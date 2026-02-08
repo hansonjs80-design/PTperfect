@@ -43,7 +43,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar bg-white dark:bg-slate-900">
+    <div className="flex-1 overflow-y-auto overflow-x-auto log-scrollbar bg-white dark:bg-slate-900">
       {/* 
         Mobile Optimization: 
         min-w-[500px] ensures the table is wider than the screen in portrait mode but compact enough.

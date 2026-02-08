@@ -56,6 +56,38 @@
         scrollbar-color: #334155 transparent;
       }
 
+      /* Patient Log Scrollbar: 50% larger height (8px), always visible style */
+      .log-scrollbar {
+        scrollbar-width: auto;
+        scrollbar-color: #cbd5e1 transparent;
+      }
+      .dark .log-scrollbar {
+        scrollbar-color: #475569 transparent;
+      }
+      .log-scrollbar::-webkit-scrollbar {
+        width: 8px;
+        height: 8px; /* Increased from 5px */
+      }
+      .log-scrollbar::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.02); /* Subtle track to encourage visibility */
+      }
+      .dark .log-scrollbar::-webkit-scrollbar-track {
+        background: rgba(255,255,255,0.02);
+      }
+      .log-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+      }
+      .dark .log-scrollbar::-webkit-scrollbar-thumb {
+        background: #475569;
+      }
+      .log-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+      .dark .log-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+      }
+
       /* Mobile Landscape Optimization: Visible Scrollbars */
       @media (orientation: landscape) and (max-width: 1024px) {
         ::-webkit-scrollbar {
