@@ -1,5 +1,6 @@
 
 import React, { memo } from 'react';
+import { MoreHorizontal } from 'lucide-react';
 import { BedState, BedStatus } from '../../types';
 import { getBedNumberColor } from '../../utils/styleUtils';
 import { BedStatusBadges } from '../BedStatusBadges';
@@ -13,9 +14,12 @@ interface BedNumberAndStatusProps {
 export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({ bed, onMovePatient, onEditStatus }) => {
   const isBedT = bed.id === 11;
   const isIdle = bed.status === BedStatus.IDLE;
+  
+  const hasActiveBadges = bed.isInjection || bed.isFluid || bed.isManual || bed.isESWT || bed.isTraction;
+  const showPlaceholder = !hasActiveBadges && bed.status === BedStatus.ACTIVE;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-[5px] sm:gap-3">
       {/* Bed Number */}
       <div 
         className={`flex items-center justify-center transition-transform select-none ${isIdle ? 'cursor-default' : 'cursor-pointer active:scale-95'}`}
@@ -27,13 +31,21 @@ export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({ bed
         </span>
       </div>
 
-      {/* Status Icons Area */}
+      {/* Status Icons Area - Reduced Width (40%) & Height (25%) for Mobile */}
       <div 
-        className="flex items-center cursor-pointer p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+        className={`flex items-center justify-center cursor-pointer rounded-xl transition-all duration-200 min-w-[26px] sm:min-w-[44px] min-h-[33px] sm:min-h-[44px] hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/20`}
         onDoubleClick={onEditStatus}
         title="더블클릭하여 상태 아이콘 설정"
       >
         <BedStatusBadges bed={bed} />
+        
+        {/* Placeholder if Active but no icons: Faint Ellipsis */}
+        {showPlaceholder && (
+           <MoreHorizontal 
+             className="w-6 h-6 text-slate-900/10 dark:text-white/10" 
+             strokeWidth={3}
+           />
+        )}
       </div>
     </div>
   );
