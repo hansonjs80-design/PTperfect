@@ -1,17 +1,19 @@
 
 import React, { useState, useMemo } from 'react';
-import { Play, ArrowUpDown, Filter, Search } from 'lucide-react';
+import { Play, ArrowUpDown, Filter, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { Preset } from '../../types';
 import { getStepLabel } from '../../utils/bedUtils';
+import { PresetInlineDetail } from './PresetInlineDetail';
 
 interface PresetListViewProps {
   presets: Preset[];
-  onSelect: (preset: Preset) => void;
+  onSelect: (preset: Preset) => void; // Used for "Start" action now
 }
 
 export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelect }) => {
   const [filterStep, setFilterStep] = useState<'all' | number>('all');
   const [sortDir, setSortDir] = useState<'none' | 'asc' | 'desc'>('none');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const processedPresets = useMemo(() => {
     let result = [...presets];
@@ -32,6 +34,10 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
     if (prev === 'desc') return 'asc';
     return 'none';
   });
+
+  const handleToggleExpand = (id: string) => {
+    setExpandedId(prev => prev === id ? null : id);
+  };
 
   return (
     <div className="space-y-3">
@@ -88,47 +94,66 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
         ) : (
           processedPresets.map(preset => {
             const totalMins = Math.floor(preset.steps.reduce((acc, s) => acc + s.duration, 0) / 60);
+            const isExpanded = expandedId === preset.id;
+
             return (
-              <button
+              <div
                 key={preset.id}
-                onClick={() => onSelect(preset)}
-                className="group relative w-full p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-transparent hover:border-brand-300 dark:hover:border-slate-600 hover:shadow-md transition-all active:scale-[0.98] text-left flex items-center justify-between"
+                className={`w-full p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border transition-all ${
+                  isExpanded 
+                    ? 'border-brand-500 ring-1 ring-brand-500/20 shadow-md' 
+                    : 'border-transparent hover:border-brand-300 dark:hover:border-slate-600'
+                }`}
+                onClick={() => handleToggleExpand(preset.id)}
               >
-                <div className="flex-1 min-w-0 pr-3">
-                  <div className="flex items-center gap-2 mb-1.5">
-                     <span className="font-black text-slate-800 dark:text-white text-base leading-none">
-                       {preset.name}
-                     </span>
-                     <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-md">
-                       {totalMins}분
-                     </span>
+                <div className="flex items-center justify-between cursor-pointer">
+                  <div className="flex-1 min-w-0 pr-3">
+                    <div className="flex items-center gap-2 mb-1.5">
+                       <span className={`font-black text-base leading-none transition-colors ${isExpanded ? 'text-brand-600 dark:text-brand-400' : 'text-slate-800 dark:text-white'}`}>
+                         {preset.name}
+                       </span>
+                       <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-md">
+                         {totalMins}분
+                       </span>
+                    </div>
+                    
+                    {/* Step Pills */}
+                    <div className="flex flex-wrap items-center gap-1">
+                      {preset.steps.map((step, idx) => (
+                        <div key={idx} className="flex items-center">
+                          <span 
+                            className={`
+                              text-[10px] px-2 py-0.5 rounded-full font-bold text-white shadow-sm
+                              ${step.color} opacity-90
+                            `}
+                          >
+                            {getStepLabel(step)}
+                          </span>
+                          {idx < preset.steps.length - 1 && (
+                            <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full mx-1" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  
-                  {/* Step Pills */}
-                  <div className="flex flex-wrap items-center gap-1">
-                    {preset.steps.map((step, idx) => (
-                      <div key={idx} className="flex items-center">
-                        <span 
-                          className={`
-                            text-[10px] px-2 py-0.5 rounded-full font-bold text-white shadow-sm
-                            ${step.color.replace('bg-', 'bg-')} 
-                            opacity-90 group-hover:opacity-100 transition-opacity
-                          `}
-                        >
-                          {getStepLabel(step)}
-                        </span>
-                        {idx < preset.steps.length - 1 && (
-                          <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full mx-1" />
-                        )}
-                      </div>
-                    ))}
+
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                    isExpanded 
+                      ? 'bg-brand-100 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400' 
+                      : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500'
+                  }`}>
+                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </div>
                 </div>
 
-                <div className="w-8 h-8 rounded-full bg-brand-50 dark:bg-slate-700 text-brand-600 dark:text-slate-400 flex items-center justify-center group-hover:bg-brand-500 group-hover:text-white transition-colors shadow-inner group-hover:shadow-lg group-hover:shadow-brand-500/30">
-                   <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                </div>
-              </button>
+                {/* Inline Details (Expanded) */}
+                {isExpanded && (
+                  <PresetInlineDetail 
+                    initialPreset={preset} 
+                    onStart={(updatedPreset) => onSelect(updatedPreset)} 
+                  />
+                )}
+              </div>
             );
           })
         )}

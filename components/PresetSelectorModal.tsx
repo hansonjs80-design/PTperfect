@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { X, Play, ChevronLeft, Eraser, Check, Clock } from 'lucide-react';
 import { Preset, TreatmentStep, QuickTreatment } from '../types';
 import { OptionToggles } from './preset-selector/OptionToggles';
 import { PresetListView } from './preset-selector/PresetListView';
 import { QuickStartGrid } from './preset-selector/QuickStartGrid';
 import { TreatmentPreview } from './preset-selector/TreatmentPreview';
+import { createQuickStep } from '../utils/treatmentFactories';
 
 interface PresetSelectorModalProps {
   isOpen: boolean;
@@ -43,6 +44,10 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
   const [tractionDuration, setTractionDuration] = useState(15);
   const [previewPreset, setPreviewPreset] = useState<Preset | null>(null);
   
+  // Multi-select state for Quick Treatments
+  const [selectedQuickItems, setSelectedQuickItems] = useState<QuickTreatment[]>([]);
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+
   const [options, setOptions] = useState({
     isInjection: false,
     isManual: false,
@@ -64,6 +69,9 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
       } else {
         setPreviewPreset(null);
       }
+      // Reset multi-select state on open
+      setSelectedQuickItems([]);
+      setIsMultiSelectMode(false);
     }
   }, [isOpen, initialOptions, initialPreset]);
 
@@ -84,26 +92,48 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
     }
   };
 
-  const handleQuickItemClick = (template: QuickTreatment) => {
-    const initialStep: TreatmentStep = {
-      id: crypto.randomUUID(),
-      name: template.name,
-      duration: template.duration * 60,
-      enableTimer: template.enableTimer,
-      color: template.color
-    };
+  // Handle Quick Item Click (Single vs Multi logic)
+  const handleQuickItemClick = useCallback((template: QuickTreatment) => {
+    if (isMultiSelectMode) {
+      // Toggle selection in multi mode
+      setSelectedQuickItems(prev => {
+        const exists = prev.find(item => item.id === template.id);
+        if (exists) {
+          return prev.filter(item => item.id !== template.id);
+        } else {
+          return [...prev, template];
+        }
+      });
+    } else {
+      // Immediate start in single mode
+      onQuickStart(targetBedId, template, options);
+      onClose();
+    }
+  }, [isMultiSelectMode, onQuickStart, targetBedId, options, onClose]);
 
-    setPreviewPreset({
-      id: `temp-${Date.now()}`,
-      name: template.name,
-      steps: [initialStep]
-    });
+  // Handle Starting Multiple Selected Items
+  const handleStartSelectedQuick = () => {
+    if (selectedQuickItems.length === 0) return;
+
+    const steps: TreatmentStep[] = selectedQuickItems.map(item => 
+      createQuickStep(item.name, item.duration, item.enableTimer, item.color, item.label)
+    );
+
+    // Create a combined name (e.g., "HP + ICT + Laser")
+    const combinedName = selectedQuickItems.map(i => i.label || i.name).join(' + ');
+
+    onCustomStart(targetBedId, combinedName, steps, options);
+    onClose();
   };
 
-  // --- Dynamic Header Style Logic (Matching Bed Cards) ---
+  const handlePresetStart = (preset: Preset) => {
+      onCustomStart(targetBedId, preset.name, preset.steps, options);
+      onClose();
+  };
+
   const getHeaderStyle = () => {
     if (isLogMode) return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200';
-    if (targetBedId === 11) return 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'; // Traction/Indigo
+    if (targetBedId === 11) return 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300';
     if (targetBedId >= 7) return 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300';
     if (targetBedId >= 3) return 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300';
     return 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300';
@@ -118,7 +148,7 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
         className="w-full sm:w-[500px] max-h-[90vh] sm:max-h-[95vh] bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header - Styled like Bed Card */}
+        {/* Header */}
         <div className={`p-4 sm:p-5 flex justify-between items-center shrink-0 transition-colors ${getHeaderStyle()}`}>
           <div className="flex items-center gap-3">
             {previewPreset && (
@@ -171,7 +201,6 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
                    </span>
                    <span className="text-sm font-bold text-gray-400 mt-1">MINUTES</span>
                 </div>
-                {/* Control Buttons */}
                 <button 
                   onClick={() => setTractionDuration(Math.max(1, tractionDuration - 1))}
                   className="absolute top-1/2 -left-6 -translate-y-1/2 w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-100 dark:border-slate-700 flex items-center justify-center text-xl font-black text-slate-600 dark:text-slate-300 active:scale-90 transition-transform hover:bg-gray-50"
@@ -211,7 +240,7 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
             <div className="flex flex-col gap-4 pb-20">
               <PresetListView 
                 presets={presets} 
-                onSelect={(p) => setPreviewPreset(JSON.parse(JSON.stringify(p)))} 
+                onSelect={handlePresetStart} 
               />
               
               <div className="relative">
@@ -224,7 +253,11 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
               </div>
 
               <QuickStartGrid 
-                onQuickStart={handleQuickItemClick} 
+                onQuickItemClick={handleQuickItemClick}
+                selectedItems={selectedQuickItems}
+                isMultiSelect={isMultiSelectMode}
+                onToggleMultiSelect={() => setIsMultiSelectMode(prev => !prev)}
+                onStartSelected={handleStartSelectedQuick}
               />
             </div>
           )}

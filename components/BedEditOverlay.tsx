@@ -31,6 +31,9 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
   onUpdateSteps,
   onUpdateDuration
 }) => {
+  // Safety guard
+  if (!bed) return null;
+
   return (
     <div 
       className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
@@ -56,7 +59,7 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
            <div className="flex-1 min-h-0">
              <BedEditStepList 
                bed={bed} 
-               steps={steps} 
+               steps={steps || []} 
                onUpdateSteps={onUpdateSteps}
                onUpdateDuration={onUpdateDuration}
              />
@@ -65,7 +68,7 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
            <div className="shrink-0 pb-2">
              <BedEditQuickAdd 
                bedId={bed.id} 
-               steps={steps} 
+               steps={steps || []} 
                onUpdateSteps={onUpdateSteps} 
              />
            </div>

@@ -37,7 +37,6 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     toggleManual
   } = useTreatmentContext();
 
-  // Extract Logic to Hook
   const { 
     trashState, 
     handleTrashClick, 
@@ -49,7 +48,6 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const currentStep = currentPreset?.steps[bed.currentStepIndex];
   const steps = currentPreset?.steps || [];
   
-  // Timer Logic
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
   const isOvertime = isTimerActive && bed.remainingTime <= 0;
   const isNearEnd = isTimerActive && bed.remainingTime > 0 && bed.remainingTime <= 60;
@@ -57,6 +55,12 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const containerClass = useMemo(() => getBedCardStyles(bed, isOvertime, isNearEnd), [
     bed.status, bed.isInjection, bed.isFluid, bed.isESWT, bed.isTraction, bed.isManual, isOvertime, isNearEnd
   ]);
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingBedId(bed.id);
+  };
 
   return (
     <div className={`${containerClass} transform transition-transform duration-200 active:scale-[0.99]`}>
@@ -83,7 +87,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
           ) : (
             <div 
               className="w-full h-full min-h-0"
-              onDoubleClick={(e) => setEditingBedId(bed.id)}
+              onDoubleClick={handleDoubleClick}
             >
               <BedContent 
                 steps={steps}

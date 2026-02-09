@@ -4,11 +4,11 @@ import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { usePatientLogContext } from '../contexts/PatientLogContext';
 import { TreatmentStep, QuickTreatment } from '../types';
 import { generateTreatmentString, findMatchingPreset } from '../utils/bedUtils';
+import { BedEditOverlay } from './BedEditOverlay'; 
 
 // Lazy load heavy components
 const SettingsPanel = React.lazy(() => import('./SettingsPanel').then(module => ({ default: module.SettingsPanel })));
 const PresetSelectorModal = React.lazy(() => import('./PresetSelectorModal').then(module => ({ default: module.PresetSelectorModal })));
-const BedEditOverlay = React.lazy(() => import('./BedEditOverlay').then(module => ({ default: module.BedEditOverlay })));
 const BedMoveModal = React.lazy(() => import('./modals/BedMoveModal').then(module => ({ default: module.BedMoveModal })));
 
 interface GlobalModalsProps {
@@ -21,7 +21,6 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
   const { 
     beds, 
     presets, 
-    updatePresets,
     selectingBedId,
     setSelectingBedId,
     selectingLogId,
@@ -43,7 +42,8 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
     toggleManual,
     updateBedSteps,
     updateBedDuration,
-    updateVisitWithBedSync
+    updateVisitWithBedSync,
+    updatePresets
   } = useTreatmentContext();
 
   const { visits } = usePatientLogContext();
@@ -56,36 +56,25 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
     is_manual: options?.isManual,
   });
 
-  // --- LOGIC SEPARATION ---
-  // 1. Pure Log Edit: selectingLogId is SET, selectingBedId is NULL.
-  // 2. Assignment from Log: selectingLogId is SET, selectingBedId is SET.
-  // 3. Manual Bed Control: selectingLogId is NULL, selectingBedId is SET.
-
   const handleSelectPreset = (bedId: number, presetId: string, options: any) => {
     if (selectingLogId) {
       const preset = presets.find(p => p.id === presetId);
       if (preset) {
         if (selectingBedId) {
-            // [CASE 2: Assignment Mode]
-            // Bed exists in Log, Treatment Empty -> User selected preset.
-            // Action: Update Log with Treatment Name + Sync (False) to trigger Bed Activation & Conflict Check.
             updateVisitWithBedSync(selectingLogId, {
                 treatment_name: generateTreatmentString(preset.steps),
                 ...mapOptionsToFlags(options)
-            }, false); // <--- DO NOT SKIP SYNC. This triggers activation prompt.
+            }, false);
         } else {
-            // [CASE 1: Log Edit Mode]
-            // Bed assigned, Treatment exists -> User editing log only.
             updateVisitWithBedSync(selectingLogId, {
                 treatment_name: generateTreatmentString(preset.steps),
                 ...mapOptionsToFlags(options)
-            }, true); // <--- FORCE SKIP SYNC. Log text only.
+            }, true);
         }
       }
       setSelectingLogId(null);
       setSelectingBedId(null);
     } else {
-      // [CASE 3: Manual Control]
       selectPreset(bedId, presetId, options);
       setSelectingBedId(null);
     }
@@ -94,13 +83,11 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
   const handleCustomStart = (bedId: number, name: string, steps: TreatmentStep[], options: any) => {
     if (selectingLogId) {
        if (selectingBedId) {
-           // [CASE 2: Assignment Mode]
            updateVisitWithBedSync(selectingLogId, {
              treatment_name: generateTreatmentString(steps),
              ...mapOptionsToFlags(options)
            }, false);
        } else {
-           // [CASE 1: Log Edit Mode]
            updateVisitWithBedSync(selectingLogId, {
              treatment_name: generateTreatmentString(steps),
              ...mapOptionsToFlags(options)
@@ -109,7 +96,6 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
        setSelectingLogId(null);
        setSelectingBedId(null);
     } else {
-       // [CASE 3: Manual Control]
        startCustomPreset(bedId, name, steps, options);
        setSelectingBedId(null);
     }
@@ -118,13 +104,11 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
   const handleQuickStart = (bedId: number, template: QuickTreatment, options: any) => {
     if (selectingLogId) {
       if (selectingBedId) {
-          // [CASE 2: Assignment Mode]
           updateVisitWithBedSync(selectingLogId, {
             treatment_name: template.label || template.name,
             ...mapOptionsToFlags(options)
           }, false);
       } else {
-          // [CASE 1: Log Edit Mode]
           updateVisitWithBedSync(selectingLogId, {
             treatment_name: template.label || template.name,
             ...mapOptionsToFlags(options)
@@ -133,7 +117,6 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
       setSelectingLogId(null);
       setSelectingBedId(null);
     } else {
-      // [CASE 3: Manual Control]
       startQuickTreatment(bedId, template, options);
       setSelectingBedId(null);
     }
@@ -149,16 +132,13 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
        };
 
        if (selectingBedId) {
-           // [CASE 2: Assignment Mode]
            updateVisitWithBedSync(selectingLogId, updatePayload, false);
        } else {
-           // [CASE 1: Log Edit Mode]
            updateVisitWithBedSync(selectingLogId, updatePayload, true);
        }
        setSelectingLogId(null);
        setSelectingBedId(null);
     } else {
-       // [CASE 3: Manual Control]
        startTraction(bedId, duration, options);
        setSelectingBedId(null);
     }
@@ -175,7 +155,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         is_manual: false,
       }, true);
       setSelectingLogId(null);
-      setSelectingBedId(null); // Ensure cleaned up
+      setSelectingBedId(null);
     }
   };
 
@@ -210,31 +190,33 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
   const editingBedSteps = editingBed ? (editingBed.customPreset?.steps || presets.find(p => p.id === editingBed.currentPresetId)?.steps || []) : [];
 
   const isModalOpen = selectingBedId !== null || selectingLogId !== null;
-  
-  // Logic for Modal ID:
-  // If selectingBedId is present, use it (Assignment or Manual).
-  // If selectingBedId is NULL but LogID is set, pass 0 (Edit Mode).
   const targetBedIdForModal = selectingBedId !== null ? selectingBedId : (selectingLogId ? 0 : null);
 
   return (
-    <Suspense fallback={null}>
-      <PresetSelectorModal 
-        isOpen={isModalOpen}
-        onClose={() => {
-          setSelectingBedId(null);
-          setSelectingLogId(null);
-        }}
-        presets={presets}
-        onSelect={handleSelectPreset}
-        onCustomStart={handleCustomStart}
-        onQuickStart={handleQuickStart}
-        onStartTraction={handleStartTraction}
-        onClearLog={handleClearLog}
-        targetBedId={targetBedIdForModal}
-        initialOptions={modalInitialOptions}
-        initialPreset={modalInitialPreset}
-      />
+    <>
+      {/* Selector Modal (Lazy) - Conditional Render to prevent eager loading blocking */}
+      {isModalOpen && (
+        <Suspense fallback={null}>
+          <PresetSelectorModal 
+            isOpen={isModalOpen}
+            onClose={() => {
+              setSelectingBedId(null);
+              setSelectingLogId(null);
+            }}
+            presets={presets}
+            onSelect={handleSelectPreset}
+            onCustomStart={handleCustomStart}
+            onQuickStart={handleQuickStart}
+            onStartTraction={handleStartTraction}
+            onClearLog={handleClearLog}
+            targetBedId={targetBedIdForModal}
+            initialOptions={modalInitialOptions}
+            initialPreset={modalInitialPreset}
+          />
+        </Suspense>
+      )}
 
+      {/* Bed Edit Overlay (Direct Import - OUTSIDE Suspense) */}
       {editingBed && (
         <BedEditOverlay 
           bed={editingBed}
@@ -250,26 +232,31 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         />
       )}
 
+      {/* Move Modal (Lazy) */}
       {movingPatientState !== null && (
-        <BedMoveModal 
-          fromBedId={movingPatientState.bedId}
-          initialPos={{ x: movingPatientState.x, y: movingPatientState.y }}
-          onClose={() => setMovingPatientState(null)}
-          onConfirm={(toBedId) => movePatient(movingPatientState.bedId, toBedId)}
-        />
+        <Suspense fallback={null}>
+          <BedMoveModal 
+            fromBedId={movingPatientState.bedId}
+            initialPos={{ x: movingPatientState.x, y: movingPatientState.y }}
+            onClose={() => setMovingPatientState(null)}
+            onConfirm={(toBedId) => movePatient(movingPatientState.bedId, toBedId)}
+          />
+        </Suspense>
       )}
 
-      <SettingsPanel 
-        isOpen={isMenuOpen} 
-        onClose={onCloseMenu}
-        presets={presets}
-        onUpdatePresets={updatePresets}
-        onResetAllBeds={resetAll}
-      />
-
+      {/* Settings (Lazy) */}
       {isMenuOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" onClick={onCloseMenu} />
+        <Suspense fallback={<div className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" onClick={onCloseMenu} />}>
+          <SettingsPanel 
+            isOpen={isMenuOpen} 
+            onClose={onCloseMenu}
+            presets={presets}
+            onUpdatePresets={updatePresets}
+            onResetAllBeds={resetAll}
+          />
+          <div className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" onClick={onCloseMenu} />
+        </Suspense>
       )}
-    </Suspense>
+    </>
   );
 };

@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { ChevronDown, Palette } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 interface ColorPickerProps {
   value: string;
@@ -22,12 +23,15 @@ const PRESET_COLORS = [
 ];
 
 export const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, className }) => {
-  const isCustom = value.startsWith('bg-[#');
-  const customHex = isCustom ? value.replace('bg-[', '').replace(']', '') : '#000000';
+  // Safety fallback for undefined value to prevent "startsWith of undefined" crash
+  const safeValue = value || 'bg-gray-500';
+  
+  const isCustom = safeValue.startsWith('bg-[#');
+  const customHex = isCustom ? safeValue.replace('bg-[', '').replace(']', '') : '#000000';
 
   const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
-    if (val === 'custom') return; // Do nothing, user picks from input
+    if (val === 'custom') return; 
     onChange(val);
   };
 
@@ -39,14 +43,14 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, class
     <div className={`relative flex items-center gap-1.5 ${className}`}>
       {/* Color Preview Indicator */}
       <div 
-        className={`w-4 h-4 rounded-full shadow-sm ring-1 ring-black/5 shrink-0 ${value}`} 
+        className={`w-4 h-4 rounded-full shadow-sm ring-1 ring-black/5 shrink-0 ${safeValue}`} 
         style={isCustom ? { backgroundColor: customHex } : undefined}
       />
 
       {/* Select Dropdown */}
       <div className="relative flex-1 min-w-[80px]">
         <select
-          value={isCustom ? 'custom' : value}
+          value={isCustom ? 'custom' : safeValue}
           onChange={handlePresetChange}
           className="w-full pl-2 pr-6 py-1 text-[10px] sm:text-xs border border-gray-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-bold focus:ring-1 focus:ring-brand-500 outline-none appearance-none cursor-pointer"
         >
@@ -58,8 +62,8 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, class
         <ChevronDown className="w-3 h-3 text-gray-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
       </div>
 
-      {/* Custom Color Input (Visible if 'custom' is selected or currently custom value) */}
-      {(isCustom || value === 'custom') && (
+      {/* Custom Color Input */}
+      {(isCustom || safeValue === 'custom') && (
         <div className="relative w-6 h-6 overflow-hidden rounded-md border border-gray-200 dark:border-slate-600 shrink-0">
            <input 
              type="color" 

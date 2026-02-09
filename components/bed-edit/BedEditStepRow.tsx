@@ -27,7 +27,11 @@ export const BedEditStepRow: React.FC<BedEditStepRowProps> = ({
   onDurationChange,
   onApplyDuration
 }) => {
-  const minutes = Math.floor(step.duration / 60);
+  // Safe access with fallbacks
+  const duration = step?.duration || 0;
+  const minutes = Math.floor(duration / 60);
+  const color = step?.color || 'bg-gray-500';
+  const name = step?.name || '';
 
   const handleMinuteInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value);
@@ -50,11 +54,11 @@ export const BedEditStepRow: React.FC<BedEditStepRowProps> = ({
            <button onClick={() => onMove(index, 'down')} disabled={index === totalSteps - 1} className="hover:text-brand-500 disabled:opacity-20"><ChevronDown className="w-3.5 h-3.5" /></button>
         </div>
 
-        <div className={`w-1.5 h-8 rounded-full ${step.color} shadow-sm shrink-0`} />
+        <div className={`w-1.5 h-8 rounded-full ${color} shadow-sm shrink-0`} />
         
         <input 
           type="text" 
-          value={step.name}
+          value={name}
           onChange={(e) => onChange(index, { name: e.target.value })}
           className="flex-1 min-w-0 bg-transparent text-sm font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-b focus:border-brand-500 transition-colors placeholder:text-slate-300"
           placeholder="치료명 입력"
@@ -88,13 +92,13 @@ export const BedEditStepRow: React.FC<BedEditStepRowProps> = ({
          <div className="flex items-center gap-2">
             {/* Timer Toggle */}
             <button
-                onClick={() => onChange(index, { enableTimer: !step.enableTimer })}
+                onClick={() => onChange(index, { enableTimer: !step?.enableTimer })}
                 className={`p-1.5 rounded-lg transition-all ${
-                  step.enableTimer 
+                  step?.enableTimer 
                     ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400 shadow-sm' 
                     : 'bg-transparent text-slate-300 hover:text-slate-500'
                 }`}
-                title={step.enableTimer ? "타이머 켜짐" : "타이머 꺼짐"}
+                title={step?.enableTimer ? "타이머 켜짐" : "타이머 꺼짐"}
             >
                 <Clock className="w-3.5 h-3.5" />
             </button>
@@ -102,13 +106,13 @@ export const BedEditStepRow: React.FC<BedEditStepRowProps> = ({
             {/* Color Picker */}
             <div className="w-[80px]">
                 <ColorPicker 
-                   value={step.color}
-                   onChange={(color) => onChange(index, { color })}
+                   value={color}
+                   onChange={(newColor) => onChange(index, { color: newColor })}
                 />
             </div>
 
             {/* Apply Button (Only for active step) */}
-            {onApplyDuration && step.enableTimer && (
+            {onApplyDuration && step?.enableTimer && (
               <button 
                 onClick={() => onApplyDuration(step.duration)}
                 className="p-1.5 bg-brand-600 text-white rounded-lg shadow-md hover:bg-brand-700 active:scale-95 transition-all ml-1 animate-pulse"
