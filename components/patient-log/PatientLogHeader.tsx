@@ -35,7 +35,8 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
       {/* Left: Title & Count */}
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-9 h-9 bg-brand-500 rounded-xl shadow-lg shadow-brand-500/30 text-white">
+          {/* Icon: Hidden on mobile (sm 미만 hidden), Visible on sm+ (sm:flex) */}
+          <div className="hidden sm:flex items-center justify-center w-9 h-9 bg-brand-500 rounded-xl shadow-lg shadow-brand-500/30 text-white">
              <ClipboardList className="w-5 h-5" strokeWidth={2.5} />
           </div>
           <div className="flex flex-col justify-center">
@@ -84,12 +85,13 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
             <ChevronRight className="w-4 h-4" strokeWidth={3} />
           </button>
 
-          {/* Vertical Divider */}
-          <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1 hidden sm:block"></div>
+          {/* Vertical Divider - Visible on mobile now to separate the Today button */}
+          <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1 block"></div>
 
+          {/* Today Button - Visible on all screens now */}
           <button 
             onClick={handleTodayClick}
-            className={`${iconBtnClass} hidden sm:flex text-brand-500 hover:text-brand-600 bg-white dark:bg-slate-700 shadow-sm`}
+            className={`${iconBtnClass} text-brand-500 hover:text-brand-600 bg-white dark:bg-slate-700 shadow-sm`}
             title="오늘 날짜로 이동"
           >
             <CalendarCheck className="w-4 h-4" strokeWidth={2.5} />

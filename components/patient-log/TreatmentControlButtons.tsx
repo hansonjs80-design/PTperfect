@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { SkipBack, SkipForward, CheckCircle } from 'lucide-react';
+import { SkipBack, SkipForward, CheckCircle, X } from 'lucide-react';
 
 interface TreatmentControlButtonsProps {
   rowStatus: 'active' | 'completed' | 'none';
@@ -27,7 +27,18 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
   return (
     <div className="absolute left-0 z-10 flex items-center h-full gap-0.5 px-0.5 bg-gradient-to-r from-white via-white to-transparent dark:from-slate-900 dark:via-slate-900">
       
-      {/* Prev Button (Only Active) */}
+      {/* Quick Clear Button (Only when at the first step, allowing immediate cancellation) */}
+      {rowStatus === 'active' && activeStepIndex === 0 && onClearBed && (
+          <button
+            onClick={(e) => onActionClick(e, 'clear')}
+            className="p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-400 hover:text-red-600 transition-all active:scale-95"
+            title="침상 비우기"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+      )}
+
+      {/* Prev Button (Only Active, visible after step 0) */}
       {rowStatus === 'active' && onPrevStep && activeStepIndex > 0 && (
         <button 
             onClick={(e) => onActionClick(e, 'prev')}
@@ -51,7 +62,7 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
         </button>
       )}
 
-      {/* Clear Button (Only Completed) */}
+      {/* Clear Button (Only Completed - when treatment is finished) */}
       {rowStatus === 'completed' && onClearBed && (
           <button
             onClick={(e) => onActionClick(e, 'clear')}
