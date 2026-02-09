@@ -37,15 +37,16 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
     : "flex items-center gap-[1px]";
 
   // Icon Size Logic (Mobile Portrait Only):
-  // 1개: w-5 (20px) - 기준
-  // 2개: w-[18px] (10% 축소)
-  // 3개 이상: w-4 (16px) (20% 축소)
+  // 기준: w-5 (20px)
+  // 1개, 2개: 20% 축소 -> w-4 (16px)
+  // 3개 이상: 30% 축소 -> w-3.5 (14px)
   // sm(태블릿/PC) 이상은 w-6 (24px) 고정
-  let iconSizeClass = "w-5 h-5"; 
-  if (count === 2) {
-    iconSizeClass = "w-[18px] h-[18px]";
-  } else if (count >= 3) {
-    iconSizeClass = "w-4 h-4";
+  let iconSizeClass = ""; 
+  
+  if (count >= 3) {
+    iconSizeClass = "w-3.5 h-3.5"; // 30% smaller
+  } else {
+    iconSizeClass = "w-4 h-4";     // 20% smaller (for 1 or 2)
   }
   
   // Combine with desktop override
