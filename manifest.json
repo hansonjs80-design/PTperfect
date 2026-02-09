@@ -1,3 +1,4 @@
+
 {
   "name": "PhysioTrack Pro",
   "short_name": "PhysioTrack",
@@ -9,7 +10,7 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3063/3063176.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/4320/4320337.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

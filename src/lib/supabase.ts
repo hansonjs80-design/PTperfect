@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // Prioritize Environment Variables for Production (Vercel)
@@ -5,8 +6,8 @@ const ENV_URL = import.meta.env.VITE_SUPABASE_URL;
 const ENV_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Hardcoded defaults as fallback (Demo mode)
-const DEFAULT_URL = 'https://uorkjldaplvojhcqlkqq.supabase.co';
-const DEFAULT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvcmtqbGRhcGx2b2poY3Fsa3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNjI0MTksImV4cCI6MjA4NTYzODQxOX0.ETJDubZgNI3TA2UwW4Rlp6Ohv6mcfOBWXdPIUnPksH4';
+const DEFAULT_URL = 'https://qqbjtuwwzwtkjgblwyso.supabase.co';
+const DEFAULT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxYmp0dXd3end0a2pnYmx3eXNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NzE4ODAsImV4cCI6MjA4NjE0Nzg4MH0.qtQ2dxmEHi0eYyVsmxgB2mlo_W039cNmaMa1pDq_zAY';
 
 // Check Local Storage first, then Env Vars, then Hardcoded defaults
 const getStoredConfig = () => {

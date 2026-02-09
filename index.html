@@ -3,7 +3,7 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="https://cdn-icons-png.flaticon.com/512/3063/3063176.png" />
+    <link rel="icon" type="image/svg+xml" href="https://cdn-icons-png.flaticon.com/512/4320/4320337.png" />
     <!-- interactive-widget=resizes-content 추가: 모바일 키보드 올라올 때 뷰포트 자동 조절 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
     
@@ -14,11 +14,12 @@
     <meta name="theme-color" content="#0f172a" />
     <meta name="description" content="실시간 물리치료 병상 관리 시스템" />
     
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3063/3063176.png" />
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/4320/4320337.png" />
     
     <title>PhysioTrack Pro</title>
     <style>
-      ::-webkit-scrollbar { width: 5px; height: 5px; }
+      /* Global Scrollbar (Default) */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
       .dark ::-webkit-scrollbar-thumb { background: #334155; }
@@ -56,36 +57,58 @@
         scrollbar-color: #334155 transparent;
       }
 
-      /* Patient Log Scrollbar: 50% larger height (8px), always visible style */
+      /* 
+       * Patient Log Scrollbar Styles 
+       * - Highly visible on Desktop
+       * - Large touch target (24px)
+       * - Always visible track
+       */
       .log-scrollbar {
-        scrollbar-width: auto;
-        scrollbar-color: #cbd5e1 transparent;
+        scrollbar-width: auto; /* Firefox: Standard width */
+        scrollbar-color: #cbd5e1 #f1f5f9; /* Thumb Track colors */
       }
       .dark .log-scrollbar {
-        scrollbar-color: #475569 transparent;
+        scrollbar-color: #475569 #1e293b;
       }
+
       .log-scrollbar::-webkit-scrollbar {
-        width: 8px;
-        height: 8px; /* Increased from 5px */
+        width: 24px;  /* Vertical scrollbar width */
+        height: 24px; /* Horizontal scrollbar height (24px) */
       }
+
+      /* Track is always visible now */
       .log-scrollbar::-webkit-scrollbar-track {
-        background: rgba(0,0,0,0.02); /* Subtle track to encourage visibility */
+        background-color: #f1f5f9; 
+        border-top: 1px solid #e2e8f0; /* Subtle border to separate from content */
       }
       .dark .log-scrollbar::-webkit-scrollbar-track {
-        background: rgba(255,255,255,0.02);
+        background-color: #0f172a;
+        border-top: 1px solid #1e293b;
       }
+
       .log-scrollbar::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
+        background-color: #cbd5e1;
+        border-radius: 20px;
+        /* Transparent border to center thumb */
+        border: 7px solid transparent; 
+        background-clip: content-box; 
+        min-height: 40px;
+        min-width: 40px;
       }
       .dark .log-scrollbar::-webkit-scrollbar-thumb {
-        background: #475569;
+        background-color: #475569;
       }
-      .log-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
+
+      /* Hover effects */
+      .log-scrollbar:hover::-webkit-scrollbar-thumb {
+        background-color: #94a3b8;
       }
-      .dark .log-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #64748b;
+      .dark .log-scrollbar:hover::-webkit-scrollbar-thumb {
+        background-color: #64748b;
+      }
+      
+      .log-scrollbar::-webkit-scrollbar-corner {
+        background: transparent;
       }
 
       /* Mobile Landscape Optimization: Visible Scrollbars */

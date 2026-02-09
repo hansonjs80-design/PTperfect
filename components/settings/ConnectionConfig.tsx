@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { Wifi, RefreshCw, Link, ShieldCheck } from 'lucide-react';
 import { isOnlineMode, testSupabaseConnection, saveSupabaseConfig, clearSupabaseConfig } from '../../lib/supabase';
 
-const DEFAULT_SB_URL = 'https://ebiirfwjucfhdrpinykr.supabase.co';
-const DEFAULT_SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWlyZndqdWNmaGRycGlueWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3MTg1ODQsImV4cCI6MjA4NTI5NDU4NH0.gEj7gIdfsNCo71WYj1qDGkfCizAcpLEfLS2dVyqcZf4';
+const DEFAULT_SB_URL = 'https://qqbjtuwwzwtkjgblwyso.supabase.co';
+const DEFAULT_SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxYmp0dXd3end0a2pnYmx3eXNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NzE4ODAsImV4cCI6MjA4NjE0Nzg4MH0.qtQ2dxmEHi0eYyVsmxgB2mlo_W039cNmaMa1pDq_zAY';
 
 export const ConnectionConfig: React.FC = () => {
   const [sbUrl, setSbUrl] = useState(window.localStorage.getItem('sb_url') || DEFAULT_SB_URL);
