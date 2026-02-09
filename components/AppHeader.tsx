@@ -54,7 +54,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <Menu className="w-6 h-6 sm:w-6 sm:h-6 md:w-5 md:h-5 xl:w-6 xl:h-6 landscape:w-5 landscape:h-5" strokeWidth={2.5} />
           </button>
           
-          <div className="flex items-center gap-2 select-none group cursor-default">
+          {/* Logo: Hidden on mobile (sm 미만 hidden) to save space */}
+          <div className="hidden sm:flex items-center gap-2 select-none group cursor-default">
             <div className="p-1.5 md:p-1 xl:p-1.5 bg-brand-600 rounded-lg shadow-lg shadow-brand-500/30 group-hover:scale-110 transition-transform duration-300">
                <Activity className="w-4 h-4 sm:w-5 sm:h-5 md:w-4 md:h-4 xl:w-5 xl:h-5 text-white" strokeWidth={3} />
             </div>
@@ -82,10 +83,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             </button>
           )}
 
-          {/* Full Screen */}
+          {/* Full Screen - Now Visible on All Screens */}
           <button 
             onClick={onToggleFullScreen}
-            className={`${buttonClass} hidden sm:flex`}
+            className={`${buttonClass}`}
             aria-label="Full Screen"
             title="전체 화면"
           >
@@ -106,7 +107,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             )}
           </button>
 
-          {/* Layout Toggle Button - Visible on all screens now */}
+          {/* Layout Toggle Button */}
           <button
             onClick={toggleLayoutMode}
             className={`${buttonClass} ${layoutMode === 'alt' ? activeButtonClass : ''}`}
