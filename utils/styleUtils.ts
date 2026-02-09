@@ -122,9 +122,10 @@ export const getBedCardStyles = (bed: BedState, isOvertime: boolean, isNearEnd: 
   let base = "relative flex flex-col h-auto sm:h-full rounded-2xl overflow-hidden select-none transition-all duration-300 ";
   
   // Height Logic Updated:
-  // Mobile Portrait: min-h-0 (Allow complete shrink wrap)
-  // Tablet/Desktop: sm:min-h-[118px] (Reduced from 130px to match smaller footer)
-  const heightClasses = "min-h-0 sm:min-h-[118px] landscape:min-h-[200px] sm:landscape:min-h-[118px] lg:landscape:min-h-[200px] ";
+  // Mobile Portrait: min-h-[150px] (Previously 0, now matches active card height: Header+Body+Footer)
+  // Tablet Portrait (sm): min-h-[150px] (Previously 118px)
+  // Landscape: Preserved specific overrides
+  const heightClasses = "min-h-[150px] sm:min-h-[150px] landscape:min-h-[200px] sm:landscape:min-h-[118px] lg:landscape:min-h-[200px] ";
 
   let statusClasses = "";
   
