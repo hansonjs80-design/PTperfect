@@ -45,7 +45,7 @@ export const QuickStartGrid: React.FC<QuickStartGridProps> = ({
         </button>
       </div>
       
-      <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 pb-16 sm:pb-0">
+      <div className="grid grid-cols-5 md:grid-cols-6 gap-2 pb-16 sm:pb-0">
         {quickTreatments.map((item) => {
           const isSelected = selectedItems.some(s => s.id === item.id);
           const selectionIndex = selectedItems.findIndex(s => s.id === item.id) + 1;
@@ -69,12 +69,17 @@ export const QuickStartGrid: React.FC<QuickStartGridProps> = ({
                 </div>
               )}
 
-              <div className={`w-1.5 h-1.5 rounded-full ${item.color} mb-1.5 shadow-sm group-hover:scale-125 transition-transform`} />
-              <span className={`text-[11px] font-black leading-none mb-0.5 text-center w-full truncate px-1 transition-colors ${isSelected ? 'text-brand-700 dark:text-brand-300' : 'text-slate-700 dark:text-slate-200 group-hover:text-brand-600 dark:group-hover:text-brand-400'}`}>
-                {item.label}
-              </span>
-              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 group-hover:text-slate-500 dark:group-hover:text-slate-400">
-                {item.duration}m
+              {/* Layout Change: Dot + Name on top row */}
+              <div className="flex items-center gap-1.5 mb-1 w-full justify-center">
+                <div className={`w-2 h-2 rounded-full ${item.color} shadow-sm group-hover:scale-125 transition-transform shrink-0`} />
+                <span className={`text-[11px] font-black leading-none truncate max-w-[80%] transition-colors ${isSelected ? 'text-brand-700 dark:text-brand-300' : 'text-slate-700 dark:text-slate-200 group-hover:text-brand-600 dark:group-hover:text-brand-400'}`}>
+                  {item.label}
+                </span>
+              </div>
+              
+              {/* Duration below */}
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 group-hover:text-slate-500 dark:group-hover:text-slate-400">
+                {item.duration}분
               </span>
             </button>
           );

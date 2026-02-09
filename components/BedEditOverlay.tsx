@@ -45,18 +45,23 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
       >
         <BedEditHeader bedId={bed.id} onClose={onClose} />
 
-        {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-slate-950 p-2 sm:p-3 relative flex flex-col gap-4">
-           <BedEditFlags 
-             bed={bed} 
-             onToggleInjection={onToggleInjection}
-             onToggleFluid={onToggleFluid}
-             onToggleManual={onToggleManual}
-             onToggleESWT={onToggleESWT}
-             onToggleTraction={onToggleTraction}
-           />
+        {/* Main Content Area - Flex Column with Independent Scrolling for List */}
+        <div className="flex-1 min-h-0 flex flex-col bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
+           
+           {/* Top: Flags (Fixed height usually) */}
+           <div className="shrink-0 p-3 pb-0 z-10">
+             <BedEditFlags 
+               bed={bed} 
+               onToggleInjection={onToggleInjection}
+               onToggleFluid={onToggleFluid}
+               onToggleManual={onToggleManual}
+               onToggleESWT={onToggleESWT}
+               onToggleTraction={onToggleTraction}
+             />
+           </div>
 
-           <div className="flex-1 min-h-0">
+           {/* Middle: Step List (Scrollable) */}
+           <div className="flex-1 min-h-0 p-3 overflow-y-auto custom-scrollbar">
              <BedEditStepList 
                bed={bed} 
                steps={steps || []} 
@@ -65,7 +70,8 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
              />
            </div>
 
-           <div className="shrink-0 pb-2">
+           {/* Bottom: Quick Add (Fixed at bottom of content area) */}
+           <div className="shrink-0 p-3 pt-2 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 shadow-lg z-20">
              <BedEditQuickAdd 
                bedId={bed.id} 
                steps={steps || []} 
@@ -75,7 +81,7 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
         </div>
         
         {/* Footer Action */}
-        <div className="p-3 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 shrink-0">
+        <div className="p-3 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 shrink-0 z-30">
            <button 
              onClick={onClose} 
              className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm rounded-2xl font-bold shadow-lg shadow-slate-300 dark:shadow-none active:scale-[0.98] transition-all"

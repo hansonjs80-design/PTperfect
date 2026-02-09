@@ -138,9 +138,8 @@ export const TreatmentPreview: React.FC<TreatmentPreviewProps> = ({
             <button
               key={item.id}
               onClick={() => addTreatment(item)}
-              className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:border-brand-500 hover:text-brand-600 transition-all active:scale-95 flex items-center gap-1.5 shadow-sm"
+              className={`px-3 py-2 rounded-lg text-xs font-bold text-white shadow-sm hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 ${item.color}`}
             >
-              <div className={`w-1.5 h-1.5 rounded-full ${item.color}`} />
               {item.label}
             </button>
           ))}

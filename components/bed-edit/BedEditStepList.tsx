@@ -61,8 +61,8 @@ export const BedEditStepList: React.FC<BedEditStepListProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full gap-2">
-      <div className="flex items-center justify-between px-1">
+    <div className="flex flex-col gap-2 pb-2">
+      <div className="flex items-center justify-between px-1 shrink-0">
         <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
           <ListOrdered className="w-3.5 h-3.5" />
           처방 순서 (Steps)
@@ -72,7 +72,7 @@ export const BedEditStepList: React.FC<BedEditStepListProps> = ({
         </span>
       </div>
       
-      <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1">
+      <div className="space-y-2">
         {safeSteps.length === 0 ? (
           <div className="h-32 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white/50 dark:bg-slate-900/50">
             <span className="text-xs font-bold">등록된 치료가 없습니다.</span>

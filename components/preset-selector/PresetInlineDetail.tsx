@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Play, Minus, Plus, Trash2, Clock, Check } from 'lucide-react';
+import { Play, Minus, Plus, Trash2, Clock, ChevronUp, ChevronDown } from 'lucide-react';
 import { Preset, TreatmentStep, QuickTreatment } from '../../types';
 import { useTreatmentContext } from '../../contexts/TreatmentContext';
 
@@ -20,6 +20,16 @@ export const PresetInlineDetail: React.FC<PresetInlineDetailProps> = ({
     const newSteps = [...preset.steps];
     const newDur = Math.max(60, newSteps[idx].duration + (change * 60));
     newSteps[idx] = { ...newSteps[idx], duration: newDur };
+    setPreset({ ...preset, steps: newSteps });
+  };
+
+  const moveStep = (idx: number, direction: 'up' | 'down') => {
+    const newSteps = [...preset.steps];
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    
+    if (swapIdx < 0 || swapIdx >= newSteps.length) return;
+
+    [newSteps[idx], newSteps[swapIdx]] = [newSteps[swapIdx], newSteps[idx]];
     setPreset({ ...preset, steps: newSteps });
   };
 
@@ -53,7 +63,26 @@ export const PresetInlineDetail: React.FC<PresetInlineDetailProps> = ({
           </div>
         ) : (
           preset.steps.map((step, idx) => (
-            <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-slate-700/50 rounded-xl border border-gray-100 dark:border-slate-700">
+            <div key={step.id || idx} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-slate-700/50 rounded-xl border border-gray-100 dark:border-slate-700">
+              
+              {/* Order Controls */}
+              <div className="flex flex-col gap-0.5 mr-1">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); moveStep(idx, 'up'); }} 
+                  disabled={idx === 0}
+                  className="text-slate-300 hover:text-brand-500 disabled:opacity-20 transition-colors active:scale-90 p-0.5"
+                >
+                  <ChevronUp className="w-3 h-3" strokeWidth={3} />
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); moveStep(idx, 'down'); }} 
+                  disabled={idx === preset.steps.length - 1}
+                  className="text-slate-300 hover:text-brand-500 disabled:opacity-20 transition-colors active:scale-90 p-0.5"
+                >
+                  <ChevronDown className="w-3 h-3" strokeWidth={3} />
+                </button>
+              </div>
+
               <div className={`w-1 h-8 rounded-full ${step.color} shrink-0`} />
               
               <div className="flex-1 min-w-0">
@@ -82,12 +111,12 @@ export const PresetInlineDetail: React.FC<PresetInlineDetailProps> = ({
       {/* Quick Add */}
       <div className="mb-4">
         <span className="text-[10px] font-bold text-gray-400 block mb-2 px-1">추가하기 (Quick Add)</span>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {quickTreatments.map((item) => (
             <button
               key={item.id}
               onClick={(e) => { e.stopPropagation(); addTreatment(item); }}
-              className="px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:border-brand-500 hover:text-brand-600 transition-colors shadow-sm"
+              className={`px-3 py-2 rounded-lg text-xs font-bold text-white shadow-sm hover:brightness-110 active:scale-95 transition-all ${item.color}`}
             >
               {item.label}
             </button>

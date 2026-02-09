@@ -31,8 +31,14 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, class
 
   const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
-    if (val === 'custom') return; 
-    onChange(val);
+    if (val === 'custom') {
+      // Try to find current preset hex to initialize custom picker, otherwise default to black
+      const currentPreset = PRESET_COLORS.find(p => p.value === safeValue);
+      const initialHex = currentPreset ? currentPreset.hex : '#000000';
+      onChange(`bg-[${initialHex}]`);
+    } else {
+      onChange(val);
+    }
   };
 
   const handleCustomHexChange = (e: React.ChangeEvent<HTMLInputElement>) => {

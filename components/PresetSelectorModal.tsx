@@ -46,7 +46,8 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
   
   // Multi-select state for Quick Treatments
   const [selectedQuickItems, setSelectedQuickItems] = useState<QuickTreatment[]>([]);
-  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  // Default to true
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(true);
 
   const [options, setOptions] = useState({
     isInjection: false,
@@ -69,9 +70,9 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
       } else {
         setPreviewPreset(null);
       }
-      // Reset multi-select state on open
+      // Reset multi-select state on open (Default to ON)
       setSelectedQuickItems([]);
-      setIsMultiSelectMode(false);
+      setIsMultiSelectMode(true);
     }
   }, [isOpen, initialOptions, initialPreset]);
 

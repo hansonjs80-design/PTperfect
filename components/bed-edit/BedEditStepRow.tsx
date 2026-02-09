@@ -27,7 +27,6 @@ export const BedEditStepRow: React.FC<BedEditStepRowProps> = ({
   onDurationChange,
   onApplyDuration
 }) => {
-  // Safe access with fallbacks
   const duration = step?.duration || 0;
   const minutes = Math.floor(duration / 60);
   const color = step?.color || 'bg-gray-500';
@@ -42,14 +41,14 @@ export const BedEditStepRow: React.FC<BedEditStepRowProps> = ({
   };
 
   return (
-    <div className={`group flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-sm border transition-all ${
+    <div className={`group flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-sm border transition-all overflow-hidden ${
       isActive 
         ? 'border-brand-300 dark:border-brand-700 ring-1 ring-brand-100 dark:ring-brand-900/50' 
         : 'border-transparent hover:border-slate-200 dark:hover:border-slate-700'
     }`}>
       {/* Top Row: Reordering & Name */}
-      <div className="flex items-center gap-2 p-2 border-b border-gray-50 dark:border-slate-700/50">
-        <div className="flex flex-col gap-0.5 text-slate-300 dark:text-slate-600 group-hover:text-slate-400 transition-colors">
+      <div className="flex items-center gap-2 p-2 border-b border-gray-50 dark:border-slate-700/50 w-full">
+        <div className="flex flex-col gap-0.5 text-slate-300 dark:text-slate-600 group-hover:text-slate-400 transition-colors shrink-0">
            <button onClick={() => onMove(index, 'up')} disabled={index === 0} className="hover:text-brand-500 disabled:opacity-20"><ChevronUp className="w-3.5 h-3.5" /></button>
            <button onClick={() => onMove(index, 'down')} disabled={index === totalSteps - 1} className="hover:text-brand-500 disabled:opacity-20"><ChevronDown className="w-3.5 h-3.5" /></button>
         </div>
@@ -60,36 +59,38 @@ export const BedEditStepRow: React.FC<BedEditStepRowProps> = ({
           type="text" 
           value={name}
           onChange={(e) => onChange(index, { name: e.target.value })}
-          className="flex-1 min-w-0 bg-transparent text-sm font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-b focus:border-brand-500 transition-colors placeholder:text-slate-300"
+          className="flex-1 min-w-0 bg-transparent text-sm font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-b focus:border-brand-500 transition-colors placeholder:text-slate-300 truncate"
           placeholder="치료명 입력"
         />
 
         <button 
           onClick={() => onRemove(index)} 
-          className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+          className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all shrink-0"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
       {/* Bottom Row: Controls */}
-      <div className="flex items-center justify-between p-2 pl-3 bg-gray-50/50 dark:bg-slate-900/30 rounded-b-2xl">
+      <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-2 p-2 pl-3 bg-gray-50/50 dark:bg-slate-900/30">
+         
          {/* Duration Control */}
-         <div className="flex items-center bg-white dark:bg-slate-700 rounded-lg p-0.5 shadow-sm border border-gray-100 dark:border-slate-600">
+         <div className="flex items-center bg-white dark:bg-slate-700 rounded-lg p-0.5 shadow-sm border border-gray-100 dark:border-slate-600 shrink-0">
             <button onClick={() => onDurationChange(index, -1)} className="w-6 h-6 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-600 rounded-md text-slate-400 active:scale-90"><Minus className="w-3 h-3" strokeWidth={3} /></button>
             <div className="flex items-baseline px-1.5 min-w-[32px] justify-center">
                <input 
                  type="number" 
                  value={minutes} 
                  onChange={handleMinuteInput}
-                 className="w-5 text-right bg-transparent text-xs font-black text-slate-700 dark:text-slate-200 outline-none p-0 appearance-none"
+                 className="w-6 text-right bg-transparent text-xs font-black text-slate-700 dark:text-slate-200 outline-none p-0 appearance-none"
                />
                <span className="text-[9px] font-bold text-slate-400 ml-0.5">m</span>
             </div>
             <button onClick={() => onDurationChange(index, 1)} className="w-6 h-6 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-600 rounded-md text-slate-400 active:scale-90"><Plus className="w-3 h-3" strokeWidth={3} /></button>
          </div>
 
-         <div className="flex items-center gap-2">
+         {/* Right Controls Group */}
+         <div className="flex items-center gap-1.5 sm:gap-2 ml-auto shrink-0">
             {/* Timer Toggle */}
             <button
                 onClick={() => onChange(index, { enableTimer: !step?.enableTimer })}
@@ -115,7 +116,7 @@ export const BedEditStepRow: React.FC<BedEditStepRowProps> = ({
             {onApplyDuration && step?.enableTimer && (
               <button 
                 onClick={() => onApplyDuration(step.duration)}
-                className="p-1.5 bg-brand-600 text-white rounded-lg shadow-md hover:bg-brand-700 active:scale-95 transition-all ml-1 animate-pulse"
+                className="p-1.5 bg-brand-600 text-white rounded-lg shadow-md hover:bg-brand-700 active:scale-95 transition-all animate-pulse shrink-0"
                 title="현재 시간에 적용"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
