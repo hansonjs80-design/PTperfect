@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Play, ArrowUpDown, Filter, Search } from 'lucide-react';
 import { Preset } from '../../types';
-import { getAbbreviation } from '../../utils/bedUtils';
+import { getStepLabel } from '../../utils/bedUtils';
 
 interface PresetListViewProps {
   presets: Preset[];
@@ -115,7 +115,7 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                             opacity-90 group-hover:opacity-100 transition-opacity
                           `}
                         >
-                          {getAbbreviation(step.name)}
+                          {getStepLabel(step)}
                         </span>
                         {idx < preset.steps.length - 1 && (
                           <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full mx-1" />

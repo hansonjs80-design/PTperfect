@@ -1,3 +1,4 @@
+
 import { BedState, BedStatus, Preset, TreatmentStep, QuickTreatment } from '../types';
 import { STANDARD_TREATMENTS } from '../constants';
 
@@ -31,8 +32,14 @@ export const getAbbreviation = (name: string): string => {
   return name.substring(0, 3);
 };
 
+// Helper to get the display label for a step
+export const getStepLabel = (step: TreatmentStep): string => {
+  return step.label || getAbbreviation(step.name);
+};
+
 export const generateTreatmentString = (steps: TreatmentStep[]) => {
-  return steps.map(s => getAbbreviation(s.name)).join('/');
+  // Prefer the explicitly set label, fallback to automatic abbreviation
+  return steps.map(s => s.label || getAbbreviation(s.name)).join('/');
 };
 
 export const parseTreatmentString = (treatmentString: string | null, customTreatments: QuickTreatment[] = []): TreatmentStep[] => {
@@ -56,6 +63,7 @@ export const parseTreatmentString = (treatmentString: string | null, customTreat
           reconstructedSteps.push({
               id: crypto.randomUUID(),
               name: match.name,
+              label: match.label, // Restore label from reference
               duration: match.duration * 60,
               enableTimer: match.enableTimer,
               color: match.color
@@ -64,6 +72,7 @@ export const parseTreatmentString = (treatmentString: string | null, customTreat
           reconstructedSteps.push({
               id: crypto.randomUUID(),
               name: part,
+              label: part, // Use the part as label for unknown items
               duration: 600, // Default 10 min
               enableTimer: true,
               color: 'bg-gray-500'

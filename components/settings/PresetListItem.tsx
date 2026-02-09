@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { ChevronUp, ChevronDown, Check, X, Trash2, Edit3 } from 'lucide-react';
 import { Preset } from '../../types';
-import { getAbbreviation } from '../../utils/bedUtils';
+import { getStepLabel } from '../../utils/bedUtils';
 
 interface PresetListItemProps {
   preset: Preset;
@@ -89,7 +90,7 @@ export const PresetListItem: React.FC<PresetListItemProps> = ({
                   <div className="flex items-center gap-1">
                     <div className={`w-1.5 h-1.5 rounded-full ${step.color} shadow-sm`} />
                     <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
-                      {getAbbreviation(step.name)}
+                      {getStepLabel(step)}
                     </span>
                   </div>
                   {sIdx < preset.steps.length - 1 && (

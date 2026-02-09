@@ -1,7 +1,7 @@
 
 import React, { memo, useState } from 'react';
 import { TreatmentStep } from '../types';
-import { getAbbreviation } from '../utils/bedUtils';
+import { getStepLabel } from '../utils/bedUtils';
 import { getStepColor } from '../utils/styleUtils';
 import { PopupEditor } from './common/PopupEditor';
 import { ArrowRightLeft } from 'lucide-react';
@@ -75,7 +75,7 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
               Desktop (lg): text-2xl
             */}
             <span className={`font-black text-base xs:text-lg sm:text-xl lg:text-2xl leading-none text-center whitespace-nowrap px-0.5 ${isActive ? 'scale-110 drop-shadow-sm' : 'opacity-90'}`}>
-              {getAbbreviation(step.name)}
+              {getStepLabel(step)}
             </span>
             
             {/* Active Indicator Pulse */}
@@ -112,7 +112,7 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
 
       {isEditingMemo && (
         <PopupEditor
-          title={`${getAbbreviation(step.name)} 메모`}
+          title={`${getStepLabel(step)} 메모`}
           initialValue={memo || ""}
           type="text"
           centered={true}

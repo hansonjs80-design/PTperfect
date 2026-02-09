@@ -1,14 +1,17 @@
 
 import { Preset, TreatmentStep } from '../types';
+import { getAbbreviation } from './bedUtils';
 
 export const createQuickStep = (
   name: string, 
   minutes: number, 
   enableTimer: boolean, 
-  color: string
+  color: string,
+  label?: string
 ): TreatmentStep => ({
   id: crypto.randomUUID(),
   name,
+  label: label || getAbbreviation(name),
   duration: minutes * 60,
   enableTimer,
   color
@@ -25,7 +28,8 @@ export const createTractionPreset = (durationMinutes: number): Preset => ({
   name: '견인 치료',
   steps: [{ 
     id: 'tr', 
-    name: '견인 (Traction)', 
+    name: '견인 (Traction)',
+    label: '견인', 
     duration: durationMinutes * 60, 
     enableTimer: true, 
     color: 'bg-orange-500' 

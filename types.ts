@@ -8,6 +8,7 @@ export enum BedStatus {
 export interface TreatmentStep {
   id: string;
   name: string; // e.g., "Hot Pack", "ICT", "Magnetic"
+  label?: string; // Custom display text (e.g. "HP", "ICT")
   duration: number; // in seconds
   enableTimer: boolean; // Only true for Hot Pack based on requirements
   color: string; // visual cue for the step

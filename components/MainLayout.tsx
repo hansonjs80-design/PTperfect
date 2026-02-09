@@ -1,12 +1,12 @@
 
-import React, { useState, useRef, useEffect, Suspense, useCallback } from 'react';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
 import { Minimize, GripVertical } from 'lucide-react';
 import { useHeaderScroll } from '../hooks/useHeaderScroll';
 import { AppHeader } from './AppHeader';
 import { BedLayoutContainer } from './BedLayoutContainer';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { GlobalModals } from './GlobalModals';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useSidebarResize } from '../hooks/useSidebarResize';
 
 // Code Splitting for performance
 const PatientLogPanel = React.lazy(() => import('./PatientLogPanel').then(module => ({ default: module.PatientLogPanel })));
@@ -16,9 +16,8 @@ export const MainLayout: React.FC = () => {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isDarkMode, setDarkMode] = useState(false);
   
-  // Sidebar Width State (Persisted)
-  const [sidebarWidth, setSidebarWidth] = useLocalStorage<number>('log-sidebar-width', 620);
-  const [isResizing, setIsResizing] = useState(false);
+  // Extracted Resizing Logic
+  const { sidebarWidth, isResizing, startResizing } = useSidebarResize(620);
 
   // Initialize based on screen width: Open by default on XL screens (Desktop)
   const [isLogOpen, setLogOpen] = useState(() => {
@@ -40,48 +39,6 @@ export const MainLayout: React.FC = () => {
     if (isDarkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [isDarkMode]);
-
-  // --- Resizing Logic ---
-  const startResizing = useCallback(() => {
-    setIsResizing(true);
-  }, []);
-
-  const stopResizing = useCallback(() => {
-    setIsResizing(false);
-  }, []);
-
-  const resize = useCallback((mouseMoveEvent: MouseEvent) => {
-    if (isResizing) {
-      // Calculate width from the right edge
-      const newWidth = window.innerWidth - mouseMoveEvent.clientX;
-      // Constraints: Min 300px (visible area), Max 80% of screen
-      if (newWidth > 300 && newWidth < window.innerWidth * 0.8) {
-        setSidebarWidth(newWidth);
-      }
-    }
-  }, [isResizing, setSidebarWidth]);
-
-  useEffect(() => {
-    if (isResizing) {
-      window.addEventListener('mousemove', resize);
-      window.addEventListener('mouseup', stopResizing);
-      // Prevent text selection while dragging
-      document.body.style.userSelect = 'none'; 
-      document.body.style.cursor = 'col-resize';
-    } else {
-      window.removeEventListener('mousemove', resize);
-      window.removeEventListener('mouseup', stopResizing);
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-    }
-    return () => {
-      window.removeEventListener('mousemove', resize);
-      window.removeEventListener('mouseup', stopResizing);
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-    };
-  }, [isResizing, resize, stopResizing]);
-
 
   // Dynamic class generation for main content area to handle Full Screen transitions
   // Adjusted for Tablet Portrait (md) positioning requests:

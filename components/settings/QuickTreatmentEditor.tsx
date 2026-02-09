@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Save, Clock } from 'lucide-react';
 import { QuickTreatment } from '../../types';
@@ -38,16 +39,16 @@ export const QuickTreatmentEditor: React.FC<QuickTreatmentEditorProps> = ({ init
 
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">약어/라벨 (Label)</label>
+                <label className="block text-xs font-bold text-brand-600 dark:text-brand-400 mb-1">배드/로그 표시명 (Label)</label>
                 <input 
                     type="text" 
                     value={item.label}
-                    maxLength={4}
+                    maxLength={6}
                     onChange={(e) => setItem({...item, label: e.target.value})}
-                    className="w-full p-3 border rounded-xl bg-white text-gray-900 border-gray-300 dark:bg-slate-700 dark:text-white dark:border-slate-600 font-bold focus:ring-2 focus:ring-brand-500 outline-none text-center"
+                    className="w-full p-3 border-2 border-brand-100 dark:border-brand-900/50 rounded-xl bg-white text-gray-900 dark:bg-slate-700 dark:text-white font-black focus:ring-2 focus:ring-brand-500 outline-none text-center"
                     placeholder="예: HP"
                 />
-                <p className="text-[9px] text-gray-400 mt-1">* 3~4글자 권장</p>
+                <p className="text-[9px] text-gray-400 mt-1">* 배드카드와 환자현황에 표시될 텍스트</p>
                 </div>
                 
                 <div>

@@ -89,7 +89,8 @@ export const useBedActions = (
   }, [updateBedState, onAddVisit]);
 
   const startQuickTreatment = useCallback((bedId: number, template: typeof STANDARD_TREATMENTS[0], options?: SelectPresetOptions) => {
-    const step = createQuickStep(template.name, template.duration, template.enableTimer, template.color);
+    // Pass the label from the template to the step
+    const step = createQuickStep(template.name, template.duration, template.enableTimer, template.color, template.label);
     startCustomPreset(bedId, template.name, [step], options);
   }, [startCustomPreset]);
 

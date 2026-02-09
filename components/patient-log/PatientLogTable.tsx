@@ -3,7 +3,7 @@ import React, { memo } from 'react';
 import { PatientVisit, BedState, Preset } from '../../types';
 import { PatientLogRow } from './PatientLogRow';
 import { PatientLogTableHeader } from './PatientLogTableHeader';
-import { mapBgToTextClass } from '../../utils/styleUtils';
+import { getRowActiveStatus } from '../../utils/patientLogUtils';
 
 interface PatientLogTableProps {
   visits: PatientVisit[];
@@ -56,51 +56,24 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         <tbody>
           {visits.map((visit) => {
             const rowStatus = getRowStatus(visit.id, visit.bed_id);
+            const bed = visit.bed_id ? beds.find(b => b.id === visit.bed_id) : undefined;
             
-            // --- Active Step Logic ---
-            let activeStepColorClass: string | undefined = undefined;
-            let activeStepIndex: number = -1;
-            let isLastStep = false;
-            let timerStatus: 'normal' | 'warning' | 'overtime' = 'normal'; 
+            // Extracted logic for cleaner component
+            const { 
+              activeStepColorClass, 
+              activeStepIndex, 
+              isLastStep, 
+              timerStatus 
+            } = getRowActiveStatus(bed, rowStatus, presets);
             
             let handleNextStep: (() => void) | undefined = undefined;
             let handlePrevStep: (() => void) | undefined = undefined;
             let handleClearBed: (() => void) | undefined = undefined;
 
-            if ((rowStatus === 'active' || rowStatus === 'completed') && visit.bed_id) {
-               const bed = beds.find(b => b.id === visit.bed_id);
-               if (bed) {
-                  if (bed.status === 'ACTIVE' && !bed.isPaused) {
-                      const currentPreset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
-                      const currentStepInfo = currentPreset?.steps[bed.currentStepIndex];
-                      
-                      if (currentStepInfo?.enableTimer) {
-                          if (bed.remainingTime <= 0) {
-                              timerStatus = 'overtime';
-                          } else if (bed.remainingTime < 60) {
-                              timerStatus = 'warning';
-                          }
-                      }
-                  }
-
-                  const preset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
-                  const totalSteps = preset?.steps.length || 0;
-                  
-                  isLastStep = bed.currentStepIndex === totalSteps - 1;
-
-                  const step = preset?.steps[bed.currentStepIndex];
-                  
-                  if (step || rowStatus === 'completed') {
-                     if (step) {
-                        activeStepColorClass = mapBgToTextClass(step.color);
-                        activeStepIndex = bed.currentStepIndex;
-                     }
-                     
-                     if (onNextStep) handleNextStep = () => onNextStep(bed.id);
-                     if (onPrevStep) handlePrevStep = () => onPrevStep(bed.id);
-                     if (onClearBed) handleClearBed = () => onClearBed(bed.id);
-                  }
-               }
+            if (bed && (rowStatus === 'active' || rowStatus === 'completed')) {
+               if (onNextStep) handleNextStep = () => onNextStep(bed.id);
+               if (onPrevStep) handlePrevStep = () => onPrevStep(bed.id);
+               if (onClearBed) handleClearBed = () => onClearBed(bed.id);
             }
 
             return (

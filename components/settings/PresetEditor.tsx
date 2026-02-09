@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import { Save, Plus, Trash2, Clock, Minus } from 'lucide-react';
 import { Preset, TreatmentStep, QuickTreatment } from '../../types';
 import { ColorPicker } from '../common/ColorPicker';
+import { getStepLabel } from '../../utils/bedUtils';
 
 interface PresetEditorProps {
   initialPreset: Preset;
@@ -17,6 +19,7 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({ initialPreset, onSav
     const newStep: TreatmentStep = {
       id: crypto.randomUUID(),
       name: '새 치료',
+      label: 'New',
       duration: 600,
       enableTimer: true,
       color: 'bg-gray-500'
@@ -31,6 +34,7 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({ initialPreset, onSav
     const newStep: TreatmentStep = {
       id: crypto.randomUUID(),
       name: template.name,
+      label: template.label,
       duration: template.duration * 60,
       enableTimer: template.enableTimer,
       color: template.color
@@ -99,12 +103,21 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({ initialPreset, onSav
                 <div className="w-6 h-6 flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-md text-xs font-black text-gray-500 dark:text-gray-400 shrink-0">
                   {idx + 1}
                 </div>
-                <input 
-                  className="flex-1 min-w-0 bg-transparent text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-b focus:border-brand-500 transition-colors" 
-                  value={step.name} 
-                  onChange={(e) => handleUpdateStep(step.id, { name: e.target.value })}
-                  placeholder="치료명"
-                />
+                <div className="flex-1 flex gap-2">
+                    <input 
+                      className="flex-[2] min-w-0 bg-transparent text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-b focus:border-brand-500 transition-colors" 
+                      value={step.name} 
+                      onChange={(e) => handleUpdateStep(step.id, { name: e.target.value })}
+                      placeholder="치료명"
+                    />
+                    <input 
+                      className="flex-1 min-w-0 bg-transparent text-xs text-gray-500 dark:text-gray-400 text-right focus:outline-none focus:border-b focus:border-brand-500 transition-colors" 
+                      value={step.label || ''} 
+                      onChange={(e) => handleUpdateStep(step.id, { label: e.target.value })}
+                      placeholder={getStepLabel(step)}
+                      title="배드 표시 텍스트 (Label)"
+                    />
+                </div>
                 <button 
                   onClick={() => handleRemoveStep(step.id)} 
                   className="text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition-all active:scale-95 shrink-0"
@@ -168,7 +181,7 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({ initialPreset, onSav
             ))}
             <button 
               onClick={handleAddCustomStep} 
-              className="flex flex-col items-center justify-center p-2 border border-dashed border-gray-300 dark:border-slate-600 text-gray-400 dark:text-gray-500 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-400 transition-all active:scale-95 h-14"
+              className="flex flex-col items-center justify-center p-2 border border-dashed border-slate-300 dark:border-slate-600 text-gray-400 dark:text-gray-500 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-400 transition-all active:scale-95 h-14"
             >
               <Plus className="w-4 h-4 mb-0.5" />
               <span className="text-[9px] font-bold">직접 입력</span>
