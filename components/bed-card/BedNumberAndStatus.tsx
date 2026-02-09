@@ -19,7 +19,7 @@ export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({ bed
   const showPlaceholder = !hasActiveBadges && bed.status === BedStatus.ACTIVE;
 
   return (
-    <div className="flex items-center gap-[5px] sm:gap-3">
+    <div className="flex items-center gap-[5px]">
       {/* Bed Number */}
       <div 
         className={`flex items-center justify-center transition-transform select-none ${isIdle ? 'cursor-default' : 'cursor-pointer active:scale-95'}`}
@@ -31,9 +31,9 @@ export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({ bed
         </span>
       </div>
 
-      {/* Status Icons Area - Reduced Width (40%) & Height (25%) for Mobile */}
+      {/* Status Icons Area - Adjusted for 15% reduction on Desktop (sm) */}
       <div 
-        className={`flex items-center justify-center cursor-pointer rounded-xl transition-all duration-200 min-w-[26px] sm:min-w-[44px] min-h-[33px] sm:min-h-[44px] hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/20`}
+        className={`flex items-center justify-center cursor-pointer rounded-xl transition-all duration-200 min-w-[26px] sm:min-w-[37px] min-h-[33px] sm:min-h-[37px] hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/20`}
         onDoubleClick={onEditStatus}
         title="더블클릭하여 상태 아이콘 설정"
       >
