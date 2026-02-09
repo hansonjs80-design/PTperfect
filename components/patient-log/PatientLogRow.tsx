@@ -109,8 +109,10 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
      }
   };
 
-  // Styling Update: Compact, Clean, matching Bed Card logic
-  let rowClasses = 'group transition-all border-b border-gray-100 dark:border-slate-800 h-[36px] '; 
+  // Styling Update: Darker borders for visibility
+  // border-gray-100 -> border-gray-300
+  // dark:border-slate-800 -> dark:border-slate-600
+  let rowClasses = 'group transition-all border-b border-gray-300 dark:border-slate-600 h-[36px] '; 
   
   if (rowStatus === 'active') {
     rowClasses += 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20';
@@ -133,10 +135,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   if (timerStatus === 'warning') dotColorClass = 'bg-orange-500';
   if (timerStatus === 'overtime') dotColorClass = 'bg-red-600 animate-pulse';
 
+  // Common Border Class for cells to ensure consistency
+  const cellBorderClass = "border-r border-gray-300 dark:border-slate-600";
+
   return (
     <tr className={rowClasses}>
       {/* 1. Bed ID */}
-      <td className="border-r border-gray-100 dark:border-slate-800 p-0 relative">
+      <td className={`${cellBorderClass} p-0 relative`}>
         <BedSelectorCell 
           value={visit?.bed_id || null}
           rowStatus={rowStatus}
@@ -159,14 +164,14 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       {/* 2. Patient Name */}
-      <td className="border-r border-gray-100 dark:border-slate-800 p-0">
+      <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
           value={visit?.patient_name || ''} 
           placeholder={isDraft ? "새 환자" : "이름"}
           menuTitle="이름 수정 (로그만 변경)"
           className={`bg-transparent justify-center text-center ${
             !visit?.patient_name 
-              ? 'font-normal text-gray-300 dark:text-gray-600' 
+              ? 'font-normal text-gray-300 dark:text-gray-500' 
               : 'font-black text-slate-800 dark:text-slate-100'
           } ${isDraft ? 'placeholder-gray-300 font-normal' : ''} text-sm`}
           onCommit={(val, skipSync) => handleChange('patient_name', val || '', skipSync)}
@@ -176,12 +181,12 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       {/* 3. Body Part */}
-      <td className="border-r border-gray-100 dark:border-slate-800 p-0">
+      <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
           value={visit?.body_part || ''} 
           placeholder={isDraft ? "부위" : ""}
           menuTitle="치료 부위 수정 (로그만 변경)"
-          className="text-slate-600 dark:text-slate-400 font-bold bg-transparent justify-center text-center text-xs sm:text-sm"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-xs sm:text-sm"
           onCommit={(val, skipSync) => handleChange('body_part', val || '', skipSync)}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -189,7 +194,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       {/* 4. Treatment */}
-      <td className="border-r border-gray-100 dark:border-slate-800 p-0 relative">
+      <td className={`${cellBorderClass} p-0 relative`}>
         <TreatmentSelectorCell
           visit={visit}
           value={visit?.treatment_name || ''}
@@ -208,7 +213,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       {/* 5. Status */}
-      <td className="border-r border-gray-100 dark:border-slate-800 p-0">
+      <td className={`${cellBorderClass} p-0`}>
         <PatientStatusCell 
             visit={visit} 
             rowStatus={rowStatus}
@@ -219,12 +224,12 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       {/* 6. Memo */}
-      <td className="border-r border-gray-100 dark:border-slate-800 p-0">
+      <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
           value={visit?.memo || ''} 
           placeholder=""
           menuTitle="메모 수정 (로그만 변경)"
-          className="text-gray-500 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-xs"
+          className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-xs"
           onCommit={(val, skipSync) => handleChange('memo', val || '', skipSync)}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -232,7 +237,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       {/* 7. Author */}
-      <td className="border-r border-gray-100 dark:border-slate-800 p-0">
+      <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
           value={visit?.author || ''} 
           placeholder="-"

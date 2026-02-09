@@ -40,7 +40,7 @@ export const BedHeader = memo(({
 }: BedHeaderProps) => {
   const { setMovingPatientState } = useTreatmentContext();
   const [isEditingTimer, setIsEditingTimer] = useState(false);
-  const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const [statusMenuPos, setStatusMenuPos] = useState<{x: number, y: number} | null>(null);
 
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
   const isOvertime = isTimerActive && bed.remainingTime <= 0;
@@ -71,10 +71,10 @@ export const BedHeader = memo(({
     setMovingPatientState({ bedId: bed.id, x: e.clientX, y: e.clientY });
   };
 
-  const handleStatusDoubleClick = (e: React.MouseEvent) => {
+  const handleStatusClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsEditingStatus(true);
+    setStatusMenuPos({ x: e.clientX, y: e.clientY });
   };
 
   return (
@@ -85,7 +85,7 @@ export const BedHeader = memo(({
         <BedNumberAndStatus 
           bed={bed} 
           onMovePatient={handleBedNumberDoubleClick} 
-          onEditStatus={handleStatusDoubleClick} 
+          onEditStatus={handleStatusClick} 
         />
 
         {/* Right Section: Timer & Actions */}
@@ -111,10 +111,11 @@ export const BedHeader = memo(({
         />
       )}
 
-      {isEditingStatus && (
+      {statusMenuPos && (
         <BedStatusPopup
           bed={bed}
-          onClose={() => setIsEditingStatus(false)}
+          position={statusMenuPos}
+          onClose={() => setStatusMenuPos(null)}
           onToggleInjection={onToggleInjection}
           onToggleFluid={onToggleFluid}
           onToggleTraction={onToggleTraction}
