@@ -36,29 +36,18 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   onPrevStep,
   onClearBed
 }) => {
-  // 항상 10개의 빈 행을 유지하여 연속 입력 편의성 제공
   const EMPTY_ROWS_COUNT = 10;
-
-  // Active Bed Ids for grid selection highlight
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
 
   return (
     <div className="flex-1 overflow-y-auto overflow-x-scroll log-scrollbar bg-white dark:bg-slate-900">
-      {/* 
-        Mobile Optimization: 
-        min-w-[500px] ensures the table is wider than the screen in portrait mode but compact enough.
-        triggering horizontal scroll and allowing columns (like Treatment List) to be wider.
-        md:min-w-full reverts to fitting the container on larger screens.
-      */}
       <table className="w-full min-w-[500px] md:min-w-full border-collapse table-fixed">
         <PatientLogTableHeader />
-        {/* Updated: Remove heavy divides for cleaner look */}
         <tbody>
-          {visits.map((visit) => {
+          {visits.map((visit, index) => {
             const rowStatus = getRowStatus(visit.id, visit.bed_id);
             const bed = visit.bed_id ? beds.find(b => b.id === visit.bed_id) : undefined;
             
-            // Extracted logic for cleaner component
             const { 
               activeStepColorClass, 
               activeStepIndex, 
@@ -79,6 +68,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
             return (
               <PatientLogRow 
                 key={visit.id}
+                rowIndex={index}
                 visit={visit}
                 isDraft={false}
                 rowStatus={rowStatus}
@@ -102,6 +92,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
           {Array.from({ length: EMPTY_ROWS_COUNT }).map((_, index) => (
             <PatientLogRow 
               key={`draft-${index}`}
+              rowIndex={visits.length + index}
               isDraft={true}
               onCreate={onCreate}
               onSelectLog={(id) => onSelectLog(id, null)} 

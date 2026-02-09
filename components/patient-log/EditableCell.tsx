@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Edit3, RefreshCw } from 'lucide-react';
 import { ContextMenu } from '../common/ContextMenu';
+import { useGridNavigation } from '../../hooks/useGridNavigation';
 
 interface EditableCellProps {
   value: string | number | null;
@@ -11,7 +12,10 @@ interface EditableCellProps {
   className?: string;
   menuTitle?: string;
   directEdit?: boolean;
-  syncOnDirectEdit?: boolean; // New prop to control sync behavior on direct edit
+  syncOnDirectEdit?: boolean;
+  gridId?: string;
+  rowIndex: number;
+  colIndex: number;
 }
 
 export const EditableCell: React.FC<EditableCellProps> = ({ 
@@ -22,24 +26,23 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   className,
   menuTitle = '수정 옵션',
   directEdit = false,
-  syncOnDirectEdit = true // Default to syncing (updating bed display) unless specified otherwise
+  syncOnDirectEdit = true,
+  gridId,
+  rowIndex,
+  colIndex
 }) => {
   const [mode, setMode] = useState<'view' | 'menu' | 'edit'>('view');
   const [skipSync, setSkipSync] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [localValue, setLocalValue] = useState(value === null ? '' : String(value));
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  const { handleGridKeyDown } = useGridNavigation(8);
 
+  // rowIndex가 변경되면(새 행이 추가되어 밀려나면) localValue를 부모 value(빈값)로 리셋
   useEffect(() => {
-    if (mode === 'edit') {
-      setLocalValue(value === null ? '' : String(value));
-      if (inputRef.current) {
-        inputRef.current.focus();
-        const len = inputRef.current.value.length;
-        inputRef.current.setSelectionRange(len, len);
-      }
-    }
-  }, [mode, value]);
+    setLocalValue(value === null ? '' : String(value));
+  }, [value, rowIndex]);
 
   const executeInteraction = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -56,14 +59,12 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   };
 
   const handleSingleClick = (e: React.MouseEvent) => {
-    // Desktop/Tablet (>= 768px): Single Click triggers action
     if (window.innerWidth >= 768) {
       executeInteraction(e);
     }
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    // Mobile (< 768px): Double Click triggers action
     if (window.innerWidth < 768) {
       executeInteraction(e);
     }
@@ -84,15 +85,26 @@ export const EditableCell: React.FC<EditableCellProps> = ({
       if (localValue !== String(value || '')) {
         onCommit(localValue, skipSync);
       }
+    } else {
+      if (localValue !== String(value || '')) {
+        onCommit(localValue, skipSync);
+      }
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setLocalValue(value === null ? '' : String(value));
       inputRef.current?.blur();
-    } else if (e.key === 'Escape') {
-      setMode('view');
+    } else {
+      handleGridKeyDown(e, rowIndex, colIndex, true, inputRef.current);
     }
+  };
+
+  // Focus handler to ensure text selection when navigating via keyboard
+  const handleFocus = () => {
+    // When focused via tab or click, we stay in 'view' mode visually (unless it was double click/menu)
+    // but the input is active.
   };
 
   if (mode === 'edit') {
@@ -104,7 +116,9 @@ export const EditableCell: React.FC<EditableCellProps> = ({
         onChange={handleChange}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className={`w-full h-full bg-white dark:bg-slate-700 px-2 py-1 outline-none border-2 border-brand-500 rounded-sm text-sm text-center !text-gray-900 dark:!text-gray-100 ${className}`}
+        autoFocus
+        data-grid-id={gridId}
+        className={`w-full h-full bg-white dark:bg-slate-700 px-2 py-1 outline-none border-2 border-brand-500 rounded-sm text-sm text-center !text-gray-900 dark:!text-gray-100 ${className} focus:ring-2 focus:ring-sky-400 focus:outline-none focus:z-10`}
         placeholder={placeholder}
       />
     );
@@ -112,13 +126,27 @@ export const EditableCell: React.FC<EditableCellProps> = ({
 
   return (
     <>
-      <div 
-        onClick={handleSingleClick}
-        onDoubleClick={handleDoubleClick}
-        className={`w-full h-full px-2 py-1 flex items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-sm truncate ${!value ? 'text-gray-300 italic' : ''} ${className}`}
-        title={directEdit ? "클릭하여 수정" : "클릭하여 옵션 열기"}
-      >
-        {value || placeholder}
+      <div className="w-full h-full relative">
+        <input
+          ref={inputRef}
+          type={type}
+          value={localValue}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
+          onClick={handleSingleClick}
+          onDoubleClick={handleDoubleClick}
+          data-grid-id={gridId}
+          placeholder={placeholder}
+          className={`
+            w-full h-full px-2 py-1 flex items-center bg-transparent border-none outline-none
+            cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-sm truncate 
+            focus:ring-2 focus:ring-sky-400 focus:z-10 focus:bg-white dark:focus:bg-slate-800
+            ${!localValue ? 'placeholder-gray-300 italic' : ''} ${className}
+          `}
+          title={directEdit ? "클릭하여 수정" : "클릭하여 옵션 열기"}
+        />
       </div>
       
       {mode === 'menu' && (

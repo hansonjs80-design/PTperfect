@@ -6,8 +6,10 @@ import { BedSelectorCell } from './BedSelectorCell';
 import { TreatmentSelectorCell } from './TreatmentSelectorCell'; 
 import { PatientStatusCell } from './PatientStatusCell';
 import { PatientVisit } from '../../types';
+import { useGridNavigation } from '../../hooks/useGridNavigation';
 
 interface PatientLogRowProps {
+  rowIndex: number;
   visit?: PatientVisit;
   isDraft?: boolean;
   rowStatus?: 'active' | 'completed' | 'none';
@@ -28,6 +30,7 @@ interface PatientLogRowProps {
 }
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
+  rowIndex,
   visit,
   isDraft = false,
   rowStatus = 'none',
@@ -46,7 +49,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   onPrevStep,
   onClearBed
 }) => {
-  
+  const { handleGridKeyDown } = useGridNavigation(8);
+
   const handleAssign = async (newBedId: number) => {
     if (isDraft && onCreate) {
        await onCreate({ bed_id: newBedId });
@@ -109,9 +113,17 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
      }
   };
 
-  // Styling Update: Darker borders for visibility
-  // border-gray-100 -> border-gray-300
-  // dark:border-slate-800 -> dark:border-slate-600
+  const handleDeleteKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!isDraft && visit && onDelete) {
+        onDelete(visit.id);
+      }
+    } else {
+      handleGridKeyDown(e, rowIndex, 7);
+    }
+  };
+
   let rowClasses = 'group transition-all border-b border-gray-300 dark:border-slate-600 h-[36px] '; 
   
   if (rowStatus === 'active') {
@@ -130,12 +142,10 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const hasTreatment = !!visit?.treatment_name && visit.treatment_name.trim() !== '';
   const isLogEditMode = !isDraft && !!visit?.bed_id && hasTreatment && rowStatus !== 'active';
   
-  // Dot Color Logic
   let dotColorClass = 'bg-brand-500';
   if (timerStatus === 'warning') dotColorClass = 'bg-orange-500';
   if (timerStatus === 'overtime') dotColorClass = 'bg-red-600 animate-pulse';
 
-  // Common Border Class for cells to ensure consistency
   const cellBorderClass = "border-r border-gray-300 dark:border-slate-600";
 
   return (
@@ -143,6 +153,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       {/* 1. Bed ID */}
       <td className={`${cellBorderClass} p-0 relative`}>
         <BedSelectorCell 
+          gridId={`${rowIndex}-0`}
+          rowIndex={rowIndex}
+          colIndex={0}
           value={visit?.bed_id || null}
           rowStatus={rowStatus}
           hasTreatment={hasTreatment}
@@ -166,8 +179,11 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       {/* 2. Patient Name */}
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
+          gridId={`${rowIndex}-1`}
+          rowIndex={rowIndex}
+          colIndex={1}
           value={visit?.patient_name || ''} 
-          placeholder={isDraft ? "새 환자" : "이름"}
+          placeholder="" 
           menuTitle="이름 수정 (로그만 변경)"
           className={`bg-transparent justify-center text-center ${
             !visit?.patient_name 
@@ -183,8 +199,11 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       {/* 3. Body Part */}
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
+          gridId={`${rowIndex}-2`}
+          rowIndex={rowIndex}
+          colIndex={2}
           value={visit?.body_part || ''} 
-          placeholder={isDraft ? "부위" : ""}
+          placeholder=""
           menuTitle="치료 부위 수정 (로그만 변경)"
           className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-xs sm:text-sm"
           onCommit={(val, skipSync) => handleChange('body_part', val || '', skipSync)}
@@ -196,6 +215,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       {/* 4. Treatment */}
       <td className={`${cellBorderClass} p-0 relative`}>
         <TreatmentSelectorCell
+          gridId={`${rowIndex}-3`}
+          rowIndex={rowIndex}
+          colIndex={3}
           visit={visit}
           value={visit?.treatment_name || ''}
           placeholder="처방 입력..." 
@@ -215,6 +237,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       {/* 5. Status */}
       <td className={`${cellBorderClass} p-0`}>
         <PatientStatusCell 
+            gridId={`${rowIndex}-4`}
+            rowIndex={rowIndex}
+            colIndex={4}
             visit={visit} 
             rowStatus={rowStatus}
             onUpdate={onUpdate || (() => {})} 
@@ -226,6 +251,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       {/* 6. Memo */}
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
+          gridId={`${rowIndex}-5`}
+          rowIndex={rowIndex}
+          colIndex={5}
           value={visit?.memo || ''} 
           placeholder=""
           menuTitle="메모 수정 (로그만 변경)"
@@ -239,6 +267,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       {/* 7. Author */}
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
+          gridId={`${rowIndex}-6`}
+          rowIndex={rowIndex}
+          colIndex={6}
           value={visit?.author || ''} 
           placeholder="-"
           menuTitle="작성자 수정 (로그만 변경)"
@@ -252,11 +283,17 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       {/* 8. Delete */}
       <td className="p-0 text-center">
         {!isDraft && visit && onDelete && (
-          <div className="flex justify-center items-center h-full">
+          <div 
+            className="flex justify-center items-center h-full outline-none focus:bg-red-50 dark:focus:bg-red-900/20 focus:ring-inset focus:ring-2 focus:ring-sky-400"
+            tabIndex={0}
+            data-grid-id={`${rowIndex}-7`}
+            onKeyDown={handleDeleteKeyDown}
+          >
             <button 
               onClick={() => onDelete(visit.id)}
               className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 transition-all active:scale-90 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
               title="삭제"
+              tabIndex={-1} // Prevent double focus
             >
               <Trash2 className="w-4 h-4" />
             </button>

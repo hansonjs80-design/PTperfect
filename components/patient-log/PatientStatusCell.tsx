@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { PatientVisit } from '../../types';
 import { PatientStatusIcons } from './PatientStatusIcons';
 import { StatusSelectionMenu } from './StatusSelectionMenu';
+import { useGridNavigation } from '../../hooks/useGridNavigation';
 
 interface PatientStatusCellProps {
   visit?: PatientVisit;
@@ -11,6 +12,9 @@ interface PatientStatusCellProps {
   onUpdate: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => void;
   isDraft?: boolean;
   onCreate?: (updates: Partial<PatientVisit>) => Promise<string>;
+  gridId?: string;
+  rowIndex: number;
+  colIndex: number;
 }
 
 export const PatientStatusCell: React.FC<PatientStatusCellProps> = ({ 
@@ -18,27 +22,45 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = ({
   rowStatus = 'none',
   onUpdate,
   isDraft,
-  onCreate
+  onCreate,
+  gridId,
+  rowIndex,
+  colIndex
 }) => {
   const [menuPos, setMenuPos] = useState<{x: number, y: number} | null>(null);
+  const cellRef = useRef<HTMLDivElement>(null);
+  const { handleGridKeyDown } = useGridNavigation(8);
 
-  const executeInteraction = (e: React.MouseEvent) => {
+  const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent, isKeyboard: boolean = false) => {
     e.preventDefault();
     e.stopPropagation();
-    setMenuPos({ x: e.clientX, y: e.clientY });
+    
+    if (isKeyboard && cellRef.current) {
+        const rect = cellRef.current.getBoundingClientRect();
+        setMenuPos({ x: rect.left + rect.width / 2, y: rect.bottom });
+    } else {
+        const mouseEvent = e as React.MouseEvent;
+        setMenuPos({ x: mouseEvent.clientX, y: mouseEvent.clientY });
+    }
   };
 
   const handleSingleClick = (e: React.MouseEvent) => {
-    // Desktop/Tablet (>= 768px): Single Click triggers action
     if (window.innerWidth >= 768) {
       executeInteraction(e);
     }
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    // Mobile (< 768px): Double Click triggers action
     if (window.innerWidth < 768) {
       executeInteraction(e);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+        executeInteraction(e, true);
+    } else {
+        handleGridKeyDown(e, rowIndex, colIndex);
     }
   };
 
@@ -49,17 +71,14 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = ({
     if (isDraft && onCreate) {
         await onCreate({ [key]: newVal });
     } else if (visit) {
-        // Active Row: Sync with Bed (skipBedSync = false)
-        // Inactive Row: Log Only (skipBedSync = true)
         const skipSync = rowStatus !== 'active';
         onUpdate(visit.id, { [key]: newVal }, skipSync);
     }
+    // Don't close menu immediately to allow multiple toggles, user clicks elsewhere to close
   };
 
   const menuTitle = rowStatus === 'active' ? "상태 변경 (배드 연동)" : "상태 변경 (단순 기록)";
 
-  // Check if there are ANY active status flags. 
-  // Even if 'visit' exists, flags might all be false.
   const hasActiveStatus = visit && (
       visit.is_injection || 
       visit.is_fluid || 
@@ -71,9 +90,13 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = ({
   return (
     <>
         <div 
-            className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group"
+            ref={cellRef}
+            className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:ring-2 focus:ring-sky-400 focus:z-10"
             onClick={handleSingleClick}
             onDoubleClick={handleDoubleClick}
+            onKeyDown={handleKeyDown}
+            tabIndex={0}
+            data-grid-id={gridId}
             title={`클릭하여 상태 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`}
         >
             {hasActiveStatus ? (
@@ -89,7 +112,10 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = ({
             <StatusSelectionMenu 
                 visit={visit}
                 position={menuPos}
-                onClose={() => setMenuPos(null)}
+                onClose={() => {
+                    setMenuPos(null);
+                    setTimeout(() => cellRef.current?.focus(), 0);
+                }}
                 onToggle={toggleStatus}
                 title={menuTitle}
             />
