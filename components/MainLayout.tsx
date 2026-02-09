@@ -84,13 +84,15 @@ export const MainLayout: React.FC = () => {
 
 
   // Dynamic class generation for main content area to handle Full Screen transitions
-  // Updated header height calculation for Tablet Compact Mode (52px)
+  // Adjusted for Tablet Portrait (md) positioning requests:
+  // 1. Normal Mode: Up 40px relative to previous -> md:pt-[calc(12px+...)] (52 - 40 = 12)
+  // 2. Full Screen: Down 30px relative to previous -> md:pt-[56px] (26 + 30 = 56)
   const mainContentPadding = isFullScreen 
-    ? 'pt-[calc(env(safe-area-inset-top)+8px)] md:pt-[26px]' 
+    ? 'pt-[calc(env(safe-area-inset-top)+8px)] md:pt-[56px]' 
     : `
       pt-[calc(62px+env(safe-area-inset-top)+1rem)] 
       landscape:pt-[calc(2.5rem+env(safe-area-inset-top))]
-      md:pt-[calc(52px+env(safe-area-inset-top)+1rem)]
+      md:pt-[calc(12px+env(safe-area-inset-top)+1rem)]
       xl:pt-[calc(72px+env(safe-area-inset-top)+1rem)]
       md:landscape:pt-2
     `;
@@ -129,6 +131,7 @@ export const MainLayout: React.FC = () => {
       {/* 
         Main Content Area Wrapper
         - Handles Split Layout for Desktop (Bed List | Patient Log)
+        - Removed extra bottom padding (1.5rem) to remove white bar
       */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* Left: Bed List Container */}
@@ -142,13 +145,14 @@ export const MainLayout: React.FC = () => {
             /* Base Padding */
             px-0 
             ${mainContentPadding}
-            pb-[calc(env(safe-area-inset-bottom)+1.5rem)]
+            pb-[env(safe-area-inset-bottom)]
             
             /* Tablet/Large Phone Portrait */
             sm:px-2 
             
             /* Desktop/Tablet Defaults (md+) */
             md:p-4 
+            md:pb-[env(safe-area-inset-bottom)]
             
             /* Mobile Landscape Overrides */
             landscape:px-0 
