@@ -30,12 +30,26 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
   if (count === 0) return null;
 
   // Layout Logic:
-  // 3개 이상: Grid (2 columns) -> 2개씩 아래 행으로 표시
+  // 3개 이상: Grid (2 columns)
   // 2개 이하: Flex (Single row)
-  // 간격: 기존(sm:gap-1 = 4px)보다 3px 줄인 gap-[1px] 적용
   const layoutClass = count >= 3 
     ? "grid grid-cols-2 gap-[1px] justify-items-center" 
     : "flex items-center gap-[1px]";
+
+  // Icon Size Logic (Mobile Portrait Only):
+  // 1개: w-5 (20px) - 기준
+  // 2개: w-[18px] (10% 축소)
+  // 3개 이상: w-4 (16px) (20% 축소)
+  // sm(태블릿/PC) 이상은 w-6 (24px) 고정
+  let iconSizeClass = "w-5 h-5"; 
+  if (count === 2) {
+    iconSizeClass = "w-[18px] h-[18px]";
+  } else if (count >= 3) {
+    iconSizeClass = "w-4 h-4";
+  }
+  
+  // Combine with desktop override
+  iconSizeClass += " sm:w-6 sm:h-6";
 
   return (
     <div className={layoutClass}>
@@ -45,7 +59,7 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
           className={`flex items-center justify-center p-0.5 rounded ${badge.colorClass}`}
           title={badge.label}
         >
-          <badge.icon className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
+          <badge.icon className={iconSizeClass} strokeWidth={2.5} />
         </div>
       ))}
     </div>
