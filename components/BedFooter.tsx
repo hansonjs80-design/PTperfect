@@ -3,6 +3,7 @@ import React, { memo } from 'react';
 import { SkipForward, SkipBack, Check, X, Settings } from 'lucide-react';
 import { BedState, BedStatus, TreatmentStep } from '../types';
 import { BedTrashButton } from './BedTrashButton';
+import { FooterButton } from './bed-card/FooterButton';
 
 interface BedFooterProps {
   bed: BedState;
@@ -14,29 +15,6 @@ interface BedFooterProps {
   onTrashClick?: (e: React.MouseEvent) => void;
   onEditClick?: (bedId: number) => void;
 }
-
-const FooterButton = ({ 
-  onClick, 
-  disabled, 
-  className, 
-  children, 
-  title 
-}: { 
-  onClick: () => void; 
-  disabled?: boolean; 
-  className: string; 
-  children?: React.ReactNode; 
-  title?: string;
-}) => (
-  <button 
-    onClick={onClick}
-    disabled={disabled}
-    className={`rounded-lg flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm ${className} ${disabled ? 'opacity-30 cursor-not-allowed' : ''}`}
-    title={title}
-  >
-    {children}
-  </button>
-);
 
 export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState, onTrashClick, onEditClick }: BedFooterProps) => {
   const totalSteps = steps.length || 0;
@@ -59,23 +37,23 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
     );
   }
 
-  // Active State: Navigation & Trash & Settings(Mobile)
+  // Active State: Reordered Buttons
+  // Order: [Trash] [Settings] [Prev] [Next]
   return (
     <div className="p-1 shrink-0 bg-white dark:bg-slate-800">
       {/* Container Height: 32px on mobile, 36px on desktop */}
       <div className="flex gap-1.5 h-[32px] sm:h-9">
          
-         {/* Prev Button */}
-         <FooterButton 
-           onClick={() => onPrev && onPrev(bed.id)}
-           disabled={bed.currentStepIndex <= 0}
-           className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-           title="이전"
-         >
-           <SkipBack className="w-[18px] h-[18px]" /> 
-         </FooterButton>
-         
-         {/* Settings Button: Visible on All Devices */}
+         {/* 1. Trash Button */}
+         {trashState && onTrashClick && (
+           <BedTrashButton 
+             trashState={trashState} 
+             onClick={onTrashClick}
+             className="flex-1 h-full"
+           />
+         )}
+
+         {/* 2. Settings Button */}
          {onEditClick && (
            <FooterButton
              onClick={() => onEditClick(bed.id)}
@@ -85,25 +63,18 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
              <Settings className="w-[18px] h-[18px]" />
            </FooterButton>
          )}
-         
-         {/* Trash Button */}
-         {trashState && onTrashClick && (
-           <div className="flex-1 flex">
-             <button 
-               onClick={onTrashClick}
-               disabled={trashState === 'deleting'}
-               className={`w-full h-full rounded-lg transition-all duration-200 flex items-center justify-center active:scale-95 shadow-sm ${
-                 trashState === 'idle' ? 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500 hover:text-red-600 hover:bg-red-50' :
-                 trashState === 'confirm' ? 'bg-red-500 text-white ring-2 ring-red-200 dark:ring-red-900' :
-                 'bg-slate-100 text-slate-400'
-               }`}
-             >
-                <BedTrashButton trashState={trashState} onClick={onTrashClick} />
-             </button>
-           </div>
-         )}
 
-         {/* Next Button */}
+         {/* 3. Prev Button */}
+         <FooterButton 
+           onClick={() => onPrev && onPrev(bed.id)}
+           disabled={bed.currentStepIndex <= 0}
+           className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+           title="이전"
+         >
+           <SkipBack className="w-[18px] h-[18px]" /> 
+         </FooterButton>
+
+         {/* 4. Next Button */}
          <FooterButton 
            onClick={() => onNext(bed.id)}
            className={`flex-1 ${

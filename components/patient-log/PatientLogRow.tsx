@@ -296,7 +296,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           >
             <button 
               onClick={() => onDelete(visit.id)}
-              className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 transition-all active:scale-90 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+              className="p-1.5 text-gray-300 hover:text-red-500 transition-all active:scale-90 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
               title="삭제"
               tabIndex={-1} 
             >
