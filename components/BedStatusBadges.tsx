@@ -25,14 +25,24 @@ const BADGES: BadgeConfig[] = [
 export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) => {
   if (bed.status === BedStatus.IDLE) return null;
   const activeBadges = BADGES.filter(b => bed[b.key]);
-  if (activeBadges.length === 0) return null;
+  const count = activeBadges.length;
+  
+  if (count === 0) return null;
+
+  // Layout Logic:
+  // 3개 이상: Grid (2 columns) -> 2개씩 아래 행으로 표시
+  // 2개 이하: Flex (Single row)
+  // 간격: 기존(sm:gap-1 = 4px)보다 3px 줄인 gap-[1px] 적용
+  const layoutClass = count >= 3 
+    ? "grid grid-cols-2 gap-[1px] justify-items-center" 
+    : "flex items-center gap-[1px]";
 
   return (
-    <div className="flex items-center gap-1 sm:gap-1.5">
+    <div className={layoutClass}>
       {activeBadges.map((badge) => (
         <div 
           key={badge.label} 
-          className={`flex items-center justify-center p-1 sm:p-1.5 rounded-lg ${badge.colorClass}`}
+          className={`flex items-center justify-center p-0.5 rounded ${badge.colorClass}`}
           title={badge.label}
         >
           <badge.icon className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />

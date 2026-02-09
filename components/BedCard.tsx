@@ -1,5 +1,5 @@
 
-import React, { memo, useState, useEffect, useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { BedState, BedStatus, Preset } from '../types';
 import { BedHeader } from './BedHeader';
 import { BedContent } from './BedContent';
@@ -7,6 +7,7 @@ import { BedFooter } from './BedFooter';
 import { BedEmptyState } from './BedEmptyState';
 import { getBedCardStyles } from '../utils/styleUtils';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
+import { useBedCardActions } from '../hooks/useBedCardActions';
 
 interface BedCardProps {
   bed: BedState;
@@ -36,6 +37,14 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     toggleManual
   } = useTreatmentContext();
 
+  // Extract Logic to Hook
+  const { 
+    trashState, 
+    handleTrashClick, 
+    swapSourceIndex, 
+    handleSwapRequest 
+  } = useBedCardActions(bed.status, bed.id, clearBed, swapSteps);
+
   const currentPreset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
   const currentStep = currentPreset?.steps[bed.currentStepIndex];
   const steps = currentPreset?.steps || [];
@@ -43,45 +52,8 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   // Timer Logic
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
   const isOvertime = isTimerActive && bed.remainingTime <= 0;
-  // 1분(60초) 이하 남았을 때 (0초 초과)
   const isNearEnd = isTimerActive && bed.remainingTime > 0 && bed.remainingTime <= 60;
   
-  const [trashState, setTrashState] = useState<'idle' | 'confirm' | 'deleting'>('idle');
-  const [swapSourceIndex, setSwapSourceIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (bed.status === BedStatus.IDLE) {
-      setTrashState('idle');
-      setSwapSourceIndex(null);
-    }
-  }, [bed.status]);
-
-  const handleTrashClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (trashState === 'idle') {
-      setTrashState('confirm');
-      setTimeout(() => setTrashState(prev => prev === 'confirm' ? 'idle' : prev), 3000);
-    } else if (trashState === 'confirm') {
-      setTrashState('deleting');
-      requestAnimationFrame(() => {
-        clearBed(bed.id);
-      });
-    }
-  };
-
-  const handleSwapRequest = (bedId: number, idx: number) => {
-    if (swapSourceIndex === null) {
-      // First click: Select source
-      setSwapSourceIndex(idx);
-    } else {
-      // Second click: Execute swap or cancel if same
-      if (swapSourceIndex !== idx) {
-        swapSteps(bedId, swapSourceIndex, idx);
-      }
-      setSwapSourceIndex(null);
-    }
-  };
-
   const containerClass = useMemo(() => getBedCardStyles(bed, isOvertime, isNearEnd), [
     bed.status, bed.isInjection, bed.isFluid, bed.isESWT, bed.isTraction, bed.isManual, isOvertime, isNearEnd
   ]);
@@ -104,15 +76,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       />
 
       {/* Main Content Area */}
-      {/* Mobile Portrait: flex-none to collapse height to content. sm:flex-1 to expand on larger screens */}
       <div className={`${bed.status === BedStatus.IDLE ? 'flex-1' : 'flex-none sm:flex-1'} flex flex-col w-full min-h-0 relative bg-white/40 dark:bg-slate-800/20 backdrop-blur-xs`}>
-        {/* 
-          BedContent Wrapper
-          - Idle: flex-1 to center
-          - Active (Mobile Portrait): flex-none, h-auto (let content dictate height)
-          - Active (Mobile/Tablet Landscape): sm:landscape:flex-none
-          - Active (Tablet/Desktop): sm:flex-1
-        */}
         <div className={`${bed.status === BedStatus.IDLE ? 'flex-1' : 'flex-none h-auto sm:flex-1 sm:h-full sm:landscape:flex-none sm:landscape:h-auto lg:landscape:flex-1 lg:landscape:h-full'} flex flex-row w-full min-h-0`}>
           {bed.status === BedStatus.IDLE ? (
             <BedEmptyState onOpenSelector={() => setSelectingBedId(bed.id)} />
@@ -124,7 +88,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
               <BedContent 
                 steps={steps}
                 bed={bed}
-                queue={[]} // Queue visual removed
+                queue={[]}
                 onSwapRequest={handleSwapRequest}
                 swapSourceIndex={swapSourceIndex}
                 onUpdateMemo={updateMemo}
@@ -132,10 +96,6 @@ export const BedCard: React.FC<BedCardProps> = memo(({
             </div>
           )}
         </div>
-
-        {/* Removed BedStatusBadges from here as it is now in Header */}
-        
-        {/* Spacer removed to eliminate empty space above footer in mobile portrait */}
       </div>
 
       {bed.status !== BedStatus.IDLE && (
