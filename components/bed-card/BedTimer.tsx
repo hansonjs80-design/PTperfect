@@ -35,16 +35,16 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
 
   return (
     <div 
-      className={`flex items-center gap-2 lg:gap-3 cursor-pointer transition-all scale-[0.95] lg:scale-100 origin-right lg:origin-center ${bed.isPaused ? 'opacity-50 grayscale' : ''}`}
+      className={`flex items-center justify-end gap-[7px] sm:gap-[10px] cursor-pointer transition-all scale-[0.95] lg:scale-100 origin-right lg:origin-center ${bed.isPaused ? 'opacity-50 grayscale' : ''}`}
     >
       {/* 
-        Timer Text Updated: 
-        text-2xl -> text-3xl 
-        lg:text-4xl -> lg:text-5xl 
+        Timer Text
+        - Gap logic controlled by parent: 7px (mobile) / 10px (tablet/desktop)
+        - Tight whitespace: leading-[0.75] and tracking-tighter
       */}
       <span 
         onDoubleClick={onTimerClick}
-        className={`font-black text-3xl lg:text-5xl tracking-tighter leading-none tabular-nums ${
+        className={`font-black text-3xl lg:text-5xl tracking-tighter leading-[0.75] tabular-nums ${
         isOvertime ? 'text-red-500 animate-pulse' : 
         isNearEnd ? 'text-orange-500 animate-pulse' :
         'text-slate-700 dark:text-slate-200'
@@ -55,7 +55,7 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
       {/* Pause Button */}
       <button 
         onClick={onTogglePause}
-        className={`p-1.5 lg:p-2 rounded-full transition-colors active:scale-90 shadow-sm ${
+        className={`shrink-0 p-1.5 lg:p-2 rounded-full transition-colors active:scale-90 shadow-sm ${
           bed.isPaused 
             ? 'bg-brand-500 text-white' 
             : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600'
