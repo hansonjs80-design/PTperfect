@@ -93,12 +93,16 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Escape handles cancellation locally
     if (e.key === 'Escape') {
       setLocalValue(value === null ? '' : String(value));
       inputRef.current?.blur();
-    } else {
-      handleGridKeyDown(e, rowIndex, colIndex, true, inputRef.current);
-    }
+      return;
+    } 
+    
+    // Pass everything else to grid navigation
+    // handleGridKeyDown now checks for isComposing internally
+    handleGridKeyDown(e, rowIndex, colIndex, true, inputRef.current);
   };
 
   // Focus handler to ensure text selection when navigating via keyboard
