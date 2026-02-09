@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React, { memo, useRef, useEffect, useState } from 'react';
 import { PatientVisit, BedState, Preset } from '../../types';
 import { PatientLogRow } from './PatientLogRow';
 import { PatientLogTableHeader } from './PatientLogTableHeader';
@@ -38,6 +38,51 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 }) => {
   const EMPTY_ROWS_COUNT = 10;
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
+
+  // Auto-focus logic for new row creation
+  // Stores { rowOffset, colIndex }
+  // rowOffset = 1 (vertical: jump to new draft), rowOffset = 0 (horizontal: stay on created row)
+  const focusTargetRef = useRef<{ rowOffset: number, colIndex: number } | null>(null);
+  const prevVisitsLengthRef = useRef(visits.length);
+
+  useEffect(() => {
+    // If visits length increased, it means a row was added.
+    if (visits.length > prevVisitsLengthRef.current && focusTargetRef.current !== null) {
+      const baseRowIndex = prevVisitsLengthRef.current; // Index of the row just created (which was previously the draft row)
+      const targetRowIndex = baseRowIndex + focusTargetRef.current.rowOffset;
+      const targetColIndex = focusTargetRef.current.colIndex;
+
+      // Small delay to allow DOM to update
+      setTimeout(() => {
+        const targetEl = document.querySelector(`[data-grid-id="${targetRowIndex}-${targetColIndex}"]`) as HTMLElement;
+        if (targetEl) {
+          targetEl.focus();
+          // If it's an input, select text
+          if (targetEl.tagName === 'INPUT') {
+            (targetEl as HTMLInputElement).select();
+          }
+        }
+        focusTargetRef.current = null; // Reset
+      }, 50);
+    }
+    prevVisitsLengthRef.current = visits.length;
+  }, [visits.length]);
+
+  const handleDraftCreate = async (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => {
+    if (colIndex !== undefined) {
+        if (navDirection === 'left') {
+            // Horizontal Left: Stay on the same row (newly created), go to previous column
+            focusTargetRef.current = { rowOffset: 0, colIndex: colIndex - 1 };
+        } else if (navDirection === 'right') {
+            // Horizontal Right: Stay on the same row (newly created), go to next column
+            focusTargetRef.current = { rowOffset: 0, colIndex: colIndex + 1 };
+        } else {
+            // Vertical (or default): Jump to the new draft row below
+            focusTargetRef.current = { rowOffset: 1, colIndex: colIndex };
+        }
+    }
+    return await onCreate(updates);
+  };
 
   return (
     <div className="flex-1 overflow-y-auto overflow-x-scroll log-scrollbar bg-white dark:bg-slate-900">
@@ -94,7 +139,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
               key={`draft-${index}`}
               rowIndex={visits.length + index}
               isDraft={true}
-              onCreate={onCreate}
+              onCreate={handleDraftCreate} // Pass the wrapper function
               onSelectLog={(id) => onSelectLog(id, null)} 
               activeBedIds={activeBedIds}
             />

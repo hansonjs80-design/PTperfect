@@ -6,7 +6,7 @@ import { useGridNavigation } from '../../hooks/useGridNavigation';
 
 interface EditableCellProps {
   value: string | number | null;
-  onCommit: (val: string, skipSync: boolean) => void;
+  onCommit: (val: string, skipSync: boolean, navDirection?: 'down' | 'right' | 'left') => void;
   type?: 'text' | 'number';
   placeholder?: string;
   className?: string;
@@ -16,6 +16,7 @@ interface EditableCellProps {
   gridId?: string;
   rowIndex: number;
   colIndex: number;
+  suppressEnterNav?: boolean; 
 }
 
 export const EditableCell: React.FC<EditableCellProps> = ({ 
@@ -29,7 +30,8 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   syncOnDirectEdit = true,
   gridId,
   rowIndex,
-  colIndex
+  colIndex,
+  suppressEnterNav = false
 }) => {
   const [mode, setMode] = useState<'view' | 'menu' | 'edit'>('view');
   const [skipSync, setSkipSync] = useState(false);
@@ -37,9 +39,11 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   const [localValue, setLocalValue] = useState(value === null ? '' : String(value));
   const inputRef = useRef<HTMLInputElement>(null);
   
+  // Ref to track navigation intent during blur
+  const navIntentRef = useRef<'down' | 'right' | 'left' | null>(null);
+  
   const { handleGridKeyDown } = useGridNavigation(8);
 
-  // rowIndex가 변경되면(새 행이 추가되어 밀려나면) localValue를 부모 value(빈값)로 리셋
   useEffect(() => {
     setLocalValue(value === null ? '' : String(value));
   }, [value, rowIndex]);
@@ -82,48 +86,88 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   const handleBlur = () => {
     if (mode === 'edit') {
       setMode('view');
-      if (localValue !== String(value || '')) {
-        onCommit(localValue, skipSync);
-      }
-    } else {
-      if (localValue !== String(value || '')) {
-        onCommit(localValue, skipSync);
-      }
     }
+    
+    // Commit if value changed OR if we have a specific nav intent (to trigger creation on Enter/Tab/Arrows)
+    if (localValue !== String(value || '') || navIntentRef.current) {
+      onCommit(localValue, skipSync, navIntentRef.current || undefined);
+    }
+    navIntentRef.current = null; // Reset intent
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Escape handles cancellation locally
+    // 1. Handle Escape (Local Cancel)
     if (e.key === 'Escape') {
+      e.stopPropagation();
       setLocalValue(value === null ? '' : String(value));
+      navIntentRef.current = null;
       inputRef.current?.blur();
       return;
-    } 
+    }
+
+    // 2. Special handling for Draft rows (suppressEnterNav=true)
+    if (suppressEnterNav) {
+        if (e.nativeEvent.isComposing) return;
+
+        // Vertical: Enter or ArrowDown -> Create Row & Move Down
+        if (e.key === 'Enter' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            e.stopPropagation();
+            navIntentRef.current = 'down';
+            inputRef.current?.blur(); 
+            return;
+        }
+        
+        // Right: Tab (no shift) or ArrowRight (at end)
+        if ((e.key === 'Tab' && !e.shiftKey) || e.key === 'ArrowRight') {
+            // For ArrowRight, ensure cursor is at end
+            if (e.key === 'ArrowRight' && inputRef.current) {
+                if (inputRef.current.selectionEnd !== inputRef.current.value.length) return;
+            }
+            
+            e.preventDefault();
+            e.stopPropagation();
+            navIntentRef.current = 'right';
+            inputRef.current?.blur(); 
+            return;
+        }
+
+        // Left: Shift+Tab or ArrowLeft (at start)
+        if ((e.key === 'Tab' && e.shiftKey) || e.key === 'ArrowLeft') {
+             // For ArrowLeft, ensure cursor is at start
+             if (e.key === 'ArrowLeft' && inputRef.current) {
+                 if (inputRef.current.selectionStart !== 0) return;
+             }
+
+             e.preventDefault();
+             e.stopPropagation();
+             navIntentRef.current = 'left';
+             inputRef.current?.blur();
+             return;
+        }
+    }
     
-    // Pass everything else to grid navigation
-    // handleGridKeyDown now checks for isComposing internally
+    // 3. Delegate Navigation (Tab, Arrows, or Enter on normal rows) to Hook
     handleGridKeyDown(e, rowIndex, colIndex, true, inputRef.current);
   };
 
-  // Focus handler to ensure text selection when navigating via keyboard
-  const handleFocus = () => {
-    // When focused via tab or click, we stay in 'view' mode visually (unless it was double click/menu)
-    // but the input is active.
+  const commonInputProps = {
+    ref: inputRef,
+    type: type,
+    value: localValue,
+    onChange: handleChange,
+    onBlur: handleBlur,
+    onKeyDown: handleKeyDown,
+    "data-grid-id": gridId,
+    placeholder: placeholder,
   };
 
   if (mode === 'edit') {
     return (
       <input
-        ref={inputRef}
-        type={type}
-        value={localValue}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
+        {...commonInputProps}
         autoFocus
-        data-grid-id={gridId}
         className={`w-full h-full bg-white dark:bg-slate-700 px-2 py-1 outline-none border-2 border-brand-500 rounded-sm text-sm text-center !text-gray-900 dark:!text-gray-100 ${className} focus:ring-2 focus:ring-sky-400 focus:outline-none focus:z-10`}
-        placeholder={placeholder}
       />
     );
   }
@@ -132,17 +176,9 @@ export const EditableCell: React.FC<EditableCellProps> = ({
     <>
       <div className="w-full h-full relative">
         <input
-          ref={inputRef}
-          type={type}
-          value={localValue}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          onFocus={handleFocus}
+          {...commonInputProps}
           onClick={handleSingleClick}
           onDoubleClick={handleDoubleClick}
-          data-grid-id={gridId}
-          placeholder={placeholder}
           className={`
             w-full h-full px-2 py-1 flex items-center bg-transparent border-none outline-none
             cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-sm truncate 

@@ -15,7 +15,8 @@ interface PatientLogRowProps {
   rowStatus?: 'active' | 'completed' | 'none';
   onUpdate?: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => void;
   onDelete?: (id: string) => void;
-  onCreate?: (updates: Partial<PatientVisit>) => Promise<string>;
+  // Updated signature to accept navigation intent
+  onCreate?: (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => Promise<string>;
   onSelectLog?: (id: string, bedId?: number | null) => void;
   onMovePatient?: (visitId: string, currentBedId: number, newBedId: number) => void;
   onEditActive?: (bedId: number) => void;
@@ -53,7 +54,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
   const handleAssign = async (newBedId: number) => {
     if (isDraft && onCreate) {
-       await onCreate({ bed_id: newBedId });
+       await onCreate({ bed_id: newBedId }, 0); 
     } else if (!isDraft && visit && onUpdate) {
        onUpdate(visit.id, { bed_id: newBedId });
     }
@@ -71,9 +72,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       }
   };
 
-  const handleChange = async (field: keyof PatientVisit, value: string, skipSync: boolean) => {
+  const handleChange = async (field: keyof PatientVisit, value: string, skipSync: boolean, colIndex: number, navDirection?: 'down' | 'right' | 'left') => {
      if (isDraft && onCreate) {
-        await onCreate({ [field]: value });
+        await onCreate({ [field]: value }, colIndex, navDirection);
      } else if (!isDraft && visit && onUpdate) {
         onUpdate(visit.id, { [field]: value }, skipSync);
      }
@@ -81,7 +82,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
   const handleTreatmentTextCommit = async (val: string) => {
      if (isDraft && onCreate) {
-        await onCreate({ treatment_name: val });
+        await onCreate({ treatment_name: val }, 3);
         return;
      } 
      
@@ -98,7 +99,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
      }
 
      if (isDraft && onCreate) {
-        const newId = await onCreate({});
+        const newId = await onCreate({}, 3);
         if (onSelectLog) onSelectLog(newId);
         return;
      } 
@@ -190,9 +191,10 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
               ? 'font-normal text-gray-300 dark:text-gray-500' 
               : 'font-black text-slate-800 dark:text-slate-100'
           } ${isDraft ? 'placeholder-gray-300 font-normal' : ''} text-sm`}
-          onCommit={(val, skipSync) => handleChange('patient_name', val || '', skipSync)}
+          onCommit={(val, skipSync, navDir) => handleChange('patient_name', val || '', skipSync, 1, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
+          suppressEnterNav={isDraft} // Enable suppression for Draft rows
         />
       </td>
 
@@ -206,9 +208,10 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           placeholder=""
           menuTitle="치료 부위 수정 (로그만 변경)"
           className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-xs sm:text-sm"
-          onCommit={(val, skipSync) => handleChange('body_part', val || '', skipSync)}
+          onCommit={(val, skipSync, navDir) => handleChange('body_part', val || '', skipSync, 2, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
+          suppressEnterNav={isDraft}
         />
       </td>
 
@@ -258,9 +261,10 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           placeholder=""
           menuTitle="메모 수정 (로그만 변경)"
           className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-xs"
-          onCommit={(val, skipSync) => handleChange('memo', val || '', skipSync)}
+          onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 5, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
+          suppressEnterNav={isDraft}
         />
       </td>
 
@@ -274,9 +278,10 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           placeholder="-"
           menuTitle="작성자 수정 (로그만 변경)"
           className="text-center justify-center text-gray-400 font-bold bg-transparent text-xs"
-          onCommit={(val, skipSync) => handleChange('author', val || '', skipSync)}
+          onCommit={(val, skipSync, navDir) => handleChange('author', val || '', skipSync, 6, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
+          suppressEnterNav={isDraft}
         />
       </td>
 
@@ -293,7 +298,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
               onClick={() => onDelete(visit.id)}
               className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 transition-all active:scale-90 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
               title="삭제"
-              tabIndex={-1} // Prevent double focus
+              tabIndex={-1} 
             >
               <Trash2 className="w-4 h-4" />
             </button>
