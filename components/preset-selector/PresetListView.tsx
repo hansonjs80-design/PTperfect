@@ -107,42 +107,51 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                 onClick={() => handleToggleExpand(preset.id)}
               >
                 <div className="flex items-center justify-between cursor-pointer">
-                  <div className="flex-1 min-w-0 pr-3">
-                    <div className="flex items-center gap-2 mb-1.5">
-                       <span className={`font-black text-base leading-none transition-colors ${isExpanded ? 'text-brand-600 dark:text-brand-400' : 'text-slate-800 dark:text-white'}`}>
-                         {preset.name}
-                       </span>
-                       <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-md">
-                         {totalMins}분
-                       </span>
-                    </div>
+                  
+                  {/* Left Group: Name & Steps */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 flex-1 min-w-0 pr-2">
+                    {/* Name */}
+                    <span className={`font-black text-base leading-none transition-colors truncate shrink-0 ${isExpanded ? 'text-brand-600 dark:text-brand-400' : 'text-slate-800 dark:text-white'}`}>
+                      {preset.name}
+                    </span>
                     
-                    {/* Step Pills */}
+                    {/* Divider (Desktop Only) */}
+                    <span className="hidden sm:block text-slate-300 dark:text-slate-600">|</span>
+
+                    {/* Step Pills (Now inline/right of name) */}
                     <div className="flex flex-wrap items-center gap-1">
                       {preset.steps.map((step, idx) => (
                         <div key={idx} className="flex items-center">
                           <span 
                             className={`
-                              text-[10px] px-2 py-0.5 rounded-full font-bold text-white shadow-sm
+                              text-[10px] px-1.5 py-0.5 rounded-md font-bold text-white shadow-sm
                               ${step.color} opacity-90
                             `}
                           >
                             {getStepLabel(step)}
                           </span>
                           {idx < preset.steps.length - 1 && (
-                            <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full mx-1" />
+                            <span className="text-[10px] text-slate-300 dark:text-slate-600 mx-0.5">+</span>
                           )}
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                    isExpanded 
-                      ? 'bg-brand-100 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400' 
-                      : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500'
-                  }`}>
-                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  {/* Right Group: Time & Chevron */}
+                  <div className="flex items-center gap-3 shrink-0 pl-2 border-l border-slate-100 dark:border-slate-700 ml-1">
+                    {/* Time Display (Increased Size) */}
+                    <span className="text-lg font-black text-slate-600 dark:text-slate-300">
+                      {totalMins}분
+                    </span>
+
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                      isExpanded 
+                        ? 'bg-brand-100 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400' 
+                        : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500'
+                    }`}>
+                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
                   </div>
                 </div>
 

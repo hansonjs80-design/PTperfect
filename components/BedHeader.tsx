@@ -79,7 +79,8 @@ export const BedHeader = memo(({
 
   return (
     <>
-      <div className={`flex items-center justify-between px-2 py-1 lg:px-3 lg:py-3 shrink-0 relative transition-colors ${getBedHeaderStyles(bed)}`}>
+      {/* Mobile: py-0.5 (Reduced), Tablet/Desktop: sm:py-1 (Restored) */}
+      <div className={`flex items-center justify-between px-1.5 sm:px-2 py-0.5 sm:py-1 lg:px-3 lg:py-3 shrink-0 relative transition-colors ${getBedHeaderStyles(bed)}`}>
         
         {/* Left: Bed Number & Status Icons */}
         <BedNumberAndStatus 
@@ -89,7 +90,8 @@ export const BedHeader = memo(({
         />
 
         {/* Right Section: Timer & Actions */}
-        <div className="flex-1 flex justify-end items-center gap-1 lg:gap-2 pl-2">
+        {/* Removed pl-2 on mobile, reduced gap on mobile */}
+        <div className="flex-1 flex justify-end items-center gap-0 sm:gap-1 lg:gap-2 pl-0 sm:pl-2">
           
           <BedTimer 
             bed={bed}

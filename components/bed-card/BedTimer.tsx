@@ -35,16 +35,16 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
 
   return (
     <div 
-      className={`flex items-center justify-end gap-[7px] sm:gap-[10px] cursor-pointer transition-all scale-[0.95] lg:scale-100 origin-right lg:origin-center ${bed.isPaused ? 'opacity-50 grayscale' : ''}`}
+      className={`flex items-center justify-end gap-[5px] sm:gap-[10px] cursor-pointer transition-all scale-[0.95] lg:scale-100 origin-right lg:origin-center ${bed.isPaused ? 'opacity-50 grayscale' : ''}`}
     >
       {/* 
         Timer Text
-        - Gap logic controlled by parent: 7px (mobile) / 10px (tablet/desktop)
-        - Tight whitespace: leading-[0.75] and tracking-tighter
+        - Gap logic: gap-[5px] on mobile, restored to gap-[10px] on sm+
+        - Tracking: tracking-[-0.08em] on mobile for extra tightness, tracking-tighter on sm+
       */}
       <span 
         onDoubleClick={onTimerClick}
-        className={`font-black text-3xl lg:text-5xl tracking-tighter leading-[0.75] tabular-nums ${
+        className={`font-black text-3xl lg:text-5xl tracking-[-0.08em] sm:tracking-tighter leading-[0.75] tabular-nums ${
         isOvertime ? 'text-red-500 animate-pulse' : 
         isNearEnd ? 'text-orange-500 animate-pulse' :
         'text-slate-700 dark:text-slate-200'

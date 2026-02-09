@@ -49,7 +49,8 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
       <div className="p-1 shrink-0 bg-white dark:bg-slate-800">
         <FooterButton 
           onClick={() => onClear(bed.id)}
-          className="w-full py-2 h-9 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 group"
+          // Height: 32px on mobile (h-[32px]), 36px on desktop (sm:h-9)
+          className="w-full py-2 h-[32px] sm:h-9 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 group"
         >
           <X className="w-[18px] h-[18px] group-hover:text-red-500 transition-colors" />
           <span className="group-hover:text-slate-800 dark:group-hover:text-white transition-colors text-xs font-bold">침상 비우기</span>
@@ -61,7 +62,8 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
   // Active State: Navigation & Trash & Settings(Mobile)
   return (
     <div className="p-1 shrink-0 bg-white dark:bg-slate-800">
-      <div className="flex gap-1.5 h-9">
+      {/* Container Height: 32px on mobile, 36px on desktop */}
+      <div className="flex gap-1.5 h-[32px] sm:h-9">
          
          {/* Prev Button */}
          <FooterButton 

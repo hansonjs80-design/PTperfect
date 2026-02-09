@@ -63,16 +63,16 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
       >
         {/* Step Visual Block */}
         <div className={`
-            flex-1 flex flex-col items-center justify-center p-1.5 relative overflow-hidden transition-all duration-200 
+            flex-1 flex flex-col items-center justify-center p-1 sm:p-1.5 relative overflow-hidden transition-all duration-200 
             ${colorClass}
             ${isSelectedForSwap ? 'ring-4 ring-indigo-500 ring-inset shadow-inner' : ''}
         `}>
             {/* 
-              Font Size Updated:
-              Mobile Base: text-base (was text-sm) -> 10~15% Larger
+              Font Size Increased for better readability on Mobile:
+              Mobile: text-base (was text-sm)
               Small Phones (xs): text-lg (was text-base)
-              Tablet (sm): text-xl
-              Desktop (lg): text-2xl
+              Tablet (sm): text-xl (Maintained)
+              Desktop (lg): text-2xl (Maintained)
             */}
             <span className={`font-black text-base xs:text-lg sm:text-xl lg:text-2xl leading-none text-center whitespace-nowrap px-0.5 ${isActive ? 'scale-110 drop-shadow-sm' : 'opacity-90'}`}>
               {getStepLabel(step)}
@@ -89,10 +89,10 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
             )}
         </div>
 
-        {/* Memo Area - Integrated into the bottom */}
+        {/* Memo Area - Integrated into the bottom with reduced height */}
         <div 
           className={`
-            h-[22px] sm:h-[26px] flex items-center justify-center px-1 cursor-pointer transition-colors select-none border-t border-black/5 dark:border-white/5
+            h-[18px] sm:h-[26px] flex items-center justify-center px-1 cursor-pointer transition-colors select-none border-t border-black/5 dark:border-white/5
             ${isActive 
                ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200' 
                : 'bg-white/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400'
@@ -101,11 +101,11 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
           onDoubleClick={handleMemoDoubleClick}
         >
           {memo ? (
-            <span className="text-[11px] sm:text-xs font-bold leading-tight text-center truncate w-full">
+            <span className="text-[10px] sm:text-xs font-bold leading-tight text-center truncate w-full">
               {memo}
             </span>
           ) : (
-            <span className="text-[10px] opacity-0 group-hover/col:opacity-30 transition-opacity font-bold">+</span>
+            <span className="text-[9px] sm:text-[10px] opacity-0 group-hover/col:opacity-30 transition-opacity font-bold">+</span>
           )}
         </div>
       </div>

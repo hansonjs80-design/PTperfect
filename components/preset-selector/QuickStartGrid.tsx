@@ -45,6 +45,7 @@ export const QuickStartGrid: React.FC<QuickStartGridProps> = ({
         </button>
       </div>
       
+      {/* Grid Layout: 5 columns on Mobile, 6 columns on Tablet/Desktop */}
       <div className="grid grid-cols-5 md:grid-cols-6 gap-2 pb-16 sm:pb-0">
         {quickTreatments.map((item) => {
           const isSelected = selectedItems.some(s => s.id === item.id);
