@@ -25,17 +25,17 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: 'https://cdn-icons-png.flaticon.com/512/4320/4320337.png',
+            src: 'https://cdn-icons-png.flaticon.com/512/9135/9135965.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'https://cdn-icons-png.flaticon.com/512/4320/4320337.png',
+            src: 'https://cdn-icons-png.flaticon.com/512/9135/9135965.png',
             sizes: '512x512',
             type: 'image/png'
           },
           {
-            src: 'https://cdn-icons-png.flaticon.com/512/4320/4320337.png',
+            src: 'https://cdn-icons-png.flaticon.com/512/9135/9135965.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
