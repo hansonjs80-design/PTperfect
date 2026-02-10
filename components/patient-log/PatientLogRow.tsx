@@ -15,7 +15,6 @@ interface PatientLogRowProps {
   rowStatus?: 'active' | 'completed' | 'none';
   onUpdate?: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => void;
   onDelete?: (id: string) => void;
-  // Updated signature to accept navigation intent
   onCreate?: (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => Promise<string>;
   onSelectLog?: (id: string, bedId?: number | null) => void;
   onMovePatient?: (visitId: string, currentBedId: number, newBedId: number) => void;
@@ -151,7 +150,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
   return (
     <tr className={rowClasses}>
-      {/* 1. Bed ID */}
       <td className={`${cellBorderClass} p-0 relative`}>
         <BedSelectorCell 
           gridId={`${rowIndex}-0`}
@@ -177,7 +175,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         )}
       </td>
 
-      {/* 2. Patient Name: Increased font size (text-sm -> text-base) */}
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
           gridId={`${rowIndex}-1`}
@@ -194,11 +191,10 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           onCommit={(val, skipSync, navDir) => handleChange('patient_name', val || '', skipSync, 1, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
-          suppressEnterNav={isDraft} // Enable suppression for Draft rows
+          suppressEnterNav={isDraft} 
         />
       </td>
 
-      {/* 3. Body Part: Increased font size (text-xs -> text-sm) */}
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
           gridId={`${rowIndex}-2`}
@@ -215,7 +211,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      {/* 4. Treatment */}
       <td className={`${cellBorderClass} p-0 relative`}>
         <TreatmentSelectorCell
           gridId={`${rowIndex}-3`}
@@ -237,7 +232,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      {/* 5. Status */}
       <td className={`${cellBorderClass} p-0`}>
         <PatientStatusCell 
             gridId={`${rowIndex}-4`}
@@ -251,7 +245,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      {/* 6. Memo: Increased font size (text-xs -> text-sm) */}
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
           gridId={`${rowIndex}-5`}
@@ -268,7 +261,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      {/* 7. Author: Increased font size (text-xs -> text-sm) */}
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
           gridId={`${rowIndex}-6`}
@@ -285,7 +277,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      {/* 8. Delete */}
       <td className="p-0 text-center">
         {!isDraft && visit && onDelete && (
           <div 
@@ -306,5 +297,44 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         )}
       </td>
     </tr>
+  );
+}, (prev, next) => {
+  // Deep comparison for memo optimization
+  // Returns true if props are equal (DO NOT re-render)
+  
+  // 1. Primitive props
+  if (
+    prev.rowIndex !== next.rowIndex ||
+    prev.isDraft !== next.isDraft ||
+    prev.rowStatus !== next.rowStatus ||
+    prev.activeStepColor !== next.activeStepColor ||
+    prev.activeStepIndex !== next.activeStepIndex ||
+    prev.isLastStep !== next.isLastStep ||
+    prev.timerStatus !== next.timerStatus
+  ) return false;
+
+  // 2. Active Bed IDs (Array shallow compare)
+  if (prev.activeBedIds?.length !== next.activeBedIds?.length) return false;
+  
+  // 3. Visit Object (Shallow compare of key fields)
+  if (!prev.visit && !next.visit) return true;
+  if (!prev.visit || !next.visit) return false; // One is null
+
+  const pv = prev.visit!;
+  const nv = next.visit!;
+
+  return (
+    pv.id === nv.id &&
+    pv.bed_id === nv.bed_id &&
+    pv.patient_name === nv.patient_name &&
+    pv.body_part === nv.body_part &&
+    pv.treatment_name === nv.treatment_name &&
+    pv.memo === nv.memo &&
+    pv.author === nv.author &&
+    pv.is_injection === nv.is_injection &&
+    pv.is_fluid === nv.is_fluid &&
+    pv.is_traction === nv.is_traction &&
+    pv.is_eswt === nv.is_eswt &&
+    pv.is_manual === nv.is_manual
   );
 });

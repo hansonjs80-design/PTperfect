@@ -59,18 +59,31 @@ export const MainLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, canUndo]);
 
-  // Back Button Logic for Log Panel (Mobile)
+  // Back Button Logic for Log Panel (Mobile/Tablet)
   useEffect(() => {
-    // Only apply history push on mobile (< 1280px where it acts as a modal/overlay)
     if (isLogOpen && window.innerWidth < 1280) {
-      window.history.pushState({ logOpen: true }, '');
+      // 1. Ensure the current history entry knows the Log is open BEFORE we might push a modal on top.
+      // This defends against the state being lost or undefined.
+      window.history.replaceState({ logOpen: true }, '');
+      
+      // 2. Push a new entry to represent the "Log Open" state so Back closes it.
+      // NOTE: We only push if we aren't already in a "logOpen" state to avoid duplicate pushes
+      if (!window.history.state?.pushedLog) {
+          window.history.pushState({ logOpen: true, pushedLog: true }, '');
+      }
       
       const handlePopState = (event: PopStateEvent) => {
-        // If the state we popped TO indicates the log should be open (e.g. returning from a nested modal),
-        // ignore this event and keep the log open.
-        if (event.state && event.state.logOpen) {
+        // Robust Check:
+        // Check event.state (standard) OR window.history.state (fallback)
+        // If either indicates logOpen is true, we are likely returning from a nested modal (Level 2) to the Log (Level 1).
+        // In that case, DO NOT close the log.
+        const state = event.state || window.history.state;
+        
+        if (state && state.logOpen) {
           return;
         }
+        
+        // If state is null or logOpen is missing, it means we went back past the Log.
         setLogOpen(false);
       };
 

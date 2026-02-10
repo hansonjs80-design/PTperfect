@@ -83,13 +83,13 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
 
   const handleTractionStart = () => {
     onStartTraction(targetBedId, tractionDuration, options);
-    onClose();
+    // Removed onClose() here as the handler in GlobalModals performs history.back()
   };
 
   const handleConfirmStart = () => {
     if (previewPreset) {
       onCustomStart(targetBedId, previewPreset.name, previewPreset.steps, options);
-      onClose();
+      // Removed onClose() here
     }
   };
 
@@ -108,9 +108,9 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
     } else {
       // Immediate start in single mode
       onQuickStart(targetBedId, template, options);
-      onClose();
+      // Removed onClose() here
     }
-  }, [isMultiSelectMode, onQuickStart, targetBedId, options, onClose]);
+  }, [isMultiSelectMode, onQuickStart, targetBedId, options]);
 
   // Handle Starting Multiple Selected Items
   const handleStartSelectedQuick = () => {
@@ -124,12 +124,12 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
     const combinedName = selectedQuickItems.map(i => i.label || i.name).join(' + ');
 
     onCustomStart(targetBedId, combinedName, steps, options);
-    onClose();
+    // Removed onClose() here
   };
 
   const handlePresetStart = (preset: Preset) => {
       onCustomStart(targetBedId, preset.name, preset.steps, options);
-      onClose();
+      // Removed onClose() here
   };
 
   const getHeaderStyle = () => {

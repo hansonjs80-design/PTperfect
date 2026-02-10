@@ -2,9 +2,9 @@
 import React, { Suspense, useMemo, useEffect } from 'react';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { usePatientLogContext } from '../contexts/PatientLogContext';
-import { TreatmentStep, QuickTreatment } from '../types';
-import { generateTreatmentString, findMatchingPreset } from '../utils/bedUtils';
+import { findMatchingPreset } from '../utils/bedUtils';
 import { BedEditOverlay } from './BedEditOverlay'; 
+import { useModalActions } from '../hooks/useModalActions';
 
 // Lazy load heavy components
 const SettingsPanel = React.lazy(() => import('./SettingsPanel').then(module => ({ default: module.SettingsPanel })));
@@ -30,10 +30,6 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
     movingPatientState,
     setMovingPatientState,
     movePatient,
-    selectPreset,
-    startCustomPreset,
-    startQuickTreatment,
-    startTraction,
     resetAll,
     toggleInjection,
     toggleFluid,
@@ -42,18 +38,27 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
     toggleManual,
     updateBedSteps,
     updateBedDuration,
-    updateVisitWithBedSync,
     updatePresets
   } = useTreatmentContext();
 
   const { visits } = usePatientLogContext();
+
+  // Use the extracted hook for business logic
+  const { 
+    handleSelectPreset,
+    handleCustomStart,
+    handleQuickStart,
+    handleStartTraction,
+    handleClearLog
+  } = useModalActions(selectingLogId, selectingBedId, setSelectingLogId, setSelectingBedId, presets);
 
   // --- Back Button Handling (SPA UX) ---
   const isModalOpen = selectingBedId !== null || selectingLogId !== null || editingBedId !== null || movingPatientState !== null || isMenuOpen;
 
   useEffect(() => {
     if (isModalOpen) {
-      // When a modal opens, push a state to history
+      // When a modal opens, push a state to history.
+      // This state acts as a "shield" so back button closes modal, not app.
       window.history.pushState({ modalOpen: true }, '');
       
       const handlePopState = () => {
@@ -69,135 +74,11 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
 
       return () => {
         window.removeEventListener('popstate', handlePopState);
-        // If we are unmounting but the modal is still "conceptually" open in history (e.g. forced close), 
-        // we might want to go back, but usually React handles state. 
-        // Here we just clean up the listener.
       };
     }
   }, [isModalOpen, isMenuOpen, onCloseMenu, setSelectingBedId, setSelectingLogId, setEditingBedId, setMovingPatientState]);
 
-
-  const mapOptionsToFlags = (options: any) => ({
-    is_injection: options?.isInjection,
-    is_fluid: options?.isFluid,
-    is_traction: options?.isTraction,
-    is_eswt: options?.isESWT,
-    is_manual: options?.isManual,
-  });
-
-  const handleSelectPreset = (bedId: number, presetId: string, options: any) => {
-    if (selectingLogId) {
-      const preset = presets.find(p => p.id === presetId);
-      if (preset) {
-        if (selectingBedId) {
-            updateVisitWithBedSync(selectingLogId, {
-                treatment_name: generateTreatmentString(preset.steps),
-                ...mapOptionsToFlags(options)
-            }, false);
-        } else {
-            updateVisitWithBedSync(selectingLogId, {
-                treatment_name: generateTreatmentString(preset.steps),
-                ...mapOptionsToFlags(options)
-            }, true);
-        }
-      }
-      setSelectingLogId(null);
-      setSelectingBedId(null);
-      window.history.back(); // Remove the history state pushed when modal opened
-    } else {
-      selectPreset(bedId, presetId, options);
-      setSelectingBedId(null);
-      window.history.back();
-    }
-  };
-
-  const handleCustomStart = (bedId: number, name: string, steps: TreatmentStep[], options: any) => {
-    if (selectingLogId) {
-       if (selectingBedId) {
-           updateVisitWithBedSync(selectingLogId, {
-             treatment_name: generateTreatmentString(steps),
-             ...mapOptionsToFlags(options)
-           }, false);
-       } else {
-           updateVisitWithBedSync(selectingLogId, {
-             treatment_name: generateTreatmentString(steps),
-             ...mapOptionsToFlags(options)
-           }, true);
-       }
-       setSelectingLogId(null);
-       setSelectingBedId(null);
-       window.history.back();
-    } else {
-       startCustomPreset(bedId, name, steps, options);
-       setSelectingBedId(null);
-       window.history.back();
-    }
-  };
-
-  const handleQuickStart = (bedId: number, template: QuickTreatment, options: any) => {
-    if (selectingLogId) {
-      if (selectingBedId) {
-          updateVisitWithBedSync(selectingLogId, {
-            treatment_name: template.label || template.name,
-            ...mapOptionsToFlags(options)
-          }, false);
-      } else {
-          updateVisitWithBedSync(selectingLogId, {
-            treatment_name: template.label || template.name,
-            ...mapOptionsToFlags(options)
-          }, true);
-      }
-      setSelectingLogId(null);
-      setSelectingBedId(null);
-      window.history.back();
-    } else {
-      startQuickTreatment(bedId, template, options);
-      setSelectingBedId(null);
-      window.history.back();
-    }
-  };
-  
-  const handleStartTraction = (bedId: number, duration: number, options: any) => {
-    if (selectingLogId) {
-       const { is_traction: _ignored, ...otherFlags } = mapOptionsToFlags(options);
-       const updatePayload = {
-         treatment_name: '견인',
-         ...otherFlags,
-         is_traction: true
-       };
-
-       if (selectingBedId) {
-           updateVisitWithBedSync(selectingLogId, updatePayload, false);
-       } else {
-           updateVisitWithBedSync(selectingLogId, updatePayload, true);
-       }
-       setSelectingLogId(null);
-       setSelectingBedId(null);
-       window.history.back();
-    } else {
-       startTraction(bedId, duration, options);
-       setSelectingBedId(null);
-       window.history.back();
-    }
-  };
-  
-  const handleClearLog = () => {
-    if (selectingLogId) {
-      updateVisitWithBedSync(selectingLogId, {
-        treatment_name: '',
-        is_injection: false,
-        is_fluid: false,
-        is_traction: false,
-        is_eswt: false,
-        is_manual: false,
-      }, true);
-      setSelectingLogId(null);
-      setSelectingBedId(null);
-      window.history.back();
-    }
-  };
-
-  // Helper to close modal and pop history
+  // Helper to close modal and pop history manually (for close buttons inside modals)
   const closeAndPop = (setter: (val: any) => void) => {
     setter(null);
     window.history.back();
@@ -284,7 +165,10 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
             fromBedId={movingPatientState.bedId}
             initialPos={{ x: movingPatientState.x, y: movingPatientState.y }}
             onClose={() => closeAndPop(setMovingPatientState)}
-            onConfirm={(toBedId) => movePatient(movingPatientState.bedId, toBedId)}
+            onConfirm={(toBedId) => {
+               movePatient(movingPatientState.bedId, toBedId);
+               window.history.back(); // Close modal manually after action
+            }}
           />
         </Suspense>
       )}
