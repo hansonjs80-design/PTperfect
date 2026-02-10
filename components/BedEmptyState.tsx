@@ -9,17 +9,19 @@ interface BedEmptyStateProps {
 export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector }) => {
   
   const handleClick = (e: React.MouseEvent) => {
-    // Desktop/Tablet (>= 768px): Single Click triggers action
-    if (window.innerWidth >= 768) {
+    // Desktop (Mouse): Single Click triggers action
+    // We check for fine pointer to distinguish mouse users from touch users
+    if (typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
       onOpenSelector();
     }
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    // Mobile (< 768px): Double Click triggers action
-    if (window.innerWidth < 768) {
-      onOpenSelector();
-    }
+    // Mobile/Touch: Double Click (Double Tap) always triggers action
+    // This removes the width restriction so it works on mobile landscape too
+    e.preventDefault();
+    e.stopPropagation();
+    onOpenSelector();
   };
 
   return (
