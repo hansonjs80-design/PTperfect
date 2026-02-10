@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Play, Minus, Plus, Trash2, Clock, ChevronUp, ChevronDown } from 'lucide-react';
 import { Preset, TreatmentStep, QuickTreatment } from '../../types';
 import { useTreatmentContext } from '../../contexts/TreatmentContext';
+import { mapBgToTextClass } from '../../utils/styleUtils';
 
 interface PresetInlineDetailProps {
   initialPreset: Preset;
@@ -116,7 +117,13 @@ export const PresetInlineDetail: React.FC<PresetInlineDetailProps> = ({
             <button
               key={item.id}
               onClick={(e) => { e.stopPropagation(); addTreatment(item); }}
-              className={`px-3 py-2 rounded-lg text-xs font-bold text-white shadow-sm hover:brightness-110 active:scale-95 transition-all ${item.color}`}
+              className={`
+                px-3 py-2 rounded-lg text-xs font-black shadow-sm active:scale-95 transition-all 
+                bg-white dark:bg-slate-800 border-2 
+                ${item.color.replace('bg-', 'border-')} 
+                ${mapBgToTextClass(item.color)}
+                hover:bg-slate-50 dark:hover:bg-slate-700
+              `}
             >
               {item.label}
             </button>

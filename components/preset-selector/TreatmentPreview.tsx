@@ -3,6 +3,7 @@ import React from 'react';
 import { Play, ChevronUp, ChevronDown, Minus, Plus, PlusCircle, Trash2, Check, Clock } from 'lucide-react';
 import { Preset, TreatmentStep, QuickTreatment } from '../../types';
 import { useTreatmentContext } from '../../contexts/TreatmentContext';
+import { mapBgToTextClass } from '../../utils/styleUtils';
 
 interface TreatmentPreviewProps {
   preset: Preset;
@@ -138,7 +139,13 @@ export const TreatmentPreview: React.FC<TreatmentPreviewProps> = ({
             <button
               key={item.id}
               onClick={() => addTreatment(item)}
-              className={`px-3 py-2 rounded-lg text-xs font-bold text-white shadow-sm hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 ${item.color}`}
+              className={`
+                px-3 py-2 rounded-lg text-xs font-bold shadow-sm active:scale-95 transition-all flex items-center gap-1.5
+                bg-white dark:bg-slate-800 border-2 
+                ${item.color.replace('bg-', 'border-')} 
+                ${mapBgToTextClass(item.color)}
+                hover:bg-slate-50 dark:hover:bg-slate-700
+              `}
             >
               {item.label}
             </button>

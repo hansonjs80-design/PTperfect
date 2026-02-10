@@ -30,19 +30,8 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
   const btnClass = "p-1 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-all active:scale-95";
 
   return (
-    <div className="absolute left-0 z-10 flex items-center h-full gap-0.5 px-0.5 bg-gradient-to-r from-white via-white to-transparent dark:from-slate-900 dark:via-slate-900">
+    <div className="absolute right-0 z-10 flex items-center h-full gap-0.5 px-0.5 bg-gradient-to-l from-white via-white to-transparent dark:from-slate-900 dark:via-slate-900">
       
-      {/* Quick Clear Button (Active 상태의 0번 스텝일 때만 취소용으로 표시) */}
-      {rowStatus === 'active' && activeStepIndex === 0 && onClearBed && (
-          <button
-            onClick={(e) => onActionClick(e, 'clear')}
-            className={`${btnClass} text-gray-400 hover:text-red-600`}
-            title="침상 비우기"
-          >
-            <X className={iconClass} />
-          </button>
-      )}
-
       {/* Prev Button (Active 중이거나 Completed 일 때 모두 표시) */}
       {onPrevStep && (rowStatus === 'active' ? activeStepIndex > 0 : true) && (
         <button 
@@ -52,6 +41,17 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
         >
             <SkipBack className={`${iconClass} fill-current`} />
         </button>
+      )}
+
+      {/* Quick Clear Button (Active 상태의 0번 스텝일 때만 취소용으로 표시) */}
+      {rowStatus === 'active' && activeStepIndex === 0 && onClearBed && (
+          <button
+            onClick={(e) => onActionClick(e, 'clear')}
+            className={`${btnClass} text-gray-400 hover:text-red-600`}
+            title="침상 비우기"
+          >
+            <X className={iconClass} />
+          </button>
       )}
 
       {/* Next/Complete Button (Only Active) */}

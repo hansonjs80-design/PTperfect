@@ -51,25 +51,20 @@ export const BedHeader = memo(({
   
   // --- Handlers using useResponsiveClick Hook ---
 
-  // 1. Header Background (Edit Settings)
-  const handleHeaderInteraction = useResponsiveClick((e) => {
-    if (onEditClick) onEditClick(bed.id);
-  }, false, false); // Don't stop propagation/default blindly for the container
-
-  // 2. Timer Click
+  // 1. Timer Click
   const handleTimerInteraction = useResponsiveClick((e) => {
     if (!isTimerActive || !onUpdateDuration) return;
     setTimerMenuPos({ x: e.clientX, y: e.clientY });
   });
 
-  // 3. Bed Number Click (Move Patient)
+  // 2. Bed Number Click (Move Patient)
   const handleBedNumberInteraction = useResponsiveClick((e) => {
     if (bed.status !== BedStatus.IDLE) {
       setMovingPatientState({ bedId: bed.id, x: e.clientX, y: e.clientY });
     }
   });
 
-  // 4. Status Icon Click
+  // 3. Status Icon Click
   const handleStatusInteraction = useResponsiveClick((e) => {
     setStatusMenuPos({ x: e.clientX, y: e.clientY });
   });
@@ -88,11 +83,7 @@ export const BedHeader = memo(({
     <>
       <div 
         className={`flex items-center justify-between px-1.5 sm:px-2 py-0.5 sm:py-1 lg:px-3 lg:py-3 shrink-0 relative transition-colors ${getBedHeaderStyles(bed)}`}
-        onClick={handleHeaderInteraction}
-        onDoubleClick={(e) => {
-           // Desktop Double Click Fallback (if user prefers double click on desktop background)
-           if (window.innerWidth >= 768 && onEditClick) onEditClick(bed.id);
-        }}
+        // Removed onClick/onDoubleClick to prevent popup on header background
       >
         
         {/* Left: Bed Number & Status Icons */}

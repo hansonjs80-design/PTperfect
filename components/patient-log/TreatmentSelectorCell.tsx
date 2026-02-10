@@ -176,11 +176,18 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     defaultValue={value}
                     onBlur={handleTextCommit}
                     onKeyDown={handleInputKeyDown}
-                    className="w-full h-full bg-white dark:bg-slate-700 px-2 py-1 outline-none border-2 border-brand-500 rounded-sm text-xs sm:text-sm text-center !text-gray-900 dark:!text-gray-100"
+                    className="w-full h-full bg-white dark:bg-slate-700 px-2 py-1 outline-none border-2 border-brand-500 rounded-sm text-xs sm:text-sm text-left pl-3 !text-gray-900 dark:!text-gray-100"
                     placeholder={placeholder}
                 />
             ) : (
                 <div className="flex items-center w-full h-full cursor-pointer px-1 hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors relative" title={getTitle()}>
+                    {/* Changed padding: pl-14 removed, pl-2 added. pr-14 added for right buttons. justify-center -> justify-start */}
+                    <div className="flex-1 min-w-0 flex justify-start pl-2 pr-14">
+                         <span className="text-xs sm:text-sm xl:text-[11px] font-bold truncate pointer-events-none text-left w-full">
+                             <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor} />
+                         </span>
+                    </div>
+                    
                     <TreatmentControlButtons 
                       rowStatus={rowStatus}
                       activeStepIndex={activeStepIndex}
@@ -190,12 +197,6 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                       onClearBed={onClearBed}
                       onActionClick={handleStepButtonClick}
                     />
-                    {/* Increased padding from pl-10 to pl-14 to fit larger buttons */}
-                    <div className="flex-1 min-w-0 flex justify-center pl-14 pr-2">
-                         <span className="text-xs sm:text-sm xl:text-[11px] font-bold truncate pointer-events-none text-center w-full">
-                             <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor} />
-                         </span>
-                    </div>
                 </div>
             )}
         </div>
