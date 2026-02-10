@@ -58,11 +58,11 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
   useEffect(() => {
     if (isModalOpen) {
       // When a modal opens, push a state to history.
-      // This state acts as a "shield" so back button closes modal, not app.
-      window.history.pushState({ modalOpen: true }, '');
+      // IMPORTANT: Preserve existing state (like logOpen) so popping back doesn't close the Log.
+      window.history.pushState({ ...window.history.state, modalOpen: true }, '');
       
       const handlePopState = () => {
-        // When back button is pressed, close all modals
+        // When back button is pressed (or history popped), close all modals
         setSelectingBedId(null);
         setSelectingLogId(null);
         setEditingBedId(null);
@@ -78,10 +78,12 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
     }
   }, [isModalOpen, isMenuOpen, onCloseMenu, setSelectingBedId, setSelectingLogId, setEditingBedId, setMovingPatientState]);
 
-  // Helper to close modal and pop history manually (for close buttons inside modals)
+  // Helper to close modal and pop history manually (SAFE: Checks if modalOpen exists)
   const closeAndPop = (setter: (val: any) => void) => {
     setter(null);
-    window.history.back();
+    if (window.history.state?.modalOpen) {
+      window.history.back();
+    }
   };
 
   const activeLogEntry = useMemo(() => {
@@ -127,7 +129,10 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
             onClose={() => {
               setSelectingBedId(null);
               setSelectingLogId(null);
-              window.history.back();
+              // Safe back
+              if (window.history.state?.modalOpen) {
+                window.history.back();
+              }
             }}
             presets={presets}
             onSelect={handleSelectPreset}
@@ -167,7 +172,10 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
             onClose={() => closeAndPop(setMovingPatientState)}
             onConfirm={(toBedId) => {
                movePatient(movingPatientState.bedId, toBedId);
-               window.history.back(); // Close modal manually after action
+               // Close modal manually after action with safe check
+               if (window.history.state?.modalOpen) {
+                 window.history.back();
+               }
             }}
           />
         </Suspense>
@@ -180,7 +188,9 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
             isOpen={isMenuOpen} 
             onClose={() => {
               onCloseMenu();
-              window.history.back();
+              if (window.history.state?.modalOpen) {
+                window.history.back();
+              }
             }}
             presets={presets}
             onUpdatePresets={updatePresets}
@@ -188,7 +198,9 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
           />
           <div className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" onClick={() => {
               onCloseMenu();
-              window.history.back();
+              if (window.history.state?.modalOpen) {
+                window.history.back();
+              }
           }} />
         </Suspense>
       )}

@@ -61,13 +61,16 @@ export const MainLayout: React.FC = () => {
 
   // Back Button Logic for Log Panel (Mobile/Tablet)
   useEffect(() => {
+    // Only apply history management if not in Desktop Sidebar mode
     if (isLogOpen && window.innerWidth < 1280) {
-      // 1. Ensure the current history entry knows the Log is open BEFORE we might push a modal on top.
-      // This defends against the state being lost or undefined.
-      window.history.replaceState({ logOpen: true }, '');
-      
+      // 1. Tag the current state if needed (to support proper popping back to this view)
+      // This defends against the state being lost if the user refreshed or navigated weirdly.
+      if (!window.history.state?.logOpen) {
+         window.history.replaceState({ ...window.history.state, logOpen: true }, '');
+      }
+
       // 2. Push a new entry to represent the "Log Open" state so Back closes it.
-      // NOTE: We only push if we aren't already in a "logOpen" state to avoid duplicate pushes
+      // We check for a flag 'pushedLog' to avoid duplicate pushes on re-renders
       if (!window.history.state?.pushedLog) {
           window.history.pushState({ logOpen: true, pushedLog: true }, '');
       }
@@ -83,19 +86,29 @@ export const MainLayout: React.FC = () => {
           return;
         }
         
-        // If state is null or logOpen is missing, it means we went back past the Log.
+        // If state is null or doesn't have logOpen, we assume we've gone back to the root.
         setLogOpen(false);
       };
 
       window.addEventListener('popstate', handlePopState);
-      return () => window.removeEventListener('popstate', handlePopState);
+      
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+        // Note: We don't manually pop history here on unmount to avoid fighting with browser navigation 
+        // if the user used the Back button. 
+        // If closed via UI, handleToggleLog handles the back() call.
+      };
     }
   }, [isLogOpen]);
 
   const handleToggleLog = () => {
     if (isLogOpen) {
-      setLogOpen(false);
-      if (window.innerWidth < 1280) window.history.back();
+      // If closing via button, we must manually go back to pop the history state we pushed
+      if (window.innerWidth < 1280) {
+        window.history.back();
+      } else {
+        setLogOpen(false);
+      }
     } else {
       setLogOpen(true);
     }
@@ -209,8 +222,9 @@ export const MainLayout: React.FC = () => {
            <div className="flex-1 w-full h-full relative pb-[env(safe-area-inset-bottom)]">
              <Suspense fallback={<div className="w-full h-full bg-white dark:bg-slate-900 flex items-center justify-center"><span className="text-gray-400 font-bold">로딩 중...</span></div>}>
                 <PatientLogPanel onClose={() => {
-                    setLogOpen(false);
+                    // When close button inside panel is clicked
                     if (window.innerWidth < 1280) window.history.back();
+                    else setLogOpen(false);
                 }} />
              </Suspense>
            </div>

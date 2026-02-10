@@ -28,9 +28,16 @@ export const useModalActions = (
   });
 
   const closeModal = useCallback(() => {
+    // 1. Reset UI State immediately
     setSelectingLogId(null);
     setSelectingBedId(null);
-    window.history.back();
+    
+    // 2. Conditional History Back
+    // Only call back() if the current history state indicates a modal is open.
+    // This prevents double-back actions or backing when the state has already been popped (e.g. hardware back button).
+    if (window.history.state?.modalOpen) {
+        window.history.back();
+    }
   }, [setSelectingLogId, setSelectingBedId]);
 
   const handleSelectPreset = useCallback((bedId: number, presetId: string, options: any) => {

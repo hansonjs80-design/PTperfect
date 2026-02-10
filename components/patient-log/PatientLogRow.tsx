@@ -298,43 +298,4 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
     </tr>
   );
-}, (prev, next) => {
-  // Deep comparison for memo optimization
-  // Returns true if props are equal (DO NOT re-render)
-  
-  // 1. Primitive props
-  if (
-    prev.rowIndex !== next.rowIndex ||
-    prev.isDraft !== next.isDraft ||
-    prev.rowStatus !== next.rowStatus ||
-    prev.activeStepColor !== next.activeStepColor ||
-    prev.activeStepIndex !== next.activeStepIndex ||
-    prev.isLastStep !== next.isLastStep ||
-    prev.timerStatus !== next.timerStatus
-  ) return false;
-
-  // 2. Active Bed IDs (Array shallow compare)
-  if (prev.activeBedIds?.length !== next.activeBedIds?.length) return false;
-  
-  // 3. Visit Object (Shallow compare of key fields)
-  if (!prev.visit && !next.visit) return true;
-  if (!prev.visit || !next.visit) return false; // One is null
-
-  const pv = prev.visit!;
-  const nv = next.visit!;
-
-  return (
-    pv.id === nv.id &&
-    pv.bed_id === nv.bed_id &&
-    pv.patient_name === nv.patient_name &&
-    pv.body_part === nv.body_part &&
-    pv.treatment_name === nv.treatment_name &&
-    pv.memo === nv.memo &&
-    pv.author === nv.author &&
-    pv.is_injection === nv.is_injection &&
-    pv.is_fluid === nv.is_fluid &&
-    pv.is_traction === nv.is_traction &&
-    pv.is_eswt === nv.is_eswt &&
-    pv.is_manual === nv.is_manual
-  );
 });
