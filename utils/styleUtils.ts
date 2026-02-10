@@ -1,6 +1,29 @@
 
 import { BedState, BedStatus, TreatmentStep } from '../types';
 
+// --- Helper: Convert Step BG Color to Text Color ---
+// Moved to top to be accessible by getStepColor
+export const mapBgToTextClass = (bgClass: string): string => {
+  // Custom Hex Color handling: Convert bg-[#...] to text-[#...]
+  if (bgClass.startsWith('bg-[#')) {
+    return bgClass.replace('bg-', 'text-');
+  }
+  
+  if (bgClass.includes('red')) return 'text-red-600 dark:text-red-400';
+  if (bgClass.includes('blue')) return 'text-blue-600 dark:text-blue-400';
+  if (bgClass.includes('green')) return 'text-emerald-600 dark:text-emerald-400';
+  if (bgClass.includes('orange')) return 'text-orange-600 dark:text-orange-400';
+  if (bgClass.includes('purple')) return 'text-purple-600 dark:text-purple-400';
+  if (bgClass.includes('pink')) return 'text-pink-600 dark:text-pink-400';
+  if (bgClass.includes('cyan')) return 'text-cyan-600 dark:text-cyan-400';
+  if (bgClass.includes('yellow')) return 'text-yellow-600 dark:text-yellow-400';
+  if (bgClass.includes('sky')) return 'text-sky-600 dark:text-sky-400';
+  if (bgClass.includes('violet')) return 'text-violet-600 dark:text-violet-400';
+  
+  // Default fallback
+  return 'text-slate-600 dark:text-slate-400';
+};
+
 // --- Bed Header Styles ---
 
 export const getBedHeaderStyles = (bed: BedState): string => {
@@ -94,24 +117,10 @@ export const getStepColor = (
     return 'bg-slate-700 text-white';
   }
 
-  // 대기 중인 스텝
-  return 'bg-white dark:bg-slate-800/80 text-slate-600 dark:text-slate-400';
-};
-
-// --- Helper: Convert Step BG Color to Text Color ---
-export const mapBgToTextClass = (bgClass: string): string => {
-  if (bgClass.startsWith('bg-[#')) return 'text-slate-900 dark:text-white';
-  if (bgClass.includes('red')) return 'text-red-600 dark:text-red-400';
-  if (bgClass.includes('blue')) return 'text-blue-600 dark:text-blue-400';
-  if (bgClass.includes('green')) return 'text-emerald-600 dark:text-emerald-400';
-  if (bgClass.includes('orange')) return 'text-orange-600 dark:text-orange-400';
-  if (bgClass.includes('purple')) return 'text-purple-600 dark:text-purple-400';
-  if (bgClass.includes('pink')) return 'text-pink-600 dark:text-pink-400';
-  if (bgClass.includes('cyan')) return 'text-cyan-600 dark:text-cyan-400';
-  if (bgClass.includes('yellow')) return 'text-yellow-600 dark:text-yellow-400';
-  if (bgClass.includes('sky')) return 'text-sky-600 dark:text-sky-400';
-  if (bgClass.includes('violet')) return 'text-violet-600 dark:text-violet-400';
-  return 'text-slate-600 dark:text-slate-400';
+  // 대기 중인 스텝 (Upcoming)
+  // 기존에는 회색 텍스트였으나, 처방 색상에 맞는 텍스트 색상으로 변경
+  const textColor = mapBgToTextClass(step.color);
+  return `bg-white dark:bg-slate-800/80 ${textColor}`;
 };
 
 // --- Bed Card Container Styles ---

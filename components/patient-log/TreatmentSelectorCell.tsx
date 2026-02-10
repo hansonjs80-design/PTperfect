@@ -190,7 +190,8 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                       onClearBed={onClearBed}
                       onActionClick={handleStepButtonClick}
                     />
-                    <div className="flex-1 min-w-0 flex justify-center pl-10 pr-2">
+                    {/* Increased padding from pl-10 to pl-14 to fit larger buttons */}
+                    <div className="flex-1 min-w-0 flex justify-center pl-14 pr-2">
                          <span className="text-xs sm:text-sm xl:text-[11px] font-bold truncate pointer-events-none text-center w-full">
                              <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor} />
                          </span>

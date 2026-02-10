@@ -162,10 +162,10 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
             )}
             <div className="flex flex-col">
               <span className="text-[10px] font-bold opacity-70 uppercase tracking-wider leading-none mb-0.5">
-                {previewPreset ? '설정 확인' : (isLogMode ? '처방 수정' : '치료 시작')}
+                {previewPreset ? '설정 확인' : (isLogMode ? '환자 현황' : '치료 시작')}
               </span>
               <h3 className="text-2xl sm:text-3xl font-black leading-none tracking-tight">
-                {isLogMode ? 'Log Edit' : (isTractionBed ? 'Traction' : `BED ${targetBedId}`)}
+                {isLogMode ? '처방 수정' : (isTractionBed ? 'Traction' : `BED ${targetBedId}`)}
               </h3>
             </div>
           </div>

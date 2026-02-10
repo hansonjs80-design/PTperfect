@@ -24,6 +24,11 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
   // Active 또는 Completed 상태가 아니면 렌더링하지 않음
   if (rowStatus !== 'active' && rowStatus !== 'completed') return null;
 
+  // Icon Class: Increased from w-3.5 (14px) to w-[18px] (~30% bigger)
+  const iconClass = "w-[18px] h-[18px]"; 
+  // Button Class: Increased padding from p-0.5 to p-1
+  const btnClass = "p-1 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-all active:scale-95";
+
   return (
     <div className="absolute left-0 z-10 flex items-center h-full gap-0.5 px-0.5 bg-gradient-to-r from-white via-white to-transparent dark:from-slate-900 dark:via-slate-900">
       
@@ -31,10 +36,10 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
       {rowStatus === 'active' && activeStepIndex === 0 && onClearBed && (
           <button
             onClick={(e) => onActionClick(e, 'clear')}
-            className="p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-400 hover:text-red-600 transition-all active:scale-95"
+            className={`${btnClass} text-gray-400 hover:text-red-600`}
             title="침상 비우기"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className={iconClass} />
           </button>
       )}
 
@@ -42,10 +47,10 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
       {onPrevStep && (rowStatus === 'active' ? activeStepIndex > 0 : true) && (
         <button 
             onClick={(e) => onActionClick(e, 'prev')}
-            className="p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-400 hover:text-brand-600 transition-all active:scale-95"
+            className={`${btnClass} text-gray-400 hover:text-brand-600`}
             title="이전 단계로 복구"
         >
-            <SkipBack className="w-3.5 h-3.5 fill-current" />
+            <SkipBack className={`${iconClass} fill-current`} />
         </button>
       )}
 
@@ -53,12 +58,12 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
       {rowStatus === 'active' && onNextStep && (
         <button 
             onClick={(e) => onActionClick(e, 'next')}
-            className={`p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-all active:scale-95 ${
+            className={`${btnClass} ${
                 isLastStep ? 'text-red-600 hover:text-red-700' : 'text-gray-400 hover:text-brand-600'
             }`}
             title={isLastStep ? "치료 완료" : "다음 단계"}
         >
-            <SkipForward className="w-3.5 h-3.5 fill-current" />
+            <SkipForward className={`${iconClass} fill-current`} />
         </button>
       )}
 
@@ -66,10 +71,10 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
       {rowStatus === 'completed' && onClearBed && (
           <button
             onClick={(e) => onActionClick(e, 'clear')}
-            className="p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-400 hover:text-red-600 transition-all active:scale-95"
+            className={`${btnClass} text-gray-400 hover:text-red-600`}
             title="침상 비우기"
           >
-            <CheckCircle className="w-3.5 h-3.5" />
+            <CheckCircle className={iconClass} />
           </button>
       )}
     </div>

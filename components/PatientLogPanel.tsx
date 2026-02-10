@@ -41,6 +41,27 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       setSelectingBedId(bedId || null);
   }, [setSelectingLogId, setSelectingBedId]);
 
+  // Handle Deletion with Bed Sync
+  const handleDeleteVisit = useCallback((visitId: string) => {
+    const visit = visits.find(v => v.id === visitId);
+    if (!visit) return;
+
+    const rowStatus = getRowStatus(visitId, visit.bed_id);
+    
+    // If the row is active (meaning it corresponds to the currently running bed)
+    if (rowStatus === 'active' && visit.bed_id) {
+        if (window.confirm(`${visit.bed_id}번 배드가 사용 중입니다. 기록을 삭제하고 배드를 비우시겠습니까?`)) {
+            clearBed(visit.bed_id);
+            deleteVisit(visitId);
+        }
+    } else {
+        // Just a normal log deletion
+        if (window.confirm("기록을 영구적으로 삭제하시겠습니까?")) {
+            deleteVisit(visitId);
+        }
+    }
+  }, [visits, getRowStatus, clearBed, deleteVisit]);
+
   return (
     <>
       <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-xl print:hidden">
@@ -60,7 +81,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           presets={presets}
           getRowStatus={getRowStatus}
           onUpdate={updateVisitWithBedSync}
-          onDelete={deleteVisit}
+          onDelete={handleDeleteVisit}
           onCreate={addVisit}
           onSelectLog={handleSelectLog}
           onMovePatient={handleMovePatient}
