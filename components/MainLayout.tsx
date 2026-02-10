@@ -65,7 +65,12 @@ export const MainLayout: React.FC = () => {
     if (isLogOpen && window.innerWidth < 1280) {
       window.history.pushState({ logOpen: true }, '');
       
-      const handlePopState = () => {
+      const handlePopState = (event: PopStateEvent) => {
+        // If the state we popped TO indicates the log should be open (e.g. returning from a nested modal),
+        // ignore this event and keep the log open.
+        if (event.state && event.state.logOpen) {
+          return;
+        }
         setLogOpen(false);
       };
 
