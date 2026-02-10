@@ -164,6 +164,7 @@ export const MainLayout: React.FC = () => {
         <div className={`
           fixed inset-0 z-[100] bg-white dark:bg-slate-900 transition-transform duration-300 xl:hidden flex flex-col
           ${isLogOpen ? 'translate-x-0' : 'translate-x-full'}
+          pt-[env(safe-area-inset-top)]
         `}>
            <div className="flex-1 w-full h-full relative pb-[env(safe-area-inset-bottom)]">
              <Suspense fallback={<div className="w-full h-full bg-white dark:bg-slate-900 flex items-center justify-center"><span className="text-gray-400 font-bold">로딩 중...</span></div>}>

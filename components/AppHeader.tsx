@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Menu, Sun, Moon, Download, ClipboardList, Maximize, Activity, LayoutDashboard, ArrowRightLeft } from 'lucide-react';
+import { Menu, Sun, Moon, Download, ClipboardList, Maximize, Activity, ArrowUpDown } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 
@@ -29,6 +29,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const buttonClass = "relative flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 md:w-9 md:h-9 xl:w-11 xl:h-11 landscape:w-9 landscape:h-9 rounded-xl transition-all duration-200 active:scale-90 hover:bg-white/80 dark:hover:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-700";
   
   const activeButtonClass = "bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 border-brand-200 dark:border-brand-800/50 shadow-inner";
+  
+  // Custom active style for Layout Toggle to distinguish from Log Toggle
+  const activeLayoutBtnClass = "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/50 shadow-inner";
 
   return (
     // Header Container: Glassmorphism with subtle border
@@ -110,14 +113,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           {/* Layout Toggle Button */}
           <button
             onClick={toggleLayoutMode}
-            className={`${buttonClass} ${layoutMode === 'alt' ? activeButtonClass : ''}`}
+            className={`${buttonClass} ${layoutMode === 'alt' ? activeLayoutBtnClass : ''}`}
             title="배드 배치 변경"
           >
-            {layoutMode === 'alt' ? (
-              <ArrowRightLeft className="w-5 h-5 md:w-4 md:h-4 xl:w-5 xl:h-5 landscape:w-4 landscape:h-4" strokeWidth={2.5} />
-            ) : (
-              <LayoutDashboard className="w-5 h-5 md:w-4 md:h-4 xl:w-5 xl:h-5 landscape:w-4 landscape:h-4" strokeWidth={2.5} />
-            )}
+            <ArrowUpDown 
+              className={`
+                w-5 h-5 md:w-4 md:h-4 xl:w-5 xl:h-5 landscape:w-4 landscape:h-4 
+                transition-transform duration-500 ease-in-out
+                ${layoutMode === 'alt' ? 'rotate-180' : 'rotate-0'}
+              `} 
+              strokeWidth={2.5} 
+            />
           </button>
 
           {/* Dark Mode Toggle */}
