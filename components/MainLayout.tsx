@@ -118,10 +118,10 @@ export const MainLayout: React.FC = () => {
         {isFullScreen && (
           <button
             onClick={() => setIsFullScreen(false)}
-            className="fixed top-4 right-4 z-[60] p-2 bg-black/30 dark:bg-white/10 text-gray-500 dark:text-gray-300 hover:text-white hover:bg-black/50 dark:hover:bg-white/20 rounded-full backdrop-blur-md shadow-lg transition-all active:scale-95"
+            className="fixed top-[calc(env(safe-area-inset-top)+20px)] right-4 z-[60] p-1.5 bg-black/30 dark:bg-white/10 text-gray-500 dark:text-gray-300 hover:text-white hover:bg-black/50 dark:hover:bg-white/20 rounded-full backdrop-blur-md shadow-lg transition-all active:scale-95"
             title="전체 화면 종료"
           >
-            <Minimize className="w-5 h-5 sm:w-6 sm:h-6" />
+            <Minimize className="w-4 h-4 sm:w-6 sm:h-6" />
           </button>
         )}
 
