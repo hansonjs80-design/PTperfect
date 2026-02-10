@@ -24,9 +24,6 @@ export const usePatientLogVisibility = () => {
         if (isLogHistoryState) {
           setLogOpen(true);
         } else {
-          // Check if we are returning from a nested modal (which might have its own state)
-          // If event.state exists but isn't patientLog, it might be a modal.
-          // But here we are handling the top-level Log visibility.
           // If we popped back to a state WITHOUT panel='patientLog', close the log.
           setLogOpen(false);
         }
@@ -43,7 +40,7 @@ export const usePatientLogVisibility = () => {
     
     if (isMobile && isLogOpen) {
       // If opening on mobile, push a new history entry
-      // Check if we already have this state to avoid duplicate pushes (e.g. strict mode double render)
+      // Check if we already have this state to avoid duplicate pushes
       if (window.history.state?.panel !== 'patientLog') {
         window.history.pushState({ panel: 'patientLog' }, '');
       }
@@ -60,8 +57,9 @@ export const usePatientLogVisibility = () => {
         // If we are closing, and the current history state is the log, go back.
         if (window.history.state?.panel === 'patientLog') {
            window.history.back();
-           // We return prev (true) here because the popstate handler will set it to false.
-           // This prevents a double-update flicker.
+           // Important: We return `prev` (true) here initially to let popstate handle the UI update.
+           // However, if back() doesn't fire popstate immediately (rare but possible), the UI might stick.
+           // The popstate listener will effectively set it to false.
            return prev; 
         }
       }
@@ -74,11 +72,11 @@ export const usePatientLogVisibility = () => {
     const isMobile = window.innerWidth < 1280;
     
     if (isMobile) {
-        // Mobile: Use history back if applicable
+        // Mobile: Check if we need to pop history
         if (window.history.state?.panel === 'patientLog') {
             window.history.back();
         } else {
-            // Fallback if history state is desynced
+            // Fallback: If history state is not patientLog (e.g. lost state or desktop mode switch), force close
             setLogOpen(false);
         }
     } else {

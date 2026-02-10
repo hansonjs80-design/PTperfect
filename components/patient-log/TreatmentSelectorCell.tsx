@@ -51,6 +51,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const [hoverInfo, setHoverInfo] = useState<{ x: number, y: number, width: number } | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Manual Double Tap Logic
+  const lastClickTimeRef = useRef<number>(0);
 
   const { handleGridKeyDown } = useGridNavigation(8);
 
@@ -89,12 +92,28 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     setMode('menu');
   };
 
-  const handleSingleClick = (e: React.MouseEvent) => {
-    if (window.innerWidth >= 768) executeInteraction(e);
-  };
+  // Unified click handler for Desktop (Single) and Mobile (Double Tap)
+  const handleInteraction = (e: React.MouseEvent) => {
+    // 1. Desktop & Tablet (Width >= 768px) -> Single Click triggers interaction
+    if (window.innerWidth >= 768) {
+        executeInteraction(e);
+        return;
+    }
 
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    if (window.innerWidth < 768) executeInteraction(e);
+    // 2. Mobile (Width < 768px) -> Manual Double Tap Detection
+    // Native onDoubleClick is unreliable on mobile due to zoom/delay
+    const now = Date.now();
+    const timeDiff = now - lastClickTimeRef.current;
+
+    if (timeDiff < 350 && timeDiff > 0) {
+        // Double tap detected
+        executeInteraction(e);
+        lastClickTimeRef.current = 0; // Reset
+    } else {
+        // First tap
+        lastClickTimeRef.current = now;
+        // Optional: Could set a timeout here to clear ref if single tap isn't followed by another
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -142,6 +161,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const getTitle = () => {
+      if (typeof window !== 'undefined' && window.innerWidth < 768) return "더블탭하여 수정";
       if (directSelector || (rowStatus as string) === 'active') return "클릭하여 처방 수정";
       if (value && (rowStatus as string) !== 'active') return "클릭하여 로그 수정 (배드 미작동)";
       return "클릭하여 수정 옵션 열기";
@@ -161,8 +181,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         <div 
           ref={cellRef}
           className="relative w-full h-full focus:ring-2 focus:ring-sky-400 focus:outline-none focus:z-10"
-          onClick={handleSingleClick}
-          onDoubleClick={handleDoubleClick}
+          onClick={handleInteraction}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           onKeyDown={handleKeyDown}
