@@ -1,11 +1,12 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Minus, Plus, Save, X, Clock } from 'lucide-react';
 
 interface TimerEditPopupProps {
   title: string;
   initialSeconds: number;
+  position?: { x: number; y: number }; // Optional position
   onConfirm: (seconds: number) => void;
   onCancel: () => void;
 }
@@ -13,20 +14,60 @@ interface TimerEditPopupProps {
 export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   title,
   initialSeconds,
+  position,
   onConfirm,
   onCancel
 }) => {
   // 초기값을 분 단위로 변환 (최소 1분)
   const [minutes, setMinutes] = useState(Math.ceil(Math.max(60, initialSeconds) / 60));
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
+  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto focus input on mount
+  // Auto focus
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
     }
   }, []);
+
+  // Smart Positioning: Place ABOVE the click by default
+  useLayoutEffect(() => {
+    if (position && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const screenW = window.innerWidth;
+      const screenH = window.innerHeight;
+      
+      const GAP = 10;
+      // Default: Center horizontally on click, Place ABOVE click
+      let left = position.x - (rect.width / 2);
+      let top = position.y - rect.height - GAP - 10; // 10px offset up
+
+      // 1. Vertical Check
+      // If it goes off top, flip to BELOW
+      if (top < GAP) {
+        top = position.y + 20;
+      }
+      // If flipping to below goes off bottom, pin to bottom
+      if (top + rect.height > screenH - GAP) {
+        top = screenH - rect.height - GAP;
+      }
+
+      // 2. Horizontal Check
+      // Left edge
+      if (left < GAP) left = GAP;
+      // Right edge
+      if (left + rect.width > screenW - GAP) {
+        left = screenW - rect.width - GAP;
+      }
+
+      setPopupStyle({ top, left, position: 'absolute' });
+    } else if (!position) {
+      // Fallback: Centered
+      setPopupStyle({}); 
+    }
+  }, [position]);
 
   const handleAdjust = (delta: number) => {
     setMinutes(prev => {
@@ -36,7 +77,6 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // 빈 값 허용 (사용자가 지우고 다시 쓸 때)
     if (e.target.value === '') {
         setMinutes(0); 
         return;
@@ -48,7 +88,6 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   };
 
   const handleConfirm = () => {
-    // 0분이거나 빈 값이면 저장 안함 혹은 최소 1분 처리
     const finalMinutes = minutes <= 0 ? 1 : minutes;
     onConfirm(finalMinutes * 60);
   };
@@ -58,13 +97,19 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
     if (e.key === 'Escape') onCancel();
   };
 
+  const overlayClass = position 
+    ? "fixed inset-0 z-[100] bg-transparent" // Transparent overlay for click-outside
+    : "fixed inset-0 z-[100] bg-black/40 backdrop-blur-[2px] flex items-center justify-center animate-in fade-in duration-200";
+
   return createPortal(
     <div 
-      className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-[2px] flex items-center justify-center animate-in fade-in duration-200"
+      className={overlayClass}
       onClick={onCancel}
     >
       <div
-        className="relative w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-600 overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col"
+        ref={containerRef}
+        className={`w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-600 overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col ${position ? 'absolute' : 'relative'}`}
+        style={popupStyle}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

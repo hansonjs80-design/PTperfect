@@ -10,7 +10,7 @@ interface BedTimerProps {
   isOvertime: boolean;
   isNearEnd: boolean;
   onTimerClick: (e: React.MouseEvent) => void;
-  onTimerTouchClick?: (e: React.MouseEvent) => void;
+  onTimerTouchClick?: (e: React.MouseEvent) => void; // Deprecated
   onTogglePause: (e: React.MouseEvent) => void;
 }
 
@@ -20,7 +20,6 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
   isOvertime, 
   isNearEnd, 
   onTimerClick, 
-  onTimerTouchClick,
   onTogglePause 
 }) => {
   if (!isTimerActive) {
@@ -40,8 +39,7 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
       className={`flex items-center justify-end gap-[5px] sm:gap-[10px] cursor-pointer transition-all scale-[0.95] lg:scale-100 origin-right lg:origin-center ${bed.isPaused ? 'opacity-50 grayscale' : ''}`}
     >
       <span 
-        onDoubleClick={onTimerClick}
-        onClick={onTimerTouchClick}
+        onClick={onTimerClick}
         className={`font-black text-3xl lg:text-5xl tracking-[-0.08em] sm:tracking-tighter leading-[0.75] tabular-nums ${
         isOvertime ? 'text-red-500 animate-pulse' : 
         isNearEnd ? 'text-orange-500 animate-pulse' :

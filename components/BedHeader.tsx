@@ -1,5 +1,5 @@
 
-import React, { memo, useState, useRef } from 'react';
+import React, { memo, useState } from 'react';
 import { BedState, BedStatus, TreatmentStep } from '../types';
 import { getBedHeaderStyles } from '../utils/styleUtils';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
@@ -7,6 +7,7 @@ import { TimerEditPopup } from './bed-card/TimerEditPopup';
 import { BedStatusPopup } from './bed-card/BedStatusPopup';
 import { BedNumberAndStatus } from './bed-card/BedNumberAndStatus';
 import { BedTimer } from './bed-card/BedTimer';
+import { useResponsiveClick } from '../hooks/useResponsiveClick';
 
 interface BedHeaderProps {
   bed: BedState;
@@ -39,58 +40,43 @@ export const BedHeader = memo(({
   onToggleManual
 }: BedHeaderProps) => {
   const { setMovingPatientState } = useTreatmentContext();
-  const [isEditingTimer, setIsEditingTimer] = useState(false);
+  
+  // Changed from boolean to coordinates object to support positioning
+  const [timerMenuPos, setTimerMenuPos] = useState<{x: number, y: number} | null>(null);
   const [statusMenuPos, setStatusMenuPos] = useState<{x: number, y: number} | null>(null);
   
-  // Refs for manual double tap detection on mobile
-  const lastHeaderClickRef = useRef<number>(0);
-  const lastTimerClickRef = useRef<number>(0);
-  const lastBedNumClickRef = useRef<number>(0);
-
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
   const isOvertime = isTimerActive && bed.remainingTime <= 0;
   const isNearEnd = isTimerActive && bed.remainingTime > 0 && bed.remainingTime <= 60;
   
-  const handleHeaderDoubleClick = (e: React.MouseEvent) => {
+  // --- Handlers using useResponsiveClick Hook ---
+
+  // 1. Header Background (Edit Settings)
+  const handleHeaderInteraction = useResponsiveClick((e) => {
     if (onEditClick) onEditClick(bed.id);
-  };
+  }, false, false); // Don't stop propagation/default blindly for the container
 
-  const handleHeaderTouchClick = (e: React.MouseEvent) => {
-    if (window.matchMedia('(pointer: coarse)').matches) {
-        const now = Date.now();
-        if (now - lastHeaderClickRef.current < 350) {
-            if (onEditClick) onEditClick(bed.id);
-            lastHeaderClickRef.current = 0;
-        } else {
-            lastHeaderClickRef.current = now;
-        }
-    }
-  };
-
-  const handleTimerDoubleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // 2. Timer Click
+  const handleTimerInteraction = useResponsiveClick((e) => {
     if (!isTimerActive || !onUpdateDuration) return;
-    setIsEditingTimer(true);
-  };
+    setTimerMenuPos({ x: e.clientX, y: e.clientY });
+  });
 
-  const handleTimerTouchClick = (e: React.MouseEvent) => {
-    if (window.matchMedia('(pointer: coarse)').matches) {
-        const now = Date.now();
-        if (now - lastTimerClickRef.current < 350) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (isTimerActive && onUpdateDuration) setIsEditingTimer(true);
-            lastTimerClickRef.current = 0;
-        } else {
-            lastTimerClickRef.current = now;
-        }
+  // 3. Bed Number Click (Move Patient)
+  const handleBedNumberInteraction = useResponsiveClick((e) => {
+    if (bed.status !== BedStatus.IDLE) {
+      setMovingPatientState({ bedId: bed.id, x: e.clientX, y: e.clientY });
     }
-  };
+  });
+
+  // 4. Status Icon Click
+  const handleStatusInteraction = useResponsiveClick((e) => {
+    setStatusMenuPos({ x: e.clientX, y: e.clientY });
+  });
 
   const handleTimerSave = (newSeconds: number) => {
     if (onUpdateDuration) onUpdateDuration(bed.id, newSeconds);
-    setIsEditingTimer(false);
+    setTimerMenuPos(null);
   };
 
   const handleTogglePause = (e: React.MouseEvent) => {
@@ -98,49 +84,22 @@ export const BedHeader = memo(({
     onTogglePause?.(bed.id);
   };
 
-  const handleBedNumberDoubleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (bed.status === BedStatus.IDLE) return;
-    setMovingPatientState({ bedId: bed.id, x: e.clientX, y: e.clientY });
-  };
-
-  const handleBedNumberTouchClick = (e: React.MouseEvent) => {
-    if (window.matchMedia('(pointer: coarse)').matches) {
-        const now = Date.now();
-        if (now - lastBedNumClickRef.current < 350) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (bed.status !== BedStatus.IDLE) {
-               setMovingPatientState({ bedId: bed.id, x: e.clientX, y: e.clientY });
-            }
-            lastBedNumClickRef.current = 0;
-        } else {
-            lastBedNumClickRef.current = now;
-        }
-    }
-  };
-
-  const handleStatusClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setStatusMenuPos({ x: e.clientX, y: e.clientY });
-  };
-
   return (
     <>
       <div 
         className={`flex items-center justify-between px-1.5 sm:px-2 py-0.5 sm:py-1 lg:px-3 lg:py-3 shrink-0 relative transition-colors ${getBedHeaderStyles(bed)}`}
-        onDoubleClick={handleHeaderDoubleClick}
-        onClick={handleHeaderTouchClick}
+        onClick={handleHeaderInteraction}
+        onDoubleClick={(e) => {
+           // Desktop Double Click Fallback (if user prefers double click on desktop background)
+           if (window.innerWidth >= 768 && onEditClick) onEditClick(bed.id);
+        }}
       >
         
         {/* Left: Bed Number & Status Icons */}
         <BedNumberAndStatus 
           bed={bed} 
-          onMovePatient={handleBedNumberDoubleClick}
-          onMovePatientClick={handleBedNumberTouchClick}
-          onEditStatus={handleStatusClick} 
+          onMovePatient={handleBedNumberInteraction}
+          onEditStatus={handleStatusInteraction} 
         />
 
         {/* Right Section: Timer & Actions */}
@@ -150,19 +109,19 @@ export const BedHeader = memo(({
             isTimerActive={isTimerActive}
             isOvertime={isOvertime}
             isNearEnd={isNearEnd}
-            onTimerClick={handleTimerDoubleClick}
-            onTimerTouchClick={handleTimerTouchClick}
+            onTimerClick={handleTimerInteraction}
             onTogglePause={handleTogglePause}
           />
         </div>
       </div>
 
-      {isEditingTimer && (
+      {timerMenuPos && (
         <TimerEditPopup
           title={`${bed.id === 11 ? '견인치료기' : `${bed.id}번 배드`} 시간 설정`}
           initialSeconds={bed.remainingTime}
+          position={timerMenuPos}
           onConfirm={handleTimerSave}
-          onCancel={() => setIsEditingTimer(false)}
+          onCancel={() => setTimerMenuPos(null)}
         />
       )}
 
