@@ -176,14 +176,14 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     defaultValue={value}
                     onBlur={handleTextCommit}
                     onKeyDown={handleInputKeyDown}
-                    className="w-full h-full bg-white dark:bg-slate-700 px-2 py-1 outline-none border-2 border-brand-500 rounded-sm text-xs sm:text-sm text-left pl-3 !text-gray-900 dark:!text-gray-100"
+                    className="w-full h-full bg-white dark:bg-slate-700 px-2 py-1 outline-none border-2 border-brand-500 rounded-sm text-sm sm:text-base text-left pl-3 !text-gray-900 dark:!text-gray-100"
                     placeholder={placeholder}
                 />
             ) : (
                 <div className="flex items-center w-full h-full cursor-pointer px-1 hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors relative" title={getTitle()}>
-                    {/* Changed padding: pl-14 removed, pl-2 added. pr-14 added for right buttons. justify-center -> justify-start */}
+                    {/* Updated Font Size: text-sm sm:text-base xl:text-xs */}
                     <div className="flex-1 min-w-0 flex justify-start pl-2 pr-14">
-                         <span className="text-xs sm:text-sm xl:text-[11px] font-bold truncate pointer-events-none text-left w-full">
+                         <span className="text-sm sm:text-base xl:text-xs font-bold truncate pointer-events-none text-left w-full leading-tight">
                              <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor} />
                          </span>
                     </div>

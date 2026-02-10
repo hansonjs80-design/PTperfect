@@ -177,7 +177,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         )}
       </td>
 
-      {/* 2. Patient Name */}
+      {/* 2. Patient Name: Increased font size (text-sm -> text-base) */}
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
           gridId={`${rowIndex}-1`}
@@ -190,7 +190,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
             !visit?.patient_name 
               ? 'font-normal text-gray-300 dark:text-gray-500' 
               : 'font-black text-slate-800 dark:text-slate-100'
-          } ${isDraft ? 'placeholder-gray-300 font-normal' : ''} text-sm`}
+          } ${isDraft ? 'placeholder-gray-300 font-normal' : ''} text-[15px] sm:text-base`}
           onCommit={(val, skipSync, navDir) => handleChange('patient_name', val || '', skipSync, 1, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -198,7 +198,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      {/* 3. Body Part */}
+      {/* 3. Body Part: Increased font size (text-xs -> text-sm) */}
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
           gridId={`${rowIndex}-2`}
@@ -207,7 +207,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.body_part || ''} 
           placeholder=""
           menuTitle="치료 부위 수정 (로그만 변경)"
-          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-xs sm:text-sm"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-sm sm:text-[15px]"
           onCommit={(val, skipSync, navDir) => handleChange('body_part', val || '', skipSync, 2, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -251,7 +251,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      {/* 6. Memo */}
+      {/* 6. Memo: Increased font size (text-xs -> text-sm) */}
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
           gridId={`${rowIndex}-5`}
@@ -260,7 +260,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.memo || ''} 
           placeholder=""
           menuTitle="메모 수정 (로그만 변경)"
-          className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-xs"
+          className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-sm"
           onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 5, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -268,7 +268,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      {/* 7. Author */}
+      {/* 7. Author: Increased font size (text-xs -> text-sm) */}
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell 
           gridId={`${rowIndex}-6`}
@@ -277,7 +277,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.author || ''} 
           placeholder="-"
           menuTitle="작성자 수정 (로그만 변경)"
-          className="text-center justify-center text-gray-400 font-bold bg-transparent text-xs"
+          className="text-center justify-center text-gray-400 font-bold bg-transparent text-sm"
           onCommit={(val, skipSync, navDir) => handleChange('author', val || '', skipSync, 6, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}

@@ -240,7 +240,8 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
             title={!value ? "클릭하여 배드 선택" : (rowStatus === 'active' ? "클릭하여 방번호 변경" : "클릭하여 수정/배정 메뉴 열기")}
         >
             {value ? (
-                <span className={`text-base sm:text-lg xl:text-[12px] font-black group-hover:scale-110 transition-transform ${value === 11 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                // Updated Font Size: text-lg sm:text-xl xl:text-sm
+                <span className={`text-lg sm:text-xl xl:text-sm font-black group-hover:scale-110 transition-transform ${value === 11 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>
                 {value === 11 ? 'T' : value}
                 </span>
             ) : (
