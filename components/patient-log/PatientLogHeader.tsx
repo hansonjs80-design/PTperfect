@@ -118,12 +118,12 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
              <Printer className="w-5 h-5" strokeWidth={2.5} />
            </button>
 
-           {/* Close Button */}
+           {/* Close Button - Always Render if onClose is provided */}
            {onClose && (
             <button 
               onClick={onClose}
-              className="flex items-center justify-center w-10 h-10 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl text-slate-500 dark:text-slate-300 transition-all shadow-inner active:scale-95 shrink-0"
-              title="닫기"
+              className="flex items-center justify-center w-10 h-10 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl text-slate-600 dark:text-slate-300 transition-all shadow-inner active:scale-95 shrink-0"
+              title="창 닫기"
             >
               <X className="w-5 h-5" strokeWidth={3} />
             </button>

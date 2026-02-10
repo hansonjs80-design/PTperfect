@@ -7,6 +7,7 @@ import { BedLayoutContainer } from './BedLayoutContainer';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { GlobalModals } from './GlobalModals';
 import { useSidebarResize } from '../hooks/useSidebarResize';
+import { usePatientLogVisibility } from '../hooks/usePatientLogVisibility';
 
 const PatientLogPanel = React.lazy(() => import('./PatientLogPanel').then(module => ({ default: module.PatientLogPanel })));
 
@@ -14,17 +15,11 @@ export const MainLayout: React.FC = () => {
   const { beds, presets, undo, canUndo } = useTreatmentContext();
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isDarkMode, setDarkMode] = useState(false);
-  
-  const { sidebarWidth, isResizing, startResizing } = useSidebarResize(620);
-
-  const [isLogOpen, setLogOpen] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth >= 1280;
-    }
-    return false;
-  });
-  
   const [isFullScreen, setIsFullScreen] = useState(false);
+  
+  // Custom Hooks
+  const { sidebarWidth, isResizing, startResizing } = useSidebarResize(620);
+  const { isLogOpen, toggleLog, closeLog } = usePatientLogVisibility(); // Logic extracted here
   
   const mainRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -59,61 +54,6 @@ export const MainLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, canUndo]);
 
-  // Back Button Logic for Log Panel (Mobile/Tablet)
-  useEffect(() => {
-    // Only apply history management if not in Desktop Sidebar mode
-    if (isLogOpen && window.innerWidth < 1280) {
-      // 1. Tag the current state if needed (to support proper popping back to this view)
-      // This defends against the state being lost if the user refreshed or navigated weirdly.
-      if (!window.history.state?.logOpen) {
-         window.history.replaceState({ ...window.history.state, logOpen: true }, '');
-      }
-
-      // 2. Push a new entry to represent the "Log Open" state so Back closes it.
-      // We check for a flag 'pushedLog' to avoid duplicate pushes on re-renders
-      if (!window.history.state?.pushedLog) {
-          window.history.pushState({ logOpen: true, pushedLog: true }, '');
-      }
-      
-      const handlePopState = (event: PopStateEvent) => {
-        // Robust Check:
-        // Check event.state (standard) OR window.history.state (fallback)
-        // If either indicates logOpen is true, we are likely returning from a nested modal (Level 2) to the Log (Level 1).
-        // In that case, DO NOT close the log.
-        const state = event.state || window.history.state;
-        
-        if (state && state.logOpen) {
-          return;
-        }
-        
-        // If state is null or doesn't have logOpen, we assume we've gone back to the root.
-        setLogOpen(false);
-      };
-
-      window.addEventListener('popstate', handlePopState);
-      
-      return () => {
-        window.removeEventListener('popstate', handlePopState);
-        // Note: We don't manually pop history here on unmount to avoid fighting with browser navigation 
-        // if the user used the Back button. 
-        // If closed via UI, handleToggleLog handles the back() call.
-      };
-    }
-  }, [isLogOpen]);
-
-  const handleToggleLog = () => {
-    if (isLogOpen) {
-      // If closing via button, we must manually go back to pop the history state we pushed
-      if (window.innerWidth < 1280) {
-        window.history.back();
-      } else {
-        setLogOpen(false);
-      }
-    } else {
-      setLogOpen(true);
-    }
-  };
-
   const mainContentPadding = isFullScreen 
     ? 'pt-[calc(env(safe-area-inset-top)+8px)] md:pt-[56px]' 
     : `
@@ -144,7 +84,7 @@ export const MainLayout: React.FC = () => {
             isDarkMode={isDarkMode}
             onToggleDarkMode={() => setDarkMode(!isDarkMode)}
             isLogOpen={isLogOpen}
-            onToggleLog={handleToggleLog}
+            onToggleLog={toggleLog}
             onToggleFullScreen={() => setIsFullScreen(true)}
           />
         </div>
@@ -182,6 +122,7 @@ export const MainLayout: React.FC = () => {
           </button>
         )}
 
+        {/* Desktop Sidebar Resizer */}
         {isLogOpen && !isFullScreen && (
           <div
             className={`hidden xl:flex w-3 hover:w-3 cursor-col-resize z-50 items-center justify-center -ml-1.5 transition-all group select-none ${isResizing ? 'bg-brand-500/10' : ''}`}
@@ -194,6 +135,7 @@ export const MainLayout: React.FC = () => {
           </div>
         )}
 
+        {/* Desktop Sidebar */}
         <aside 
           ref={sidebarRef}
           className={`
@@ -210,22 +152,19 @@ export const MainLayout: React.FC = () => {
              style={{ minWidth: '620px', width: '100%' }}
            >
              <Suspense fallback={<div className="w-full h-full bg-white dark:bg-slate-900 animate-pulse" />}>
-               <PatientLogPanel />
+               <PatientLogPanel onClose={closeLog} />
              </Suspense>
            </div>
         </aside>
 
+        {/* Mobile/Tablet Overlay Sidebar */}
         <div className={`
           fixed inset-0 z-[100] bg-white dark:bg-slate-900 transition-transform duration-300 xl:hidden flex flex-col
           ${isLogOpen ? 'translate-x-0' : 'translate-x-full'}
         `}>
            <div className="flex-1 w-full h-full relative pb-[env(safe-area-inset-bottom)]">
              <Suspense fallback={<div className="w-full h-full bg-white dark:bg-slate-900 flex items-center justify-center"><span className="text-gray-400 font-bold">로딩 중...</span></div>}>
-                <PatientLogPanel onClose={() => {
-                    // When close button inside panel is clicked
-                    if (window.innerWidth < 1280) window.history.back();
-                    else setLogOpen(false);
-                }} />
+                <PatientLogPanel onClose={closeLog} />
              </Suspense>
            </div>
         </div>
