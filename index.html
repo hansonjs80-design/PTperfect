@@ -10,7 +10,7 @@
     -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cstyle%3E:root%7B--bg:%23ffffff;--p:%23000000;--t:%232563eb%7D@media(prefers-color-scheme:dark)%7B:root%7B--bg:%230f172a;--p:%23ffffff;--t:%2338bdf8%7D%7D.bg%7Bfill:var(--bg)%7D.p%7Bfill:var(--p)%7D.t%7Bfill:var(--t)%7D%3C/style%3E%3Crect width='512' height='512' rx='128' class='bg'/%3E%3Cpath class='p' d='M140 112h80c53 0 96 43 96 96s-43 96-96 96h-32v96h-48V112zm48 48v96h32c26.5 0 48-21.5 48-48s-21.5-48-48-48h-32z'/%3E%3Cpath class='t' d='M310 112h110v48h-31v240h-48v-240h-31z'/%3E%3C/svg%3E" />
     
-    <!-- interactive-widget=resizes-content 추가: 모바일 키보드 올라올 때 뷰포트 자동 조절 -->
+    <!-- interactive-widget=resizes-content: Adjust viewport when keyboard opens -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
     
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -20,7 +20,7 @@
     <meta name="theme-color" content="#0f172a" />
     <meta name="description" content="실시간 물리치료 병상 관리 시스템" />
     
-    <!-- Apple Touch Icon: Using the Dark Mode version (Static) for a premium look on iOS Home Screen -->
+    <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%230f172a'/%3E%3Cpath fill='%23ffffff' d='M140 112h80c53 0 96 43 96 96s-43 96-96 96h-32v96h-48V112zm48 48v96h32c26.5 0 48-21.5 48-48s-21.5-48-48-48h-32z'/%3E%3Cpath fill='%2338bdf8' d='M310 112h110v48h-31v240h-48v-240h-31z'/%3E%3C/svg%3E" />
     
     <title>PhysioTrack Pro</title>
@@ -37,17 +37,32 @@
         padding: 0;
         overflow: hidden;
         background-color: #f1f5f9;
-        /* iOS 바운스 효과 방지 및 터치 동작 제어 */
-        overscroll-behavior-y: none;
-        /* 모바일 브라우저 주소창 대응 */
+        /* Prevent Pull-to-Refresh & Bounce */
+        overscroll-behavior: none;
+        /* Handle Dynamic Viewport Height on Mobile */
         height: 100dvh; 
+        
+        /* Disable Text Selection for App-like feel */
+        -webkit-user-select: none;
+        user-select: none;
+        
+        /* Remove Tap Highlight */
+        -webkit-tap-highlight-color: transparent;
+        
+        /* Improve Touch Response */
+        touch-action: manipulation;
       }
+      
       .dark html, .dark body { background-color: #020617; }
       
+      /* Allow text selection in inputs */
+      input, textarea {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      
       body {
-        -webkit-tap-highlight-color: transparent;
         -webkit-touch-callout: none;
-        user-select: none;
       }
       
       input::-webkit-outer-spin-button,
@@ -64,79 +79,46 @@
         scrollbar-color: #334155 transparent;
       }
 
-      /* 
-       * Patient Log Scrollbar Styles 
-       * - Highly visible on Desktop
-       * - Large touch target (24px)
-       * - Always visible track
-       */
+      /* Log Scrollbar */
       .log-scrollbar {
-        scrollbar-width: auto; /* Firefox: Standard width */
-        scrollbar-color: #cbd5e1 #f1f5f9; /* Thumb Track colors */
+        scrollbar-width: auto; 
+        scrollbar-color: #cbd5e1 #f1f5f9; 
       }
       .dark .log-scrollbar {
         scrollbar-color: #475569 #1e293b;
       }
 
-      .log-scrollbar::-webkit-scrollbar {
-        width: 24px;  /* Vertical scrollbar width */
-        height: 24px; /* Horizontal scrollbar height (24px) */
-      }
-
-      /* Track is always visible now */
+      .log-scrollbar::-webkit-scrollbar { width: 24px; height: 24px; }
       .log-scrollbar::-webkit-scrollbar-track {
         background-color: #f1f5f9; 
-        border-top: 1px solid #e2e8f0; /* Subtle border to separate from content */
+        border-top: 1px solid #e2e8f0; 
       }
       .dark .log-scrollbar::-webkit-scrollbar-track {
         background-color: #0f172a;
         border-top: 1px solid #1e293b;
       }
-
       .log-scrollbar::-webkit-scrollbar-thumb {
         background-color: #cbd5e1;
         border-radius: 20px;
-        /* Transparent border to center thumb */
         border: 7px solid transparent; 
         background-clip: content-box; 
         min-height: 40px;
         min-width: 40px;
       }
-      .dark .log-scrollbar::-webkit-scrollbar-thumb {
-        background-color: #475569;
-      }
+      .dark .log-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; }
+      .log-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #94a3b8; }
+      .dark .log-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #64748b; }
+      .log-scrollbar::-webkit-scrollbar-corner { background: transparent; }
 
-      /* Hover effects */
-      .log-scrollbar:hover::-webkit-scrollbar-thumb {
-        background-color: #94a3b8;
-      }
-      .dark .log-scrollbar:hover::-webkit-scrollbar-thumb {
-        background-color: #64748b;
-      }
-      
-      .log-scrollbar::-webkit-scrollbar-corner {
-        background: transparent;
-      }
-
-      /* Mobile Landscape Optimization: Visible Scrollbars */
       @media (orientation: landscape) and (max-width: 1024px) {
-        ::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-          display: block;
-        }
-        ::-webkit-scrollbar-track {
-          background: transparent;
-        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; display: block; }
+        ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb {
-          background: rgba(100, 116, 139, 0.5); /* Slate-500 semi-transparent */
+          background: rgba(100, 116, 139, 0.5);
           border-radius: 10px;
           border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .dark ::-webkit-scrollbar-thumb {
-          background: rgba(148, 163, 184, 0.4); /* Slate-400 semi-transparent */
-        }
-        
+        .dark ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); }
         .custom-scrollbar {
           scrollbar-width: thin;
           scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
@@ -146,12 +128,8 @@
         }
       }
 
-      /* Print Optimization for A4 */
       @media print {
-        @page {
-          size: A4;
-          margin: 10mm;
-        }
+        @page { size: A4; margin: 10mm; }
         body {
           background-color: white !important;
           color: black !important;
@@ -160,24 +138,12 @@
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
-        /* Hide everything by default, show specific print areas */
-        body > * {
-          display: none !important;
-        }
-        /* Only display the print-overlay which will be appended to body or be fixed */
-        #root {
-          display: block !important; /* Ensure root is rendered so we can target children */
-          height: auto !important;
-          overflow: visible !important;
-        }
-        /* Specific handling to make the print overlay fill the page */
+        body > * { display: none !important; }
+        #root { display: block !important; height: auto !important; overflow: visible !important; }
         .print-only-visible {
           display: block !important;
           position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
+          top: 0; left: 0; width: 100vw; height: 100vh;
           z-index: 9999;
           background: white;
         }
@@ -190,22 +156,10 @@
         theme: {
           extend: {
             colors: {
-              brand: { 
-                50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 
-                500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 900: '#0c4a6e' 
-              }
+              brand: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 900: '#0c4a6e' }
             },
-            backdropBlur: {
-              xs: '2px',
-            },
-            screens: {
-              'xs': '375px',
-              'sm': '640px',
-              'md': '768px',
-              'lg': '1024px',
-              'xl': '1280px',
-              '2xl': '1536px',
-            }
+            backdropBlur: { xs: '2px' },
+            screens: { 'xs': '375px', 'sm': '640px', 'md': '768px', 'lg': '1024px', 'xl': '1280px', '2xl': '1536px' }
           }
         }
       }
@@ -230,7 +184,8 @@
 }
 </script>
 </head>
-  <body class="bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-brand-100 dark:selection:bg-brand-900/30">
+  <!-- Disable Right Click Context Menu Globally -->
+  <body class="bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-brand-100 dark:selection:bg-brand-900/30" oncontextmenu="return false;">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

@@ -8,18 +8,15 @@ import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { GlobalModals } from './GlobalModals';
 import { useSidebarResize } from '../hooks/useSidebarResize';
 
-// Code Splitting for performance
 const PatientLogPanel = React.lazy(() => import('./PatientLogPanel').then(module => ({ default: module.PatientLogPanel })));
 
 export const MainLayout: React.FC = () => {
-  const { beds, presets } = useTreatmentContext();
+  const { beds, presets, undo, canUndo } = useTreatmentContext();
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isDarkMode, setDarkMode] = useState(false);
   
-  // Extracted Resizing Logic
   const { sidebarWidth, isResizing, startResizing } = useSidebarResize(620);
 
-  // Initialize based on screen width: Open by default on XL screens (Desktop)
   const [isLogOpen, setLogOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth >= 1280;
@@ -40,10 +37,52 @@ export const MainLayout: React.FC = () => {
     else document.documentElement.classList.remove('dark');
   }, [isDarkMode]);
 
-  // Dynamic class generation for main content area to handle Full Screen transitions
-  // Adjusted for Tablet Portrait (md) positioning requests:
-  // 1. Normal Mode: Up 40px relative to previous -> md:pt-[calc(12px+...)] (52 - 40 = 12)
-  // 2. Full Screen: Down 30px relative to previous -> md:pt-[56px] (26 + 30 = 56)
+  // Global Keyboard Shortcut (Ctrl + Z)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        const activeEl = document.activeElement;
+        const isTyping = activeEl && (
+          activeEl.tagName === 'INPUT' || 
+          activeEl.tagName === 'TEXTAREA' || 
+          (activeEl as HTMLElement).isContentEditable
+        );
+
+        if (!isTyping && canUndo) {
+          e.preventDefault();
+          undo();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, canUndo]);
+
+  // Back Button Logic for Log Panel (Mobile)
+  useEffect(() => {
+    // Only apply history push on mobile (< 1280px where it acts as a modal/overlay)
+    if (isLogOpen && window.innerWidth < 1280) {
+      window.history.pushState({ logOpen: true }, '');
+      
+      const handlePopState = () => {
+        setLogOpen(false);
+      };
+
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [isLogOpen]);
+
+  const handleToggleLog = () => {
+    if (isLogOpen) {
+      setLogOpen(false);
+      if (window.innerWidth < 1280) window.history.back();
+    } else {
+      setLogOpen(true);
+    }
+  };
+
   const mainContentPadding = isFullScreen 
     ? 'pt-[calc(env(safe-area-inset-top)+8px)] md:pt-[56px]' 
     : `
@@ -56,11 +95,6 @@ export const MainLayout: React.FC = () => {
 
   return (
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-gray-100 dark:bg-slate-950 landscape:bg-transparent relative">
-      {/* 
-        Header Wrapper
-        - Hidden when isFullScreen is true
-        - Updated height with md:h-[52px] for tablet compactness
-      */}
       {!isFullScreen && (
         <div 
           ref={headerRef}
@@ -79,42 +113,27 @@ export const MainLayout: React.FC = () => {
             isDarkMode={isDarkMode}
             onToggleDarkMode={() => setDarkMode(!isDarkMode)}
             isLogOpen={isLogOpen}
-            onToggleLog={() => setLogOpen(prev => !prev)}
+            onToggleLog={handleToggleLog}
             onToggleFullScreen={() => setIsFullScreen(true)}
           />
         </div>
       )}
 
-      {/* 
-        Main Content Area Wrapper
-        - Handles Split Layout for Desktop (Bed List | Patient Log)
-        - Removed extra bottom padding (1.5rem) to remove white bar
-      */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Left: Bed List Container */}
         <main 
           ref={mainRef}
           className={`
             flex-1 overflow-x-auto overflow-y-auto scroll-smooth touch-pan-x touch-pan-y overscroll-contain 
             bg-gray-200 dark:bg-slate-950 landscape:bg-transparent
             transition-all duration-300 ease-in-out
-            
-            /* Base Padding */
             px-0 
             ${mainContentPadding}
             pb-[env(safe-area-inset-bottom)]
-            
-            /* Tablet/Large Phone Portrait */
             sm:px-2 
-            
-            /* Desktop/Tablet Defaults (md+) */
             md:p-4 
             md:pb-[env(safe-area-inset-bottom)]
-            
-            /* Mobile Landscape Overrides */
             landscape:px-0 
             landscape:pb-[env(safe-area-inset-bottom)]
-            
             md:landscape:px-0
             md:landscape:pb-[env(safe-area-inset-bottom)]
           `}
@@ -122,7 +141,6 @@ export const MainLayout: React.FC = () => {
           <BedLayoutContainer beds={beds} presets={presets} />
         </main>
 
-        {/* Exit Full Screen Button - Visible only in Full Screen Mode */}
         {isFullScreen && (
           <button
             onClick={() => setIsFullScreen(false)}
@@ -133,10 +151,6 @@ export const MainLayout: React.FC = () => {
           </button>
         )}
 
-        {/* 
-          Resizable Sidebar Logic (Desktop Only)
-        */}
-        {/* Resizer Handle */}
         {isLogOpen && !isFullScreen && (
           <div
             className={`hidden xl:flex w-3 hover:w-3 cursor-col-resize z-50 items-center justify-center -ml-1.5 transition-all group select-none ${isResizing ? 'bg-brand-500/10' : ''}`}
@@ -149,14 +163,6 @@ export const MainLayout: React.FC = () => {
           </div>
         )}
 
-        {/* 
-          Right: Patient Log Sidebar (Desktop)
-          - Hidden on Mobile (< XL)
-          - Hidden in Full Screen Mode
-          - Animated Width & Slide for smooth toggle
-          - Dynamic Width controlled by sidebarWidth state
-          - Added 'overflow-x-auto' to enable scrolling when shrunk
-        */}
         <aside 
           ref={sidebarRef}
           className={`
@@ -168,13 +174,9 @@ export const MainLayout: React.FC = () => {
           `}
           style={{ width: isLogOpen ? sidebarWidth : 0 }}
         >
-           {/* Inner container with min-width to maintain default size layout when shrunk */}
            <div 
              className="h-full border-l border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900"
-             style={{ 
-                minWidth: '620px', // Prevent inner content from squashing
-                width: '100%'      // Allow expansion if sidebar is wider than 620px
-             }}
+             style={{ minWidth: '620px', width: '100%' }}
            >
              <Suspense fallback={<div className="w-full h-full bg-white dark:bg-slate-900 animate-pulse" />}>
                <PatientLogPanel />
@@ -182,14 +184,16 @@ export const MainLayout: React.FC = () => {
            </div>
         </aside>
 
-        {/* Mobile/Tablet Patient Log Overlay (Visible on < XL screens) */}
         <div className={`
           fixed inset-0 z-[100] bg-white dark:bg-slate-900 transition-transform duration-300 xl:hidden flex flex-col
           ${isLogOpen ? 'translate-x-0' : 'translate-x-full'}
         `}>
            <div className="flex-1 w-full h-full relative pb-[env(safe-area-inset-bottom)]">
              <Suspense fallback={<div className="w-full h-full bg-white dark:bg-slate-900 flex items-center justify-center"><span className="text-gray-400 font-bold">로딩 중...</span></div>}>
-                <PatientLogPanel onClose={() => setLogOpen(false)} />
+                <PatientLogPanel onClose={() => {
+                    setLogOpen(false);
+                    if (window.innerWidth < 1280) window.history.back();
+                }} />
              </Suspense>
            </div>
         </div>

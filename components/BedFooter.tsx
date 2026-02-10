@@ -21,30 +21,37 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
   const isLastStep = bed.currentStepIndex === totalSteps - 1;
   const isCompleted = bed.status === BedStatus.COMPLETED;
 
-  // Completed State: Full width Clear Button
+  // Completed State: Prev Button + Clear Button
   if (isCompleted) {
     return (
       <div className="p-1 shrink-0 bg-white dark:bg-slate-800">
-        <FooterButton 
-          onClick={() => onClear(bed.id)}
-          // Height: 32px on mobile (h-[32px]), 36px on desktop (sm:h-9)
-          className="w-full py-2 h-[32px] sm:h-9 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 group"
-        >
-          <X className="w-[18px] h-[18px] group-hover:text-red-500 transition-colors" />
-          <span className="group-hover:text-slate-800 dark:group-hover:text-white transition-colors text-xs font-bold">침상 비우기</span>
-        </FooterButton>
+        <div className="flex gap-1.5 h-[32px] sm:h-9">
+          {/* 이전 단계로 복구 버튼 */}
+          <FooterButton 
+            onClick={() => onPrev && onPrev(bed.id)}
+            className="w-12 sm:w-14 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+            title="이전 단계로 복구"
+          >
+            <SkipBack className="w-[18px] h-[18px]" />
+          </FooterButton>
+
+          {/* 침상 비우기 버튼 */}
+          <FooterButton 
+            onClick={() => onClear(bed.id)}
+            className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 group"
+          >
+            <X className="w-[18px] h-[18px] group-hover:text-red-500 transition-colors" />
+            <span className="group-hover:text-slate-800 dark:group-hover:text-white transition-colors text-xs font-bold whitespace-nowrap">침상 비우기</span>
+          </FooterButton>
+        </div>
       </div>
     );
   }
 
-  // Active State: Reordered Buttons
-  // Order: [Trash] [Settings] [Prev] [Next]
+  // Active State: [Trash] [Settings] [Prev] [Next]
   return (
     <div className="p-1 shrink-0 bg-white dark:bg-slate-800">
-      {/* Container Height: 32px on mobile, 36px on desktop */}
       <div className="flex gap-1.5 h-[32px] sm:h-9">
-         
-         {/* 1. Trash Button */}
          {trashState && onTrashClick && (
            <BedTrashButton 
              trashState={trashState} 
@@ -53,7 +60,6 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
            />
          )}
 
-         {/* 2. Settings Button */}
          {onEditClick && (
            <FooterButton
              onClick={() => onEditClick(bed.id)}
@@ -64,7 +70,6 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
            </FooterButton>
          )}
 
-         {/* 3. Prev Button */}
          <FooterButton 
            onClick={() => onPrev && onPrev(bed.id)}
            disabled={bed.currentStepIndex <= 0}
@@ -74,7 +79,6 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
            <SkipBack className="w-[18px] h-[18px]" /> 
          </FooterButton>
 
-         {/* 4. Next Button */}
          <FooterButton 
            onClick={() => onNext(bed.id)}
            className={`flex-1 ${

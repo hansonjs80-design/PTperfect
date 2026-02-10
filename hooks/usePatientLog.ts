@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, isOnlineMode } from '../lib/supabase';
 import { PatientVisit } from '../types';
@@ -125,10 +126,6 @@ export const usePatientLog = () => {
 
     // DB Sync
     if (isOnlineMode() && supabase) {
-      // Omit ID to let DB generate one (if using default uuid) or use provided one
-      // Since we generated a UUID client-side, we can try to use it, OR let DB gen one and update.
-      // Here we use the client-side UUID as the primary key if the DB schema allows, or insert and get new one.
-      // The current schema uses `uuid default gen_random_uuid()`, so we can pass our ID.
       const { data, error } = await supabase
         .from('patient_visits')
         .insert([newVisit]) 
@@ -137,7 +134,6 @@ export const usePatientLog = () => {
 
       if (error) {
         console.error('Error adding visit to DB:', error);
-        // If error, we might want to flag the local entry as "unsynced" in a future update
       } else if (data) {
         // Confirm sync
         setVisits(prev => {
@@ -207,6 +203,7 @@ export const usePatientLog = () => {
     currentDate,
     setCurrentDate,
     visits,
+    setVisits,
     isLoading,
     addVisit,
     updateVisit,

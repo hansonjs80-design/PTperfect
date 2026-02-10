@@ -1,4 +1,3 @@
-
 import { BedState, Preset, QuickTreatment, PatientVisit, TreatmentStep } from '../types';
 import { useBedState } from './useBedState';
 import { useBedActions } from './useBedActions';
@@ -58,6 +57,8 @@ export const useBedManager = (
     updateBedSteps: integration.updateBedSteps,
     overrideBedFromLog: integration.overrideBedFromLog,
     moveBedState: integration.moveBedState,
+    // Added updateBedState to fix the error in TreatmentContext
+    updateBedState,
     // Utils
     jumpToStep: (bedId: number, stepIndex: number) => {}, 
     realtimeStatus

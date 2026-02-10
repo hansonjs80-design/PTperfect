@@ -37,16 +37,21 @@ export const useBedControls = (
 
   const prevStep = useCallback((bedId: number) => {
     const bed = bedsRef.current.find(b => b.id === bedId);
-    if (!bed || bed.status !== BedStatus.ACTIVE) return;
+    // ACTIVE 또는 COMPLETED 상태일 때만 이전 단계로 이동 가능
+    if (!bed || (bed.status !== BedStatus.ACTIVE && bed.status !== BedStatus.COMPLETED)) return;
     
     const preset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
     if (!preset) return;
 
-    const prevIndex = bed.currentStepIndex - 1;
+    // 만약 완료 상태라면 마지막 인덱스로 돌아가고, 아니면 현재 인덱스에서 -1
+    let prevIndex = bed.status === BedStatus.COMPLETED 
+        ? preset.steps.length - 1 
+        : bed.currentStepIndex - 1;
     
     if (prevIndex >= 0) {
       const prevStepItem = preset.steps[prevIndex];
       updateBedState(bedId, {
+        status: BedStatus.ACTIVE, // 상태를 다시 ACTIVE로 복구
         currentStepIndex: prevIndex,
         startTime: Date.now(),
         remainingTime: prevStepItem.duration,

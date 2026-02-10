@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, Dispatch, SetStateAction } from 'react';
 import { usePatientLog } from '../hooks/usePatientLog';
 import { PatientVisit } from '../types';
 
@@ -7,6 +7,7 @@ interface PatientLogContextType {
   currentDate: string;
   setCurrentDate: (date: string) => void;
   visits: PatientVisit[];
+  setVisits: Dispatch<SetStateAction<PatientVisit[]>>;
   isLoading: boolean;
   addVisit: (data?: Partial<PatientVisit>) => Promise<string>;
   updateVisit: (id: string, updates: Partial<PatientVisit>) => Promise<void>;

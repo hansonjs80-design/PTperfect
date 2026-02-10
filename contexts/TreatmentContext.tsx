@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, ReactNode, useRef, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useRef, useEffect, useCallback } from 'react';
 import { BedState, Preset, TreatmentStep, PatientVisit, QuickTreatment } from '../types';
 import { usePresetManager } from '../hooks/usePresetManager';
 import { useQuickTreatmentManager } from '../hooks/useQuickTreatmentManager';
@@ -9,6 +9,9 @@ import { usePatientLogContext } from './PatientLogContext';
 import { useTreatmentSettings } from '../hooks/useTreatmentSettings';
 import { useTreatmentUI } from '../hooks/useTreatmentUI';
 import { usePatientBedSync } from '../hooks/usePatientBedSync';
+import { useHistory } from '../hooks/useHistory';
+import { supabase, isOnlineMode } from '../lib/supabase';
+import { mapBedToDbPayload } from '../utils/bedLogic';
 
 interface MovingPatientState {
   bedId: number;
@@ -65,6 +68,10 @@ interface TreatmentContextType {
   resetAll: () => void;
   movePatient: (fromBedId: number, toBedId: number) => Promise<void>;
   
+  // Undo System
+  undo: () => Promise<boolean>;
+  canUndo: boolean;
+  
   // Exposed for Log Component usage
   updateVisitWithBedSync: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => Promise<void>;
 }
@@ -72,28 +79,18 @@ interface TreatmentContextType {
 const TreatmentContext = createContext<TreatmentContextType | undefined>(undefined);
 
 export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // 1. Core Data Managers
   const { presets, updatePresets } = usePresetManager();
   const { quickTreatments, updateQuickTreatments } = useQuickTreatmentManager();
-  
-  // 2. Settings & UI State Hooks
   const settings = useTreatmentSettings();
   const uiState = useTreatmentUI();
+  const { visits, addVisit, updateVisit: updateLogVisit, setVisits, currentDate } = usePatientLogContext();
+  const { saveSnapshot, popSnapshot, canUndo } = useHistory(20);
 
-  // 3. Patient Log Integration
-  const { visits, addVisit, updateVisit: updateLogVisit } = usePatientLogContext();
   const visitsRef = useRef(visits);
-  
-  useEffect(() => {
-    visitsRef.current = visits;
-  }, [visits]);
+  useEffect(() => { visitsRef.current = visits; }, [visits]);
 
-  // Placeholder for circular dependency resolution
-  // We need to pass a handler to useBedManager, but useBedManager creates the bedsRef we need for the handler.
-  // We use a mutable ref for the handler and update it after hooks are initialized.
   const logUpdateHandlerRef = useRef<(bedId: number, updates: Partial<PatientVisit>) => void>(() => {});
 
-  // 4. Bed Logic Manager
   const bedManager = useBedManager(
       presets,
       quickTreatments,
@@ -103,25 +100,53 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
       (bedId, updates) => logUpdateHandlerRef.current(bedId, updates)
   );
 
-  const { beds, clearBed, nextStep } = bedManager;
+  const { beds, clearBed, nextStep, updateBedState } = bedManager;
   const bedsRef = useRef(beds);
-  useEffect(() => {
-    bedsRef.current = beds;
-  }, [beds]);
+  useEffect(() => { bedsRef.current = beds; }, [beds]);
 
-  // 5. Complex Synchronization Logic (Extracted Hook)
   const { handleLogUpdate, movePatient, updateVisitWithBedSync } = usePatientBedSync(
     bedsRef,
     visitsRef,
     updateLogVisit,
     clearBed,
-    bedManager // Pass the integration methods from bedManager
+    bedManager
   );
 
-  // Update the ref so bedManager can call it
   useEffect(() => {
     logUpdateHandlerRef.current = handleLogUpdate;
   }, [handleLogUpdate]);
+
+  // Snapshot before destructive actions
+  const clearBedWithHistory = useCallback((id: number) => {
+    saveSnapshot(bedsRef.current, visitsRef.current);
+    clearBed(id);
+  }, [clearBed, saveSnapshot]);
+
+  const resetAllWithHistory = useCallback(() => {
+    saveSnapshot(bedsRef.current, visitsRef.current);
+    bedsRef.current.forEach(bed => clearBed(bed.id));
+  }, [clearBed, saveSnapshot]);
+
+  const undo = useCallback(async () => {
+    const prevState = popSnapshot();
+    if (!prevState) return false;
+
+    // 1. Restore Beds (Local & DB)
+    for (const bedState of prevState.beds) {
+      await updateBedState(bedState.id, bedState);
+    }
+
+    // 2. Restore Visits (Local & DB)
+    setVisits(prevState.visits);
+    if (isOnlineMode() && supabase) {
+      // 대량 복구는 복잡하므로, 가장 최신 상태를 Upsert 하는 방식으로 처리하거나 
+      // 개별 방문 기록을 돌려놓습니다. 여기서는 단순화를 위해 개별 upsert 진행.
+      const rows = prevState.visits.map(v => ({...v, updated_at: new Date().toISOString()}));
+      await supabase.from('patient_visits').upsert(rows);
+    }
+
+    return true;
+  }, [popSnapshot, updateBedState, setVisits]);
 
   useNotificationBridge(nextStep);
 
@@ -133,8 +158,12 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     ...settings,
     ...uiState,
     ...bedManager, 
+    clearBed: clearBedWithHistory,
+    resetAll: resetAllWithHistory,
     movePatient,
-    updateVisitWithBedSync
+    updateVisitWithBedSync,
+    undo,
+    canUndo
   };
 
   return (

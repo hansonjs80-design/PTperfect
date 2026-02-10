@@ -27,7 +27,7 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
   return (
     <div className="absolute left-0 z-10 flex items-center h-full gap-0.5 px-0.5 bg-gradient-to-r from-white via-white to-transparent dark:from-slate-900 dark:via-slate-900">
       
-      {/* Quick Clear Button (Only when at the first step, allowing immediate cancellation) */}
+      {/* Quick Clear Button (Active 상태의 0번 스텝일 때만 취소용으로 표시) */}
       {rowStatus === 'active' && activeStepIndex === 0 && onClearBed && (
           <button
             onClick={(e) => onActionClick(e, 'clear')}
@@ -38,12 +38,12 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
           </button>
       )}
 
-      {/* Prev Button (Only Active, visible after step 0) */}
-      {rowStatus === 'active' && onPrevStep && activeStepIndex > 0 && (
+      {/* Prev Button (Active 중이거나 Completed 일 때 모두 표시) */}
+      {onPrevStep && (rowStatus === 'active' ? activeStepIndex > 0 : true) && (
         <button 
             onClick={(e) => onActionClick(e, 'prev')}
             className="p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-400 hover:text-brand-600 transition-all active:scale-95"
-            title="이전 단계"
+            title="이전 단계로 복구"
         >
             <SkipBack className="w-3.5 h-3.5 fill-current" />
         </button>

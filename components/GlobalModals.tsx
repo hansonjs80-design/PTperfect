@@ -1,5 +1,5 @@
 
-import React, { Suspense, useMemo } from 'react';
+import React, { Suspense, useMemo, useEffect } from 'react';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { usePatientLogContext } from '../contexts/PatientLogContext';
 import { TreatmentStep, QuickTreatment } from '../types';
@@ -48,6 +48,35 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
 
   const { visits } = usePatientLogContext();
 
+  // --- Back Button Handling (SPA UX) ---
+  const isModalOpen = selectingBedId !== null || selectingLogId !== null || editingBedId !== null || movingPatientState !== null || isMenuOpen;
+
+  useEffect(() => {
+    if (isModalOpen) {
+      // When a modal opens, push a state to history
+      window.history.pushState({ modalOpen: true }, '');
+      
+      const handlePopState = () => {
+        // When back button is pressed, close all modals
+        setSelectingBedId(null);
+        setSelectingLogId(null);
+        setEditingBedId(null);
+        setMovingPatientState(null);
+        if (isMenuOpen) onCloseMenu();
+      };
+
+      window.addEventListener('popstate', handlePopState);
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+        // If we are unmounting but the modal is still "conceptually" open in history (e.g. forced close), 
+        // we might want to go back, but usually React handles state. 
+        // Here we just clean up the listener.
+      };
+    }
+  }, [isModalOpen, isMenuOpen, onCloseMenu, setSelectingBedId, setSelectingLogId, setEditingBedId, setMovingPatientState]);
+
+
   const mapOptionsToFlags = (options: any) => ({
     is_injection: options?.isInjection,
     is_fluid: options?.isFluid,
@@ -74,9 +103,11 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
       }
       setSelectingLogId(null);
       setSelectingBedId(null);
+      window.history.back(); // Remove the history state pushed when modal opened
     } else {
       selectPreset(bedId, presetId, options);
       setSelectingBedId(null);
+      window.history.back();
     }
   };
 
@@ -95,9 +126,11 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
        }
        setSelectingLogId(null);
        setSelectingBedId(null);
+       window.history.back();
     } else {
        startCustomPreset(bedId, name, steps, options);
        setSelectingBedId(null);
+       window.history.back();
     }
   };
 
@@ -116,9 +149,11 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
       }
       setSelectingLogId(null);
       setSelectingBedId(null);
+      window.history.back();
     } else {
       startQuickTreatment(bedId, template, options);
       setSelectingBedId(null);
+      window.history.back();
     }
   };
   
@@ -138,9 +173,11 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
        }
        setSelectingLogId(null);
        setSelectingBedId(null);
+       window.history.back();
     } else {
        startTraction(bedId, duration, options);
        setSelectingBedId(null);
+       window.history.back();
     }
   };
   
@@ -156,7 +193,14 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
       }, true);
       setSelectingLogId(null);
       setSelectingBedId(null);
+      window.history.back();
     }
+  };
+
+  // Helper to close modal and pop history
+  const closeAndPop = (setter: (val: any) => void) => {
+    setter(null);
+    window.history.back();
   };
 
   const activeLogEntry = useMemo(() => {
@@ -189,19 +233,20 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
   const editingBed = editingBedId ? getBed(editingBedId) : null;
   const editingBedSteps = editingBed ? (editingBed.customPreset?.steps || presets.find(p => p.id === editingBed.currentPresetId)?.steps || []) : [];
 
-  const isModalOpen = selectingBedId !== null || selectingLogId !== null;
+  const isSelectorOpen = selectingBedId !== null || selectingLogId !== null;
   const targetBedIdForModal = selectingBedId !== null ? selectingBedId : (selectingLogId ? 0 : null);
 
   return (
     <>
-      {/* Selector Modal (Lazy) - Conditional Render to prevent eager loading blocking */}
-      {isModalOpen && (
+      {/* Selector Modal */}
+      {isSelectorOpen && (
         <Suspense fallback={null}>
           <PresetSelectorModal 
-            isOpen={isModalOpen}
+            isOpen={isSelectorOpen}
             onClose={() => {
               setSelectingBedId(null);
               setSelectingLogId(null);
+              window.history.back();
             }}
             presets={presets}
             onSelect={handleSelectPreset}
@@ -216,12 +261,12 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         </Suspense>
       )}
 
-      {/* Bed Edit Overlay (Direct Import - OUTSIDE Suspense) */}
+      {/* Bed Edit Overlay */}
       {editingBed && (
         <BedEditOverlay 
           bed={editingBed}
           steps={editingBedSteps}
-          onClose={() => setEditingBedId(null)}
+          onClose={() => closeAndPop(setEditingBedId)}
           onToggleInjection={toggleInjection}
           onToggleFluid={toggleFluid}
           onToggleTraction={toggleTraction}
@@ -232,29 +277,35 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         />
       )}
 
-      {/* Move Modal (Lazy) */}
+      {/* Move Modal */}
       {movingPatientState !== null && (
         <Suspense fallback={null}>
           <BedMoveModal 
             fromBedId={movingPatientState.bedId}
             initialPos={{ x: movingPatientState.x, y: movingPatientState.y }}
-            onClose={() => setMovingPatientState(null)}
+            onClose={() => closeAndPop(setMovingPatientState)}
             onConfirm={(toBedId) => movePatient(movingPatientState.bedId, toBedId)}
           />
         </Suspense>
       )}
 
-      {/* Settings (Lazy) */}
+      {/* Settings */}
       {isMenuOpen && (
-        <Suspense fallback={<div className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" onClick={onCloseMenu} />}>
+        <Suspense fallback={<div className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" />}>
           <SettingsPanel 
             isOpen={isMenuOpen} 
-            onClose={onCloseMenu}
+            onClose={() => {
+              onCloseMenu();
+              window.history.back();
+            }}
             presets={presets}
             onUpdatePresets={updatePresets}
             onResetAllBeds={resetAll}
           />
-          <div className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" onClick={onCloseMenu} />
+          <div className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" onClick={() => {
+              onCloseMenu();
+              window.history.back();
+          }} />
         </Suspense>
       )}
     </>
