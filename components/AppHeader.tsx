@@ -30,7 +30,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   
   const activeButtonClass = "bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 border-brand-200 dark:border-brand-800/50 shadow-inner";
   
-  // Custom active style for Layout Toggle to distinguish from Log Toggle
+  // Custom active style for Layout Toggle to distinguish from Log Toggle (Indigo)
   const activeLayoutBtnClass = "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/50 shadow-inner";
 
   return (
@@ -110,7 +110,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             )}
           </button>
 
-          {/* Layout Toggle Button */}
+          {/* Layout Toggle Button (ArrowUpDown with Rotation) */}
           <button
             onClick={toggleLayoutMode}
             className={`${buttonClass} ${layoutMode === 'alt' ? activeLayoutBtnClass : ''}`}

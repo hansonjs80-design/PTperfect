@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, memo, useCallback } from 'react';
+import React, { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { X, Play, ChevronLeft, Eraser, Check, Clock } from 'lucide-react';
 import { Preset, TreatmentStep, QuickTreatment } from '../types';
 import { OptionToggles } from './preset-selector/OptionToggles';
@@ -31,7 +31,7 @@ interface PresetSelectorModalProps {
 export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
   isOpen,
   onClose,
-  presets,
+  presets = [], // Default empty array to prevent map errors
   onSelect,
   onCustomStart,
   onQuickStart,
@@ -66,7 +66,13 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
       }
       
       if (initialPreset) {
-        setPreviewPreset(JSON.parse(JSON.stringify(initialPreset)));
+        // Deep copy to prevent mutating the original preset in context
+        try {
+            setPreviewPreset(JSON.parse(JSON.stringify(initialPreset)));
+        } catch (e) {
+            console.error("Failed to parse initialPreset", e);
+            setPreviewPreset(null);
+        }
       } else {
         setPreviewPreset(null);
       }
@@ -75,23 +81,6 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
       setIsMultiSelectMode(true);
     }
   }, [isOpen, initialOptions, initialPreset]);
-
-  if (!isOpen || targetBedId === null) return null;
-
-  const isTractionBed = targetBedId === 11;
-  const isLogMode = targetBedId === 0;
-
-  const handleTractionStart = () => {
-    onStartTraction(targetBedId, tractionDuration, options);
-    // Removed onClose() here as the handler in GlobalModals performs history.back()
-  };
-
-  const handleConfirmStart = () => {
-    if (previewPreset) {
-      onCustomStart(targetBedId, previewPreset.name, previewPreset.steps, options);
-      // Removed onClose() here
-    }
-  };
 
   // Handle Quick Item Click (Single vs Multi logic)
   const handleQuickItemClick = useCallback((template: QuickTreatment) => {
@@ -107,14 +96,15 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
       });
     } else {
       // Immediate start in single mode
-      onQuickStart(targetBedId, template, options);
-      // Removed onClose() here
+      if (targetBedId !== null) {
+          onQuickStart(targetBedId, template, options);
+      }
     }
   }, [isMultiSelectMode, onQuickStart, targetBedId, options]);
 
   // Handle Starting Multiple Selected Items
   const handleStartSelectedQuick = () => {
-    if (selectedQuickItems.length === 0) return;
+    if (selectedQuickItems.length === 0 || targetBedId === null) return;
 
     const steps: TreatmentStep[] = selectedQuickItems.map(item => 
       createQuickStep(item.name, item.duration, item.enableTimer, item.color, item.label)
@@ -124,13 +114,31 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
     const combinedName = selectedQuickItems.map(i => i.label || i.name).join(' + ');
 
     onCustomStart(targetBedId, combinedName, steps, options);
-    // Removed onClose() here
   };
 
   const handlePresetStart = (preset: Preset) => {
-      onCustomStart(targetBedId, preset.name, preset.steps, options);
-      // Removed onClose() here
+      if (targetBedId !== null) {
+          onCustomStart(targetBedId, preset.name, preset.steps, options);
+      }
   };
+
+  const handleTractionStart = () => {
+    if (targetBedId !== null) {
+        onStartTraction(targetBedId, tractionDuration, options);
+    }
+  };
+
+  const handleConfirmStart = () => {
+    if (previewPreset && targetBedId !== null) {
+      onCustomStart(targetBedId, previewPreset.name, previewPreset.steps, options);
+    }
+  };
+
+  // Safety check: Don't render if not open or no target (unless log edit where bedId can be 0)
+  if (!isOpen || targetBedId === null) return null;
+
+  const isTractionBed = targetBedId === 11;
+  const isLogMode = targetBedId === 0;
 
   const getHeaderStyle = () => {
     if (isLogMode) return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200';
@@ -139,6 +147,9 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
     if (targetBedId >= 3) return 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300';
     return 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300';
   };
+
+  // Ensure presets is safe to map
+  const safePresets = useMemo(() => Array.isArray(presets) ? presets : [], [presets]);
 
   return (
     <div 
@@ -240,7 +251,7 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
             // Standard Preset & Quick List
             <div className="flex flex-col gap-4 pb-20">
               <PresetListView 
-                presets={presets} 
+                presets={safePresets} 
                 onSelect={handlePresetStart} 
               />
               

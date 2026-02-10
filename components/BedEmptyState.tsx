@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 
 interface BedEmptyStateProps {
@@ -9,7 +9,9 @@ interface BedEmptyStateProps {
 export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector }) => {
   const lastClickTimeRef = useRef<number>(0);
   
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation(); // Stop event from bubbling to parent container which might trigger other logic
+
     // Device Capability Check
     const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
     // Check for Tablet/Desktop width (md breakpoint = 768px)
@@ -31,14 +33,15 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector }) 
     // 350ms window for double tap
     if (timeDiff < 350 && timeDiff > 0) {
       // Double Tap Detected
-      e.preventDefault();
+      // Prevent Default is critical here to avoid ghost clicks or zooming
+      if (e.cancelable) e.preventDefault(); 
       onOpenSelector();
       lastClickTimeRef.current = 0; // Reset
     } else {
       // First Tap: Record time
       lastClickTimeRef.current = now;
     }
-  };
+  }, [onOpenSelector]);
 
   return (
     <div 
