@@ -1,5 +1,5 @@
 
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useRef } from 'react';
 import { TreatmentStep } from '../types';
 import { getStepLabel } from '../utils/bedUtils';
 import { getStepColor } from '../utils/styleUtils';
@@ -33,12 +33,46 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
 }) => {
   const [isEditingMemo, setIsEditingMemo] = useState(false);
   const colorClass = getStepColor(step, isActive, isPast, false, isCompleted);
+  const lastMemoClickRef = useRef<number>(0);
+  const lastSwapClickRef = useRef<number>(0);
 
   const handleMemoDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!onUpdateMemo) return;
     setIsEditingMemo(true);
+  };
+
+  const handleMemoTouchClick = (e: React.MouseEvent) => {
+    if (window.matchMedia('(pointer: coarse)').matches) {
+        const now = Date.now();
+        if (now - lastMemoClickRef.current < 350) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (onUpdateMemo) setIsEditingMemo(true);
+            lastMemoClickRef.current = 0;
+        } else {
+            lastMemoClickRef.current = now;
+        }
+    }
+  };
+
+  const handleSwapDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSwapRequest && onSwapRequest(bedId, index);
+  };
+
+  const handleSwapTouchClick = (e: React.MouseEvent) => {
+    if (window.matchMedia('(pointer: coarse)').matches) {
+        const now = Date.now();
+        if (now - lastSwapClickRef.current < 350) {
+            e.stopPropagation();
+            onSwapRequest && onSwapRequest(bedId, index);
+            lastSwapClickRef.current = 0;
+        } else {
+            lastSwapClickRef.current = now;
+        }
+    }
   };
 
   const handleMemoSave = (val: string) => {
@@ -56,10 +90,8 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
           ${isActive ? 'z-10 shadow-md transform scale-[1.02] rounded-lg my-[-1px]' : ''}
           ${isSelectedForSwap ? 'z-20' : ''}
         `}
-        onDoubleClick={(e) => {
-          e.stopPropagation();
-          onSwapRequest && onSwapRequest(bedId, index);
-        }}
+        onDoubleClick={handleSwapDoubleClick}
+        onClick={handleSwapTouchClick}
       >
         {/* Step Visual Block */}
         <div className={`
@@ -67,21 +99,12 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
             ${colorClass}
             ${isSelectedForSwap ? 'ring-4 ring-indigo-500 ring-inset shadow-inner' : ''}
         `}>
-            {/* 
-              Font Size Increased for better readability on Mobile:
-              Mobile: text-base (was text-sm)
-              Small Phones (xs): text-lg (was text-base)
-              Tablet (sm): text-xl (Maintained)
-              Desktop (lg): text-2xl (Maintained)
-            */}
             <span className={`font-black text-base xs:text-lg sm:text-xl lg:text-2xl leading-none text-center whitespace-nowrap px-0.5 ${isActive ? 'scale-110 drop-shadow-sm' : 'opacity-90'}`}>
               {getStepLabel(step)}
             </span>
             
-            {/* Active Indicator Pulse */}
             {isActive && <div className="absolute inset-0 bg-white/10 animate-pulse pointer-events-none" />}
             
-            {/* Swap Overlay - Only covers the treatment part */}
             {isSelectedForSwap && (
               <div className="absolute inset-0 bg-indigo-500/90 flex items-center justify-center animate-in fade-in duration-200 z-10">
                  <ArrowRightLeft className="w-6 h-6 sm:w-8 sm:h-8 text-white animate-bounce drop-shadow-md" strokeWidth={2.5} />
@@ -89,7 +112,7 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
             )}
         </div>
 
-        {/* Memo Area - Integrated into the bottom with reduced height */}
+        {/* Memo Area */}
         <div 
           className={`
             h-[18px] sm:h-[26px] flex items-center justify-center px-1 cursor-pointer transition-colors select-none border-t border-black/5 dark:border-white/5
@@ -99,6 +122,7 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
             }
           `}
           onDoubleClick={handleMemoDoubleClick}
+          onClick={(e) => { e.stopPropagation(); handleMemoTouchClick(e); }}
         >
           {memo ? (
             <span className="text-[10px] sm:text-xs font-bold leading-tight text-center truncate w-full">

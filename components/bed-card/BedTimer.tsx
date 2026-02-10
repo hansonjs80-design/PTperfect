@@ -10,6 +10,7 @@ interface BedTimerProps {
   isOvertime: boolean;
   isNearEnd: boolean;
   onTimerClick: (e: React.MouseEvent) => void;
+  onTimerTouchClick?: (e: React.MouseEvent) => void;
   onTogglePause: (e: React.MouseEvent) => void;
 }
 
@@ -19,6 +20,7 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
   isOvertime, 
   isNearEnd, 
   onTimerClick, 
+  onTimerTouchClick,
   onTogglePause 
 }) => {
   if (!isTimerActive) {
@@ -37,13 +39,9 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
     <div 
       className={`flex items-center justify-end gap-[5px] sm:gap-[10px] cursor-pointer transition-all scale-[0.95] lg:scale-100 origin-right lg:origin-center ${bed.isPaused ? 'opacity-50 grayscale' : ''}`}
     >
-      {/* 
-        Timer Text
-        - Gap logic: gap-[5px] on mobile, restored to gap-[10px] on sm+
-        - Tracking: tracking-[-0.08em] on mobile for extra tightness, tracking-tighter on sm+
-      */}
       <span 
         onDoubleClick={onTimerClick}
+        onClick={onTimerTouchClick}
         className={`font-black text-3xl lg:text-5xl tracking-[-0.08em] sm:tracking-tighter leading-[0.75] tabular-nums ${
         isOvertime ? 'text-red-500 animate-pulse' : 
         isNearEnd ? 'text-orange-500 animate-pulse' :
@@ -52,7 +50,6 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
         {isOvertime && '+'}{formatTime(bed.remainingTime)}
       </span>
 
-      {/* Pause Button */}
       <button 
         onClick={onTogglePause}
         className={`shrink-0 p-1.5 lg:p-2 rounded-full transition-colors active:scale-90 shadow-sm ${

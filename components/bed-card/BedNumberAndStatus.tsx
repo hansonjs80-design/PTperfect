@@ -8,31 +8,34 @@ import { BedStatusBadges } from '../BedStatusBadges';
 interface BedNumberAndStatusProps {
   bed: BedState;
   onMovePatient: (e: React.MouseEvent) => void;
+  onMovePatientClick?: (e: React.MouseEvent) => void;
   onEditStatus: (e: React.MouseEvent) => void;
 }
 
-export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({ bed, onMovePatient, onEditStatus }) => {
+export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({ 
+  bed, 
+  onMovePatient, 
+  onMovePatientClick,
+  onEditStatus 
+}) => {
   const isBedT = bed.id === 11;
   const isIdle = bed.status === BedStatus.IDLE;
   
   const hasActiveBadges = bed.isInjection || bed.isFluid || bed.isManual || bed.isESWT || bed.isTraction;
   const showPlaceholder = !hasActiveBadges && bed.status === BedStatus.ACTIVE;
 
-  // Desktop/Tablet (>= 768px): Single Click triggers action
   const handleSingleClick = (e: React.MouseEvent, action: (e: React.MouseEvent) => void) => {
     if (window.innerWidth >= 768) {
       action(e);
     }
   };
 
-  // Mobile (< 768px): Double Click triggers action
   const handleDoubleClick = (e: React.MouseEvent, action: (e: React.MouseEvent) => void) => {
     if (window.innerWidth < 768) {
       action(e);
     }
   };
 
-  // Tooltip helper
   const getTooltip = (baseText: string) => {
     if (typeof window !== 'undefined') {
         return window.innerWidth >= 768 ? `클릭하여 ${baseText}` : `더블클릭하여 ${baseText}`;
@@ -45,7 +48,10 @@ export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({ bed
       {/* Bed Number */}
       <div 
         className={`flex items-center justify-center transition-transform select-none ${isIdle ? 'cursor-default' : 'cursor-pointer active:scale-95'}`}
-        onClick={isIdle ? undefined : (e) => handleSingleClick(e, onMovePatient)}
+        onClick={isIdle ? undefined : (e) => {
+            if (onMovePatientClick) onMovePatientClick(e);
+            handleSingleClick(e, onMovePatient);
+        }}
         onDoubleClick={isIdle ? undefined : (e) => handleDoubleClick(e, onMovePatient)}
         title={isIdle ? undefined : getTooltip("환자 이동")}
       >
@@ -54,7 +60,7 @@ export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({ bed
         </span>
       </div>
 
-      {/* Status Icons Area - Adjusted for 15% reduction on Desktop (sm) */}
+      {/* Status Icons Area */}
       <div 
         className={`flex items-center justify-center cursor-pointer rounded-xl transition-all duration-200 min-w-[26px] sm:min-w-[37px] min-h-[33px] sm:min-h-[37px] hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/20`}
         onClick={(e) => handleSingleClick(e, onEditStatus)}
@@ -63,7 +69,6 @@ export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({ bed
       >
         <BedStatusBadges bed={bed} />
         
-        {/* Placeholder if Active but no icons: Faint Ellipsis */}
         {showPlaceholder && (
            <MoreHorizontal 
              className="w-6 h-6 text-slate-900/10 dark:text-white/10" 

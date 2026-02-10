@@ -1,5 +1,5 @@
 
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useRef } from 'react';
 import { BedState, BedStatus, TreatmentStep } from '../types';
 import { getBedHeaderStyles } from '../utils/styleUtils';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
@@ -41,16 +41,51 @@ export const BedHeader = memo(({
   const { setMovingPatientState } = useTreatmentContext();
   const [isEditingTimer, setIsEditingTimer] = useState(false);
   const [statusMenuPos, setStatusMenuPos] = useState<{x: number, y: number} | null>(null);
+  
+  // Refs for manual double tap detection on mobile
+  const lastHeaderClickRef = useRef<number>(0);
+  const lastTimerClickRef = useRef<number>(0);
+  const lastBedNumClickRef = useRef<number>(0);
 
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
   const isOvertime = isTimerActive && bed.remainingTime <= 0;
   const isNearEnd = isTimerActive && bed.remainingTime > 0 && bed.remainingTime <= 60;
   
+  const handleHeaderDoubleClick = (e: React.MouseEvent) => {
+    if (onEditClick) onEditClick(bed.id);
+  };
+
+  const handleHeaderTouchClick = (e: React.MouseEvent) => {
+    if (window.matchMedia('(pointer: coarse)').matches) {
+        const now = Date.now();
+        if (now - lastHeaderClickRef.current < 350) {
+            if (onEditClick) onEditClick(bed.id);
+            lastHeaderClickRef.current = 0;
+        } else {
+            lastHeaderClickRef.current = now;
+        }
+    }
+  };
+
   const handleTimerDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!isTimerActive || !onUpdateDuration) return;
     setIsEditingTimer(true);
+  };
+
+  const handleTimerTouchClick = (e: React.MouseEvent) => {
+    if (window.matchMedia('(pointer: coarse)').matches) {
+        const now = Date.now();
+        if (now - lastTimerClickRef.current < 350) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (isTimerActive && onUpdateDuration) setIsEditingTimer(true);
+            lastTimerClickRef.current = 0;
+        } else {
+            lastTimerClickRef.current = now;
+        }
+    }
   };
 
   const handleTimerSave = (newSeconds: number) => {
@@ -66,9 +101,24 @@ export const BedHeader = memo(({
   const handleBedNumberDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // 비어있는 배드는 이동 창을 띄우지 않음
     if (bed.status === BedStatus.IDLE) return;
     setMovingPatientState({ bedId: bed.id, x: e.clientX, y: e.clientY });
+  };
+
+  const handleBedNumberTouchClick = (e: React.MouseEvent) => {
+    if (window.matchMedia('(pointer: coarse)').matches) {
+        const now = Date.now();
+        if (now - lastBedNumClickRef.current < 350) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (bed.status !== BedStatus.IDLE) {
+               setMovingPatientState({ bedId: bed.id, x: e.clientX, y: e.clientY });
+            }
+            lastBedNumClickRef.current = 0;
+        } else {
+            lastBedNumClickRef.current = now;
+        }
+    }
   };
 
   const handleStatusClick = (e: React.MouseEvent) => {
@@ -79,26 +129,29 @@ export const BedHeader = memo(({
 
   return (
     <>
-      {/* Mobile: py-0.5 (Reduced), Tablet/Desktop: sm:py-1 (Restored) */}
-      <div className={`flex items-center justify-between px-1.5 sm:px-2 py-0.5 sm:py-1 lg:px-3 lg:py-3 shrink-0 relative transition-colors ${getBedHeaderStyles(bed)}`}>
+      <div 
+        className={`flex items-center justify-between px-1.5 sm:px-2 py-0.5 sm:py-1 lg:px-3 lg:py-3 shrink-0 relative transition-colors ${getBedHeaderStyles(bed)}`}
+        onDoubleClick={handleHeaderDoubleClick}
+        onClick={handleHeaderTouchClick}
+      >
         
         {/* Left: Bed Number & Status Icons */}
         <BedNumberAndStatus 
           bed={bed} 
-          onMovePatient={handleBedNumberDoubleClick} 
+          onMovePatient={handleBedNumberDoubleClick}
+          onMovePatientClick={handleBedNumberTouchClick}
           onEditStatus={handleStatusClick} 
         />
 
         {/* Right Section: Timer & Actions */}
-        {/* Removed pl-2 on mobile, reduced gap on mobile */}
         <div className="flex-1 flex justify-end items-center gap-0 sm:gap-1 lg:gap-2 pl-0 sm:pl-2">
-          
           <BedTimer 
             bed={bed}
             isTimerActive={isTimerActive}
             isOvertime={isOvertime}
             isNearEnd={isNearEnd}
             onTimerClick={handleTimerDoubleClick}
+            onTimerTouchClick={handleTimerTouchClick}
             onTogglePause={handleTogglePause}
           />
         </div>

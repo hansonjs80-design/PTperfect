@@ -1,5 +1,5 @@
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useRef } from 'react';
 import { BedState, BedStatus, Preset } from '../types';
 import { BedHeader } from './BedHeader';
 import { BedContent } from './BedContent';
@@ -56,10 +56,26 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     bed.status, bed.isInjection, bed.isFluid, bed.isESWT, bed.isTraction, bed.isManual, isOvertime, isNearEnd
   ]);
 
+  const lastClickTimeRef = useRef<number>(0);
+
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setEditingBedId(bed.id);
+  };
+
+  const handleTouchClick = (e: React.MouseEvent) => {
+    if (window.matchMedia('(pointer: coarse)').matches) {
+      const now = Date.now();
+      if (now - lastClickTimeRef.current < 350) {
+        e.preventDefault();
+        e.stopPropagation();
+        setEditingBedId(bed.id);
+        lastClickTimeRef.current = 0;
+      } else {
+        lastClickTimeRef.current = now;
+      }
+    }
   };
 
   return (
@@ -88,6 +104,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
             <div 
               className="w-full h-full min-h-0"
               onDoubleClick={handleDoubleClick}
+              onClick={handleTouchClick}
             >
               <BedContent 
                 steps={steps}
