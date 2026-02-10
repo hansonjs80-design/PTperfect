@@ -29,6 +29,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = ({
 }) => {
   const [menuPos, setMenuPos] = useState<{x: number, y: number} | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
+  const lastClickTimeRef = useRef<number>(0);
   const { handleGridKeyDown } = useGridNavigation(8);
 
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent, isKeyboard: boolean = false) => {
@@ -44,15 +45,26 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = ({
     }
   };
 
-  const handleSingleClick = (e: React.MouseEvent) => {
+  // Unified click handler: Desktop (Single Click), Mobile (Manual Double Tap)
+  const handleInteraction = (e: React.MouseEvent) => {
+    // 1. Desktop & Tablet (Width >= 768px) -> Single Click
     if (window.innerWidth >= 768) {
       executeInteraction(e);
+      return;
     }
-  };
 
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    if (window.innerWidth < 768) {
+    // 2. Mobile (Width < 768px) -> Manual Double Tap Detection
+    // Native onDoubleClick is unreliable on mobile due to zoom/delay/viewport handling
+    const now = Date.now();
+    const timeDiff = now - lastClickTimeRef.current;
+
+    if (timeDiff < 350 && timeDiff > 0) {
+      // Double tap detected
       executeInteraction(e);
+      lastClickTimeRef.current = 0; // Reset
+    } else {
+      // First tap
+      lastClickTimeRef.current = now;
     }
   };
 
@@ -74,7 +86,6 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = ({
         const skipSync = rowStatus !== 'active';
         onUpdate(visit.id, { [key]: newVal }, skipSync);
     }
-    // Don't close menu immediately to allow multiple toggles, user clicks elsewhere to close
   };
 
   const menuTitle = rowStatus === 'active' ? "상태 변경 (배드 연동)" : "상태 변경 (단순 기록)";
@@ -87,17 +98,24 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = ({
       visit.is_traction
   );
 
+  // Helper for title (tooltip)
+  const getTitle = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        return `더블탭하여 상태 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`;
+    }
+    return `클릭하여 상태 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`;
+  };
+
   return (
     <>
         <div 
             ref={cellRef}
             className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:ring-2 focus:ring-sky-400 focus:z-10"
-            onClick={handleSingleClick}
-            onDoubleClick={handleDoubleClick}
+            onClick={handleInteraction}
             onKeyDown={handleKeyDown}
             tabIndex={0}
             data-grid-id={gridId}
-            title={`클릭하여 상태 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`}
+            title={getTitle()}
         >
             {hasActiveStatus ? (
                 <PatientStatusIcons visit={visit!} />
