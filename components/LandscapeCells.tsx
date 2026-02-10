@@ -54,21 +54,21 @@ export const LandscapeEmptyCell: React.FC = memo(() => {
   };
 
   return (
-    <div className="w-full h-full flex gap-1.5 lg:gap-3 p-1 lg:p-0">
+    <div className="w-full h-full flex gap-1.5 lg:gap-3 p-1 lg:p-0 min-h-[120px] sm:min-h-full">
       {/* Undo Button */}
       <button 
         onClick={(e) => handleOpenPopup(e, 'undo')}
         disabled={!canUndo}
         className={`
-          flex-1 h-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all duration-300
+          flex-1 h-full rounded-2xl flex flex-col items-center justify-center gap-2 transition-all duration-300 shadow-sm
           ${canUndo 
-            ? 'border-indigo-200 dark:border-indigo-900/30 bg-indigo-50/30 dark:bg-indigo-950/10 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 group' 
-            : 'border-gray-200 dark:border-slate-800 bg-gray-50/30 dark:bg-slate-900/10 opacity-30 cursor-not-allowed'}
+            ? 'bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 group shadow-md' 
+            : 'bg-slate-50 dark:bg-slate-800/50 opacity-50 cursor-not-allowed'}
         `}
         title="되돌리기 (Ctrl + Z)"
       >
-        <div className={`p-2 lg:p-3 rounded-full transition-all ${canUndo ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-500 group-hover:scale-110' : 'text-gray-300'}`}>
-          <Undo2 className="w-5 h-5 lg:w-7 lg:h-7" />
+        <div className={`p-2 lg:p-3 rounded-full transition-all ${canUndo ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-500 group-hover:scale-110' : 'bg-slate-200 dark:bg-slate-700 text-gray-400'}`}>
+          <Undo2 className="w-5 h-5 lg:w-6 lg:h-6" />
         </div>
         <span className={`font-black text-[10px] lg:text-xs uppercase tracking-widest ${canUndo ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400'}`}>
           되돌리기
@@ -80,14 +80,14 @@ export const LandscapeEmptyCell: React.FC = memo(() => {
         onClick={(e) => handleOpenPopup(e, 'clear')}
         disabled={activeBedsCount === 0}
         className={`
-          flex-1 h-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all duration-300
+          flex-1 h-full rounded-2xl flex flex-col items-center justify-center gap-2 transition-all duration-300 shadow-sm
           ${activeBedsCount > 0 
-            ? 'border-red-200 dark:border-red-900/30 bg-red-50/30 dark:bg-red-950/10 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 group' 
-            : 'border-gray-200 dark:border-slate-800 bg-gray-50/30 dark:bg-slate-900/10 opacity-30 cursor-not-allowed'}
+            ? 'bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 group shadow-md' 
+            : 'bg-slate-50 dark:bg-slate-800/50 opacity-50 cursor-not-allowed'}
         `}
       >
-        <div className={`p-2 lg:p-3 rounded-full transition-all ${activeBedsCount > 0 ? 'bg-red-100 dark:bg-red-900/40 text-red-500 group-hover:scale-110' : 'text-gray-300'}`}>
-          <Trash2 className="w-5 h-5 lg:w-7 lg:h-7" />
+        <div className={`p-2 lg:p-3 rounded-full transition-all ${activeBedsCount > 0 ? 'bg-red-100 dark:bg-red-900/40 text-red-500 group-hover:scale-110' : 'bg-slate-200 dark:bg-slate-700 text-gray-400'}`}>
+          <Trash2 className="w-5 h-5 lg:w-6 lg:h-6" />
         </div>
         <span className={`font-black text-[10px] lg:text-xs uppercase tracking-widest ${activeBedsCount > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-400'}`}>
           일괄 비우기
