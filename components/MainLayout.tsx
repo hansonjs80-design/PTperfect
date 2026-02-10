@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, Suspense } from 'react';
+import React, { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { Minimize, GripVertical } from 'lucide-react';
 import { useHeaderScroll } from '../hooks/useHeaderScroll';
 import { AppHeader } from './AppHeader';
@@ -63,6 +63,9 @@ export const MainLayout: React.FC = () => {
       xl:pt-[calc(72px+env(safe-area-inset-top)+1rem)]
       md:landscape:pt-2
     `;
+
+  // Memoize handleCloseMenu to prevent GlobalModals useEffect from re-triggering constantly
+  const handleCloseMenu = useCallback(() => setMenuOpen(false), []);
 
   return (
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-gray-100 dark:bg-slate-950 landscape:bg-transparent relative">
@@ -172,7 +175,7 @@ export const MainLayout: React.FC = () => {
 
       <GlobalModals 
         isMenuOpen={isMenuOpen} 
-        onCloseMenu={() => setMenuOpen(false)} 
+        onCloseMenu={handleCloseMenu} 
         presets={presets}
       />
     </div>

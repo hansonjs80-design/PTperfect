@@ -57,9 +57,11 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
 
   useEffect(() => {
     if (isModalOpen) {
-      // When a modal opens, push a state to history.
-      // IMPORTANT: Preserve existing state (like logOpen) so popping back doesn't close the Log.
-      window.history.pushState({ ...window.history.state, modalOpen: true }, '');
+      // Prevent duplicate history entries if component re-renders while modal is open
+      // This is crucial because timer updates cause frequent re-renders of parent components
+      if (!window.history.state?.modalOpen) {
+        window.history.pushState({ ...window.history.state, modalOpen: true }, '');
+      }
       
       const handlePopState = () => {
         // When back button is pressed (or history popped), close all modals
