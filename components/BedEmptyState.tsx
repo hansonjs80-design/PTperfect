@@ -11,16 +11,19 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector }) 
   
   const handleClick = (e: React.MouseEvent) => {
     // Device Capability Check
-    // 'coarse' pointer usually indicates a touch device (Mobile/Tablet)
     const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+    // Check for Tablet/Desktop width (md breakpoint = 768px)
+    const isTabletOrDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
 
-    if (!isTouchDevice) {
-      // Desktop (Mouse): Single Click triggers action immediately
+    // Single Click Action if:
+    // 1. Not a touch device (Desktop Mouse)
+    // 2. Touch device but large screen (Tablet) -> User requested single tap for tablet
+    if (!isTouchDevice || isTabletOrDesktop) {
       onOpenSelector();
       return;
     }
 
-    // Mobile (Touch): Implement Manual Double Tap Detection
+    // Mobile (Touch & Small Screen): Implement Manual Double Tap Detection
     // Native onDoubleClick is unreliable on some mobile browsers due to zoom delays or event handling
     const now = Date.now();
     const timeDiff = now - lastClickTimeRef.current;
