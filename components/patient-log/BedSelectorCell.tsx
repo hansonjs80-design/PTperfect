@@ -44,6 +44,7 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const cellRef = useRef<HTMLDivElement>(null);
+  const lastClickTimeRef = useRef<number>(0);
 
   const { handleGridKeyDown } = useGridNavigation(8);
 
@@ -107,6 +108,7 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
         if (window.innerWidth >= 768) {
             setActiveConfirmPos(clickPos);
         } else {
+            // Mobile uses native confirm for better UX in this specific dangerous action
             if (window.confirm("방번호를 변경하시겠습니까?")) {
                 setMode('select_target');
             }
@@ -116,15 +118,25 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
     setMode('menu');
   };
 
-  const handleSingleClick = (e: React.MouseEvent) => {
+  // Unified interaction handler: Single Click (Desktop) vs Double Tap (Mobile)
+  const handleInteraction = (e: React.MouseEvent) => {
+    // 1. Desktop & Tablet (Width >= 768px) -> Single Click
     if (window.innerWidth >= 768) {
       executeInteraction(e);
+      return;
     }
-  };
 
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    if (window.innerWidth < 768) {
+    // 2. Mobile (Width < 768px) -> Manual Double Tap Detection
+    const now = Date.now();
+    const timeDiff = now - lastClickTimeRef.current;
+
+    if (timeDiff < 350 && timeDiff > 0) {
+      // Double tap detected
       executeInteraction(e);
+      lastClickTimeRef.current = 0; // Reset
+    } else {
+      // First tap
+      lastClickTimeRef.current = now;
     }
   };
 
@@ -227,20 +239,25 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
     return null;
   };
 
+  const getTitle = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        return "더블탭하여 수정";
+    }
+    return !value ? "클릭하여 배드 선택" : (rowStatus === 'active' ? "클릭하여 방번호 변경" : "클릭하여 수정/배정 메뉴 열기");
+  };
+
   return (
     <>
         <div 
             ref={cellRef}
-            onClick={handleSingleClick}
-            onDoubleClick={handleDoubleClick}
+            onClick={handleInteraction}
             onKeyDown={handleContainerKeyDown}
             tabIndex={0}
             data-grid-id={gridId}
             className={`w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors group select-none outline-none focus:ring-2 focus:ring-sky-400 focus:outline-none focus:z-10 ${className}`}
-            title={!value ? "클릭하여 배드 선택" : (rowStatus === 'active' ? "클릭하여 방번호 변경" : "클릭하여 수정/배정 메뉴 열기")}
+            title={getTitle()}
         >
             {value ? (
-                // Updated Font Size: text-lg sm:text-xl xl:text-sm
                 <span className={`text-lg sm:text-xl xl:text-sm font-black group-hover:scale-110 transition-transform ${value === 11 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>
                 {value === 11 ? 'T' : value}
                 </span>
