@@ -43,7 +43,10 @@ export const LandscapeLayout: React.FC<BedLayoutProps> = memo(({ beds, presets }
   }, [beds, presets, gridIds]);
 
   return (
-    <div className="block w-full h-full overflow-x-auto overflow-y-auto custom-scrollbar pb-[120px] px-0">
+    // Changed: Removed overflow-y-auto to prevent double scrollbars with MainLayout.
+    // Kept overflow-x-auto for horizontal scrolling if needed.
+    // Added pb-[120px] to ensure bottom content isn't hidden.
+    <div className="block w-full h-full overflow-x-auto custom-scrollbar pb-[120px] px-0">
       <div className="
         grid content-start
         gap-y-[5px] gap-x-[5px] sm:gap-y-[5px] sm:gap-x-[5px] md:gap-y-[20px]
@@ -56,8 +59,8 @@ export const LandscapeLayout: React.FC<BedLayoutProps> = memo(({ beds, presets }
         /* Reset translations for landscape to avoid shifting */
         translate-x-[25px] translate-y-[10px] md:landscape:translate-y-0 lg:translate-x-0 lg:translate-y-0
         
-        /* Reset all negative margins/paddings for desktop */
-        md:-mt-[15px] md:landscape:mt-0 md:landscape:pt-0 lg:mt-0 lg:pt-0
+        /* Reset margins. Use pt-2 instead of pt-0 to prevent clipping of top shadows/borders */
+        md:-mt-[15px] md:landscape:mt-0 md:landscape:pt-2 lg:mt-0 lg:pt-2
       ">
         {gridItems}
       </div>
