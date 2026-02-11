@@ -58,13 +58,13 @@ export const MainLayout: React.FC = () => {
   // Header Heights:
   // Mobile Portrait: ~62px
   // Tablet Portrait (md): 52px
-  // Tablet Landscape (landscape): 48px (2.5rem)
+  // Tablet Landscape (landscape): 48px (3rem) - Updated to match AppHeader h-12
   // Desktop (xl / lg:landscape): 72px
   
   // Target Gap: 20px
   
   const mainContentPaddingTop = isFullScreen 
-    ? 'pt-[env(safe-area-inset-top)] md:portrait:pt-[calc(env(safe-area-inset-top)+30px)] md:landscape:pt-[70px]' 
+    ? 'pt-[env(safe-area-inset-top)] md:portrait:pt-[calc(env(safe-area-inset-top)+30px)] lg:landscape:pt-[70px]' 
     : `
       /* Mobile Portrait Base */
       pt-[calc(62px+env(safe-area-inset-top)+20px)]
@@ -72,8 +72,8 @@ export const MainLayout: React.FC = () => {
       /* Tablet Portrait: Header 52px + 20px */
       md:pt-[calc(52px+env(safe-area-inset-top)+20px)]
 
-      /* Tablet/Mobile Landscape: Header 48px + 20px */
-      landscape:pt-[calc(2.5rem+env(safe-area-inset-top)+20px)]
+      /* Tablet/Mobile Landscape: Header 48px (3rem) + 20px */
+      landscape:pt-[calc(3rem+env(safe-area-inset-top)+20px)]
 
       /* Desktop / Large Landscape: Header 72px + 20px */
       /* Note: We force header to 72px on lg:landscape in AppHeader */
@@ -97,8 +97,8 @@ export const MainLayout: React.FC = () => {
             h-[calc(62px+env(safe-area-inset-top))]
             md:h-[calc(52px+env(safe-area-inset-top))]
             
-            /* Landscape Defaults (Mobile/Tablet) */
-            landscape:h-[calc(2.5rem+env(safe-area-inset-top))]
+            /* Landscape Defaults (Mobile/Tablet): Matches h-12 (3rem) */
+            landscape:h-[calc(3rem+env(safe-area-inset-top))]
             
             /* Desktop Sizes */
             xl:h-[calc(72px+env(safe-area-inset-top))]
