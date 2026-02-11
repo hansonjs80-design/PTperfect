@@ -42,7 +42,7 @@ export const LandscapeLayout: React.FC<BedLayoutProps> = memo(({ beds, presets }
     <div className="block w-full h-full overflow-x-auto overflow-y-auto custom-scrollbar pb-0 px-0">
       <div className="
         grid content-start
-        gap-y-[5px] gap-x-[5px] sm:gap-y-[5px] sm:gap-x-[5px]
+        gap-y-[5px] gap-x-[5px] sm:gap-y-[5px] sm:gap-x-[5px] md:gap-y-[20px]
         lg:gap-y-6 lg:gap-x-1.5 
         grid-cols-4 lg:grid-cols-[1fr_1fr_0px_1fr_1fr]
         min-w-[170vw] px-2 pl-[28px] pt-0
