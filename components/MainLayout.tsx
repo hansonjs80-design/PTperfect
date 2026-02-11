@@ -54,15 +54,25 @@ export const MainLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, canUndo]);
 
-  const mainContentPadding = isFullScreen 
-    ? 'pt-[calc(env(safe-area-inset-top)+8px)] md:pt-[56px]' 
+  // --- Dynamic Padding Logic ---
+  
+  // 1. Top Padding (Header Compensation)
+  const mainContentPaddingTop = isFullScreen 
+    ? 'pt-[env(safe-area-inset-top)]' // Full Screen: No extra padding, just safe area
     : `
       pt-[calc(62px+env(safe-area-inset-top)+1rem)] 
-      landscape:pt-[calc(2.5rem+env(safe-area-inset-top))]
+      landscape:pt-[calc(2.5rem+env(safe-area-inset-top)+0.5rem)]
       md:pt-[calc(12px+env(safe-area-inset-top)+1rem)]
       xl:pt-[calc(72px+env(safe-area-inset-top)+1rem)]
       md:landscape:pt-2
     `;
+
+  // 2. Bottom Padding (Footer/Browser UI Compensation)
+  // Normal Mode: Add huge padding (5rem ~ 80px) to ensure last card scrolls clearly above browser bottom bar
+  // Full Screen: Minimal padding (just safe area) to remove "bars"
+  const mainContentPaddingBottom = isFullScreen
+    ? 'pb-[env(safe-area-inset-bottom)]'
+    : 'pb-[calc(env(safe-area-inset-bottom)+5rem)] md:pb-[env(safe-area-inset-bottom)]';
 
   // Memoize handleCloseMenu to prevent GlobalModals useEffect from re-triggering constantly
   const handleCloseMenu = useCallback(() => setMenuOpen(false), []);
@@ -101,15 +111,12 @@ export const MainLayout: React.FC = () => {
             bg-gray-200 dark:bg-slate-950 landscape:bg-transparent
             transition-all duration-300 ease-in-out
             px-0 
-            ${mainContentPadding}
-            pb-[env(safe-area-inset-bottom)]
+            ${mainContentPaddingTop}
+            ${mainContentPaddingBottom}
             sm:px-2 
             md:p-4 
-            md:pb-[env(safe-area-inset-bottom)]
             landscape:px-0 
-            landscape:pb-[env(safe-area-inset-bottom)]
             md:landscape:px-0
-            md:landscape:pb-[env(safe-area-inset-bottom)]
           `}
         >
           <BedLayoutContainer beds={beds} presets={presets} />

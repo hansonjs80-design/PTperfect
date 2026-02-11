@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, RefObject } from 'react';
 
 // Define the breakpoint for switching between mobile (absolute/scroll-away) and desktop (relative/fixed)
@@ -23,11 +24,16 @@ export const useHeaderScroll = (
       if (!ticking.current) {
         window.requestAnimationFrame(() => {
           const currentScrollY = scrollContainer.scrollTop;
-          const isMobile = window.innerWidth < DESKTOP_BREAKPOINT;
+          
+          // Determine if we should apply mobile scroll behavior
+          // 1. Width < 768px (Standard Mobile)
+          // 2. Landscape Orientation on Mobile (Width might be > 768, but Height is small, e.g. < 600px)
+          const isMobileWidth = window.innerWidth < DESKTOP_BREAKPOINT;
+          const isMobileLandscape = window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 600;
+          const isMobileBehavior = isMobileWidth || isMobileLandscape;
 
-          // On Desktop/Tablet (Portrait & Landscape), always reset to visible
-          // This ensures the header is sticky/relative and doesn't hide on scroll
-          if (!isMobile) {
+          // On Desktop/Tablet (Portrait & Large Landscape), always reset to visible
+          if (!isMobileBehavior) {
             header.style.transform = 'translate3d(0, 0, 0)';
             currentTranslateY.current = 0;
             lastScrollY.current = currentScrollY;
@@ -80,9 +86,12 @@ export const useHeaderScroll = (
       scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
     }
 
-    // Handle Resize to reset transform when crossing the breakpoint
+    // Handle Resize to reset transform when switching modes
     const handleResize = () => {
-       if (window.innerWidth >= DESKTOP_BREAKPOINT && headerRef.current) {
+       const isMobileWidth = window.innerWidth < DESKTOP_BREAKPOINT;
+       const isMobileLandscape = window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 600;
+       
+       if (!isMobileWidth && !isMobileLandscape && headerRef.current) {
          headerRef.current.style.transform = 'translate3d(0, 0, 0)';
        }
     };
