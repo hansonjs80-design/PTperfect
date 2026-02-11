@@ -196,11 +196,19 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
           </button>
         </div>
         
-        {/* Options Area */}
-        <OptionToggles options={options} setOptions={setOptions} />
+        {/* Options Area (Visible on Portrait/Desktop, Hidden on Mobile Landscape) */}
+        <div className="landscape:hidden lg:landscape:block shrink-0">
+            <OptionToggles options={options} setOptions={setOptions} />
+        </div>
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-slate-950 p-2 sm:p-3 relative">
+          
+          {/* Options Area (Visible ONLY on Mobile Landscape inside scroll) */}
+          <div className="hidden landscape:block lg:landscape:hidden mb-2">
+             <OptionToggles options={options} setOptions={setOptions} />
+          </div>
+
           {previewPreset ? (
              <TreatmentPreview 
                preset={previewPreset} 

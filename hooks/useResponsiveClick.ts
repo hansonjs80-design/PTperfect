@@ -1,5 +1,5 @@
 
-import { useRef, useCallback } from 'react';
+import React, { useRef, useCallback } from 'react';
 
 /**
  * Provides a click handler that adapts to device size:

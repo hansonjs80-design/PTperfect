@@ -47,9 +47,11 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
         <BedEditHeader bedId={bed.id} onClose={onClose} />
 
         {/* 2. Main Body (Flexible) */}
-        <div className="flex-1 min-h-0 flex flex-col bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
+        {/* Modified: Enable vertical scroll on main body ONLY for mobile landscape */}
+        <div className="flex-1 min-h-0 flex flex-col bg-slate-50 dark:bg-slate-950 relative overflow-hidden landscape:overflow-y-auto lg:landscape:overflow-hidden">
            
-           {/* Top: Status Flags (Fixed within body) */}
+           {/* Top: Status Flags */}
+           {/* Fixed in portrait/desktop, scrolls with body in mobile landscape */}
            <div className="shrink-0 p-3 pb-0 z-10">
              <BedEditFlags 
                bed={bed} 
@@ -61,8 +63,9 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
              />
            </div>
 
-           {/* Middle: Step List (Scrollable Area) */}
-           <div className="flex-1 min-h-0 p-3 overflow-y-auto custom-scrollbar">
+           {/* Middle: Step List (Scrollable) */}
+           {/* Modified: Disable inner scroll on mobile landscape to let parent scroll */}
+           <div className="flex-1 min-h-0 p-3 overflow-y-auto custom-scrollbar landscape:overflow-visible landscape:h-auto landscape:flex-none lg:landscape:flex-1 lg:landscape:overflow-y-auto lg:landscape:h-full lg:landscape:min-h-0">
              <BedEditStepList 
                bed={bed} 
                steps={steps || []} 
@@ -71,7 +74,8 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
              />
            </div>
 
-           {/* Bottom: Quick Add (Fixed at bottom of body) */}
+           {/* Bottom: Quick Add */}
+           {/* Fixed in portrait/desktop, scrolls with body in mobile landscape */}
            <div className="shrink-0 p-3 pt-2 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 shadow-lg z-20">
              <BedEditQuickAdd 
                bedId={bed.id} 
