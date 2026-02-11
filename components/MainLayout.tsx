@@ -63,8 +63,9 @@ export const MainLayout: React.FC = () => {
       pt-[calc(62px+env(safe-area-inset-top)+1rem)] 
       landscape:pt-[calc(2.5rem+env(safe-area-inset-top)+0.5rem)]
       md:pt-[calc(52px+env(safe-area-inset-top)+1rem)]
-      lg:pt-[calc(12px+env(safe-area-inset-top)+1rem)]
-      xl:pt-[calc(72px+env(safe-area-inset-top)+1rem)]
+      md:landscape:pt-[calc(52px+env(safe-area-inset-top)+0.5rem)]
+      lg:landscape:pt-[calc(52px+env(safe-area-inset-top)+0.5rem)]
+      xl:landscape:pt-[calc(72px+env(safe-area-inset-top)+1rem)]
     `;
 
   // 2. Bottom Padding (Footer/Browser UI Compensation)
