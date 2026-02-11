@@ -2,8 +2,8 @@
 import { useEffect, useRef, RefObject } from 'react';
 
 // Define the breakpoint for switching between mobile (absolute/scroll-away) and desktop (relative/fixed)
-// 768 (md) includes Tablet Portrait in the "Desktop" behavior
-const DESKTOP_BREAKPOINT = 768; 
+// 1024 (lg) includes Tablet Portrait in the "Mobile" scroll behavior
+const DESKTOP_BREAKPOINT = 1024; 
 
 export const useHeaderScroll = (
   scrollContainerRef: RefObject<HTMLElement | null>,
@@ -26,13 +26,13 @@ export const useHeaderScroll = (
           const currentScrollY = scrollContainer.scrollTop;
           
           // Determine if we should apply mobile scroll behavior
-          // 1. Width < 768px (Standard Mobile)
-          // 2. Landscape Orientation on Mobile (Width might be > 768, but Height is small, e.g. < 600px)
+          // 1. Width < 1024px (Mobile + Tablet Portrait)
+          // 2. Landscape Orientation on Mobile (low height)
           const isMobileWidth = window.innerWidth < DESKTOP_BREAKPOINT;
           const isMobileLandscape = window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 600;
           const isMobileBehavior = isMobileWidth || isMobileLandscape;
 
-          // On Desktop/Tablet (Portrait & Large Landscape), always reset to visible
+          // On Desktop (Landscape Tablet & PC), always reset to visible
           if (!isMobileBehavior) {
             header.style.transform = 'translate3d(0, 0, 0)';
             currentTranslateY.current = 0;
