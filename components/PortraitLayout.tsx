@@ -30,14 +30,30 @@ export const PortraitLayout: React.FC<BedLayoutProps> = memo(({ beds, presets })
             const leftBed = pair.left ? getBed(pair.left) : null;
             const rightBed = pair.right ? getBed(pair.right) : null;
 
+            // Apply specific spacing for Tablet Portrait (md breakpoint)
+            // Identify pairs by checking if they contain the specific bed IDs
+            const hasBed3 = pair.left === 3 || pair.right === 3;
+            const hasBed10 = pair.left === 10 || pair.right === 10;
+            const isRow3_10 = hasBed3 && hasBed10;
+
+            const hasBed4 = pair.left === 4 || pair.right === 4;
+            const hasBed9 = pair.left === 9 || pair.right === 9;
+            const isRow4_9 = hasBed4 && hasBed9;
+
+            const spacingClass = `
+              ${isRow3_10 ? 'md:mt-[10px]' : ''} 
+              ${isRow4_9 ? 'md:mb-[10px]' : ''}
+            `;
+
             return (
-              <PortraitBedRow 
-                key={`${groupIdx}-${idx}`}
-                leftBed={leftBed}
-                rightBed={rightBed}
-                presets={presets}
-                beds={beds}
-              />
+              <div key={`${groupIdx}-${idx}`} className={spacingClass}>
+                <PortraitBedRow 
+                  leftBed={leftBed}
+                  rightBed={rightBed}
+                  presets={presets}
+                  beds={beds}
+                />
+              </div>
             );
           })}
         </div>
