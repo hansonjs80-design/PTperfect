@@ -99,19 +99,19 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({ initialPreset, onSav
             <div key={step.id} className="bg-white dark:bg-slate-900/50 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm p-2 flex flex-col gap-2">
               
               {/* Row 1: Index, Name, Delete */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <div className="w-6 h-6 flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-md text-xs font-black text-gray-500 dark:text-gray-400 shrink-0">
                   {idx + 1}
                 </div>
-                <div className="flex-1 flex gap-2">
+                <div className="flex-1 flex gap-2 min-w-0">
                     <input 
-                      className="flex-[2] min-w-0 bg-transparent text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-b focus:border-brand-500 transition-colors" 
+                      className="flex-1 min-w-0 bg-transparent text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-b focus:border-brand-500 transition-colors placeholder:text-gray-300 truncate" 
                       value={step.name} 
                       onChange={(e) => handleUpdateStep(step.id, { name: e.target.value })}
                       placeholder="치료명"
                     />
                     <input 
-                      className="flex-1 min-w-0 bg-transparent text-xs text-gray-500 dark:text-gray-400 text-right focus:outline-none focus:border-b focus:border-brand-500 transition-colors" 
+                      className="w-14 sm:flex-1 sm:w-auto min-w-0 bg-gray-100 sm:bg-transparent dark:bg-slate-800 dark:sm:bg-transparent rounded-md sm:rounded-none px-1 sm:px-0 h-7 sm:h-auto text-xs text-center sm:text-right text-gray-600 sm:text-gray-500 dark:text-gray-300 dark:sm:text-gray-400 focus:outline-none focus:ring-1 sm:focus:ring-0 sm:focus:border-b focus:ring-brand-500 sm:focus:border-brand-500 transition-all placeholder:text-gray-300" 
                       value={step.label || ''} 
                       onChange={(e) => handleUpdateStep(step.id, { label: e.target.value })}
                       placeholder={getStepLabel(step)}
