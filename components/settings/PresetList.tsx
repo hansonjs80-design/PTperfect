@@ -66,15 +66,12 @@ export const PresetList: React.FC<PresetListProps> = ({
 
   return (
     <div className="animate-in fade-in slide-in-from-right-2 duration-200 flex flex-col h-full overflow-hidden">
-      {/* 상단 헤더 및 추가 버튼 */}
-      <div className="flex justify-between items-end mb-4 px-1 shrink-0">
-        <div>
-          <h3 className="text-xl font-black dark:text-white leading-none">처방 목록 관리</h3>
-          <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tighter">Manage Treatment Presets</p>
-        </div>
+      {/* 상단 헤더 및 추가 버튼 - Compact Mode */}
+      <div className="flex justify-between items-center mb-3 px-1 shrink-0">
+        <h3 className="text-lg sm:text-xl font-black dark:text-white leading-none">처방 목록 관리</h3>
         <button 
           onClick={onCreate}
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 font-black text-xs transition-all active:scale-95"
+          className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 text-white rounded-xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 font-black text-xs transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" strokeWidth={3} />
           신규 처방

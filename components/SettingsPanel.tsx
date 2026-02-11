@@ -31,19 +31,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         
         {/* Header: Glassmorphism Style */}
         <div className="shrink-0 pt-[env(safe-area-inset-top)] bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 z-20">
-          <div className="flex items-center justify-between p-4 sm:p-5">
+          <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400">
-                <SettingsIcon className="w-6 h-6" strokeWidth={2.5} />
+                <SettingsIcon className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
               </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-0.5">
-                  CONFIGURATION
-                </span>
-                <h2 className="text-2xl font-black text-slate-800 dark:text-white leading-none tracking-tight">
-                  설정 및 관리
-                </h2>
-              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white leading-none tracking-tight">
+                설정 및 관리
+              </h2>
             </div>
             <button 
               onClick={onClose}
