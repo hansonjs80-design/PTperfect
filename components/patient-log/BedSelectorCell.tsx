@@ -258,7 +258,7 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
             title={getTitle()}
         >
             {value ? (
-                <span className={`text-lg sm:text-xl xl:text-sm font-black group-hover:scale-110 transition-transform ${value === 11 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                <span className={`text-lg sm:text-xl xl:text-base font-black group-hover:scale-110 transition-transform ${value === 11 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>
                 {value === 11 ? 'T' : value}
                 </span>
             ) : (

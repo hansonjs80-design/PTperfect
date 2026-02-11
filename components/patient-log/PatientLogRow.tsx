@@ -203,7 +203,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.body_part || ''} 
           placeholder=""
           menuTitle="치료 부위 수정 (로그만 변경)"
-          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-sm sm:text-[15px]"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-sm sm:text-[15px] xl:text-base"
           onCommit={(val, skipSync, navDir) => handleChange('body_part', val || '', skipSync, 2, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -253,7 +253,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.memo || ''} 
           placeholder=""
           menuTitle="메모 수정 (로그만 변경)"
-          className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-sm"
+          className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-sm xl:text-base"
           onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 5, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -269,7 +269,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.author || ''} 
           placeholder="-"
           menuTitle="작성자 수정 (로그만 변경)"
-          className="text-center justify-center text-gray-400 font-bold bg-transparent text-sm"
+          className="text-center justify-center text-gray-400 font-bold bg-transparent text-sm xl:text-base"
           onCommit={(val, skipSync, navDir) => handleChange('author', val || '', skipSync, 6, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -291,7 +291,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
               title="삭제"
               tabIndex={-1} 
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-4 h-4 xl:w-5 xl:h-5" />
             </button>
           </div>
         )}
