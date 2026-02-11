@@ -57,16 +57,17 @@ export const MainLayout: React.FC = () => {
   // --- Dynamic Padding Logic ---
   
   // 1. Top Padding (Header Compensation)
-  // Note: On lg screens (Tablet Landscape/Desktop), the header is 'relative', so we do NOT need padding to compensate for its height.
   const mainContentPaddingTop = isFullScreen 
     ? 'pt-[env(safe-area-inset-top)] md:portrait:pt-[calc(env(safe-area-inset-top)+30px)] md:landscape:pt-[70px]' 
     : `
       pt-[calc(62px+env(safe-area-inset-top)+1rem)] 
       landscape:pt-[calc(2.5rem+env(safe-area-inset-top)+0.5rem)]
       md:pt-[calc(52px+env(safe-area-inset-top)+1rem)]
-      md:landscape:pt-[calc(52px+env(safe-area-inset-top))]
-      lg:landscape:pt-2
-      xl:landscape:pt-4
+      /* Tablet Landscape (< lg): Header is absolute, height ~40px (2.5rem). Set padding to match exactly to remove gap. */
+      md:landscape:pt-[calc(2.5rem+env(safe-area-inset-top))]
+      /* Desktop / Large Tablet (>= lg): Header is relative. Remove top padding to sit flush. */
+      lg:landscape:pt-0
+      xl:landscape:pt-0
     `;
 
   // 2. Bottom Padding (Footer/Browser UI Compensation)
