@@ -58,7 +58,7 @@ export const MainLayout: React.FC = () => {
   
   // 1. Top Padding (Header Compensation)
   const mainContentPaddingTop = isFullScreen 
-    ? 'pt-[env(safe-area-inset-top)] md:landscape:pt-[35px]' // Full Screen: Safe area + 35px shift for Tablet Landscape
+    ? 'pt-[env(safe-area-inset-top)] md:portrait:pt-[calc(env(safe-area-inset-top)+30px)] md:landscape:pt-[70px]' // Full Screen: Adjust for Tablet Portrait (+30px) & Landscape (+70px to compensate -15px margin)
     : `
       pt-[calc(62px+env(safe-area-inset-top)+1rem)] 
       landscape:pt-[calc(2.5rem+env(safe-area-inset-top)+0.5rem)]
