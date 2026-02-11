@@ -8,6 +8,7 @@ import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { GlobalModals } from './GlobalModals';
 import { useSidebarResize } from '../hooks/useSidebarResize';
 import { usePatientLogVisibility } from '../hooks/usePatientLogVisibility';
+import { useLayoutStyles } from '../hooks/useLayoutStyles';
 
 const PatientLogPanel = React.lazy(() => import('./PatientLogPanel').then(module => ({ default: module.PatientLogPanel })));
 
@@ -19,7 +20,8 @@ export const MainLayout: React.FC = () => {
   
   // Custom Hooks
   const { sidebarWidth, isResizing, startResizing } = useSidebarResize(620);
-  const { isLogOpen, toggleLog, closeLog } = usePatientLogVisibility(); // Logic extracted here
+  const { isLogOpen, toggleLog, closeLog } = usePatientLogVisibility(); 
+  const { headerHeightClass, mainContentPaddingTop, mainContentPaddingBottom, closeButtonClass } = useLayoutStyles(isFullScreen);
   
   const mainRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -54,36 +56,6 @@ export const MainLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, canUndo]);
 
-  // --- Dynamic Padding Logic ---
-  // Header Heights:
-  // Mobile Portrait: ~62px
-  // Tablet Portrait (md): 52px
-  // Tablet Landscape (landscape): 48px (3rem)
-  // Desktop / Large Landscape (xl / lg:landscape): Reduced to 60px (from 72px)
-  
-  // Target Gap: 20px
-  
-  const mainContentPaddingTop = isFullScreen 
-    ? 'pt-[calc(env(safe-area-inset-top)+10px)]' 
-    : `
-      /* Mobile Portrait Base */
-      pt-[calc(62px+env(safe-area-inset-top)+20px)]
-      
-      /* Tablet Portrait: Header 52px + 20px */
-      md:pt-[calc(52px+env(safe-area-inset-top)+20px)]
-
-      /* Tablet/Mobile Landscape: Header 48px (3rem) + 20px */
-      landscape:pt-[calc(3rem+env(safe-area-inset-top)+20px)]
-
-      /* Desktop / Large Landscape: Header 60px + 20px */
-      lg:landscape:pt-[calc(60px+env(safe-area-inset-top)+20px)]
-      xl:pt-[calc(60px+env(safe-area-inset-top)+20px)]
-    `;
-
-  const mainContentPaddingBottom = isFullScreen
-    ? 'pb-[env(safe-area-inset-bottom)]'
-    : 'pb-[calc(env(safe-area-inset-bottom)+120px)]';
-
   const handleCloseMenu = useCallback(() => setMenuOpen(false), []);
 
   return (
@@ -91,22 +63,7 @@ export const MainLayout: React.FC = () => {
       {!isFullScreen && (
         <div 
           ref={headerRef}
-          className="
-            w-full z-40 will-change-transform
-            h-[calc(62px+env(safe-area-inset-top))]
-            md:h-[calc(52px+env(safe-area-inset-top))]
-            
-            /* Landscape Defaults (Mobile/Tablet): Matches h-12 (3rem) */
-            landscape:h-[calc(3rem+env(safe-area-inset-top))]
-            
-            /* Desktop Sizes: 60px */
-            xl:h-[calc(60px+env(safe-area-inset-top))]
-            /* Restore Desktop height for Large Landscape */
-            lg:landscape:h-[calc(60px+env(safe-area-inset-top))]
-            
-            /* Position: Always Absolute to allow content to scroll behind */
-            absolute top-0 left-0 right-0
-          "
+          className={headerHeightClass}
         >
           <AppHeader 
             onOpenMenu={() => setMenuOpen(true)}
@@ -141,7 +98,7 @@ export const MainLayout: React.FC = () => {
         {isFullScreen && (
           <button
             onClick={() => setIsFullScreen(false)}
-            className="fixed top-[calc(env(safe-area-inset-top)+10px)] right-4 z-[60] p-1.5 bg-black/30 dark:bg-white/10 text-gray-500 dark:text-gray-300 hover:text-white hover:bg-black/50 dark:hover:bg-white/20 rounded-full backdrop-blur-md shadow-lg transition-all active:scale-95"
+            className={closeButtonClass}
             title="전체 화면 종료"
           >
             <Minimize className="w-4 h-4 sm:w-6 sm:h-6" />
