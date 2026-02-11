@@ -78,9 +78,21 @@ export const PresetList: React.FC<PresetListProps> = ({
         </button>
       </div>
 
-      {/* 필터 및 정렬 바 */}
-      <div className="flex flex-col gap-2 mb-4 shrink-0 px-1">
-        <div className="relative group">
+      {/* 필터 및 정렬 바 - 같은 행 배치 (좌: 정렬, 우: 검색) */}
+      <div className="flex gap-2 mb-4 shrink-0 px-1">
+        <button 
+          onClick={toggleSort}
+          className={`shrink-0 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[11px] font-black transition-all border-2 whitespace-nowrap ${
+            sortOrder !== 'none' 
+              ? 'bg-brand-50 border-brand-200 text-brand-700 dark:bg-brand-900/20 dark:border-brand-800 dark:text-brand-400' 
+              : 'bg-white border-gray-100 text-gray-500 dark:bg-slate-800 dark:border-slate-700 hover:border-gray-200'
+          }`}
+        >
+          <ArrowUpDown className={`w-3.5 h-3.5 transition-transform ${sortOrder === 'asc' ? 'rotate-180' : ''}`} />
+          {sortOrder === 'desc' ? '단계 많은 순 (3→1)' : sortOrder === 'asc' ? '단계 적은 순 (1→3)' : '단계별 정렬하기'}
+        </button>
+
+        <div className="relative group flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-brand-500 transition-colors" />
           <input 
             type="text"
@@ -98,18 +110,6 @@ export const PresetList: React.FC<PresetListProps> = ({
             </button>
           )}
         </div>
-        
-        <button 
-          onClick={toggleSort}
-          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-[11px] font-black transition-all border-2 ${
-            sortOrder !== 'none' 
-              ? 'bg-brand-50 border-brand-200 text-brand-700 dark:bg-brand-900/20 dark:border-brand-800 dark:text-brand-400' 
-              : 'bg-white border-gray-100 text-gray-500 dark:bg-slate-800 dark:border-slate-700 hover:border-gray-200'
-          }`}
-        >
-          <ArrowUpDown className={`w-3.5 h-3.5 transition-transform ${sortOrder === 'asc' ? 'rotate-180' : ''}`} />
-          {sortOrder === 'desc' ? '단계 많은 순 (3→1)' : sortOrder === 'asc' ? '단계 적은 순 (1→3)' : '단계별 정렬하기'}
-        </button>
       </div>
 
       {/* 리스트 본문 */}
