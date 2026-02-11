@@ -35,10 +35,7 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
       if (type === 'undo') undo();
       else redo();
     } else {
-      // For mobile header, we simply execute it. 
-      // The requirement for "confirmation" was specific to the main button area which is easily mis-clicked.
-      // Header buttons are smaller and less prone to accidental huge data loss compared to "Clear All".
-      // So we'll keep it direct here for consistency with toolbar UX.
+      // Mobile behavior
       if (type === 'undo') undo();
       else redo();
     }
@@ -48,34 +45,35 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
   const iconBtnClass = "flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all shadow-sm hover:shadow active:scale-95 shrink-0 disabled:opacity-30 disabled:cursor-not-allowed";
 
   return (
-    <div className="shrink-0 z-20 flex flex-row items-center justify-between px-3 sm:px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800 transition-colors">
+    <div className="shrink-0 z-20 flex flex-row items-center justify-between px-2 sm:px-4 py-2 sm:py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800 transition-colors">
       
       {/* Left: Title & Count */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <div className="flex items-center gap-2">
-          {/* Icon: Hidden on mobile (sm 미만 hidden), Visible on sm+ (sm:flex) */}
+          {/* Icon: Hidden on mobile, Visible on sm+ */}
           <div className="hidden sm:flex items-center justify-center w-9 h-9 bg-brand-500 rounded-xl shadow-lg shadow-brand-500/30 text-white">
              <ClipboardList className="w-5 h-5" strokeWidth={2.5} />
           </div>
-          <div className="flex flex-col justify-center">
+          {/* Title: Hidden on mobile (< sm), Visible on sm+ */}
+          <div className="hidden sm:flex flex-col justify-center">
             <h3 className="font-black text-base sm:text-lg text-slate-800 dark:text-white leading-none tracking-tight">
               환자 현황
             </h3>
           </div>
         </div>
         
-        {/* Count Badge */}
-        <div className="hidden xs:flex flex-col items-center justify-center px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-           <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase leading-none mb-0.5">Total</span>
-           <span className="text-sm font-black text-brand-600 dark:text-brand-400 leading-none">{totalCount}</span>
+        {/* Count Badge: Always visible now (removed xs:flex constraint) since title is hidden on mobile */}
+        <div className="flex flex-col items-center justify-center px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 min-w-[36px]">
+           <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase leading-none mb-0.5">Total</span>
+           <span className="text-xs sm:text-sm font-black text-brand-600 dark:text-brand-400 leading-none">{totalCount}</span>
         </div>
       </div>
       
       {/* Right: Controls */}
-      <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden justify-end flex-1 pl-2">
+      <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden justify-end flex-1 pl-1 sm:pl-2">
          
-         {/* Undo/Redo Group (New) */}
-         <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
+         {/* Undo/Redo Group */}
+         <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700 shrink-0">
             <button 
               onClick={() => handleUndoRedo('undo')} 
               disabled={!canUndo}
@@ -95,18 +93,18 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
          </div>
 
          {/* Date Navigator Capsule */}
-         <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/50 dark:border-slate-700 shrink-0">
+         <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-0.5 sm:p-1 rounded-xl border border-slate-200/50 dark:border-slate-700 shrink-0">
           <button 
             onClick={() => onDateChange(-1)}
-            className={iconBtnClass}
+            className={`${iconBtnClass} w-7 h-7 sm:w-9 sm:h-9`}
             title="이전 날짜"
           >
-            <ChevronLeft className="w-4 h-4" strokeWidth={3} />
+            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
           </button>
           
           {/* Date Display */}
-          <div className="relative flex items-center justify-center h-8 sm:h-9 px-1 sm:px-2 group cursor-pointer">
-            <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 tabular-nums tracking-tight whitespace-nowrap">
+          <div className="relative flex items-center justify-center h-7 sm:h-9 px-1.5 sm:px-2 group cursor-pointer">
+            <span className="text-xs sm:text-base font-black text-slate-800 dark:text-slate-100 tabular-nums tracking-tight whitespace-nowrap">
               {currentDate}
             </span>
             <input 
@@ -121,20 +119,20 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
           
           <button 
             onClick={() => onDateChange(1)}
-            className={iconBtnClass}
+            className={`${iconBtnClass} w-7 h-7 sm:w-9 sm:h-9`}
             title="다음 날짜"
           >
-            <ChevronRight className="w-4 h-4" strokeWidth={3} />
+            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
           </button>
 
-          <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1 block shrink-0"></div>
+          <div className="w-px h-3 sm:h-4 bg-slate-300 dark:bg-slate-600 mx-0.5 sm:mx-1 block shrink-0"></div>
 
           <button 
             onClick={handleTodayClick}
-            className={`${iconBtnClass} text-brand-500 hover:text-brand-600 bg-white dark:bg-slate-700 shadow-sm`}
+            className={`${iconBtnClass} text-brand-500 hover:text-brand-600 bg-white dark:bg-slate-700 shadow-sm w-7 h-7 sm:w-9 sm:h-9`}
             title="오늘 날짜로 이동"
           >
-            <CalendarCheck className="w-4 h-4" strokeWidth={2.5} />
+            <CalendarCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={2.5} />
           </button>
         </div>
         
@@ -149,14 +147,14 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
              <Printer className="w-5 h-5" strokeWidth={2.5} />
            </button>
 
-           {/* Close Button - Always Render if onClose is provided */}
+           {/* Close Button */}
            {onClose && (
             <button 
               onClick={onClose}
-              className="flex items-center justify-center w-10 h-10 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl text-slate-600 dark:text-slate-300 transition-all shadow-inner active:scale-95 shrink-0"
+              className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl text-slate-600 dark:text-slate-300 transition-all shadow-inner active:scale-95 shrink-0"
               title="창 닫기"
             >
-              <X className="w-5 h-5" strokeWidth={3} />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
             </button>
            )}
         </div>
