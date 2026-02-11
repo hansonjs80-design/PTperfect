@@ -56,8 +56,8 @@ export const LandscapeLayout: React.FC<BedLayoutProps> = memo(({ beds, presets }
         /* Reset translations for landscape to avoid shifting */
         translate-x-[25px] translate-y-[10px] md:landscape:translate-y-0 lg:translate-x-0 lg:translate-y-0
         
-        /* Reset margins and paddings for landscape to sit flush */
-        md:-mt-[15px] md:landscape:mt-0 md:landscape:pt-0
+        /* Reset all negative margins/paddings for desktop */
+        md:-mt-[15px] md:landscape:mt-0 md:landscape:pt-0 lg:mt-0 lg:pt-0
       ">
         {gridItems}
       </div>

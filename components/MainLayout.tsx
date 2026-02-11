@@ -55,27 +55,36 @@ export const MainLayout: React.FC = () => {
   }, [undo, canUndo]);
 
   // --- Dynamic Padding Logic ---
+  // Header Heights:
+  // Mobile Portrait: ~62px
+  // Tablet Portrait (md): 52px
+  // Tablet Landscape (landscape): 48px (2.5rem)
+  // Desktop (xl / lg:landscape): 72px
   
-  // 1. Top Padding (Header Compensation)
+  // Target Gap: 20px
+  
   const mainContentPaddingTop = isFullScreen 
     ? 'pt-[env(safe-area-inset-top)] md:portrait:pt-[calc(env(safe-area-inset-top)+30px)] md:landscape:pt-[70px]' 
     : `
-      pt-[calc(62px+env(safe-area-inset-top)+1rem)] 
-      landscape:pt-[calc(2.5rem+env(safe-area-inset-top)+0.5rem)]
-      md:pt-[calc(52px+env(safe-area-inset-top)+1rem)]
-      /* Tablet Landscape (< lg): Header is absolute, height ~40px (2.5rem). Set padding to match exactly to remove gap. */
-      md:landscape:pt-[calc(2.5rem+env(safe-area-inset-top))]
-      /* Desktop / Large Tablet (>= lg): Header is relative. Remove top padding to sit flush. */
-      lg:landscape:pt-0
-      xl:landscape:pt-0
+      /* Mobile Portrait Base */
+      pt-[calc(62px+env(safe-area-inset-top)+20px)]
+      
+      /* Tablet Portrait: Header 52px + 20px */
+      md:pt-[calc(52px+env(safe-area-inset-top)+20px)]
+
+      /* Tablet/Mobile Landscape: Header 48px + 20px */
+      landscape:pt-[calc(2.5rem+env(safe-area-inset-top)+20px)]
+
+      /* Desktop / Large Landscape: Header 72px + 20px */
+      /* Note: We force header to 72px on lg:landscape in AppHeader */
+      lg:landscape:pt-[calc(72px+env(safe-area-inset-top)+20px)]
+      xl:pt-[calc(72px+env(safe-area-inset-top)+20px)]
     `;
 
-  // 2. Bottom Padding (Footer/Browser UI Compensation)
   const mainContentPaddingBottom = isFullScreen
     ? 'pb-[env(safe-area-inset-bottom)]'
     : 'pb-[calc(env(safe-area-inset-bottom)+120px)]';
 
-  // Memoize handleCloseMenu to prevent GlobalModals useEffect from re-triggering constantly
   const handleCloseMenu = useCallback(() => setMenuOpen(false), []);
 
   return (
@@ -87,10 +96,17 @@ export const MainLayout: React.FC = () => {
             w-full z-40 will-change-transform
             h-[calc(62px+env(safe-area-inset-top))]
             md:h-[calc(52px+env(safe-area-inset-top))]
-            xl:h-[calc(72px+env(safe-area-inset-top))]
+            
+            /* Landscape Defaults (Mobile/Tablet) */
             landscape:h-[calc(2.5rem+env(safe-area-inset-top))]
+            
+            /* Desktop Sizes */
+            xl:h-[calc(72px+env(safe-area-inset-top))]
+            /* Restore Desktop height for Large Landscape */
+            lg:landscape:h-[calc(72px+env(safe-area-inset-top))]
+            
+            /* Position: Always Absolute to allow content to scroll behind */
             absolute top-0 left-0 right-0
-            lg:relative lg:top-auto lg:left-auto lg:right-auto lg:shrink-0
           "
         >
           <AppHeader 
