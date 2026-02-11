@@ -58,13 +58,13 @@ export const MainLayout: React.FC = () => {
   // Header Heights:
   // Mobile Portrait: ~62px
   // Tablet Portrait (md): 52px
-  // Tablet Landscape (landscape): 48px (3rem) - Updated to match AppHeader h-12
-  // Desktop (xl / lg:landscape): 72px
+  // Tablet Landscape (landscape): 48px (3rem)
+  // Desktop / Large Landscape (xl / lg:landscape): Reduced to 60px (from 72px)
   
   // Target Gap: 20px
   
   const mainContentPaddingTop = isFullScreen 
-    ? 'pt-[env(safe-area-inset-top)] md:portrait:pt-[calc(env(safe-area-inset-top)+30px)] lg:landscape:pt-[70px]' 
+    ? 'pt-[calc(env(safe-area-inset-top)+10px)]' 
     : `
       /* Mobile Portrait Base */
       pt-[calc(62px+env(safe-area-inset-top)+20px)]
@@ -75,10 +75,9 @@ export const MainLayout: React.FC = () => {
       /* Tablet/Mobile Landscape: Header 48px (3rem) + 20px */
       landscape:pt-[calc(3rem+env(safe-area-inset-top)+20px)]
 
-      /* Desktop / Large Landscape: Header 72px + 20px */
-      /* Note: We force header to 72px on lg:landscape in AppHeader */
-      lg:landscape:pt-[calc(72px+env(safe-area-inset-top)+20px)]
-      xl:pt-[calc(72px+env(safe-area-inset-top)+20px)]
+      /* Desktop / Large Landscape: Header 60px + 20px */
+      lg:landscape:pt-[calc(60px+env(safe-area-inset-top)+20px)]
+      xl:pt-[calc(60px+env(safe-area-inset-top)+20px)]
     `;
 
   const mainContentPaddingBottom = isFullScreen
@@ -100,10 +99,10 @@ export const MainLayout: React.FC = () => {
             /* Landscape Defaults (Mobile/Tablet): Matches h-12 (3rem) */
             landscape:h-[calc(3rem+env(safe-area-inset-top))]
             
-            /* Desktop Sizes */
-            xl:h-[calc(72px+env(safe-area-inset-top))]
+            /* Desktop Sizes: 60px */
+            xl:h-[calc(60px+env(safe-area-inset-top))]
             /* Restore Desktop height for Large Landscape */
-            lg:landscape:h-[calc(72px+env(safe-area-inset-top))]
+            lg:landscape:h-[calc(60px+env(safe-area-inset-top))]
             
             /* Position: Always Absolute to allow content to scroll behind */
             absolute top-0 left-0 right-0
@@ -142,7 +141,7 @@ export const MainLayout: React.FC = () => {
         {isFullScreen && (
           <button
             onClick={() => setIsFullScreen(false)}
-            className="fixed top-[calc(env(safe-area-inset-top)+20px)] right-4 z-[60] p-1.5 bg-black/30 dark:bg-white/10 text-gray-500 dark:text-gray-300 hover:text-white hover:bg-black/50 dark:hover:bg-white/20 rounded-full backdrop-blur-md shadow-lg transition-all active:scale-95"
+            className="fixed top-[calc(env(safe-area-inset-top)+10px)] right-4 z-[60] p-1.5 bg-black/30 dark:bg-white/10 text-gray-500 dark:text-gray-300 hover:text-white hover:bg-black/50 dark:hover:bg-white/20 rounded-full backdrop-blur-md shadow-lg transition-all active:scale-95"
             title="전체 화면 종료"
           >
             <Minimize className="w-4 h-4 sm:w-6 sm:h-6" />
