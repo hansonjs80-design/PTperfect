@@ -17,20 +17,23 @@ export const BedEditHeader: React.FC<BedEditHeaderProps> = ({ bedId, onClose }) 
   };
 
   return (
-    <div className={`flex items-center justify-between p-4 sm:p-5 border-b border-white/10 shrink-0 transition-colors ${getHeaderStyle()}`}>
+    <div className={`flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4 border-b border-white/10 shrink-0 transition-colors ${getHeaderStyle()}`}>
        <div className="flex items-center gap-3">
-         <div className="p-2 bg-white/60 dark:bg-black/20 rounded-xl shadow-sm backdrop-blur-sm">
-            <Settings className="w-5 h-5" />
-         </div>
-         <div className="flex flex-col">
-            <span className="text-[10px] font-bold opacity-70 uppercase tracking-wider leading-none mb-0.5">
-              설정 및 수정
+         {/* Single Row Layout: Circle Badge + Title */}
+         
+         {/* Circle Badge (Solid White Background) */}
+         <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm shrink-0 ring-2 ring-white/30 dark:ring-slate-700/30">
+            <span className="text-xl font-black leading-none text-current opacity-90 pb-0.5">
+                {bedId === 11 ? 'T' : bedId}
             </span>
-            <h3 className="text-2xl font-black leading-none tracking-tight">
-              {bedId === 11 ? 'Traction' : `BED ${bedId}`}
-            </h3>
          </div>
+
+         {/* Title Text */}
+         <h3 className="text-xl sm:text-2xl font-black leading-none tracking-tight opacity-90">
+            설정 및 수정
+         </h3>
        </div>
+       
        <button 
          onClick={onClose}
          className="p-2 bg-white/50 dark:bg-black/20 hover:bg-white/80 dark:hover:bg-black/40 rounded-full transition-colors backdrop-blur-sm"

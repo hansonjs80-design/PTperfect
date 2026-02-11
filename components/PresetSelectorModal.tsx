@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, memo, useCallback, useMemo } from 'react';
-import { X, Play, ChevronLeft, Eraser, Check, Clock } from 'lucide-react';
+import { X, Play, ChevronLeft, Eraser, Check, Clock, Edit3 } from 'lucide-react';
 import { Preset, TreatmentStep, QuickTreatment } from '../types';
 import { OptionToggles } from './preset-selector/OptionToggles';
 import { PresetListView } from './preset-selector/PresetListView';
@@ -161,7 +161,7 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className={`p-4 sm:p-5 flex justify-between items-center shrink-0 transition-colors ${getHeaderStyle()}`}>
+        <div className={`px-4 py-3 sm:px-5 sm:py-4 flex justify-between items-center shrink-0 transition-colors ${getHeaderStyle()}`}>
           <div className="flex items-center gap-3">
             {previewPreset && (
               <button 
@@ -171,15 +171,23 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
                 <ChevronLeft className="w-6 h-6" />
               </button>
             )}
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold opacity-70 uppercase tracking-wider leading-none mb-0.5">
-                {previewPreset ? '설정 확인' : (isLogMode ? '환자 현황' : '치료 시작')}
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-black leading-none tracking-tight">
-                {isLogMode ? '처방 수정' : (isTractionBed ? 'Traction' : `BED ${targetBedId}`)}
-              </h3>
+            
+            {/* New Single Row Layout */}
+            <div className="flex items-center gap-3">
+                {/* Circle Badge - Solid White Background */}
+                <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm shrink-0 ring-2 ring-white/30 dark:ring-slate-700/30">
+                    <span className="text-xl font-black leading-none text-current opacity-90 pb-0.5">
+                        {isLogMode ? <Edit3 className="w-5 h-5" /> : (isTractionBed ? 'T' : targetBedId)}
+                    </span>
+                </div>
+                
+                {/* Title Text */}
+                <h3 className="text-xl sm:text-2xl font-black leading-none tracking-tight opacity-90">
+                    {previewPreset ? '설정 확인' : (isLogMode ? '처방 수정' : '치료 시작')}
+                </h3>
             </div>
           </div>
+          
           <button 
             onClick={onClose}
             className="p-2 bg-white/50 dark:bg-black/20 hover:bg-white/80 dark:hover:bg-black/40 rounded-full transition-colors backdrop-blur-sm"
