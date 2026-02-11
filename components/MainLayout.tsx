@@ -57,20 +57,19 @@ export const MainLayout: React.FC = () => {
   // --- Dynamic Padding Logic ---
   
   // 1. Top Padding (Header Compensation)
+  // Note: On lg screens (Tablet Landscape/Desktop), the header is 'relative', so we do NOT need padding to compensate for its height.
   const mainContentPaddingTop = isFullScreen 
-    ? 'pt-[env(safe-area-inset-top)] md:portrait:pt-[calc(env(safe-area-inset-top)+30px)] md:landscape:pt-[70px]' // Full Screen: Adjust for Tablet Portrait (+30px) & Landscape (+70px)
+    ? 'pt-[env(safe-area-inset-top)] md:portrait:pt-[calc(env(safe-area-inset-top)+30px)] md:landscape:pt-[70px]' 
     : `
       pt-[calc(62px+env(safe-area-inset-top)+1rem)] 
       landscape:pt-[calc(2.5rem+env(safe-area-inset-top)+0.5rem)]
       md:pt-[calc(52px+env(safe-area-inset-top)+1rem)]
       md:landscape:pt-[calc(52px+env(safe-area-inset-top))]
-      lg:landscape:pt-[calc(52px+env(safe-area-inset-top))]
-      xl:landscape:pt-[calc(72px+env(safe-area-inset-top)+1rem)]
+      lg:landscape:pt-2
+      xl:landscape:pt-4
     `;
 
   // 2. Bottom Padding (Footer/Browser UI Compensation)
-  // Normal Mode: Add huge padding (120px) to ensure content sits well above any browser navigation bars
-  // Full Screen: Minimal padding (just safe area)
   const mainContentPaddingBottom = isFullScreen
     ? 'pb-[env(safe-area-inset-bottom)]'
     : 'pb-[calc(env(safe-area-inset-bottom)+120px)]';
