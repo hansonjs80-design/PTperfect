@@ -10,8 +10,8 @@ export const LANDSCAPE_GRID_IDS_ALT = [11, null, 2, 1, 6, 5, 4, 3, 7, 8, 9, 10];
 // Requested Layout 3 (Option3):
 // Row 1 (Top): 10, 9, 8, 7
 // Row 2 (Mid): 3, 4, 5, 6
-// Row 3 (Bot): T(11), Empty, 2, 1
-export const LANDSCAPE_GRID_IDS_OPTION3 = [10, 9, 8, 7, 3, 4, 5, 6, 11, null, 2, 1];
+// Row 3 (Bot): 1, 2, Empty, T(11)
+export const LANDSCAPE_GRID_IDS_OPTION3 = [10, 9, 8, 7, 3, 4, 5, 6, 1, 2, null, 11];
 
 export interface BedPairConfig {
   left: number | null;
