@@ -30,8 +30,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   
   const activeButtonClass = "bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 border-brand-200 dark:border-brand-800/50 shadow-inner";
   
-  // Custom active style for Layout Toggle to distinguish from Log Toggle (Indigo)
+  // Custom active style for Layout Toggle (Indigo)
   const activeLayoutBtnClass = "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/50 shadow-inner";
+
+  const getLayoutRotation = () => {
+    if (layoutMode === 'alt') return 'rotate-180';
+    if (layoutMode === 'option3') return 'rotate-90';
+    return 'rotate-0';
+  };
 
   return (
     // Header Container: Glassmorphism with subtle border
@@ -110,17 +116,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             )}
           </button>
 
-          {/* Layout Toggle Button (ArrowUpDown with Rotation) */}
+          {/* Layout Toggle Button (Cycle 3 Modes) */}
           <button
             onClick={toggleLayoutMode}
-            className={`${buttonClass} ${layoutMode === 'alt' ? activeLayoutBtnClass : ''}`}
+            className={`${buttonClass} ${layoutMode !== 'default' ? activeLayoutBtnClass : ''}`}
             title="배드 배치 변경"
           >
             <ArrowUpDown 
               className={`
                 w-5 h-5 md:w-4 md:h-4 xl:w-5 xl:h-5 landscape:w-4 landscape:h-4 
                 transition-transform duration-500 ease-in-out
-                ${layoutMode === 'alt' ? 'rotate-180' : 'rotate-0'}
+                ${getLayoutRotation()}
               `} 
               strokeWidth={2.5} 
             />

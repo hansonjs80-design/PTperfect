@@ -30,7 +30,7 @@ interface TreatmentContextType {
   toggleSound: () => void;
   isBackgroundKeepAlive: boolean;
   toggleBackgroundKeepAlive: () => void;
-  layoutMode: 'default' | 'alt';
+  layoutMode: 'default' | 'alt' | 'option3';
   toggleLayoutMode: () => void;
 
   // UI State for Modals

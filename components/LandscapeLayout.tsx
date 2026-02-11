@@ -1,7 +1,7 @@
 
 import React, { memo, useMemo } from 'react';
 import { BedLayoutProps } from '../types';
-import { LANDSCAPE_GRID_IDS, LANDSCAPE_GRID_IDS_ALT } from '../constants/layout';
+import { LANDSCAPE_GRID_IDS, LANDSCAPE_GRID_IDS_ALT, LANDSCAPE_GRID_IDS_OPTION3 } from '../constants/layout';
 import { LandscapeBedCell, LandscapeEmptyCell } from './LandscapeCells';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 
@@ -9,7 +9,11 @@ export const LandscapeLayout: React.FC<BedLayoutProps> = memo(({ beds, presets }
   const { layoutMode } = useTreatmentContext();
   const getBed = (id: number) => beds.find(b => b.id === id) || beds[0];
 
-  const gridIds = layoutMode === 'default' ? LANDSCAPE_GRID_IDS : LANDSCAPE_GRID_IDS_ALT;
+  const gridIds = useMemo(() => {
+    if (layoutMode === 'alt') return LANDSCAPE_GRID_IDS_ALT;
+    if (layoutMode === 'option3') return LANDSCAPE_GRID_IDS_OPTION3;
+    return LANDSCAPE_GRID_IDS;
+  }, [layoutMode]);
 
   const gridItems = useMemo(() => {
     const items = [];
