@@ -45,10 +45,11 @@ export const LandscapeLayout: React.FC<BedLayoutProps> = memo(({ beds, presets }
         gap-y-[5px] gap-x-[5px] sm:gap-y-[5px] sm:gap-x-[5px] md:gap-y-[20px]
         lg:gap-y-6 lg:gap-x-1.5 
         grid-cols-4 lg:grid-cols-[1fr_1fr_0px_1fr_1fr]
-        min-w-[170vw] px-2 pl-[28px] pt-0
+        min-w-[170vw] px-2 pl-[28px] pt-[4px]
         sm:min-w-[120vw] sm:px-0
         lg:min-w-0 lg:w-full lg:px-1
         translate-x-[25px] translate-y-[10px] lg:translate-x-0 lg:translate-y-0
+        md:mt-[20px]
       ">
         {gridItems}
       </div>
