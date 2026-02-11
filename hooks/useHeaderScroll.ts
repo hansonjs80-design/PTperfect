@@ -28,8 +28,9 @@ export const useHeaderScroll = (
           // Determine if we should apply mobile scroll behavior
           // 1. Width < 1024px (Mobile + Tablet Portrait)
           // 2. Landscape Orientation on Mobile (low height)
+          //    We use height < 700px to cover large phones in landscape, but exclude Tablets (iPad Mini landscape height is 768px)
           const isMobileWidth = window.innerWidth < DESKTOP_BREAKPOINT;
-          const isMobileLandscape = window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 600;
+          const isMobileLandscape = window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 700;
           const isMobileBehavior = isMobileWidth || isMobileLandscape;
 
           // On Desktop (Landscape Tablet & PC), always reset to visible
@@ -89,7 +90,7 @@ export const useHeaderScroll = (
     // Handle Resize to reset transform when switching modes
     const handleResize = () => {
        const isMobileWidth = window.innerWidth < DESKTOP_BREAKPOINT;
-       const isMobileLandscape = window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 600;
+       const isMobileLandscape = window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 700;
        
        if (!isMobileWidth && !isMobileLandscape && headerRef.current) {
          headerRef.current.style.transform = 'translate3d(0, 0, 0)';
