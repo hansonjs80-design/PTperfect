@@ -58,7 +58,7 @@ export const MainLayout: React.FC = () => {
   
   // 1. Top Padding (Header Compensation)
   const mainContentPaddingTop = isFullScreen 
-    ? 'pt-[env(safe-area-inset-top)] md:portrait:pt-[calc(env(safe-area-inset-top)+30px)] md:landscape:pt-[70px]' // Full Screen: Adjust for Tablet Portrait (+30px) & Landscape (+70px to compensate -15px margin)
+    ? 'pt-[env(safe-area-inset-top)] md:portrait:pt-[calc(env(safe-area-inset-top)+30px)] md:landscape:pt-[70px]' // Full Screen: Adjust for Tablet Portrait (+30px) & Landscape (+70px)
     : `
       pt-[calc(62px+env(safe-area-inset-top)+1rem)] 
       landscape:pt-[calc(2.5rem+env(safe-area-inset-top)+0.5rem)]
@@ -68,11 +68,11 @@ export const MainLayout: React.FC = () => {
     `;
 
   // 2. Bottom Padding (Footer/Browser UI Compensation)
-  // Normal Mode: Add huge padding (5rem ~ 80px) to ensure last card scrolls clearly above browser bottom bar
-  // Full Screen: Minimal padding (just safe area) to remove "bars"
+  // Normal Mode: Add huge padding (120px) to ensure content sits well above any browser navigation bars
+  // Full Screen: Minimal padding (just safe area)
   const mainContentPaddingBottom = isFullScreen
     ? 'pb-[env(safe-area-inset-bottom)]'
-    : 'pb-[calc(env(safe-area-inset-bottom)+5rem)] md:pb-[env(safe-area-inset-bottom)]';
+    : 'pb-[calc(env(safe-area-inset-bottom)+120px)]';
 
   // Memoize handleCloseMenu to prevent GlobalModals useEffect from re-triggering constantly
   const handleCloseMenu = useCallback(() => setMenuOpen(false), []);
