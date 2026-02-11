@@ -59,43 +59,44 @@ export const PatientLogPrintView: React.FC<PatientLogPrintViewProps> = ({
            <div 
              key={visit.id} 
              // Darkened horizontal border (gray-600) per request, removed gap to make vertical lines connect
-             className="break-inside-avoid page-break-inside-avoid border-b border-gray-600 flex items-center"
+             // Use items-stretch to ensure vertical borders extend full height
+             className="break-inside-avoid page-break-inside-avoid border-b border-gray-600 flex items-stretch"
            >
-              {/* No. (Room Number) */}
-              <div className={`${widthClasses.no} shrink-0 font-black text-gray-900 text-center text-[12px] py-2 ${vBorder}`}>
+              {/* No. (Room Number) - Centered Vertically & Horizontally */}
+              <div className={`${widthClasses.no} shrink-0 font-black text-gray-900 flex items-center justify-center text-[12px] py-1.5 ${vBorder}`}>
                  {visit.bed_id || (index + 1)}
               </div>
               
-              {/* Name */}
-              <div className={`${widthClasses.name} shrink-0 font-black text-[11px] text-gray-900 text-center whitespace-nowrap overflow-hidden px-1 py-2 ${vBorder}`}>
+              {/* Name - Centered Vertically & Horizontally */}
+              <div className={`${widthClasses.name} shrink-0 font-black text-[11px] text-gray-900 flex items-center justify-center whitespace-nowrap overflow-hidden px-1 py-1.5 ${vBorder}`}>
                  {visit.patient_name || "-"}
               </div>
               
-              {/* Body Part */}
-              <div className={`${widthClasses.part} shrink-0 font-bold text-[11px] text-gray-600 text-center whitespace-nowrap overflow-hidden px-1 py-2 ${vBorder}`}>
+              {/* Body Part - Centered Vertically & Horizontally */}
+              <div className={`${widthClasses.part} shrink-0 font-bold text-[11px] text-gray-600 flex items-center justify-center whitespace-nowrap overflow-hidden px-1 py-1.5 ${vBorder}`}>
                  {visit.body_part || "-"}
               </div>
               
-              {/* Treatment */}
-              <div className={`${widthClasses.treatment} text-gray-800 font-bold text-[11px] whitespace-nowrap overflow-hidden px-2 py-2 ${vBorder}`}>
+              {/* Treatment - Centered Vertically, Left Aligned */}
+              <div className={`${widthClasses.treatment} text-gray-800 font-bold text-[11px] flex items-center whitespace-nowrap overflow-hidden px-2 py-1.5 ${vBorder}`}>
                  {visit.treatment_name || "-"}
               </div>
 
-              {/* Status Icons Column */}
-              <div className={`${widthClasses.status} shrink-0 flex items-center justify-center py-1 ${vBorder}`}>
+              {/* Status Icons Column - Centered Vertically & Horizontally */}
+              <div className={`${widthClasses.status} shrink-0 flex items-center justify-center py-1.5 ${vBorder}`}>
                  <PatientStatusIcons visit={visit} />
               </div>
               
-              {/* Memo */}
-              <div className={`${widthClasses.memo} shrink-0 font-bold text-[11px] text-gray-500 text-center whitespace-nowrap overflow-hidden px-1 py-2`}>
+              {/* Memo - Centered Vertically & Horizontally */}
+              <div className={`${widthClasses.memo} shrink-0 font-bold text-[11px] text-gray-500 flex items-center justify-center whitespace-nowrap overflow-hidden px-1 py-1.5`}>
                  {visit.memo || ""}
               </div>
            </div>
          ))}
          
-         {/* Fill empty space for paper feel */}
+         {/* Fill empty space for paper feel (Reduced height py-3) */}
          {Array.from({ length: Math.max(0, 15 - visits.length) }).map((_, i) => (
-           <div key={`empty-${i}`} className="break-inside-avoid py-4 border-b border-gray-200"></div>
+           <div key={`empty-${i}`} className="break-inside-avoid py-3 border-b border-gray-200"></div>
          ))}
       </div>
       

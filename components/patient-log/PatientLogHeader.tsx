@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { ChevronLeft, ChevronRight, ClipboardList, CalendarCheck, Printer, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardList, CalendarCheck, Printer, X, Undo2, Redo2 } from 'lucide-react';
+import { useTreatmentContext } from '../../contexts/TreatmentContext';
 
 interface PatientLogHeaderProps {
   totalCount: number;
@@ -19,6 +20,8 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
   onPrint,
   onClose
 }) => {
+  const { undo, redo, canUndo, canRedo } = useTreatmentContext();
+
   const handleTodayClick = () => {
     const now = new Date();
     const offset = now.getTimezoneOffset() * 60000;
@@ -26,8 +29,23 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
     onDateSelect(localDate);
   };
 
+  const handleUndoRedo = (type: 'undo' | 'redo') => {
+    // Desktop/Tablet immediate execution (matches main layout logic)
+    if (window.innerWidth >= 768) {
+      if (type === 'undo') undo();
+      else redo();
+    } else {
+      // For mobile header, we simply execute it. 
+      // The requirement for "confirmation" was specific to the main button area which is easily mis-clicked.
+      // Header buttons are smaller and less prone to accidental huge data loss compared to "Clear All".
+      // So we'll keep it direct here for consistency with toolbar UX.
+      if (type === 'undo') undo();
+      else redo();
+    }
+  };
+
   // 공통 버튼 스타일 정의
-  const iconBtnClass = "flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all shadow-sm hover:shadow active:scale-95 shrink-0";
+  const iconBtnClass = "flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all shadow-sm hover:shadow active:scale-95 shrink-0 disabled:opacity-30 disabled:cursor-not-allowed";
 
   return (
     <div className="shrink-0 z-20 flex flex-row items-center justify-between px-3 sm:px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800 transition-colors">
@@ -56,6 +74,26 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
       {/* Right: Controls */}
       <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden justify-end flex-1 pl-2">
          
+         {/* Undo/Redo Group (New) */}
+         <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
+            <button 
+              onClick={() => handleUndoRedo('undo')} 
+              disabled={!canUndo}
+              className={`${iconBtnClass} w-7 h-7 sm:w-8 sm:h-8 hover:bg-white dark:hover:bg-slate-700`}
+              title="되돌리기"
+            >
+              <Undo2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+            <button 
+              onClick={() => handleUndoRedo('redo')} 
+              disabled={!canRedo}
+              className={`${iconBtnClass} w-7 h-7 sm:w-8 sm:h-8 hover:bg-white dark:hover:bg-slate-700`}
+              title="다시 실행"
+            >
+              <Redo2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+         </div>
+
          {/* Date Navigator Capsule */}
          <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/50 dark:border-slate-700 shrink-0">
           <button 
@@ -66,14 +104,11 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
             <ChevronLeft className="w-4 h-4" strokeWidth={3} />
           </button>
           
-          {/* Date Display: Overlay Method for perfect styling */}
+          {/* Date Display */}
           <div className="relative flex items-center justify-center h-8 sm:h-9 px-1 sm:px-2 group cursor-pointer">
-            {/* Visual Text */}
             <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 tabular-nums tracking-tight whitespace-nowrap">
               {currentDate}
             </span>
-            
-            {/* Invisible Input Trigger */}
             <input 
               type="date" 
               value={currentDate}
@@ -81,8 +116,6 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               title="날짜 선택"
             />
-            
-            {/* Hover visual cue */}
             <div className="absolute inset-x-2 bottom-0.5 h-0.5 bg-brand-500/0 group-hover:bg-brand-500/50 transition-all rounded-full"></div>
           </div>
           
@@ -94,10 +127,8 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
             <ChevronRight className="w-4 h-4" strokeWidth={3} />
           </button>
 
-          {/* Vertical Divider */}
           <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1 block shrink-0"></div>
 
-          {/* Today Button */}
           <button 
             onClick={handleTodayClick}
             className={`${iconBtnClass} text-brand-500 hover:text-brand-600 bg-white dark:bg-slate-700 shadow-sm`}

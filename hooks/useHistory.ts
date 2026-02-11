@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { BedState, PatientVisit } from '../types';
 
 interface StateSnapshot {
@@ -9,16 +9,10 @@ interface StateSnapshot {
 
 export const useHistory = (maxSize: number = 20) => {
   const [history, setHistory] = useState<StateSnapshot[]>([]);
-  const lastSavedTime = useRef<number>(0);
+  const [future, setFuture] = useState<StateSnapshot[]>([]);
 
+  // Action Performed: Save current state to history, clear future
   const saveSnapshot = useCallback((beds: BedState[], visits: PatientVisit[]) => {
-    // 1초 이내의 연속적인 변화는 무시 (성능 최적화)
-    const now = Date.now();
-    if (now - lastSavedTime.current < 1000) return;
-    
-    lastSavedTime.current = now;
-    
-    // 깊은 복사를 통해 현재 상태 저장
     const snapshot: StateSnapshot = {
       beds: JSON.parse(JSON.stringify(beds)),
       visits: JSON.parse(JSON.stringify(visits))
@@ -26,18 +20,53 @@ export const useHistory = (maxSize: number = 20) => {
 
     setHistory(prev => {
       const newHistory = [snapshot, ...prev];
-      return newHistory.slice(0, maxSize);
+      if (newHistory.length > maxSize) {
+        return newHistory.slice(0, maxSize);
+      }
+      return newHistory;
     });
+    // Creating a new timeline branch clears the future
+    setFuture([]);
   }, [maxSize]);
 
-  const popSnapshot = useCallback(() => {
+  // Undo: Move current state to future, pop from history
+  const undoOp = useCallback((currentBeds: BedState[], currentVisits: PatientVisit[]) => {
     if (history.length === 0) return null;
-    const [lastState, ...remaining] = history;
-    setHistory(remaining);
-    return lastState;
+
+    const [pastState, ...remainingHistory] = history;
+    
+    // Save current state to future before restoring past
+    const currentSnapshot: StateSnapshot = {
+        beds: JSON.parse(JSON.stringify(currentBeds)),
+        visits: JSON.parse(JSON.stringify(currentVisits))
+    };
+
+    setFuture(prev => [currentSnapshot, ...prev]);
+    setHistory(remainingHistory);
+
+    return pastState;
   }, [history]);
 
-  const canUndo = history.length > 0;
+  // Redo: Move current state to history, pop from future
+  const redoOp = useCallback((currentBeds: BedState[], currentVisits: PatientVisit[]) => {
+    if (future.length === 0) return null;
 
-  return { saveSnapshot, popSnapshot, canUndo };
+    const [nextState, ...remainingFuture] = future;
+
+    // Save current state to history before restoring future
+    const currentSnapshot: StateSnapshot = {
+        beds: JSON.parse(JSON.stringify(currentBeds)),
+        visits: JSON.parse(JSON.stringify(currentVisits))
+    };
+
+    setHistory(prev => [currentSnapshot, ...prev]);
+    setFuture(remainingFuture);
+
+    return nextState;
+  }, [future]);
+
+  const canUndo = history.length > 0;
+  const canRedo = future.length > 0;
+
+  return { saveSnapshot, undoOp, redoOp, canUndo, canRedo };
 };

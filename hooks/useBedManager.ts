@@ -1,19 +1,28 @@
-import { BedState, Preset, QuickTreatment, PatientVisit, TreatmentStep } from '../types';
-import { useBedState } from './useBedState';
+
+import { useEffect, useCallback, useState, useRef } from 'react';
+import { BedState, BedStatus, Preset, TreatmentStep } from '../types';
+import { useLocalStorage } from './useLocalStorage';
+import { TOTAL_BEDS, STANDARD_TREATMENTS } from '../constants';
+import { supabase, isOnlineMode } from '../lib/supabase';
+import { useBedTimer } from './useBedTimer';
+import { useBedRealtime } from './useBedRealtime';
+import { useWakeLock } from './useWakeLock';
+import { mapBedToDbPayload, calculateRemainingTime } from '../utils/bedLogic';
+import { useBedState } from './useBedState'; // Import useBedState
 import { useBedActions } from './useBedActions';
 import { useBedControls } from './useBedControls';
 import { useBedIntegration } from './useBedIntegration';
 
 export const useBedManager = (
   presets: Preset[], 
-  quickTreatments: QuickTreatment[],
+  quickTreatments: any[], // Type tweak to avoid circular dep issues if any
   isSoundEnabled: boolean,
   isBackgroundKeepAlive: boolean,
-  onAddVisit?: (data?: Partial<PatientVisit>) => Promise<string>,
-  onUpdateVisit?: (bedId: number, updates: Partial<PatientVisit>) => void
+  onAddVisit?: (data?: any) => Promise<string>,
+  onUpdateVisit?: (bedId: number, updates: any) => void
 ) => {
   // 1. Core State Management
-  const { beds, bedsRef, updateBedState, realtimeStatus } = useBedState(presets, isSoundEnabled, isBackgroundKeepAlive);
+  const { beds, bedsRef, updateBedState, restoreBeds, realtimeStatus } = useBedState(presets, isSoundEnabled, isBackgroundKeepAlive);
 
   // 2. Runtime Controls (Pause, Next, Clear, Flags)
   const controls = useBedControls(bedsRef, updateBedState, presets, onUpdateVisit);
@@ -57,9 +66,10 @@ export const useBedManager = (
     updateBedSteps: integration.updateBedSteps,
     overrideBedFromLog: integration.overrideBedFromLog,
     moveBedState: integration.moveBedState,
-    // Added updateBedState to fix the error in TreatmentContext
+    
+    // Core & Utils
     updateBedState,
-    // Utils
+    restoreBeds, // EXPOSED
     jumpToStep: (bedId: number, stepIndex: number) => {}, 
     realtimeStatus
   };

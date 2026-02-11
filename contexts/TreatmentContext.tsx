@@ -11,7 +11,6 @@ import { useTreatmentUI } from '../hooks/useTreatmentUI';
 import { usePatientBedSync } from '../hooks/usePatientBedSync';
 import { useHistory } from '../hooks/useHistory';
 import { supabase, isOnlineMode } from '../lib/supabase';
-import { mapBedToDbPayload } from '../utils/bedLogic';
 
 interface MovingPatientState {
   bedId: number;
@@ -68,9 +67,11 @@ interface TreatmentContextType {
   resetAll: () => void;
   movePatient: (fromBedId: number, toBedId: number) => Promise<void>;
   
-  // Undo System
+  // Undo/Redo System
   undo: () => Promise<boolean>;
+  redo: () => Promise<boolean>;
   canUndo: boolean;
+  canRedo: boolean;
   
   // Exposed for Log Component usage
   updateVisitWithBedSync: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => Promise<void>;
@@ -83,8 +84,8 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const { quickTreatments, updateQuickTreatments } = useQuickTreatmentManager();
   const settings = useTreatmentSettings();
   const uiState = useTreatmentUI();
-  const { visits, addVisit, updateVisit: updateLogVisit, setVisits, currentDate } = usePatientLogContext();
-  const { saveSnapshot, popSnapshot, canUndo } = useHistory(20);
+  const { visits, addVisit, updateVisit: updateLogVisit, setVisits } = usePatientLogContext();
+  const { saveSnapshot, undoOp, redoOp, canUndo, canRedo } = useHistory(20);
 
   const visitsRef = useRef(visits);
   useEffect(() => { visitsRef.current = visits; }, [visits]);
@@ -100,15 +101,36 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
       (bedId, updates) => logUpdateHandlerRef.current(bedId, updates)
   );
 
-  const { beds, clearBed, nextStep, updateBedState } = bedManager;
+  const { 
+    beds, 
+    updateBedState,
+    restoreBeds, 
+    // Destructure original actions to wrap them with snapshot logic
+    selectPreset: _selectPreset,
+    startCustomPreset: _startCustomPreset,
+    startQuickTreatment: _startQuickTreatment,
+    startTraction: _startTraction,
+    nextStep: _nextStep,
+    prevStep: _prevStep,
+    swapSteps: _swapSteps,
+    togglePause: _togglePause,
+    clearBed: _clearBed,
+    toggleInjection: _toggleInjection,
+    toggleFluid: _toggleFluid,
+    toggleTraction: _toggleTraction,
+    toggleESWT: _toggleESWT,
+    toggleManual: _toggleManual,
+    updateBedSteps: _updateBedSteps
+  } = bedManager;
+
   const bedsRef = useRef(beds);
   useEffect(() => { bedsRef.current = beds; }, [beds]);
 
-  const { handleLogUpdate, movePatient, updateVisitWithBedSync } = usePatientBedSync(
+  const { handleLogUpdate, movePatient: _movePatient, updateVisitWithBedSync } = usePatientBedSync(
     bedsRef,
     visitsRef,
     updateLogVisit,
-    clearBed,
+    _clearBed,
     bedManager
   );
 
@@ -116,39 +138,80 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     logUpdateHandlerRef.current = handleLogUpdate;
   }, [handleLogUpdate]);
 
-  // Snapshot before destructive actions
-  const clearBedWithHistory = useCallback((id: number) => {
-    saveSnapshot(bedsRef.current, visitsRef.current);
-    clearBed(id);
-  }, [clearBed, saveSnapshot]);
+  // --- Snapshot Wrappers for Actions ---
+  
+  const withSnapshot = useCallback((action: (...args: any[]) => void) => {
+    return (...args: any[]) => {
+      saveSnapshot(bedsRef.current, visitsRef.current);
+      action(...args);
+    };
+  }, [saveSnapshot]);
 
-  const resetAllWithHistory = useCallback(() => {
-    saveSnapshot(bedsRef.current, visitsRef.current);
-    bedsRef.current.forEach(bed => clearBed(bed.id));
-  }, [clearBed, saveSnapshot]);
+  const selectPreset = withSnapshot(_selectPreset);
+  const startCustomPreset = withSnapshot(_startCustomPreset);
+  const startQuickTreatment = withSnapshot(_startQuickTreatment);
+  const startTraction = withSnapshot(_startTraction);
+  const nextStep = withSnapshot(_nextStep);
+  const prevStep = withSnapshot(_prevStep);
+  const swapSteps = withSnapshot(_swapSteps);
+  const togglePause = withSnapshot(_togglePause); 
+  const clearBed = withSnapshot(_clearBed);
+  
+  const toggleInjection = withSnapshot(_toggleInjection);
+  const toggleFluid = withSnapshot(_toggleFluid);
+  const toggleTraction = withSnapshot(_toggleTraction);
+  const toggleESWT = withSnapshot(_toggleESWT);
+  const toggleManual = withSnapshot(_toggleManual);
+  const updateBedSteps = withSnapshot(_updateBedSteps);
 
+  const resetAll = useCallback(() => {
+    saveSnapshot(bedsRef.current, visitsRef.current);
+    bedsRef.current.forEach(bed => _clearBed(bed.id));
+  }, [_clearBed, saveSnapshot]);
+
+  const movePatient = useCallback(async (fromBedId: number, toBedId: number) => {
+    saveSnapshot(bedsRef.current, visitsRef.current);
+    await _movePatient(fromBedId, toBedId);
+  }, [_movePatient, saveSnapshot]);
+
+
+  // --- Undo Logic ---
   const undo = useCallback(async () => {
-    const prevState = popSnapshot();
+    // Pass current state to save it into 'future' stack before restoring 'past'
+    const prevState = undoOp(bedsRef.current, visitsRef.current);
     if (!prevState) return false;
 
-    // 1. Restore Beds (Local & DB)
-    for (const bedState of prevState.beds) {
-      await updateBedState(bedState.id, bedState);
-    }
-
-    // 2. Restore Visits (Local & DB)
+    await restoreBeds(prevState.beds);
     setVisits(prevState.visits);
+    
     if (isOnlineMode() && supabase) {
-      // 대량 복구는 복잡하므로, 가장 최신 상태를 Upsert 하는 방식으로 처리하거나 
-      // 개별 방문 기록을 돌려놓습니다. 여기서는 단순화를 위해 개별 upsert 진행.
       const rows = prevState.visits.map(v => ({...v, updated_at: new Date().toISOString()}));
-      await supabase.from('patient_visits').upsert(rows);
+      if (rows.length > 0) {
+        await supabase.from('patient_visits').upsert(rows);
+      }
     }
-
     return true;
-  }, [popSnapshot, updateBedState, setVisits]);
+  }, [undoOp, restoreBeds, setVisits]);
 
-  useNotificationBridge(nextStep);
+  // --- Redo Logic ---
+  const redo = useCallback(async () => {
+    // Pass current state to save it into 'history' stack before restoring 'future'
+    const nextState = redoOp(bedsRef.current, visitsRef.current);
+    if (!nextState) return false;
+
+    await restoreBeds(nextState.beds);
+    setVisits(nextState.visits);
+
+    if (isOnlineMode() && supabase) {
+      const rows = nextState.visits.map(v => ({...v, updated_at: new Date().toISOString()}));
+      if (rows.length > 0) {
+        await supabase.from('patient_visits').upsert(rows);
+      }
+    }
+    return true;
+  }, [redoOp, restoreBeds, setVisits]);
+
+  useNotificationBridge(nextStep); 
 
   const value = {
     presets,
@@ -158,12 +221,28 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     ...settings,
     ...uiState,
     ...bedManager, 
-    clearBed: clearBedWithHistory,
-    resetAll: resetAllWithHistory,
+    selectPreset,
+    startCustomPreset,
+    startQuickTreatment,
+    startTraction,
+    nextStep,
+    prevStep,
+    swapSteps,
+    togglePause,
+    toggleInjection,
+    toggleFluid,
+    toggleTraction,
+    toggleESWT,
+    toggleManual,
+    updateBedSteps,
+    clearBed,
+    resetAll,
     movePatient,
     updateVisitWithBedSync,
     undo,
-    canUndo
+    redo,
+    canUndo,
+    canRedo
   };
 
   return (
