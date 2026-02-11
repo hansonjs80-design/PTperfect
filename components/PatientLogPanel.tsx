@@ -1,5 +1,5 @@
 
-import React, { useState, Suspense, useCallback, useMemo } from 'react';
+import React, { Suspense, useCallback } from 'react';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { usePatientLogContext } from '../contexts/PatientLogContext';
 import { PatientLogPrintView } from './patient-log/PatientLogPrintView';
@@ -7,7 +7,6 @@ import { PatientLogHeader } from './patient-log/PatientLogHeader';
 import { PatientLogTable } from './patient-log/PatientLogTable';
 import { Loader2 } from 'lucide-react';
 import { useLogStatusLogic } from '../hooks/useLogStatusLogic';
-import { BedStatus } from '../types';
 
 const PrintPreviewModal = React.lazy(() => import('./modals/PrintPreviewModal').then(module => ({ default: module.PrintPreviewModal })));
 
@@ -16,17 +15,29 @@ interface PatientLogPanelProps {
 }
 
 export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => {
-  const { setSelectingLogId, setSelectingBedId, beds, presets, nextStep, prevStep, movePatient, updateVisitWithBedSync, setEditingBedId, clearBed } = useTreatmentContext();
+  const { 
+    setSelectingLogId, 
+    setSelectingBedId, 
+    beds, 
+    presets, 
+    nextStep, 
+    prevStep, 
+    movePatient, 
+    updateVisitWithBedSync, 
+    setEditingBedId, 
+    clearBed,
+    isPrintModalOpen,
+    setPrintModalOpen
+  } = useTreatmentContext();
+  
   const { visits, currentDate, setCurrentDate, changeDate, addVisit, deleteVisit } = usePatientLogContext();
   
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-
   // Performance Optimization: 
   // Extract status logic to prevent re-rendering on every timer tick.
   const { getRowStatus } = useLogStatusLogic(beds, visits);
 
   const handlePrintClick = () => {
-    setIsPreviewOpen(true);
+    setPrintModalOpen(true);
   };
 
   const handleMovePatient = useCallback((visitId: string, currentBedId: number, newBedId: number) => {
@@ -66,14 +77,17 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     <>
       <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-xl print:hidden">
         
-        <PatientLogHeader 
-          totalCount={visits.length}
-          currentDate={currentDate}
-          onDateChange={changeDate}
-          onDateSelect={setCurrentDate}
-          onPrint={handlePrintClick}
-          onClose={onClose}
-        />
+        {/* Header: Visible on Mobile/Tablet, Hidden on Desktop (xl:hidden) */}
+        <div className="xl:hidden shrink-0">
+          <PatientLogHeader 
+            totalCount={visits.length}
+            currentDate={currentDate}
+            onDateChange={changeDate}
+            onDateSelect={setCurrentDate}
+            onPrint={handlePrintClick}
+            onClose={onClose}
+          />
+        </div>
 
         <PatientLogTable 
           visits={visits}
@@ -104,15 +118,15 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         currentDate={currentDate} 
       />
 
-      {isPreviewOpen && (
+      {isPrintModalOpen && (
         <Suspense fallback={
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
             <Loader2 className="w-10 h-10 text-white animate-spin" />
           </div>
         }>
           <PrintPreviewModal 
-            isOpen={isPreviewOpen} 
-            onClose={() => setIsPreviewOpen(false)} 
+            isOpen={isPrintModalOpen} 
+            onClose={() => setPrintModalOpen(false)} 
             visits={visits} 
             currentDate={currentDate} 
           />

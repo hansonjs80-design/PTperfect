@@ -12,6 +12,7 @@ export const useTreatmentUI = () => {
   const [selectingLogId, setSelectingLogId] = useState<string | null>(null);
   const [editingBedId, setEditingBedId] = useState<number | null>(null);
   const [movingPatientState, setMovingPatientState] = useState<MovingPatientState | null>(null);
+  const [isPrintModalOpen, setPrintModalOpen] = useState(false);
 
   return {
     selectingBedId,
@@ -21,6 +22,8 @@ export const useTreatmentUI = () => {
     editingBedId,
     setEditingBedId,
     movingPatientState,
-    setMovingPatientState
+    setMovingPatientState,
+    isPrintModalOpen,
+    setPrintModalOpen
   };
 };

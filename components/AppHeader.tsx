@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Menu, Sun, Moon, Download, ClipboardList, Maximize, Activity, ArrowUpDown } from 'lucide-react';
+import { Menu, Sun, Moon, Download, ClipboardList, Maximize, Activity, ArrowUpDown, ChevronLeft, ChevronRight, CalendarCheck, Printer, X, Undo2, Redo2 } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
+import { usePatientLogContext } from '../contexts/PatientLogContext';
 
 interface AppHeaderProps {
   onOpenMenu: () => void;
@@ -22,14 +23,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onToggleFullScreen,
 }) => {
   const { isInstallable, install } = usePWAInstall();
-  const { layoutMode, toggleLayoutMode } = useTreatmentContext();
+  const { layoutMode, toggleLayoutMode, undo, redo, canUndo, canRedo, setPrintModalOpen } = useTreatmentContext();
+  const { visits, currentDate, changeDate, setCurrentDate } = usePatientLogContext();
+
+  const handleTodayClick = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    const localDate = new Date(now.getTime() - offset).toISOString().split('T')[0];
+    setCurrentDate(localDate);
+  };
 
   // 공통 버튼 스타일
-  // Reduced size for lg:landscape/xl from w-11/h-11 to w-10/h-10 to match reduced header height
   const buttonClass = "relative flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 md:w-9 md:h-9 xl:w-10 xl:h-10 landscape:w-9 landscape:h-9 lg:landscape:w-10 lg:landscape:h-10 rounded-xl transition-all duration-200 active:scale-90 hover:bg-white/80 dark:hover:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-700";
   
   const activeButtonClass = "bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 border-brand-200 dark:border-brand-800/50 shadow-inner";
   const activeLayoutBtnClass = "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/50 shadow-inner";
+
+  // Desktop Header Icons style (smaller, cleaner)
+  const desktopIconClass = "flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed";
 
   const getLayoutRotation = () => {
     if (layoutMode === 'alt') return 'rotate-180';
@@ -39,15 +50,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
   return (
     <header className="flex flex-col justify-end w-full h-full bg-white/75 dark:bg-slate-950/75 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 z-30 pt-[env(safe-area-inset-top)] transition-colors duration-300">
-      {/* 
-        Height Adjustment:
-        Base: h-[62px]
-        Small Mobile (sm): h-[72px]
-        Tablet Portrait (md): h-[52px]
-        Desktop (xl): h-[60px] (Reduced from 72px)
-        Landscape Mobile: h-12
-        Desktop Landscape (lg): h-[60px] (Reduced from 72px)
-      */}
       <div className="flex items-center justify-between px-3 sm:px-5 h-[62px] sm:h-[72px] md:h-[52px] xl:h-[60px] landscape:h-12 lg:landscape:h-[60px] shrink-0 max-w-[1600px] mx-auto w-full">
         
         {/* Left: Menu & Logo */}
@@ -64,7 +66,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <div className="p-1.5 md:p-1 xl:p-1.5 bg-brand-600 rounded-lg shadow-lg shadow-brand-500/30 group-hover:scale-110 transition-transform duration-300">
                <Activity className="w-4 h-4 sm:w-5 sm:h-5 md:w-4 md:h-4 xl:w-5 xl:h-5 text-white" strokeWidth={3} />
             </div>
-            {/* Reduced Text Size for xl and lg:landscape: text-3xl -> text-2xl */}
             <h1 className="text-2xl sm:text-3xl md:text-xl xl:text-2xl landscape:text-lg lg:landscape:text-2xl font-black text-slate-800 dark:text-white tracking-tighter leading-none flex items-center">
               PHYSIO<span className="text-brand-600">TRACK</span>
             </h1>
@@ -74,6 +75,45 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {/* Right: Actions */}
         <div className="flex items-center gap-1 sm:gap-2">
           
+          {/* Desktop Patient Log Controls (Visible only on Desktop when Log is Open) */}
+          {isLogOpen && (
+            <div className="hidden xl:flex items-center gap-3 mr-4 border-r border-slate-200 dark:border-slate-700 pr-4 animate-in fade-in slide-in-from-right-4 duration-300">
+               {/* Total Badge */}
+               <div className="flex flex-col items-center justify-center px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 min-w-[40px]">
+                 <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase leading-none mb-0.5">Total</span>
+                 <span className="text-sm font-black text-brand-600 dark:text-brand-400 leading-none">{visits.length}</span>
+               </div>
+
+               {/* Undo/Redo */}
+               <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
+                  <button onClick={undo} disabled={!canUndo} className={desktopIconClass} title="되돌리기"><Undo2 className="w-4 h-4" /></button>
+                  <button onClick={redo} disabled={!canRedo} className={desktopIconClass} title="다시 실행"><Redo2 className="w-4 h-4" /></button>
+               </div>
+
+               {/* Date Nav */}
+               <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-0.5 rounded-xl border border-slate-200/50 dark:border-slate-700">
+                  <button onClick={() => changeDate(-1)} className={desktopIconClass}><ChevronLeft className="w-4 h-4" /></button>
+                  <div className="relative flex items-center justify-center h-8 px-2 group cursor-pointer min-w-[90px]">
+                    <span className="text-sm font-black text-slate-800 dark:text-slate-100 tabular-nums tracking-tight">{currentDate}</span>
+                    <input type="date" value={currentDate} onChange={(e) => setCurrentDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                  </div>
+                  <button onClick={() => changeDate(1)} className={desktopIconClass}><ChevronRight className="w-4 h-4" /></button>
+                  <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+                  <button onClick={handleTodayClick} className={`${desktopIconClass} text-brand-500 hover:text-brand-600 bg-white dark:bg-slate-700 shadow-sm`} title="오늘"><CalendarCheck className="w-4 h-4" /></button>
+               </div>
+
+               {/* Print */}
+               <button onClick={() => setPrintModalOpen(true)} className="flex items-center justify-center w-9 h-9 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-300 dark:hover:border-brand-700 rounded-xl text-slate-500 hover:text-brand-600 transition-all shadow-sm active:scale-95" title="출력">
+                 <Printer className="w-5 h-5" strokeWidth={2} />
+               </button>
+
+               {/* Close Log */}
+               <button onClick={onToggleLog} className="flex items-center justify-center w-9 h-9 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl text-slate-500 dark:text-slate-300 transition-all active:scale-95" title="닫기">
+                 <X className="w-5 h-5" />
+               </button>
+            </div>
+          )}
+
           {isInstallable && (
             <button 
               onClick={install}

@@ -40,6 +40,8 @@ interface TreatmentContextType {
   setSelectingLogId: (id: string | null) => void;
   editingBedId: number | null;
   setEditingBedId: (id: number | null) => void;
+  isPrintModalOpen: boolean;
+  setPrintModalOpen: (isOpen: boolean) => void;
   
   // Patient Move State
   movingPatientState: MovingPatientState | null;
