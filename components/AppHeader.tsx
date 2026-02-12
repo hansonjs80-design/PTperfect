@@ -106,11 +106,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                <button onClick={() => setPrintModalOpen(true)} className="flex items-center justify-center w-9 h-9 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-300 dark:hover:border-brand-700 rounded-xl text-slate-500 hover:text-brand-600 transition-all shadow-sm active:scale-95" title="출력">
                  <Printer className="w-5 h-5" strokeWidth={2} />
                </button>
-
-               {/* Close Log */}
-               <button onClick={onToggleLog} className="flex items-center justify-center w-9 h-9 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl text-slate-500 dark:text-slate-300 transition-all active:scale-95" title="닫기">
-                 <X className="w-5 h-5" />
-               </button>
             </div>
           )}
 
