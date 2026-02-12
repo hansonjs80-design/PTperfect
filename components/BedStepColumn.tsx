@@ -122,7 +122,7 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
       >
         {/* Step Visual Block */}
         <div className={`
-            flex-1 flex flex-col items-center justify-center p-1 sm:p-1.5 relative overflow-hidden transition-all duration-200 
+            flex-1 flex flex-col items-center justify-center p-0.5 sm:p-1.5 relative overflow-hidden transition-all duration-200 
             ${colorClass}
             ${isSelectedForSwap ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900 rounded-md' : ''}
         `}>

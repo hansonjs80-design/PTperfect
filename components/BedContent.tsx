@@ -22,8 +22,8 @@ export const BedContent: React.FC<BedContentProps> = memo(({
   const isCompleted = bed.status === BedStatus.COMPLETED;
 
   return (
-    // Reduced min-h from 60px to 45px for compact mobile view
-    <div className="w-full h-auto sm:h-full min-h-[45px] flex flex-row gap-[1px] bg-slate-100 dark:bg-slate-700/50 p-[1px] overflow-hidden">
+    // Reduced min-h from 45px to 40px for tighter mobile view
+    <div className="w-full h-auto sm:h-full min-h-[40px] flex flex-row gap-[1px] bg-slate-100 dark:bg-slate-700/50 p-[1px] overflow-hidden">
       {steps.map((step, idx) => {
         const isActive = idx === bed.currentStepIndex && bed.status === BedStatus.ACTIVE;
         const isPast = !isCompleted && idx < bed.currentStepIndex;
