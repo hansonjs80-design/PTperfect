@@ -85,7 +85,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-scroll log-scrollbar bg-white dark:bg-slate-900">
+    <div className="flex-1 overflow-y-auto overflow-x-auto xl:overflow-x-hidden log-scrollbar bg-white dark:bg-slate-900">
       <table className="w-full min-w-[500px] md:min-w-full border-collapse table-fixed">
         <PatientLogTableHeader />
         <tbody>

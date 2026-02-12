@@ -125,7 +125,7 @@ export const MainLayout: React.FC = () => {
           className={`
             hidden xl:block 
             h-full shrink-0 relative z-30 
-            transition-[width,opacity,transform] duration-300 ease-out overflow-x-auto custom-scrollbar
+            transition-[width,opacity,transform] duration-300 ease-out overflow-x-auto sidebar-scrollbar
             ${isFullScreen ? '!hidden' : ''}
             ${isLogOpen ? 'opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-20 overflow-hidden'}
             ${!isFullScreen ? 'pt-[calc(60px+env(safe-area-inset-top))]' : ''}
