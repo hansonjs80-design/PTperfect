@@ -1,5 +1,5 @@
 
-import React, { useRef, useState, useLayoutEffect } from 'react';
+import React, { useRef, useState, useLayoutEffect, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { BedState } from '../../types';
@@ -31,6 +31,17 @@ export const BedStatusPopup: React.FC<BedStatusPopupProps> = ({
   
   // Breakpoint for Desktop/Tablet (matches tailwind md: 768px)
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+
+  // Window Escape Listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   useLayoutEffect(() => {
     if (isDesktop && containerRef.current) {

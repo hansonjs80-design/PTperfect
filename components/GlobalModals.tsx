@@ -88,6 +88,47 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
     }
   };
 
+  // --- Global Escape Key Listener ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        // 1. Move Modal
+        if (movingPatientState !== null) {
+          closeAndPop(setMovingPatientState);
+          return;
+        }
+        
+        // 2. Edit Overlay
+        if (editingBedId !== null) {
+          closeAndPop(setEditingBedId);
+          return;
+        }
+
+        // 3. Preset Selector / Log Selector
+        if (selectingBedId !== null || selectingLogId !== null) {
+          setSelectingBedId(null);
+          setSelectingLogId(null);
+          if (window.history.state?.modalOpen) {
+            window.history.back();
+          }
+          return;
+        }
+
+        // 4. Settings Menu
+        if (isMenuOpen) {
+          onCloseMenu();
+          if (window.history.state?.modalOpen) {
+            window.history.back();
+          }
+          return;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [movingPatientState, editingBedId, selectingBedId, selectingLogId, isMenuOpen, setMovingPatientState, setEditingBedId, setSelectingBedId, setSelectingLogId, onCloseMenu]);
+
   const activeLogEntry = useMemo(() => {
     if (!selectingLogId) return null;
     return visits.find(v => v.id === selectingLogId) || null;

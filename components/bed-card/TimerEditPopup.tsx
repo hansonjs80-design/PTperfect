@@ -32,6 +32,17 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
     }
   }, []);
 
+  // Window Escape Listener
+  useEffect(() => {
+    const handleWindowKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+    window.addEventListener('keydown', handleWindowKeyDown);
+    return () => window.removeEventListener('keydown', handleWindowKeyDown);
+  }, [onCancel]);
+
   // Smart Positioning: Place ABOVE the click by default
   useLayoutEffect(() => {
     if (position && containerRef.current) {
@@ -94,7 +105,7 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleConfirm();
-    if (e.key === 'Escape') onCancel();
+    // e.key === 'Escape' handled by window listener
   };
 
   const overlayClass = position 

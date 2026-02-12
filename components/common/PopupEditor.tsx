@@ -29,6 +29,25 @@ export const PopupEditor: React.FC<PopupEditorProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Auto Focus
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, []);
+
+  // Window Escape Listener
+  useEffect(() => {
+    const handleWindowKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+    window.addEventListener('keydown', handleWindowKeyDown);
+    return () => window.removeEventListener('keydown', handleWindowKeyDown);
+  }, [onCancel]);
+
   // Smart Positioning: 화면 밖으로 나가지 않게 조정 (centered 모드가 아닐 때만)
   useLayoutEffect(() => {
     if (centered || !position) return;
@@ -59,20 +78,11 @@ export const PopupEditor: React.FC<PopupEditorProps> = ({
     }
   }, [position, centered]);
 
-  // Auto Focus
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, []);
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       onConfirm(value);
-    } else if (e.key === 'Escape') {
-      onCancel();
     }
+    // Escape handled by window listener
   };
 
   const overlayClass = centered 

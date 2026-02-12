@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Printer, FileDown, CheckCircle, Loader2 } from 'lucide-react';
 import { PatientLogPrintView } from '../patient-log/PatientLogPrintView';
@@ -21,6 +21,17 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 }) => {
   // Use extracted hook for PDF logic
   const { isGenerating, generatePdf } = usePdfGenerator();
+
+  // Handle Escape Key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isOpen && e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
