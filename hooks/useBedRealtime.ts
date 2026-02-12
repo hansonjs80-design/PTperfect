@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BedState, BedStatus } from '../types';
 import { supabase, isOnlineMode } from '../lib/supabase';
 import { mapRowToBed, shouldIgnoreServerUpdate } from '../utils/bedLogic';
@@ -10,6 +10,28 @@ export const useBedRealtime = (
 ) => {
   const [realtimeStatus, setRealtimeStatus] = useState<'OFFLINE' | 'CONNECTING' | 'SUBSCRIBED' | 'CHANNEL_ERROR' | 'CLOSED' | 'TIMED_OUT'>('OFFLINE');
 
+  const fetchBeds = useCallback(async () => {
+    const client = supabase;
+    if (!isOnlineMode() || !client) {
+      setRealtimeStatus('OFFLINE');
+      return;
+    }
+
+    const { data, error } = await client.from('beds').select('*').order('id');
+    if (!error && data) {
+      const serverBeds: BedState[] = data.map(row => mapRowToBed(row) as BedState);
+      setBeds((currentBeds) => {
+        const newBeds = serverBeds.map(serverBed => {
+          const localBed = currentBeds.find(b => b.id === serverBed.id);
+          if (localBed && shouldIgnoreServerUpdate(localBed, serverBed)) return localBed;
+          return serverBed;
+        });
+        setLocalBeds(newBeds); // Sync local storage
+        return newBeds;
+      });
+    }
+  }, [setBeds, setLocalBeds]);
+
   useEffect(() => {
     const client = supabase;
     if (!isOnlineMode() || !client) {
@@ -19,20 +41,7 @@ export const useBedRealtime = (
 
     setRealtimeStatus('CONNECTING');
 
-    const fetchBeds = async () => {
-      const { data, error } = await client.from('beds').select('*').order('id');
-      if (!error && data) {
-        const serverBeds: BedState[] = data.map(row => mapRowToBed(row) as BedState);
-        setBeds((currentBeds) => {
-          return serverBeds.map(serverBed => {
-            const localBed = currentBeds.find(b => b.id === serverBed.id);
-            if (localBed && shouldIgnoreServerUpdate(localBed, serverBed)) return localBed;
-            return serverBed;
-          });
-        });
-      }
-    };
-
+    // Initial Fetch
     fetchBeds();
 
     const channel = client
@@ -84,7 +93,7 @@ export const useBedRealtime = (
       });
 
     return () => { client.removeChannel(channel); };
-  }, [setBeds, setLocalBeds]);
+  }, [setBeds, setLocalBeds, fetchBeds]);
 
-  return { realtimeStatus };
+  return { realtimeStatus, refresh: fetchBeds };
 };

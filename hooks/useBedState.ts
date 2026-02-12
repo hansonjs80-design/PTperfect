@@ -45,7 +45,7 @@ export const useBedState = (
 
   // 2. Sub-hooks (Infrastructure)
   useBedTimer(setBeds, presets, isSoundEnabled, beds);
-  const { realtimeStatus } = useBedRealtime(setBeds, setLocalBeds);
+  const { realtimeStatus, refresh } = useBedRealtime(setBeds, setLocalBeds);
 
   const hasActiveBeds = beds.some(b => b.status === BedStatus.ACTIVE && !b.isPaused);
   useWakeLock(hasActiveBeds);
@@ -104,6 +104,7 @@ export const useBedState = (
     bedsRef, 
     updateBedState,
     restoreBeds, // Exported for Undo logic
+    refreshBeds: refresh, // Exported for Manual Refresh
     realtimeStatus 
   };
 };

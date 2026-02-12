@@ -22,7 +22,7 @@ export const useBedManager = (
   onUpdateVisit?: (bedId: number, updates: any) => void
 ) => {
   // 1. Core State Management
-  const { beds, bedsRef, updateBedState, restoreBeds, realtimeStatus } = useBedState(presets, isSoundEnabled, isBackgroundKeepAlive);
+  const { beds, bedsRef, updateBedState, restoreBeds, refreshBeds, realtimeStatus } = useBedState(presets, isSoundEnabled, isBackgroundKeepAlive);
 
   // 2. Runtime Controls (Pause, Next, Clear, Flags)
   const controls = useBedControls(bedsRef, updateBedState, presets, onUpdateVisit);
@@ -70,6 +70,7 @@ export const useBedManager = (
     // Core & Utils
     updateBedState,
     restoreBeds, // EXPOSED
+    refreshBeds, // EXPOSED
     jumpToStep: (bedId: number, stepIndex: number) => {}, 
     realtimeStatus
   };

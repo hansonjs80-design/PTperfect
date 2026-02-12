@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Menu, Sun, Moon, Download, ClipboardList, Maximize, Activity, ArrowUpDown, ChevronLeft, ChevronRight, CalendarCheck, Printer, X, Undo2, Redo2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Menu, Sun, Moon, Download, ClipboardList, Maximize, Activity, ArrowUpDown, ChevronLeft, ChevronRight, CalendarCheck, Printer, X, Undo2, Redo2, RotateCw } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { usePatientLogContext } from '../contexts/PatientLogContext';
@@ -23,14 +23,22 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onToggleFullScreen,
 }) => {
   const { isInstallable, install } = usePWAInstall();
-  const { layoutMode, toggleLayoutMode, undo, redo, canUndo, canRedo, setPrintModalOpen } = useTreatmentContext();
+  const { layoutMode, toggleLayoutMode, undo, redo, canUndo, canRedo, setPrintModalOpen, refreshBeds } = useTreatmentContext();
   const { visits, currentDate, changeDate, setCurrentDate } = usePatientLogContext();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleTodayClick = () => {
     const now = new Date();
     const offset = now.getTimezoneOffset() * 60000;
     const localDate = new Date(now.getTime() - offset).toISOString().split('T')[0];
     setCurrentDate(localDate);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshBeds(); // Call the refresh function
+    // Ensure animation plays for at least 800ms for visual feedback
+    setTimeout(() => setIsRefreshing(false), 800);
   };
 
   // 공통 버튼 스타일
@@ -150,6 +158,21 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 w-5 h-5 md:w-4 md:h-4 xl:w-5 xl:h-5 landscape:w-4 landscape:h-4 lg:landscape:w-5 lg:landscape:h-5
                 transition-transform duration-500 ease-in-out
                 ${getLayoutRotation()}
+              `} 
+              strokeWidth={2.5} 
+            />
+          </button>
+
+          {/* New Refresh Button */}
+          <button
+            onClick={handleRefresh}
+            className={`${buttonClass}`}
+            title="데이터 새로고침 (DB Sync)"
+          >
+            <RotateCw 
+              className={`
+                w-5 h-5 md:w-4 md:h-4 xl:w-5 xl:h-5 landscape:w-4 landscape:h-4 lg:landscape:w-5 lg:landscape:h-5
+                ${isRefreshing ? 'animate-spin' : ''}
               `} 
               strokeWidth={2.5} 
             />

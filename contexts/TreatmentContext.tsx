@@ -67,6 +67,7 @@ interface TreatmentContextType {
   updateBedDuration: (bedId: number, duration: number) => void;
   clearBed: (bedId: number) => void;
   resetAll: () => void;
+  refreshBeds: () => void; // Added
   movePatient: (fromBedId: number, toBedId: number) => Promise<void>;
   
   // Undo/Redo System
@@ -107,6 +108,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     beds, 
     updateBedState,
     restoreBeds, 
+    refreshBeds, // Destructure
     // Destructure original actions to wrap them with snapshot logic
     selectPreset: _selectPreset,
     startCustomPreset: _startCustomPreset,
@@ -239,6 +241,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     updateBedSteps,
     clearBed,
     resetAll,
+    refreshBeds,
     movePatient,
     updateVisitWithBedSync,
     undo,
