@@ -144,7 +144,7 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
         {/* Memo Area */}
         <div 
           className={`
-            h-[18px] sm:h-[26px] flex items-center justify-center px-1 cursor-pointer transition-colors select-none border-t border-black/5 dark:border-white/5 relative
+            h-[24px] sm:h-[32px] flex items-center justify-center px-1 cursor-pointer transition-colors select-none border-t border-black/5 dark:border-white/5 relative
             ${isActive 
                ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200' 
                : 'bg-white/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400'
@@ -157,18 +157,18 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
              <input
                autoFocus
                defaultValue={memo || ""}
-               className="w-full h-full bg-white dark:bg-slate-600 text-center border-2 border-brand-500 rounded-none outline-none p-0 text-xs sm:text-sm font-bold text-slate-800 dark:text-white"
+               className="w-full h-full bg-white dark:bg-slate-600 text-center border-2 border-brand-500 rounded-none outline-none p-0 text-base font-bold text-slate-800 dark:text-white leading-none"
                onBlur={handleInlineBlur}
                onKeyDown={handleInlineKeyDown}
                onClick={(e) => e.stopPropagation()}
              />
           ) : (
              memo ? (
-                <span className="text-xs sm:text-sm font-bold leading-tight text-center truncate w-full">
+                <span className="text-base font-bold leading-none text-center truncate w-full">
                   {memo}
                 </span>
               ) : (
-                <span className="text-[9px] sm:text-[10px] opacity-0 group-hover/col:opacity-30 transition-opacity font-bold">+</span>
+                <span className="text-xs sm:text-sm opacity-0 group-hover/col:opacity-30 transition-opacity font-bold">+</span>
               )
           )}
         </div>
