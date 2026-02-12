@@ -50,7 +50,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
   return (
     <header className="flex flex-col justify-end w-full h-full bg-white/75 dark:bg-slate-950/75 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 z-30 pt-[env(safe-area-inset-top)] transition-colors duration-300">
-      <div className="flex items-center justify-between px-3 sm:px-5 h-[62px] sm:h-[72px] md:h-[52px] xl:h-[60px] landscape:h-12 lg:landscape:h-[60px] shrink-0 max-w-[1600px] mx-auto w-full">
+      <div className="flex items-center justify-between px-3 sm:px-5 h-[62px] sm:h-[72px] md:h-[52px] xl:h-[60px] landscape:h-12 lg:landscape:h-[60px] shrink-0 w-full">
         
         {/* Left: Menu & Logo */}
         <div className="flex items-center gap-3 sm:gap-4 md:gap-3 xl:gap-4">

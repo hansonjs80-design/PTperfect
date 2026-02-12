@@ -5,6 +5,7 @@ import { getStepLabel } from '../utils/bedUtils';
 import { getStepColor } from '../utils/styleUtils';
 import { PopupEditor } from './common/PopupEditor';
 import { ArrowRightLeft } from 'lucide-react';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 interface BedStepColumnProps {
   step: TreatmentStep;
@@ -35,6 +36,9 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
   const colorClass = getStepColor(step, isActive, isPast, false, isCompleted);
   const lastMemoClickRef = useRef<number>(0);
   const lastSwapClickRef = useRef<number>(0);
+  
+  // Desktop/Tablet check (>= 768px)
+  const isDesktopOrTablet = useMediaQuery('(min-width: 768px)');
 
   const handleMemoDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -43,23 +47,30 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
     setIsEditingMemo(true);
   };
 
-  const handleMemoTouchClick = (e: React.MouseEvent) => {
-    if (window.matchMedia('(pointer: coarse)').matches) {
-        const now = Date.now();
-        if (now - lastMemoClickRef.current < 350) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (onUpdateMemo) setIsEditingMemo(true);
-            lastMemoClickRef.current = 0;
-        } else {
-            lastMemoClickRef.current = now;
+  const handleMemoInteraction = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (isDesktopOrTablet) {
+        // Desktop/Tablet: Single Click -> Edit
+        if (onUpdateMemo) setIsEditingMemo(true);
+    } else {
+        // Mobile: Double Tap Logic
+        if (window.matchMedia('(pointer: coarse)').matches) {
+            const now = Date.now();
+            if (now - lastMemoClickRef.current < 350) {
+                e.preventDefault();
+                if (onUpdateMemo) setIsEditingMemo(true);
+                lastMemoClickRef.current = 0;
+            } else {
+                lastMemoClickRef.current = now;
+            }
         }
     }
   };
 
   const handleSwapInteraction = (e: React.MouseEvent) => {
     // 1. Desktop & Tablet (Width >= 768px) -> Single Click
-    if (window.innerWidth >= 768) {
+    if (isDesktopOrTablet) {
         e.preventDefault();
         e.stopPropagation();
         onSwapRequest && onSwapRequest(bedId, index);
@@ -75,7 +86,6 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
         lastSwapClickRef.current = 0;
     } else {
         lastSwapClickRef.current = now;
-        // Allow bubbling for first tap on mobile (to support parent handlers if any)
     }
   };
 
@@ -84,6 +94,20 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
       onUpdateMemo(bedId, index, val === "" ? null : val);
     }
     setIsEditingMemo(false);
+  };
+
+  const handleInlineBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    handleMemoSave(e.target.value);
+  };
+
+  const handleInlineKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        handleMemoSave(e.currentTarget.value);
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setIsEditingMemo(false);
+    }
   };
 
   return (
@@ -120,26 +144,37 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
         {/* Memo Area */}
         <div 
           className={`
-            h-[18px] sm:h-[26px] flex items-center justify-center px-1 cursor-pointer transition-colors select-none border-t border-black/5 dark:border-white/5
+            h-[18px] sm:h-[26px] flex items-center justify-center px-1 cursor-pointer transition-colors select-none border-t border-black/5 dark:border-white/5 relative
             ${isActive 
                ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200' 
                : 'bg-white/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400'
             }
           `}
           onDoubleClick={handleMemoDoubleClick}
-          onClick={(e) => { e.stopPropagation(); handleMemoTouchClick(e); }}
+          onClick={handleMemoInteraction}
         >
-          {memo ? (
-            <span className="text-[10px] sm:text-xs font-bold leading-tight text-center truncate w-full">
-              {memo}
-            </span>
+          {isEditingMemo && isDesktopOrTablet ? (
+             <input
+               autoFocus
+               defaultValue={memo || ""}
+               className="w-full h-full bg-white dark:bg-slate-600 text-center border-2 border-brand-500 rounded-none outline-none p-0 text-xs sm:text-sm font-bold text-slate-800 dark:text-white"
+               onBlur={handleInlineBlur}
+               onKeyDown={handleInlineKeyDown}
+               onClick={(e) => e.stopPropagation()}
+             />
           ) : (
-            <span className="text-[9px] sm:text-[10px] opacity-0 group-hover/col:opacity-30 transition-opacity font-bold">+</span>
+             memo ? (
+                <span className="text-xs sm:text-sm font-bold leading-tight text-center truncate w-full">
+                  {memo}
+                </span>
+              ) : (
+                <span className="text-[9px] sm:text-[10px] opacity-0 group-hover/col:opacity-30 transition-opacity font-bold">+</span>
+              )
           )}
         </div>
       </div>
 
-      {isEditingMemo && (
+      {isEditingMemo && !isDesktopOrTablet && (
         <PopupEditor
           title={`${getStepLabel(step)} 메모`}
           initialValue={memo || ""}
