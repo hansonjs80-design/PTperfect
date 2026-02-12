@@ -11,7 +11,7 @@ export const PatientLogTableHeader: React.FC = () => {
         <th className="py-3 px-1 text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider w-[55px] md:w-[95px] xl:w-[75px] text-center border-r border-slate-300 dark:border-slate-600 last:border-r-0">
           이름
         </th>
-        <th className="py-3 px-1 text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider w-[55px] md:w-[120px] xl:w-[90px] text-center border-r border-slate-300 dark:border-slate-600 last:border-r-0">
+        <th className="py-3 px-1 text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider w-[55px] md:w-[120px] xl:w-[105px] text-center border-r border-slate-300 dark:border-slate-600 last:border-r-0">
           부위
         </th>
         {/* Adjusted Treatment List Column: w-[150px] on mobile, auto on desktop */}
