@@ -109,6 +109,7 @@ export const MainLayout: React.FC = () => {
         {isLogOpen && !isFullScreen && (
           <div
             className={`hidden xl:flex w-3 hover:w-3 cursor-col-resize z-50 items-center justify-center -ml-1.5 transition-all group select-none ${isResizing ? 'bg-brand-500/10' : ''}`}
+            style={{ paddingTop: 'calc(60px + env(safe-area-inset-top))' }}
             onMouseDown={startResizing}
           >
             <div className={`w-1 h-12 rounded-full transition-all group-hover:h-20 group-hover:bg-brand-400 ${isResizing ? 'bg-brand-500 h-24' : 'bg-gray-300 dark:bg-slate-700'}`} />
@@ -127,6 +128,7 @@ export const MainLayout: React.FC = () => {
             transition-[width,opacity,transform] duration-300 ease-out overflow-x-auto custom-scrollbar
             ${isFullScreen ? '!hidden' : ''}
             ${isLogOpen ? 'opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-20 overflow-hidden'}
+            ${!isFullScreen ? 'pt-[calc(60px+env(safe-area-inset-top))]' : ''}
           `}
           style={{ width: isLogOpen ? sidebarWidth : 0 }}
         >

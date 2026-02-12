@@ -1,8 +1,10 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { createPortal } from 'react-dom';
 import { X, Printer, FileDown, CheckCircle, Loader2 } from 'lucide-react';
 import { PatientLogPrintView } from '../patient-log/PatientLogPrintView';
 import { PatientVisit } from '../../types';
+import { usePdfGenerator } from '../../hooks/usePdfGenerator';
 
 interface PrintPreviewModalProps {
   isOpen: boolean;
@@ -17,7 +19,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   visits, 
   currentDate 
 }) => {
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  // Use extracted hook for PDF logic
+  const { isGenerating, generatePdf } = usePdfGenerator();
 
   if (!isOpen) return null;
 
@@ -25,52 +28,25 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
     window.print();
   };
 
-  const handleDownloadPDF = async () => {
-    const element = document.getElementById('pdf-preview-content-target');
-    if (!element) {
-        console.error("PDF target element not found");
-        return;
-    }
-
-    setIsGeneratingPdf(true);
-
-    const opt = {
-      margin: 10,
-      filename: `physiotrack_log_${currentDate}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    try {
-      // @ts-ignore
-      const html2pdfModule = await import('html2pdf.js');
-      const html2pdf = html2pdfModule.default || html2pdfModule;
-      await html2pdf().set(opt).from(element).save();
-    } catch (e) {
-      console.error("PDF generation failed:", e);
-      alert("PDF 생성 중 오류가 발생했습니다.");
-    } finally {
-      setIsGeneratingPdf(false);
-    }
+  const handleDownloadPDF = () => {
+    generatePdf('pdf-preview-content-target', `physiotrack_log_${currentDate}.pdf`);
   };
 
-  return (
+  return createPortal(
     <div 
       /* 
-        xl:pr-[620px]: 데스크톱 모드에서 사이드바(620px) 너비만큼 우측 패딩을 주어 
-        중앙 정렬(items-center justify-center)이 배드 영역을 기준으로 잡히게 설정
+        xl:pr-[620px]: Ensures centering is relative to the bed area (viewport - sidebar).
       */
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 xl:p-8 xl:pr-[620px] animate-in fade-in duration-300"
       onClick={onClose}
     >
       {/* 
         Container Logic:
-        - Mobile/Tablet: Stays as is (sm:rounded-2xl)
-        - Desktop (xl): Offset container to avoid covering the sidebar
+        - Mobile/Tablet: Stays as is.
+        - Desktop (xl): Increased max-width to 7xl (~1280px) for wider view.
       */}
       <div 
-        className="w-full h-full sm:w-[95vw] sm:h-[95vh] xl:w-[90%] xl:max-w-5xl xl:h-[90vh] bg-slate-900 sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/10 animate-in zoom-in-95 duration-300"
+        className="w-full h-full sm:w-[95vw] sm:h-[95vh] xl:w-[92%] xl:max-w-7xl xl:h-[92vh] bg-slate-900 sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/10 animate-in zoom-in-95 duration-300"
         onClick={e => e.stopPropagation()}
       >
         
@@ -96,8 +72,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
         {/* Scrollable Preview Area */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-10 flex justify-center bg-slate-950/50 custom-scrollbar">
           <div className="relative shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] origin-top">
-            {/* A4 Content Container */}
-            <div className="w-[210mm] min-h-[297mm] bg-white text-black scale-[0.5] xs:scale-[0.6] sm:scale-[0.8] lg:scale-[0.9] xl:scale-100 origin-top transition-transform">
+            {/* A4 Content Container - Scaled up on XL for better visibility */}
+            <div className="w-[210mm] min-h-[297mm] bg-white text-black scale-[0.5] xs:scale-[0.6] sm:scale-[0.8] lg:scale-[0.9] xl:scale-110 origin-top transition-transform">
                <PatientLogPrintView 
                  id="pdf-preview-content-target"
                  visits={visits} 
@@ -110,7 +86,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
         {/* Modal Footer / Controls */}
         <div className="p-6 sm:p-8 bg-slate-900 border-t border-slate-800 shrink-0">
-          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
              
              {/* Info Label */}
              <div className="hidden xl:flex flex-col gap-1 text-sm text-slate-400">
@@ -125,10 +101,10 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
              <div className="flex items-center gap-3 w-full md:w-auto">
                <button 
                  onClick={handleDownloadPDF}
-                 disabled={isGeneratingPdf}
+                 disabled={isGenerating}
                  className="flex-1 md:flex-none px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-black text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-wait border border-slate-700"
                >
-                 {isGeneratingPdf ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
+                 {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
                  PDF 저장
                </button>
 
@@ -143,6 +119,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
