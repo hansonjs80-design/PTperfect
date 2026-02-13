@@ -60,16 +60,15 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     const rowStatus = getRowStatus(visitId, visit.bed_id);
     
     // If the row is active (meaning it corresponds to the currently running bed)
+    // We still keep the safeguard for active bed clearing
     if (rowStatus === 'active' && visit.bed_id) {
         if (window.confirm(`${visit.bed_id}번 배드가 사용 중입니다. 기록을 삭제하고 배드를 비우시겠습니까?`)) {
             clearBed(visit.bed_id);
             deleteVisit(visitId);
         }
     } else {
-        // Just a normal log deletion
-        if (window.confirm("기록을 영구적으로 삭제하시겠습니까?")) {
-            deleteVisit(visitId);
-        }
+        // For normal deletion, we rely on the Row's 2-step button, so we execute immediately here.
+        deleteVisit(visitId);
     }
   }, [visits, getRowStatus, clearBed, deleteVisit]);
 

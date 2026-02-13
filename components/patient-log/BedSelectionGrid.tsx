@@ -14,19 +14,22 @@ export const BedSelectionGrid: React.FC<BedSelectionGridProps> = ({
   onSelect,
   disableHighlight = false
 }) => {
-  const bedNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+  // 0 represents "Unassigned" (Clear Bed)
+  const bedNumbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
   return (
-    <div className="grid grid-cols-5 gap-1.5 p-2">
+    <div className="grid grid-cols-4 gap-1.5 p-2">
       {bedNumbers.map((num) => {
         // If disableHighlight is true, we force isActive to false so no gray background is rendered
-        const isActive = !disableHighlight && activeBedIds.includes(num);
-        const isSelected = currentValue === num;
+        // 0 (Unassigned) is never "Active" in terms of occupancy
+        const isActive = num !== 0 && !disableHighlight && activeBedIds.includes(num);
+        const isSelected = (currentValue === null && num === 0) || currentValue === num;
         
         // Style Logic:
         // 1. Selected: Blue
         // 2. Active (Busy): Gray (Ignored if disableHighlight is true)
         // 3. Default: White
+        // 4. Unassign (0): Special Styling
         let btnClass = "h-8 flex items-center justify-center rounded-lg font-black text-xs sm:text-sm border transition-all active:scale-95 ";
         
         if (isSelected) {
@@ -34,7 +37,13 @@ export const BedSelectionGrid: React.FC<BedSelectionGridProps> = ({
         } else if (isActive) {
             btnClass += "bg-slate-200 dark:bg-slate-600 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-500 hover:bg-slate-300 dark:hover:bg-slate-500";
         } else {
+            // Default styling
             btnClass += "bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-slate-600 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200";
+            
+            // Special style for "Unassign" button
+            if (num === 0) {
+               btnClass = "h-8 flex items-center justify-center rounded-lg font-black text-xs sm:text-sm border transition-all active:scale-95 bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600";
+            }
         }
 
         return (
@@ -43,9 +52,13 @@ export const BedSelectionGrid: React.FC<BedSelectionGridProps> = ({
             onClick={() => onSelect(num)}
             className={btnClass}
             disabled={isSelected}
-            title={isActive ? "현재 사용 중인 배드" : (disableHighlight ? "배드 번호 수정 (로그)" : "빈 배드")}
+            title={
+                num === 0 ? "배드 배정 해제 (미지정)" :
+                isActive ? "현재 사용 중인 배드" : 
+                (disableHighlight ? "배드 번호 수정 (로그)" : "빈 배드")
+            }
           >
-            {num === 11 ? 'T' : num}
+            {num === 0 ? '-' : (num === 11 ? 'T' : num)}
           </button>
         );
       })}

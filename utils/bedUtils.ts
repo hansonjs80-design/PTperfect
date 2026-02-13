@@ -5,6 +5,10 @@ import { STANDARD_TREATMENTS } from '../constants';
 // --- Formatters ---
 
 export const formatTime = (seconds: number): string => {
+  // Safe guard for NaN or undefined/null
+  if (typeof seconds !== 'number' || isNaN(seconds)) {
+    return "0:00";
+  }
   const absSeconds = Math.abs(seconds);
   const m = Math.floor(absSeconds / 60);
   const s = absSeconds % 60;

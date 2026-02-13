@@ -1,6 +1,6 @@
 
-import React, { memo } from 'react';
-import { Trash2 } from 'lucide-react';
+import React, { memo, useState, useRef, useEffect } from 'react';
+import { Trash2, Check, X } from 'lucide-react';
 import { EditableCell } from './EditableCell';
 import { BedSelectorCell } from './BedSelectorCell';
 import { TreatmentSelectorCell } from './TreatmentSelectorCell'; 
@@ -50,24 +50,51 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   onClearBed
 }) => {
   const { handleGridKeyDown } = useGridNavigation(8);
+  const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
+  const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
+    };
+  }, []);
 
   const handleAssign = async (newBedId: number) => {
+    // Convert 0 (from "Unassign" button) to null for DB
+    const bedIdToSave = newBedId === 0 ? null : newBedId;
+
     if (isDraft && onCreate) {
-       await onCreate({ bed_id: newBedId }, 0); 
+       await onCreate({ bed_id: bedIdToSave }, 0); 
     } else if (!isDraft && visit && onUpdate) {
-       onUpdate(visit.id, { bed_id: newBedId });
+       onUpdate(visit.id, { bed_id: bedIdToSave });
     }
   };
 
   const handleMove = (newBedId: number) => {
+    // If selecting 0 (Unassign), we move to "no bed" which effectively is clearing the assignment.
+    // However, onMovePatient usually expects a valid bed ID to move TO.
+    // If newBedId is 0, we treat it as "Assign to null" logic handled by onUpdate instead of move logic if possible,
+    // OR allow movePatient to handle 0 as "remove from bed".
+    // For now, we route 0 to standard update (unassign) if the API supports it, or let movePatient handle it.
+    // Given the context, 'move' implies bed-to-bed. If unassigning, we use onUpdate logic usually.
+    
+    if (newBedId === 0) {
+        if (!isDraft && visit && onUpdate) {
+            onUpdate(visit.id, { bed_id: null });
+        }
+        return;
+    }
+
     if (!isDraft && visit && visit.bed_id && onMovePatient) {
         onMovePatient(visit.id, visit.bed_id, newBedId);
     }
   };
 
   const handleUpdateLogOnly = (newBedId: number) => {
+      const bedIdToSave = newBedId === 0 ? null : newBedId;
       if (!isDraft && visit && onUpdate) {
-          onUpdate(visit.id, { bed_id: newBedId }, true);
+          onUpdate(visit.id, { bed_id: bedIdToSave }, true);
       }
   };
 
@@ -113,25 +140,61 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
      }
   };
 
-  const handleDeleteKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (deleteStep === 'idle') {
+      setDeleteStep('confirm');
+      // Auto-revert after 3 seconds
+      deleteTimeoutRef.current = setTimeout(() => {
+        setDeleteStep('idle');
+      }, 3000);
+    } else {
       if (!isDraft && visit && onDelete) {
         onDelete(visit.id);
       }
+      setDeleteStep('idle');
+      if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
+    }
+  };
+
+  const handleDeleteKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // On keyboard enter, trigger same logic as click
+      if (deleteStep === 'idle') {
+          setDeleteStep('confirm');
+          deleteTimeoutRef.current = setTimeout(() => {
+            setDeleteStep('idle');
+          }, 3000);
+      } else {
+          if (!isDraft && visit && onDelete) {
+            onDelete(visit.id);
+          }
+          setDeleteStep('idle');
+      }
+    } else if (e.key === 'Escape') {
+       if (deleteStep === 'confirm') {
+           setDeleteStep('idle');
+           if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
+       }
     } else {
       handleGridKeyDown(e, rowIndex, 7);
     }
   };
 
-  let rowClasses = 'group transition-all border-b border-gray-300 dark:border-slate-600 h-[36px] '; 
+  // Row Styling Logic
+  // Using transition-colors for smooth hover effect
+  let rowClasses = 'group transition-colors duration-75 border-b border-gray-300 dark:border-slate-600 h-[36px] '; 
   
   if (rowStatus === 'active') {
-    rowClasses += 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20';
+    // Active Row: Blue tint -> Darker Blue on Hover
+    rowClasses += 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-100 dark:hover:bg-blue-900/30';
   } else if (rowStatus === 'completed') {
-    rowClasses += 'bg-slate-50 dark:bg-slate-800/50 opacity-80 hover:opacity-100';
+    // Completed Row: Gray tint -> Darker Gray on Hover
+    rowClasses += 'bg-slate-50 dark:bg-slate-800/50 opacity-80 hover:opacity-100 hover:bg-slate-200 dark:hover:bg-slate-700';
   } else {
-    rowClasses += 'bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800/80';
+    // Default Row: White -> Distinct Gray on Hover
+    rowClasses += 'bg-white dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800';
   }
 
   if (isDraft) {
@@ -205,19 +268,10 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           menuTitle="치료 부위 수정 (로그만 변경)"
           className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-sm sm:text-[15px] xl:text-base"
           onCommit={(val, skipSync, navDir) => {
-            // 1. Basic Auto-format: Capitalize first letter of every word (e.g. "rt sh" -> "Rt Sh", "cx" -> "Cx")
             let formattedVal = (val || '').replace(/\b\w/g, (c) => c.toUpperCase());
-
-            // 2. Advanced Auto-format: Convert specific medical abbreviations to ALL CAPS
-            // e.g. "itb" -> "ITB", "acl" -> "ACL"
-            const upperCaseWords = [
-              'ITB', 'TFL', 'SIJ', 'LS', 'CT', 'TL', 'TMJ', 
-              'ACL', 'MCL', 'ATFL', 'PV', 'AC', 'SC'
-            ];
-            
+            const upperCaseWords = ['ITB', 'TFL', 'SIJ', 'LS', 'CT', 'TL', 'TMJ', 'ACL', 'MCL', 'ATFL', 'PV', 'AC', 'SC'];
             const pattern = new RegExp(`\\b(${upperCaseWords.join('|')})\\b`, 'gi');
             formattedVal = formattedVal.replace(pattern, (match) => match.toUpperCase());
-
             handleChange('body_part', formattedVal, skipSync, 2, navDir);
           }}
           directEdit={true}
@@ -295,18 +349,27 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       <td className="p-0 text-center">
         {!isDraft && visit && onDelete && (
           <div 
-            className="flex justify-center items-center h-full outline-none focus:bg-red-50 dark:focus:bg-red-900/20 focus:ring-inset focus:ring-2 focus:ring-sky-400"
+            className="flex justify-center items-center h-full outline-none focus:ring-inset focus:ring-2 focus:ring-sky-400"
             tabIndex={0}
             data-grid-id={`${rowIndex}-7`}
             onKeyDown={handleDeleteKeyDown}
           >
             <button 
-              onClick={() => onDelete(visit.id)}
-              className="p-1.5 text-gray-300 hover:text-red-500 transition-all active:scale-90 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-              title="삭제"
+              onClick={handleDeleteClick}
+              className={`
+                transition-all duration-200 active:scale-95 flex items-center justify-center
+                ${deleteStep === 'idle' 
+                  ? 'p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg' 
+                  : 'px-2 py-1 bg-red-600 text-white rounded text-[10px] font-bold shadow-md hover:bg-red-700 w-[90%]'}
+              `}
+              title={deleteStep === 'idle' ? "삭제 (클릭하여 확인)" : "삭제 확정"}
               tabIndex={-1} 
             >
-              <Trash2 className="w-4 h-4 xl:w-5 xl:h-5" />
+              {deleteStep === 'idle' ? (
+                <Trash2 className="w-4 h-4 xl:w-5 xl:h-5" />
+              ) : (
+                "삭제"
+              )}
             </button>
           </div>
         )}
