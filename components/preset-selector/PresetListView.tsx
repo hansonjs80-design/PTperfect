@@ -1,13 +1,13 @@
 
 import React, { useState, useMemo } from 'react';
-import { ArrowUpDown, Filter, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowUpDown, Filter, Search, ChevronDown, ChevronUp, Play } from 'lucide-react';
 import { Preset } from '../../types';
 import { getStepLabel } from '../../utils/bedUtils';
 import { PresetInlineDetail } from './PresetInlineDetail';
 
 interface PresetListViewProps {
   presets: Preset[];
-  onSelect: (preset: Preset) => void; // Used for "Start" action now
+  onSelect: (preset: Preset) => void; 
 }
 
 export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelect }) => {
@@ -39,6 +39,11 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
     setExpandedId(prev => prev === id ? null : id);
   };
 
+  const handleQuickStart = (e: React.MouseEvent, preset: Preset) => {
+    e.stopPropagation(); 
+    onSelect(preset);
+  };
+
   return (
     <div className="space-y-2">
       {/* Header Controls */}
@@ -49,7 +54,6 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
         </h4>
 
         <div className="flex items-center gap-2">
-          {/* Step Filter Pills */}
           <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
             {[
               { label: 'ALL', val: 'all' },
@@ -70,7 +74,6 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
             ))}
           </div>
 
-          {/* Sort Button */}
           <button 
             onClick={toggleSort}
             className={`p-1.5 rounded-lg transition-colors flex items-center justify-center w-7 h-7 ${
@@ -84,7 +87,7 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
         </div>
       </div>
 
-      {/* Preset List - Card Style */}
+      {/* Preset List */}
       <div className="flex flex-col gap-2">
         {processedPresets.length === 0 ? (
            <div className="flex flex-col items-center justify-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
@@ -108,26 +111,18 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
               >
                 <div className="flex items-center justify-between cursor-pointer">
                   
-                  {/* Left Group: Name & Steps (Single Row Layout) */}
                   <div className="flex flex-row items-center gap-2 flex-1 min-w-0 pr-1">
-                    {/* Name */}
-                    <span className={`font-black text-sm sm:text-base leading-none transition-colors truncate shrink-0 max-w-[100px] xs:max-w-[130px] sm:max-w-none ${isExpanded ? 'text-brand-600 dark:text-brand-400' : 'text-slate-800 dark:text-white'}`}>
+                    <span className={`font-black text-sm sm:text-base leading-none transition-colors truncate shrink-0 max-w-[100px] xs:max-w-[120px] sm:max-w-none ${isExpanded ? 'text-brand-600 dark:text-brand-400' : 'text-slate-800 dark:text-white'}`}>
                       {preset.name}
                     </span>
                     
-                    {/* Divider */}
                     <span className="text-slate-300 dark:text-slate-600 shrink-0 text-[10px]">|</span>
 
-                    {/* Step Pills - Horizontal Flow */}
-                    <div className="flex flex-wrap items-center gap-1 overflow-hidden h-[18px] sm:h-auto">
+                    {/* Step Pills */}
+                    <div className="flex items-center gap-1 overflow-hidden h-[18px] sm:h-auto shrink-0">
                       {preset.steps.map((step, idx) => (
                         <div key={idx} className="flex items-center shrink-0">
-                          <span 
-                            className={`
-                              text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-md font-bold text-white shadow-sm
-                              ${step.color} opacity-90 leading-none
-                            `}
-                          >
+                          <span className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-md font-bold text-white shadow-sm ${step.color} opacity-90 leading-none`}>
                             {getStepLabel(step)}
                           </span>
                           {idx < preset.steps.length - 1 && (
@@ -136,11 +131,18 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                         </div>
                       ))}
                     </div>
+
+                    {/* Quick Start Button: Removed circle background, made triangle blue */}
+                    <button
+                      onClick={(e) => handleQuickStart(e, preset)}
+                      className="w-6 h-6 sm:w-7 sm:h-7 bg-transparent hover:scale-125 text-brand-600 dark:text-brand-400 flex items-center justify-center transition-all active:scale-90 shrink-0 ml-1 group/play"
+                      title="이 처방으로 즉시 시작"
+                    >
+                      <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current opacity-80 group-hover/play:opacity-100 transition-opacity ml-0.5" />
+                    </button>
                   </div>
 
-                  {/* Right Group: Time & Chevron */}
                   <div className="flex items-center gap-2 shrink-0 pl-2 border-l border-slate-100 dark:border-slate-700 ml-1">
-                    {/* Time Display */}
                     <span className="text-sm sm:text-lg font-black text-slate-600 dark:text-slate-300 tabular-nums">
                       {totalMins}<span className="text-[10px] sm:text-xs font-bold ml-0.5">분</span>
                     </span>
@@ -155,7 +157,6 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                   </div>
                 </div>
 
-                {/* Inline Details (Expanded) */}
                 {isExpanded && (
                   <PresetInlineDetail 
                     initialPreset={preset} 
