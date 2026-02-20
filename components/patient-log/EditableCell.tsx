@@ -80,7 +80,7 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setLocalValue(e.target.value);
+      setLocalValue(e.target.value.toUpperCase());
   };
 
   const handleBlur = () => {

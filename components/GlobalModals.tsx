@@ -3,7 +3,7 @@ import React, { Suspense, useMemo, useEffect } from 'react';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { usePatientLogContext } from '../contexts/PatientLogContext';
 import { findMatchingPreset } from '../utils/bedUtils';
-import { BedEditOverlay } from './BedEditOverlay'; 
+import { BedEditOverlay } from './BedEditOverlay';
 import { useModalActions } from '../hooks/useModalActions';
 
 // Lazy load heavy components
@@ -14,13 +14,13 @@ const BedMoveModal = React.lazy(() => import('./modals/BedMoveModal').then(modul
 interface GlobalModalsProps {
   isMenuOpen: boolean;
   onCloseMenu: () => void;
-  presets: any[]; 
+  presets: any[];
 }
 
 export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseMenu }) => {
-  const { 
-    beds, 
-    presets, 
+  const {
+    beds,
+    presets,
     selectingBedId,
     setSelectingBedId,
     selectingLogId,
@@ -30,6 +30,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
     movingPatientState,
     setMovingPatientState,
     movePatient,
+    quickTreatments,
     resetAll,
     toggleInjection,
     toggleFluid,
@@ -44,7 +45,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
   const { visits } = usePatientLogContext();
 
   // Use the extracted hook for business logic
-  const { 
+  const {
     handleSelectPreset,
     handleCustomStart,
     handleQuickStart,
@@ -62,7 +63,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
       if (!window.history.state?.modalOpen) {
         window.history.pushState({ ...window.history.state, modalOpen: true }, '');
       }
-      
+
       const handlePopState = () => {
         // When back button is pressed (or history popped), close all modals
         setSelectingBedId(null);
@@ -97,7 +98,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
           closeAndPop(setMovingPatientState);
           return;
         }
-        
+
         // 2. Edit Overlay
         if (editingBedId !== null) {
           closeAndPop(setEditingBedId);
@@ -149,10 +150,10 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
 
   const modalInitialPreset = useMemo(() => {
     if (activeLogEntry) {
-      return findMatchingPreset(presets, activeLogEntry.treatment_name);
+      return findMatchingPreset(presets, activeLogEntry.treatment_name, quickTreatments);
     }
     return undefined;
-  }, [activeLogEntry, presets]);
+  }, [activeLogEntry, presets, quickTreatments]);
 
 
   const getBed = (id: number) => beds.find(b => b.id === id) || beds[0];
@@ -167,7 +168,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
       {/* Selector Modal */}
       {isSelectorOpen && (
         <Suspense fallback={null}>
-          <PresetSelectorModal 
+          <PresetSelectorModal
             isOpen={isSelectorOpen}
             onClose={() => {
               setSelectingBedId(null);
@@ -192,7 +193,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
 
       {/* Bed Edit Overlay */}
       {editingBed && (
-        <BedEditOverlay 
+        <BedEditOverlay
           bed={editingBed}
           steps={editingBedSteps}
           onClose={() => closeAndPop(setEditingBedId)}
@@ -209,16 +210,16 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
       {/* Move Modal */}
       {movingPatientState !== null && (
         <Suspense fallback={null}>
-          <BedMoveModal 
+          <BedMoveModal
             fromBedId={movingPatientState.bedId}
             initialPos={{ x: movingPatientState.x, y: movingPatientState.y }}
             onClose={() => closeAndPop(setMovingPatientState)}
             onConfirm={(toBedId) => {
-               movePatient(movingPatientState.bedId, toBedId);
-               // Close modal manually after action with safe check
-               if (window.history.state?.modalOpen) {
-                 window.history.back();
-               }
+              movePatient(movingPatientState.bedId, toBedId);
+              // Close modal manually after action with safe check
+              if (window.history.state?.modalOpen) {
+                window.history.back();
+              }
             }}
           />
         </Suspense>
@@ -227,8 +228,8 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
       {/* Settings */}
       {isMenuOpen && (
         <Suspense fallback={<div className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" />}>
-          <SettingsPanel 
-            isOpen={isMenuOpen} 
+          <SettingsPanel
+            isOpen={isMenuOpen}
             onClose={() => {
               onCloseMenu();
               if (window.history.state?.modalOpen) {
@@ -240,10 +241,10 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
             onResetAllBeds={resetAll}
           />
           <div className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" onClick={() => {
-              onCloseMenu();
-              if (window.history.state?.modalOpen) {
-                window.history.back();
-              }
+            onCloseMenu();
+            if (window.history.state?.modalOpen) {
+              window.history.back();
+            }
           }} />
         </Suspense>
       )}

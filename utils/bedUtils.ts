@@ -31,7 +31,7 @@ export const getAbbreviation = (name: string): string => {
   if (upper.includes('MICRO') || upper.includes('마이크로') || upper.includes('MW')) return 'MW';
   if (upper.includes('CRYO') || upper.includes('크라이오')) return 'Cryo';
   if (upper.includes('MANUAL') || upper.includes('도수')) return '도수';
-  
+
   if (name.includes('(')) return name.split('(')[0].trim().substring(0, 3);
   return name.substring(0, 3);
 };
@@ -53,40 +53,40 @@ export const parseTreatmentString = (treatmentString: string | null, customTreat
 
   const parts = treatmentString.split('/').map(s => s.trim());
   const reconstructedSteps: TreatmentStep[] = [];
-  
-  for (const part of parts) {
-      if (!part) continue;
-      
-      const match = referenceList.find(t => 
-          t.label.toUpperCase() === part.toUpperCase() || 
-          getAbbreviation(t.name).toUpperCase() === part.toUpperCase() ||
-          t.name.toUpperCase().includes(part.toUpperCase())
-      );
 
-      if (match) {
-          reconstructedSteps.push({
-              id: crypto.randomUUID(),
-              name: match.name,
-              label: match.label, // Restore label from reference
-              duration: match.duration * 60,
-              enableTimer: match.enableTimer,
-              color: match.color
-          });
-      } else {
-          reconstructedSteps.push({
-              id: crypto.randomUUID(),
-              name: part,
-              label: part, // Use the part as label for unknown items
-              duration: 600, // Default 10 min
-              enableTimer: true,
-              color: 'bg-gray-500'
-          });
-      }
+  for (const part of parts) {
+    if (!part) continue;
+
+    const match = referenceList.find(t =>
+      t.label.toUpperCase() === part.toUpperCase() ||
+      getAbbreviation(t.name).toUpperCase() === part.toUpperCase() ||
+      t.name.toUpperCase().includes(part.toUpperCase())
+    );
+
+    if (match) {
+      reconstructedSteps.push({
+        id: crypto.randomUUID(),
+        name: match.name,
+        label: match.label, // Restore label from reference
+        duration: match.duration * 60,
+        enableTimer: match.enableTimer,
+        color: match.color
+      });
+    } else {
+      reconstructedSteps.push({
+        id: crypto.randomUUID(),
+        name: part,
+        label: part, // Use the part as label for unknown items
+        duration: 600, // Default 10 min
+        enableTimer: true,
+        color: 'bg-gray-500'
+      });
+    }
   }
   return reconstructedSteps;
 };
 
-export const findMatchingPreset = (presets: Preset[], treatmentString: string | null): Preset | undefined => {
+export const findMatchingPreset = (presets: Preset[], treatmentString: string | null, customTreatments: QuickTreatment[] = []): Preset | undefined => {
   if (!treatmentString) return undefined;
 
   // 1. Exact Match
@@ -94,14 +94,14 @@ export const findMatchingPreset = (presets: Preset[], treatmentString: string | 
   if (exactMatch) return exactMatch;
 
   // 2. Reconstruct from string
-  const reconstructedSteps = parseTreatmentString(treatmentString);
+  const reconstructedSteps = parseTreatmentString(treatmentString, customTreatments);
 
   if (reconstructedSteps.length > 0) {
-      return {
-          id: `restored-${Date.now()}`,
-          name: '치료 구성 (수정)',
-          steps: reconstructedSteps
-      };
+    return {
+      id: `restored-${Date.now()}`,
+      name: '치료 구성 (수정)',
+      steps: reconstructedSteps
+    };
   }
 
   return undefined;
