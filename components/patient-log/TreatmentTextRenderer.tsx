@@ -7,6 +7,7 @@ interface TreatmentTextRendererProps {
   isActiveRow: boolean;
   activeStepIndex: number;
   activeStepColor?: string;
+  activeStepBgColor?: string;
 }
 
 export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(({
@@ -14,7 +15,8 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
   placeholder,
   isActiveRow,
   activeStepIndex,
-  activeStepColor
+  activeStepColor,
+  activeStepBgColor
 }) => {
   if (!value) {
     return (
@@ -28,16 +30,29 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
   if (isActiveRow && activeStepIndex >= 0) {
     const parts = value.split('/');
     return (
-      <>
+      <div className="flex items-center flex-wrap gap-y-1 leading-relaxed">
         {parts.map((part, i) => (
           <Fragment key={i}>
-            <span className={i === activeStepIndex ? `${activeStepColor} transition-colors duration-300` : 'text-gray-700 dark:text-gray-300'}>
-              {part.trim()}
-            </span>
-            {i < parts.length - 1 && <span className="text-gray-400 mx-0.5">/</span>}
+            {i === activeStepIndex ? (
+              <span className={`
+                inline-flex items-center justify-center
+                ${activeStepBgColor || 'bg-brand-500'} 
+                text-white px-1.5 py-0.5 rounded-md 
+                text-[13px] sm:text-sm xl:text-[13px]
+                font-black shadow-sm ring-1 ring-white/20
+                transition-all duration-300 transform scale-105 z-10
+              `}>
+                {part.trim()}
+              </span>
+            ) : (
+              <span className="text-gray-700 dark:text-gray-300 px-0.5">
+                {part.trim()}
+              </span>
+            )}
+            {i < parts.length - 1 && <span className="text-gray-400 mx-0.5 self-center">/</span>}
           </Fragment>
         ))}
-      </>
+      </div>
     );
   }
 

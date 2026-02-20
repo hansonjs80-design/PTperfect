@@ -70,16 +70,16 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
   const handleDraftCreate = async (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => {
     if (colIndex !== undefined) {
-        if (navDirection === 'left') {
-            // Horizontal Left: Stay on the same row (newly created), go to previous column
-            focusTargetRef.current = { rowOffset: 0, colIndex: colIndex - 1 };
-        } else if (navDirection === 'right') {
-            // Horizontal Right: Stay on the same row (newly created), go to next column
-            focusTargetRef.current = { rowOffset: 0, colIndex: colIndex + 1 };
-        } else {
-            // Vertical (or default): Jump to the new draft row below
-            focusTargetRef.current = { rowOffset: 1, colIndex: colIndex };
-        }
+      if (navDirection === 'left') {
+        // Horizontal Left: Stay on the same row (newly created), go to previous column
+        focusTargetRef.current = { rowOffset: 0, colIndex: colIndex - 1 };
+      } else if (navDirection === 'right') {
+        // Horizontal Right: Stay on the same row (newly created), go to next column
+        focusTargetRef.current = { rowOffset: 0, colIndex: colIndex + 1 };
+      } else {
+        // Vertical (or default): Jump to the new draft row below
+        focusTargetRef.current = { rowOffset: 1, colIndex: colIndex };
+      }
     }
     return await onCreate(updates);
   };
@@ -92,26 +92,27 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
           {visits.map((visit, index) => {
             const rowStatus = getRowStatus(visit.id, visit.bed_id);
             const bed = visit.bed_id ? beds.find(b => b.id === visit.bed_id) : undefined;
-            
-            const { 
-              activeStepColorClass, 
-              activeStepIndex, 
-              isLastStep, 
-              timerStatus 
+
+            const {
+              activeStepColorClass,
+              activeStepBgClass,
+              activeStepIndex,
+              isLastStep,
+              timerStatus
             } = getRowActiveStatus(bed, rowStatus, presets);
-            
+
             let handleNextStep: (() => void) | undefined = undefined;
             let handlePrevStep: (() => void) | undefined = undefined;
             let handleClearBed: (() => void) | undefined = undefined;
 
             if (bed && (rowStatus === 'active' || rowStatus === 'completed')) {
-               if (onNextStep) handleNextStep = () => onNextStep(bed.id);
-               if (onPrevStep) handlePrevStep = () => onPrevStep(bed.id);
-               if (onClearBed) handleClearBed = () => onClearBed(bed.id);
+              if (onNextStep) handleNextStep = () => onNextStep(bed.id);
+              if (onPrevStep) handlePrevStep = () => onPrevStep(bed.id);
+              if (onClearBed) handleClearBed = () => onClearBed(bed.id);
             }
 
             return (
-              <PatientLogRow 
+              <PatientLogRow
                 key={visit.id}
                 rowIndex={index}
                 visit={visit}
@@ -124,23 +125,24 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
                 onEditActive={onEditActive}
                 activeBedIds={activeBedIds}
                 activeStepColor={activeStepColorClass}
+                activeStepBgColor={activeStepBgClass}
                 activeStepIndex={activeStepIndex}
                 isLastStep={isLastStep}
-                timerStatus={timerStatus} 
+                timerStatus={timerStatus}
                 onNextStep={handleNextStep}
                 onPrevStep={handlePrevStep}
                 onClearBed={handleClearBed}
               />
             );
           })}
-          
+
           {Array.from({ length: EMPTY_ROWS_COUNT }).map((_, index) => (
-            <PatientLogRow 
+            <PatientLogRow
               key={`draft-${index}`}
               rowIndex={visits.length + index}
               isDraft={true}
               onCreate={handleDraftCreate} // Pass the wrapper function
-              onSelectLog={(id) => onSelectLog(id, null)} 
+              onSelectLog={(id) => onSelectLog(id, null)}
               activeBedIds={activeBedIds}
             />
           ))}

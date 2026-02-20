@@ -4,13 +4,14 @@ import { mapBgToTextClass } from './styleUtils';
 
 export interface RowActiveStatus {
   activeStepColorClass?: string;
+  activeStepBgClass?: string;
   activeStepIndex: number;
   isLastStep: boolean;
   timerStatus: 'normal' | 'warning' | 'overtime';
 }
 
 export const getRowActiveStatus = (
-  bed: BedState | undefined, 
+  bed: BedState | undefined,
   rowStatus: 'active' | 'completed' | 'none',
   presets: Preset[]
 ): RowActiveStatus => {
@@ -24,7 +25,7 @@ export const getRowActiveStatus = (
     if (bed.status === BedStatus.ACTIVE && !bed.isPaused) {
       const currentPreset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
       const currentStepInfo = currentPreset?.steps[bed.currentStepIndex];
-      
+
       if (currentStepInfo?.enableTimer) {
         if (bed.remainingTime <= 0) {
           result.timerStatus = 'overtime';
@@ -36,14 +37,15 @@ export const getRowActiveStatus = (
 
     const preset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
     const totalSteps = preset?.steps.length || 0;
-    
+
     result.isLastStep = bed.currentStepIndex === totalSteps - 1;
 
     const step = preset?.steps[bed.currentStepIndex];
-    
+
     if (step || rowStatus === 'completed') {
       if (step) {
         result.activeStepColorClass = mapBgToTextClass(step.color);
+        result.activeStepBgClass = step.color;
         result.activeStepIndex = bed.currentStepIndex;
       }
     }
