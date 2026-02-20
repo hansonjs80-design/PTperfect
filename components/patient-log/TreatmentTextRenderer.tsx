@@ -37,10 +37,10 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
               <span className={`
                 inline-flex items-center justify-center
                 ${activeStepBgColor || 'bg-brand-500'} 
-                text-white px-1.5 py-0.5 rounded-md 
+                text-white px-1.5 py-[1px] rounded-md 
                 text-[13px] sm:text-sm xl:text-[13px]
                 font-black shadow-sm ring-1 ring-white/20
-                transition-all duration-300 transform scale-105 z-10
+                transition-all duration-300 z-10
               `}>
                 {part.trim()}
               </span>
