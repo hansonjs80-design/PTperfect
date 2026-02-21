@@ -25,13 +25,13 @@ interface BedHeaderProps {
   onToggleManual: (id: number) => void;
 }
 
-export const BedHeader = memo(({ 
-  bed, 
-  currentStep, 
-  onTrashClick, 
-  trashState, 
-  onEditClick, 
-  onTogglePause, 
+export const BedHeader = memo(({
+  bed,
+  currentStep,
+  onTrashClick,
+  trashState,
+  onEditClick,
+  onTogglePause,
   onUpdateDuration,
   onToggleInjection,
   onToggleFluid,
@@ -40,15 +40,15 @@ export const BedHeader = memo(({
   onToggleManual
 }: BedHeaderProps) => {
   const { setMovingPatientState } = useTreatmentContext();
-  
+
   // Changed from boolean to coordinates object to support positioning
-  const [timerMenuPos, setTimerMenuPos] = useState<{x: number, y: number} | null>(null);
-  const [statusMenuPos, setStatusMenuPos] = useState<{x: number, y: number} | null>(null);
-  
+  const [timerMenuPos, setTimerMenuPos] = useState<{ x: number, y: number } | null>(null);
+  const [statusMenuPos, setStatusMenuPos] = useState<{ x: number, y: number } | null>(null);
+
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
   const isOvertime = isTimerActive && bed.remainingTime <= 0;
   const isNearEnd = isTimerActive && bed.remainingTime > 0 && bed.remainingTime <= 60;
-  
+
   // --- Handlers using useResponsiveClick Hook ---
 
   // 1. Timer Click
@@ -81,21 +81,21 @@ export const BedHeader = memo(({
 
   return (
     <>
-      <div 
-        className={`flex items-center justify-between px-1.5 sm:px-2 py-0.5 sm:py-1 lg:px-3 lg:py-3 shrink-0 relative transition-colors ${getBedHeaderStyles(bed)}`}
-        // Removed onClick/onDoubleClick to prevent popup on header background
+      <div
+        className={`flex items-center justify-between px-1.5 sm:px-2 py-0.5 sm:py-1 lg:px-3 lg:py-2.5 shrink-0 relative transition-colors ${getBedHeaderStyles(bed)}`}
+      // Removed onClick/onDoubleClick to prevent popup on header background
       >
-        
+
         {/* Left: Bed Number & Status Icons */}
-        <BedNumberAndStatus 
-          bed={bed} 
+        <BedNumberAndStatus
+          bed={bed}
           onMovePatient={handleBedNumberInteraction}
-          onEditStatus={handleStatusInteraction} 
+          onEditStatus={handleStatusInteraction}
         />
 
         {/* Right Section: Timer & Actions */}
         <div className="flex-1 flex justify-end items-center gap-0 sm:gap-1 lg:gap-2 pl-0 sm:pl-2">
-          <BedTimer 
+          <BedTimer
             bed={bed}
             isTimerActive={isTimerActive}
             isOvertime={isOvertime}
