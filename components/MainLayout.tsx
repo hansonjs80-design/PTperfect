@@ -80,14 +80,14 @@ export const MainLayout: React.FC = () => {
         <main 
           ref={mainRef}
           className={`
-            flex-1 overflow-x-auto overflow-y-auto scroll-smooth touch-pan-x touch-pan-y overscroll-contain
+            flex-1 overflow-x-hidden overflow-y-auto scroll-smooth touch-pan-x touch-pan-y overscroll-contain
             bg-gray-200 dark:bg-slate-950 landscape:bg-transparent
             transition-all duration-300 ease-in-out
             px-0 pb-0
             ${mainContentPaddingTop}
             sm:px-2
             md:px-4 md:pb-0
-            landscape:px-0
+            landscape:overflow-x-auto landscape:px-0
             md:landscape:px-0 md:landscape:pt-0
           `}
         >
