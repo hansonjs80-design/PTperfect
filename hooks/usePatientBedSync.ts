@@ -43,9 +43,7 @@ export const usePatientBedSync = (
          if (isBedAssignmentChange) {
              const targetBed = bedsRef.current.find(b => b.id === targetBedId);
              if (targetBed && targetBed.status === BedStatus.ACTIVE) {
-                 if (!window.confirm(`${targetBedId}번 배드는 비어있지 않습니다.\n배드카드를 비우고 입력할까요?`)) {
-                     return;
-                 }
+                 // Confirm popup is handled at BedSelectorCell level (cursor popup)
                  // Clear the bed card first
                  clearBed(targetBedId);
                  // Unlink the previous visit that was using this bed
@@ -61,9 +59,6 @@ export const usePatientBedSync = (
          if (updates.treatment_name !== undefined && updates.treatment_name !== oldVisit.treatment_name) {
              const targetBed = bedsRef.current.find(b => b.id === targetBedId);
              if (targetBed && targetBed.status === BedStatus.ACTIVE) {
-                 if (!window.confirm(`${targetBedId}번 배드는 비어있지 않습니다.\n배드카드를 비우고 입력할까요?`)) {
-                     return;
-                 }
                  shouldForceRestart = true;
              }
          }
@@ -92,12 +87,8 @@ export const usePatientBedSync = (
   const movePatient = useCallback(async (fromBedId: number, toBedId: number) => {
     if (fromBedId === toBedId) return;
 
+    // Confirm popup is handled at BedSelectorCell level (cursor popup)
     const targetBed = bedsRef.current.find(b => b.id === toBedId);
-    if (targetBed && targetBed.status === BedStatus.ACTIVE) {
-        if (!window.confirm(`${toBedId}번 배드는 현재 활성화 되어있습니다. 그래도 진행하시겠습니까?\n(기존 내용을 비우고 해당 항목으로 변경됩니다)`)) {
-            return;
-        }
-    }
 
     const sourceBed = bedsRef.current.find(b => b.id === fromBedId);
     const isSourceActive = sourceBed && sourceBed.status === BedStatus.ACTIVE;

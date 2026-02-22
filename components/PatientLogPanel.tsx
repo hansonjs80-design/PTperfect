@@ -7,6 +7,7 @@ import { PatientLogHeader } from './patient-log/PatientLogHeader';
 import { PatientLogTable } from './patient-log/PatientLogTable';
 import { Loader2 } from 'lucide-react';
 import { useLogStatusLogic } from '../hooks/useLogStatusLogic';
+import { BedStatus, PatientVisit } from '../types';
 
 const PrintPreviewModal = React.lazy(() => import('./modals/PrintPreviewModal').then(module => ({ default: module.PrintPreviewModal })));
 
@@ -30,7 +31,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setPrintModalOpen
   } = useTreatmentContext();
   
-  const { visits, currentDate, setCurrentDate, changeDate, addVisit, deleteVisit } = usePatientLogContext();
+  const { visits, currentDate, setCurrentDate, changeDate, addVisit, updateVisit, deleteVisit } = usePatientLogContext();
   
   // Performance Optimization: 
   // Extract status logic to prevent re-rendering on every timer tick.
@@ -51,6 +52,29 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       // If bedId is null/undefined (Edit Mode), reset it.
       setSelectingBedId(bedId || null);
   }, [setSelectingLogId, setSelectingBedId]);
+
+  // Handle Draft Row Creation with Bed Sync
+  // When a draft row assigns a bed_id that's already active, clear the existing bed card first.
+  // Note: The confirm popup is shown at the BedSelectorCell level (cursor popup),
+  // so by the time this function is called, the user has already confirmed.
+  const handleCreateWithBedSync = useCallback(async (initialData: Partial<PatientVisit> = {}): Promise<string> => {
+    const targetBedId = initialData.bed_id;
+
+    if (targetBedId) {
+      const targetBed = beds.find(b => b.id === targetBedId);
+      if (targetBed && targetBed.status === BedStatus.ACTIVE) {
+        // Clear the active bed card
+        clearBed(targetBedId);
+        // Unlink the previous visit that was using this bed
+        const prevVisit = visits.find(v => v.bed_id === targetBedId);
+        if (prevVisit) {
+          await updateVisit(prevVisit.id, { bed_id: null });
+        }
+      }
+    }
+
+    return await addVisit(initialData);
+  }, [beds, visits, addVisit, updateVisit, clearBed]);
 
   // Handle Deletion with Bed Sync
   const handleDeleteVisit = useCallback((visitId: string) => {
@@ -95,7 +119,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           getRowStatus={getRowStatus}
           onUpdate={updateVisitWithBedSync}
           onDelete={handleDeleteVisit}
-          onCreate={addVisit}
+          onCreate={handleCreateWithBedSync}
           onSelectLog={handleSelectLog}
           onMovePatient={handleMovePatient}
           onEditActive={setEditingBedId}

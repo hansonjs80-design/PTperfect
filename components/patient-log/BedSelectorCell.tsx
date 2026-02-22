@@ -173,6 +173,9 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
       else if (e.key === 'Escape') setMode('view');
   };
 
+  // State for conflict popup when assigning an active bed from grid selection
+  const [conflictConfirm, setConflictConfirm] = useState<{ bedId: number, pos: { x: number, y: number } } | null>(null);
+
   const handleGridSelect = (num: number) => {
     if (isLogEditMode || (mode === 'edit_log' && onUpdateLogOnly)) {
         if (onUpdateLogOnly) onUpdateLogOnly(num);
@@ -180,6 +183,12 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
         if (value && num !== value) {
             onMove(num);
         } else if (!value || value !== num) {
+            // If assigning to an active bed, show confirm popup at cursor position
+            if (activeBedIds.includes(num)) {
+                setConflictConfirm({ bedId: num, pos: menuPos });
+                setMode('view');
+                return;
+            }
             onAssign(num);
         }
     }
@@ -270,7 +279,7 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
 
         {activeConfirmPos && createPortal(
             <div className="fixed inset-0 z-[9999]" onClick={() => setActiveConfirmPos(null)}>
-                <div 
+                <div
                     ref={popupRef}
                     className="absolute bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-600 p-2.5 animate-in zoom-in-95 duration-150 flex flex-col gap-2"
                     style={getSmartPosition(activeConfirmPos)}
@@ -283,6 +292,26 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
                     <div className="flex gap-1.5">
                         <button onClick={(e) => { setMenuPos({ x: e.clientX, y: e.clientY }); setActiveConfirmPos(null); setMode('select_target'); }} className="flex-1 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 shadow-sm transition-colors"><Check className="w-3 h-3" /> 예</button>
                         <button onClick={() => setActiveConfirmPos(null)} className="flex-1 py-1.5 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition-colors"><X className="w-3 h-3" /> 아니오</button>
+                    </div>
+                </div>
+            </div>, document.body
+        )}
+
+        {/* Conflict confirm popup: when assigning an already-active bed */}
+        {conflictConfirm && createPortal(
+            <div className="fixed inset-0 z-[9999]" onClick={() => setConflictConfirm(null)}>
+                <div
+                    className="absolute bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-red-200 dark:border-red-800 p-2.5 animate-in zoom-in-95 duration-150 flex flex-col gap-2"
+                    style={getSmartPosition(conflictConfirm.pos)}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="text-center">
+                        <p className="text-[11px] font-bold text-gray-800 dark:text-white leading-tight">{conflictConfirm.bedId === 11 ? 'T' : conflictConfirm.bedId}번 배드를 비우고 입력할까요?</p>
+                        <p className="text-[9px] text-gray-400 mt-0.5">현재 사용 중인 배드입니다. 기존 배드카드가 비워집니다.</p>
+                    </div>
+                    <div className="flex gap-1.5">
+                        <button onClick={() => { const bedId = conflictConfirm.bedId; setConflictConfirm(null); onAssign(bedId); }} className="flex-1 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 shadow-sm transition-colors"><Check className="w-3 h-3" /> 예</button>
+                        <button onClick={() => setConflictConfirm(null)} className="flex-1 py-1.5 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition-colors"><X className="w-3 h-3" /> 아니오</button>
                     </div>
                 </div>
             </div>, document.body

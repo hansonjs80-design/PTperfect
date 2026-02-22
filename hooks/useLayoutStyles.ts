@@ -37,8 +37,8 @@ export const useLayoutStyles = (isFullScreen: boolean) => {
         /* Mobile Portrait Base: Header(62) + 20 */
         pt-[calc(62px+env(safe-area-inset-top)+20px)]
         
-        /* Tablet Portrait: Header(52) + 20 */
-        md:pt-[calc(52px+env(safe-area-inset-top)+20px)]
+        /* Tablet Portrait: Header(52) + 8 (tighter gap to maximize card space) */
+        md:pt-[calc(52px+env(safe-area-inset-top)+8px)]
 
         /* Tablet/Mobile Landscape: Header(48) + 20 */
         landscape:pt-[calc(3rem+env(safe-area-inset-top)+20px)]

@@ -105,7 +105,10 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
             let handlePrevStep: (() => void) | undefined = undefined;
             let handleClearBed: (() => void) | undefined = undefined;
 
-            if (bed && (rowStatus === 'active' || rowStatus === 'completed')) {
+            // Only show control buttons if the visit has a treatment_name
+            // (bed assigned without treatment should NOT show activation buttons)
+            const hasTreatment = !!visit.treatment_name && visit.treatment_name.trim() !== '';
+            if (bed && hasTreatment && (rowStatus === 'active' || rowStatus === 'completed')) {
               if (onNextStep) handleNextStep = () => onNextStep(bed.id);
               if (onPrevStep) handlePrevStep = () => onPrevStep(bed.id);
               if (onClearBed) handleClearBed = () => onClearBed(bed.id);

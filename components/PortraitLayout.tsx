@@ -23,7 +23,7 @@ export const PortraitLayout: React.FC<BedLayoutProps> = memo(({ beds, presets })
   }, [config]);
 
   return (
-    <div className="flex flex-col gap-4 pb-4 max-w-4xl mx-auto px-1 sm:px-1.5 md:flex-1 md:pb-0 md:gap-2">
+    <div className="flex flex-col gap-4 pb-4 max-w-4xl mx-auto px-1 sm:px-1.5 md:flex-1 md:pb-0 md:gap-2 md:max-w-none md:w-full">
       {groupedPairs.map((group, groupIdx) => (
         <div key={`group-${groupIdx}`} className="flex flex-col gap-[4px] md:flex-1">
           {group.map((pair, idx) => {
@@ -41,8 +41,8 @@ export const PortraitLayout: React.FC<BedLayoutProps> = memo(({ beds, presets })
             const isRow4_9 = hasBed4 && hasBed9;
 
             const spacingClass = `
-              ${isRow3_10 ? 'md:mt-[10px]' : ''} 
-              ${isRow4_9 ? 'md:mb-[10px]' : ''}
+              ${isRow3_10 ? 'md:mt-[4px]' : ''}
+              ${isRow4_9 ? 'md:mb-[4px]' : ''}
             `;
 
             return (
