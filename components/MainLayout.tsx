@@ -86,8 +86,8 @@ export const MainLayout: React.FC = () => {
             px-0 pb-0
             ${mainContentPaddingTop}
             sm:px-2
-            md:px-4 md:pb-0
-            landscape:overflow-x-auto landscape:px-0
+            md:px-4 md:pb-0 md:overflow-y-hidden md:flex md:flex-col
+            landscape:overflow-x-auto landscape:overflow-y-auto landscape:px-0
             md:landscape:px-0 md:landscape:pt-0
           `}
         >

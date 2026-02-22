@@ -16,7 +16,7 @@ export const PortraitBedRow: React.FC<PortraitBedRowProps> = memo(({
   presets
 }) => {
   return (
-    <div className="grid grid-cols-2 gap-1.5 sm:gap-5 md:gap-6">
+    <div className="grid grid-cols-2 gap-1.5 sm:gap-5 md:gap-6 md:h-full">
       <div className="flex flex-col h-full">
         {leftBed ? (
           <BedBay 
