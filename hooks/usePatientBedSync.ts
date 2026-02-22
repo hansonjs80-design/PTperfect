@@ -39,12 +39,19 @@ export const usePatientBedSync = (
       if (!skipBedSync && targetBedId) {
          // Case A: Moving/Assigning Bed
          const isBedAssignmentChange = updates.bed_id !== undefined && updates.bed_id !== oldVisit.bed_id;
-         
+
          if (isBedAssignmentChange) {
              const targetBed = bedsRef.current.find(b => b.id === targetBedId);
              if (targetBed && targetBed.status === BedStatus.ACTIVE) {
                  if (!window.confirm(`${targetBedId}번 배드는 비어있지 않습니다.\n배드카드를 비우고 입력할까요?`)) {
                      return;
+                 }
+                 // Clear the bed card first
+                 clearBed(targetBedId);
+                 // Unlink the previous visit that was using this bed
+                 const prevVisit = visitsRef.current.find(v => v.id !== id && v.bed_id === targetBedId);
+                 if (prevVisit) {
+                     updateLogVisit(prevVisit.id, { bed_id: null });
                  }
                  shouldForceRestart = true;
              }
