@@ -34,11 +34,14 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   suppressEnterNav = false
 }) => {
   const [mode, setMode] = useState<'view' | 'menu' | 'edit'>('view');
-  const [skipSync, setSkipSync] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [localValue, setLocalValue] = useState(value === null ? '' : String(value));
   const inputRef = useRef<HTMLInputElement>(null);
-  
+
+  // Use ref instead of state for skipSync to avoid async state timing issues
+  // (state may not update before handleBlur reads it synchronously)
+  const skipSyncRef = useRef(false);
+
   // Ref to track navigation intent during blur
   const navIntentRef = useRef<'down' | 'right' | 'left' | null>(null);
   
@@ -53,7 +56,7 @@ export const EditableCell: React.FC<EditableCellProps> = ({
     e.preventDefault();
 
     if (directEdit) {
-      setSkipSync(!syncOnDirectEdit); 
+      skipSyncRef.current = !syncOnDirectEdit;
       setMode('edit');
       return;
     }
@@ -75,7 +78,7 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   };
 
   const handleOptionClick = (shouldSkipSync: boolean) => {
-    setSkipSync(shouldSkipSync);
+    skipSyncRef.current = shouldSkipSync;
     setMode('edit');
   };
 
@@ -90,7 +93,7 @@ export const EditableCell: React.FC<EditableCellProps> = ({
     
     // Commit if value changed OR if we have a specific nav intent (to trigger creation on Enter/Tab/Arrows)
     if (localValue !== String(value || '') || navIntentRef.current) {
-      onCommit(localValue, skipSync, navIntentRef.current || undefined);
+      onCommit(localValue, skipSyncRef.current, navIntentRef.current || undefined);
     }
     navIntentRef.current = null; // Reset intent
   };
