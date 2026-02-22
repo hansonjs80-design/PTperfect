@@ -126,7 +126,7 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
             ${colorClass}
             ${isSelectedForSwap ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900 rounded-md' : ''}
         `}>
-            <span className={`font-black text-base xs:text-lg sm:text-2xl lg:text-2xl leading-none text-center whitespace-nowrap px-0.5 ${isActive ? 'scale-110 drop-shadow-sm' : 'opacity-90'}`}>
+            <span className={`font-black text-base xs:text-lg sm:text-2xl lg:text-3xl leading-none text-center whitespace-nowrap px-0.5 ${isActive ? 'scale-110 drop-shadow-sm' : 'opacity-90'}`}>
               {getStepLabel(step)}
             </span>
             
