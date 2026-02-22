@@ -86,7 +86,7 @@ export const MainLayout: React.FC = () => {
             px-0 pb-0
             ${mainContentPaddingTop}
             sm:px-2
-            md:px-4 md:pt-4 md:pb-0
+            md:px-4 md:pb-0
             landscape:px-0
             md:landscape:px-0 md:landscape:pt-0
           `}
