@@ -38,14 +38,14 @@ export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({
         onClick={isIdle ? undefined : onMovePatient}
         title={isIdle ? undefined : getTooltip("환자 이동")}
       >
-        <span className={`font-black tracking-tighter leading-none text-3xl sm:text-[33px] lg:text-[44px] ${getBedNumberColor(bed)}`}>
+        <span className={`font-black tracking-tighter leading-none text-3xl sm:text-[33px] md:text-[38px] lg:text-[44px] ${getBedNumberColor(bed)}`}>
           {isBedT ? 'T' : bed.id}
         </span>
       </div>
 
       {/* Status Icons Area */}
       <div
-        className={`flex items-center justify-center cursor-pointer rounded-xl transition-all duration-200 min-w-[26px] sm:min-w-[40px] lg:min-w-[36px] min-h-[33px] sm:min-h-[40px] lg:min-h-[36px] hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/20`}
+        className={`flex items-center justify-center cursor-pointer rounded-xl transition-all duration-200 min-w-[26px] sm:min-w-[40px] md:min-w-[44px] lg:min-w-[36px] min-h-[33px] sm:min-h-[40px] md:min-h-[44px] lg:min-h-[36px] hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/20`}
         onClick={onEditStatus}
         title={getTooltip("상태 아이콘 설정")}
       >

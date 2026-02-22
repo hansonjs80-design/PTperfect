@@ -25,14 +25,14 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
   if (isCompleted) {
     return (
       <div className="p-1 shrink-0 bg-white dark:bg-slate-800">
-        <div className="flex gap-1.5 h-[32px] sm:h-9">
+        <div className="flex gap-1.5 h-[32px] sm:h-9 md:h-10">
           {/* 이전 단계로 복구 버튼 */}
           <FooterButton 
             onClick={() => onPrev && onPrev(bed.id)}
             className="w-12 sm:w-14 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
             title="이전 단계로 복구"
           >
-            <SkipBack className="w-[18px] h-[18px]" />
+            <SkipBack className="w-[18px] h-[18px] md:w-5 md:h-5" />
           </FooterButton>
 
           {/* 침상 비우기 버튼 */}
@@ -41,7 +41,7 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
             className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 group"
           >
             <X className="w-[18px] h-[18px] group-hover:text-red-500 transition-colors" />
-            <span className="group-hover:text-slate-800 dark:group-hover:text-white transition-colors text-xs font-bold whitespace-nowrap">침상 비우기</span>
+            <span className="group-hover:text-slate-800 dark:group-hover:text-white transition-colors text-xs md:text-sm font-bold whitespace-nowrap">침상 비우기</span>
           </FooterButton>
         </div>
       </div>
@@ -66,7 +66,7 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
              className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
              title="설정"
            >
-             <Settings className="w-[18px] h-[18px]" />
+             <Settings className="w-[18px] h-[18px] md:w-5 md:h-5" />
            </FooterButton>
          )}
 
@@ -76,7 +76,7 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
            className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
            title="이전"
          >
-           <SkipBack className="w-[18px] h-[18px]" /> 
+           <SkipBack className="w-[18px] h-[18px] md:w-5 md:h-5" /> 
          </FooterButton>
 
          <FooterButton 
@@ -88,9 +88,9 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
            }`}
          >
            {isLastStep ? (
-             <Check className="w-[18px] h-[18px]" strokeWidth={3} />
+             <Check className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={3} />
            ) : (
-             <SkipForward className="w-[18px] h-[18px]" strokeWidth={3} />
+             <SkipForward className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={3} />
            )}
          </FooterButton>
       </div>

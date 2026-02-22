@@ -50,7 +50,7 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
   }
 
   // Combine with desktop override
-  iconSizeClass += " sm:w-[31px] sm:h-[31px]";
+  iconSizeClass += " sm:w-[31px] sm:h-[31px] md:w-[34px] md:h-[34px]";
 
   return (
     <div className={layoutClass}>

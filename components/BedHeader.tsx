@@ -82,7 +82,7 @@ export const BedHeader = memo(({
   return (
     <>
       <div
-        className={`flex items-center justify-between px-1.5 sm:px-2 py-0.5 sm:py-1 lg:px-3 lg:py-[9px] shrink-0 relative transition-colors ${getBedHeaderStyles(bed)}`}
+        className={`flex items-center justify-between px-1.5 sm:px-2 md:px-2.5 py-0.5 sm:py-1 md:py-1.5 lg:px-3 lg:py-[9px] shrink-0 relative transition-colors ${getBedHeaderStyles(bed)}`}
       // Removed onClick/onDoubleClick to prevent popup on header background
       >
 

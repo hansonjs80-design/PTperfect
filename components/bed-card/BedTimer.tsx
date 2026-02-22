@@ -25,9 +25,9 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
   if (!isTimerActive) {
     if (bed.status === BedStatus.COMPLETED) {
       return (
-        <div className="flex items-center gap-1 lg:gap-1.5 px-2 py-1 lg:px-3 lg:py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full shadow-sm scale-[0.95] lg:scale-100 origin-right lg:origin-center">
-          <CheckCircle className="w-4 h-4 lg:w-5 lg:h-5" />
-          <span className="text-xs lg:text-sm font-bold">완료</span>
+        <div className="flex items-center gap-1 lg:gap-1.5 px-2 py-1 md:px-2.5 md:py-1.5 lg:px-3 lg:py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full shadow-sm scale-[0.95] md:scale-100 lg:scale-100 origin-right md:origin-center lg:origin-center">
+          <CheckCircle className="w-4 h-4 md:w-5 md:h-5 lg:w-5 lg:h-5" />
+          <span className="text-xs md:text-sm lg:text-sm font-bold">완료</span>
         </div>
       );
     }
@@ -40,7 +40,7 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
     >
       <span
         onClick={onTimerClick}
-        className={`font-black text-3xl sm:text-[33px] lg:text-[44px] tracking-[-0.08em] sm:tracking-tighter leading-[0.75] tabular-nums ${isOvertime ? 'text-red-500 animate-pulse' :
+        className={`font-black text-3xl sm:text-[33px] md:text-[38px] lg:text-[44px] tracking-[-0.08em] sm:tracking-tighter leading-[0.75] tabular-nums ${isOvertime ? 'text-red-500 animate-pulse' :
           isNearEnd ? 'text-orange-500 animate-pulse' :
             'text-slate-700 dark:text-slate-200'
           }`}>
@@ -54,7 +54,7 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
           : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600'
           }`}
       >
-        {bed.isPaused ? <Play className="w-3.5 h-3.5 sm:w-[15px] sm:h-[15px] lg:w-4 lg:h-4 fill-current" /> : <Pause className="w-3.5 h-3.5 sm:w-[15px] sm:h-[15px] lg:w-4 lg:h-4 fill-current" />}
+        {bed.isPaused ? <Play className="w-3.5 h-3.5 sm:w-[15px] sm:h-[15px] md:w-[18px] md:h-[18px] lg:w-4 lg:h-4 fill-current" /> : <Pause className="w-3.5 h-3.5 sm:w-[15px] sm:h-[15px] md:w-[18px] md:h-[18px] lg:w-4 lg:h-4 fill-current" />}
       </button>
     </div>
   );
