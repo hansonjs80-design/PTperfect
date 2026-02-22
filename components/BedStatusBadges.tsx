@@ -40,24 +40,24 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
   // 기준: w-5 (20px)
   // 1개, 2개: 20% 축소 -> w-4 (16px)
   // 3개 이상: 30% 축소 -> w-3.5 (14px)
-  // sm(태블릿/PC) 이상은 w-6 (24px) 고정
-  let iconSizeClass = ""; 
-  
+  // sm(태블릿/PC) 이상은 w-7 (28px) 고정
+  let iconSizeClass = "";
+
   if (count >= 3) {
     iconSizeClass = "w-3.5 h-3.5"; // 30% smaller
   } else {
     iconSizeClass = "w-4 h-4";     // 20% smaller (for 1 or 2)
   }
-  
+
   // Combine with desktop override
-  iconSizeClass += " sm:w-6 sm:h-6";
+  iconSizeClass += " sm:w-7 sm:h-7";
 
   return (
     <div className={layoutClass}>
       {activeBadges.map((badge) => (
         <div 
           key={badge.label} 
-          className={`flex items-center justify-center p-0.5 rounded ${badge.colorClass}`}
+          className={`flex items-center justify-center p-0.5 sm:p-0 rounded ${badge.colorClass}`}
           title={badge.label}
         >
           <badge.icon className={iconSizeClass} strokeWidth={2.5} />
