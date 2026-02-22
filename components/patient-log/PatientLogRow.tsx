@@ -344,6 +344,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           onCommit={(val, skipSync, navDir) => handleChange('author', val || '', skipSync, 6, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
+          forceUpperCase={true}
           suppressEnterNav={isDraft}
         />
       </td>

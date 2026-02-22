@@ -13,10 +13,11 @@ interface EditableCellProps {
   menuTitle?: string;
   directEdit?: boolean;
   syncOnDirectEdit?: boolean;
+  forceUpperCase?: boolean;
   gridId?: string;
   rowIndex: number;
   colIndex: number;
-  suppressEnterNav?: boolean; 
+  suppressEnterNav?: boolean;
 }
 
 export const EditableCell: React.FC<EditableCellProps> = ({ 
@@ -28,6 +29,7 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   menuTitle = '수정 옵션',
   directEdit = false,
   syncOnDirectEdit = true,
+  forceUpperCase = false,
   gridId,
   rowIndex,
   colIndex,
@@ -83,7 +85,7 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setLocalValue(e.target.value.toUpperCase());
+      setLocalValue(forceUpperCase ? e.target.value.toUpperCase() : e.target.value);
   };
 
   const handleBlur = () => {
