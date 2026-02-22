@@ -50,8 +50,8 @@ export const useLayoutStyles = (isFullScreen: boolean) => {
 
     // 3. Main Content Bottom Padding Logic
     const mainContentPaddingBottom = isFullScreen
-      ? 'pb-[env(safe-area-inset-bottom)]'
-      : 'pb-[env(safe-area-inset-bottom)]';
+      ? 'pb-0'
+      : 'pb-0';
 
     // 4. Close Button Position Logic (Full Screen)
     const closeButtonClass = `

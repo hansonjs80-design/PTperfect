@@ -59,7 +59,7 @@ export const MainLayout: React.FC = () => {
   const handleCloseMenu = useCallback(() => setMenuOpen(false), []);
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-gray-100 dark:bg-slate-950 landscape:bg-transparent relative">
+    <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-gray-200 dark:bg-slate-950 landscape:bg-transparent relative">
       {!isFullScreen && (
         <div 
           ref={headerRef}
@@ -80,12 +80,11 @@ export const MainLayout: React.FC = () => {
         <main 
           ref={mainRef}
           className={`
-            flex-1 overflow-x-auto overflow-y-auto scroll-smooth touch-pan-x touch-pan-y overscroll-contain 
+            flex-1 overflow-x-auto overflow-y-auto scroll-smooth touch-pan-x touch-pan-y overscroll-contain
             bg-gray-200 dark:bg-slate-950 landscape:bg-transparent
             transition-all duration-300 ease-in-out
-            px-0
+            px-0 pb-0
             ${mainContentPaddingTop}
-            ${mainContentPaddingBottom}
             sm:px-2
             md:px-4 md:pt-4 md:pb-0
             landscape:px-0
