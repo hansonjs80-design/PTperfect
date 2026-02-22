@@ -45,7 +45,7 @@ export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({
 
       {/* Status Icons Area */}
       <div
-        className={`flex items-center justify-center cursor-pointer rounded-xl transition-all duration-200 min-w-[26px] sm:min-w-[40px] min-h-[33px] sm:min-h-[40px] hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/20`}
+        className={`flex items-center justify-center cursor-pointer rounded-xl transition-all duration-200 min-w-[26px] sm:min-w-[40px] lg:min-w-[36px] min-h-[33px] sm:min-h-[40px] lg:min-h-[36px] hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/20`}
         onClick={onEditStatus}
         title={getTooltip("상태 아이콘 설정")}
       >
