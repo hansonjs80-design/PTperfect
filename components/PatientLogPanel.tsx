@@ -31,7 +31,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setPrintModalOpen
   } = useTreatmentContext();
   
-  const { visits, currentDate, setCurrentDate, changeDate, addVisit, updateVisit, deleteVisit } = usePatientLogContext();
+  const { visits, currentDate, setCurrentDate, changeDate, addVisit, deleteVisit } = usePatientLogContext();
   
   // Performance Optimization: 
   // Extract status logic to prevent re-rendering on every timer tick.
@@ -63,18 +63,15 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     if (targetBedId) {
       const targetBed = beds.find(b => b.id === targetBedId);
       if (targetBed && targetBed.status === BedStatus.ACTIVE) {
-        // Clear the active bed card
+        // Clear the active bed card (sets to IDLE)
         clearBed(targetBedId);
-        // Unlink the previous visit that was using this bed
-        const prevVisit = visits.find(v => v.bed_id === targetBedId);
-        if (prevVisit) {
-          await updateVisit(prevVisit.id, { bed_id: null });
-        }
+        // Note: Do NOT null out previous visit's bed_id — keep the bed number visible.
+        // The row auto-deactivates because getRowStatus checks bed status (IDLE = 'none').
       }
     }
 
     return await addVisit(initialData);
-  }, [beds, visits, addVisit, updateVisit, clearBed]);
+  }, [beds, addVisit, clearBed]);
 
   // Handle Deletion with Bed Sync
   const handleDeleteVisit = useCallback((visitId: string) => {

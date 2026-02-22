@@ -44,13 +44,10 @@ export const usePatientBedSync = (
              const targetBed = bedsRef.current.find(b => b.id === targetBedId);
              if (targetBed && targetBed.status === BedStatus.ACTIVE) {
                  // Confirm popup is handled at BedSelectorCell level (cursor popup)
-                 // Clear the bed card first
-                 clearBed(targetBedId);
-                 // Unlink the previous visit that was using this bed
-                 const prevVisit = visitsRef.current.find(v => v.id !== id && v.bed_id === targetBedId);
-                 if (prevVisit) {
-                     updateLogVisit(prevVisit.id, { bed_id: null });
-                 }
+                 // Do NOT call clearBed here — overrideBedFromLog with forceRestart=true
+                 // will overwrite the bed state in a single setState call, avoiding
+                 // React batching race conditions where clearBed's IDLE could overwrite
+                 // the new ACTIVE state.
                  shouldForceRestart = true;
              }
          }
@@ -80,7 +77,14 @@ export const usePatientBedSync = (
              clearBed(oldVisit.bed_id);
              shouldForceRestart = true;
           }
-          overrideBedFromLog(mergedVisit.bed_id, mergedVisit, shouldForceRestart);
+          // If no treatment_name, just clear the bed (don't activate)
+          const hasTreatment = !!mergedVisit.treatment_name && mergedVisit.treatment_name.trim() !== '';
+          if (!hasTreatment && shouldForceRestart) {
+             // No treatment to activate — just clear the previously active bed
+             clearBed(mergedVisit.bed_id);
+          } else {
+             overrideBedFromLog(mergedVisit.bed_id, mergedVisit, shouldForceRestart);
+          }
       }
   }, [updateLogVisit, clearBed, overrideBedFromLog, bedsRef, visitsRef]);
 
