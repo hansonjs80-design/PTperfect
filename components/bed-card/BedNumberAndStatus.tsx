@@ -38,7 +38,7 @@ export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({
         onClick={isIdle ? undefined : onMovePatient}
         title={isIdle ? undefined : getTooltip("환자 이동")}
       >
-        <span className={`font-black tracking-tighter leading-none text-3xl lg:text-[44px] ${getBedNumberColor(bed)}`}>
+        <span className={`font-black tracking-tighter leading-none text-3xl sm:text-[33px] lg:text-[44px] ${getBedNumberColor(bed)}`}>
           {isBedT ? 'T' : bed.id}
         </span>
       </div>

@@ -40,7 +40,7 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
     >
       <span
         onClick={onTimerClick}
-        className={`font-black text-3xl lg:text-[44px] tracking-[-0.08em] sm:tracking-tighter leading-[0.75] tabular-nums ${isOvertime ? 'text-red-500 animate-pulse' :
+        className={`font-black text-3xl sm:text-[33px] lg:text-[44px] tracking-[-0.08em] sm:tracking-tighter leading-[0.75] tabular-nums ${isOvertime ? 'text-red-500 animate-pulse' :
           isNearEnd ? 'text-orange-500 animate-pulse' :
             'text-slate-700 dark:text-slate-200'
           }`}>
@@ -54,7 +54,7 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
           : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600'
           }`}
       >
-        {bed.isPaused ? <Play className="w-3.5 h-3.5 lg:w-4 lg:h-4 fill-current" /> : <Pause className="w-3.5 h-3.5 lg:w-4 lg:h-4 fill-current" />}
+        {bed.isPaused ? <Play className="w-3.5 h-3.5 sm:w-[15px] sm:h-[15px] lg:w-4 lg:h-4 fill-current" /> : <Pause className="w-3.5 h-3.5 sm:w-[15px] sm:h-[15px] lg:w-4 lg:h-4 fill-current" />}
       </button>
     </div>
   );
