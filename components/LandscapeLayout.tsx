@@ -46,9 +46,9 @@ export const LandscapeLayout: React.FC<BedLayoutProps> = memo(({ beds, presets }
     // Changed: Removed overflow-y-auto to prevent double scrollbars with MainLayout.
     // Kept overflow-x-auto for horizontal scrolling if needed.
     // Added pb-[120px] to ensure bottom content isn't hidden.
-    <div className="block w-full h-full overflow-x-auto custom-scrollbar pb-[120px] px-0">
+    <div className="block w-full h-full overflow-x-auto custom-scrollbar pb-[120px] px-0 lg:flex lg:items-center lg:min-h-full">
       <div className="
-        grid content-start
+        grid content-start lg:content-center
         gap-y-[5px] gap-x-[5px] sm:gap-y-[5px] sm:gap-x-[5px] md:gap-y-[20px]
         lg:gap-y-[29px] lg:gap-x-[7px]
         grid-cols-4 lg:grid-cols-[1fr_1fr_0px_1fr_1fr]
