@@ -20,6 +20,9 @@ interface TreatmentSelectorCellProps {
     activeStepBgColor?: string;
     activeStepIndex?: number;
     isLastStep?: boolean;
+    timerStatus?: 'normal' | 'warning' | 'overtime';
+    remainingTime?: number;
+    isPaused?: boolean;
     onNextStep?: () => void;
     onPrevStep?: () => void;
     onClearBed?: () => void;
@@ -40,6 +43,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     activeStepBgColor,
     activeStepIndex = -1,
     isLastStep = false,
+    timerStatus = 'normal',
+    remainingTime,
+    isPaused,
     onNextStep,
     onPrevStep,
     onClearBed,
@@ -205,7 +211,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                         {/* Updated Font Size: xl:text-sm */}
                         <div className="flex-1 min-w-0 flex justify-start pl-2 pr-14">
                             <span className="text-sm sm:text-base xl:text-sm font-bold truncate pointer-events-none text-left w-full leading-tight">
-                                <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor} activeStepBgColor={activeStepBgColor} />
+                                <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor} activeStepBgColor={activeStepBgColor} timerStatus={timerStatus} remainingTime={remainingTime} isPaused={isPaused} />
                             </span>
                         </div>
 
@@ -225,7 +231,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
             {hoverInfo && createPortal(
                 <div className="fixed z-[9999] bg-[#f2f2f2] dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 rounded-lg shadow-xl pointer-events-none animate-in fade-in zoom-in-95 duration-150 max-w-sm border border-gray-200 dark:border-slate-700" style={{ top: hoverInfo.y, left: hoverInfo.x, transform: 'translate(-50%, -100%)' }}>
                     <div className="text-xs font-bold text-center leading-relaxed">
-                        <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor ? 'text-green-600 dark:text-green-300' : undefined} activeStepBgColor={activeStepBgColor} />
+                        <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor ? 'text-green-600 dark:text-green-300' : undefined} activeStepBgColor={activeStepBgColor} timerStatus={timerStatus} remainingTime={remainingTime} isPaused={isPaused} />
                     </div>
                     <div className="absolute bottom-[-5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-[#f2f2f2] dark:bg-slate-800 rotate-45 transform border-b border-r border-gray-200 dark:border-slate-700"></div>
                 </div>, document.body

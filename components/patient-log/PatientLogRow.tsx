@@ -26,6 +26,8 @@ interface PatientLogRowProps {
   activeStepIndex?: number;
   isLastStep?: boolean;
   timerStatus?: 'normal' | 'warning' | 'overtime';
+  remainingTime?: number;
+  isPaused?: boolean;
   onNextStep?: () => void;
   onPrevStep?: () => void;
   onClearBed?: () => void;
@@ -48,6 +50,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   activeStepIndex = -1,
   isLastStep = false,
   timerStatus = 'normal',
+  remainingTime,
+  isPaused,
   onNextStep,
   onPrevStep,
   onClearBed
@@ -298,6 +302,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           activeStepBgColor={activeStepBgColor}
           activeStepIndex={activeStepIndex}
           isLastStep={isLastStep}
+          timerStatus={timerStatus}
+          remainingTime={remainingTime}
+          isPaused={isPaused}
           onNextStep={onNextStep}
           onPrevStep={onPrevStep}
           onClearBed={onClearBed}
