@@ -156,8 +156,10 @@
         #root { display: block !important; height: auto !important; overflow: visible !important; }
         .print-only-visible {
           display: block !important;
-          position: fixed;
-          top: 0; left: 0; width: 100vw; height: 100vh;
+          position: static;
+          width: 100%;
+          height: auto;
+          overflow: visible;
           z-index: 9999;
           background: white;
         }

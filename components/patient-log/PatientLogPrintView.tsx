@@ -115,7 +115,7 @@ export const PatientLogPrintView: React.FC<PatientLogPrintViewProps> = ({
         </tbody>
       </table>
       
-      <div className="fixed bottom-4 left-0 w-full text-center text-[8pt] text-gray-300 uppercase tracking-wider">
+      <div className="mt-6 text-center text-[8pt] text-gray-300 uppercase tracking-wider">
         PhysioTrack Pro - Printed on {new Date().toLocaleString()}
       </div>
     </div>
