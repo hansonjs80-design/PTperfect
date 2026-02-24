@@ -256,7 +256,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           className={`bg-transparent justify-center text-center ${!visit?.patient_name
               ? 'font-normal text-gray-300 dark:text-gray-500'
               : 'font-black text-slate-800 dark:text-slate-100'
-            } ${isDraft ? 'placeholder-gray-300 font-normal' : ''} text-[15px] sm:text-base`}
+            } ${isDraft ? 'placeholder-gray-300 font-normal' : ''} text-[13.5px] sm:text-[14.4px]`}
           onCommit={(val, skipSync, navDir) => handleChange('patient_name', val || '', skipSync, 1, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -272,7 +272,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.body_part || ''}
           placeholder=""
           menuTitle="치료 부위 수정 (로그만 변경)"
-          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-sm sm:text-[15px] xl:text-base"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[12.6px] sm:text-[13.5px] xl:text-[14.4px]"
           onCommit={(val, skipSync, navDir) => {
             let formattedVal = (val || '').replace(/\b\w/g, (c) => c.toUpperCase());
             const upperCaseWords = ['ITB', 'TFL', 'SIJ', 'LS', 'CT', 'TL', 'TMJ', 'ACL', 'MCL', 'ATFL', 'PV', 'AC', 'SC'];
@@ -349,7 +349,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.memo || ''}
           placeholder=""
           menuTitle="메모 수정 (로그만 변경)"
-          className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-sm xl:text-base"
+          className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-[12.6px] xl:text-[14.4px]"
           onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 6, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}

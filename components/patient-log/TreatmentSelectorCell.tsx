@@ -210,7 +210,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     <div className="flex items-center w-full h-full cursor-pointer px-1 hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors relative" title={getTitle()}>
                         {/* Updated Font Size: xl:text-sm */}
                         <div className="flex-1 min-w-0 flex justify-start pl-2 pr-14">
-                            <span className="text-sm sm:text-base xl:text-sm font-bold truncate pointer-events-none text-left w-full leading-tight">
+                            <span className="text-[15.4px] sm:text-[17.6px] xl:text-[15.4px] font-bold truncate pointer-events-none text-left w-full leading-tight">
                                 <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor} activeStepBgColor={activeStepBgColor} timerStatus={timerStatus} remainingTime={remainingTime} isPaused={isPaused} />
                             </span>
                         </div>
