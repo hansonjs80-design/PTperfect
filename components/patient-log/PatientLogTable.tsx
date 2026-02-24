@@ -4,6 +4,7 @@ import { PatientVisit, BedState, Preset } from '../../types';
 import { PatientLogRow } from './PatientLogRow';
 import { PatientLogTableHeader } from './PatientLogTableHeader';
 import { getRowActiveStatus } from '../../utils/patientLogUtils';
+import { useColumnResize, FLEX_COL_INDEX } from '../../hooks/useColumnResize';
 
 interface PatientLogTableProps {
   visits: PatientVisit[];
@@ -38,6 +39,10 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 }) => {
   const EMPTY_ROWS_COUNT = 10;
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
+
+  // Column resize (desktop & tablet portrait)
+  const tableRef = useRef<HTMLTableElement>(null);
+  const { columnWidths, isResizing, onResizeStart } = useColumnResize(tableRef);
 
   // Auto-focus logic for new row creation
   // Stores { rowOffset, colIndex }
@@ -86,8 +91,15 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
   return (
     <div className="flex-1 overflow-y-auto overflow-x-auto xl:overflow-x-hidden log-scrollbar bg-white dark:bg-slate-900">
-      <table className="w-full min-w-[500px] md:min-w-full border-collapse table-fixed">
-        <PatientLogTableHeader />
+      <table ref={tableRef} className="w-full min-w-[500px] md:min-w-full border-collapse table-fixed">
+        {columnWidths && (
+          <colgroup>
+            {columnWidths.map((w, i) => (
+              <col key={i} style={i !== FLEX_COL_INDEX ? { width: `${w}px` } : undefined} />
+            ))}
+          </colgroup>
+        )}
+        <PatientLogTableHeader onResizeStart={onResizeStart} isResizing={isResizing} />
         <tbody>
           {visits.map((visit, index) => {
             const rowStatus = getRowStatus(visit.id, visit.bed_id);
