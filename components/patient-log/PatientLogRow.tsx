@@ -321,13 +321,14 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           gridId={`${rowIndex}-5`}
           rowIndex={rowIndex}
           colIndex={5}
-          value={visit?.memo || ''}
-          placeholder=""
-          menuTitle="메모 수정 (로그만 변경)"
-          className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-sm xl:text-base"
-          onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 5, navDir)}
+          value={visit?.author || ''}
+          placeholder="-"
+          menuTitle="작성자 수정 (로그만 변경)"
+          className="text-center justify-center text-gray-400 font-bold bg-transparent text-sm xl:text-base"
+          onCommit={(val, skipSync, navDir) => handleChange('author', val || '', skipSync, 5, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
+          forceUpperCase={true}
           suppressEnterNav={isDraft}
         />
       </td>
@@ -337,14 +338,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           gridId={`${rowIndex}-6`}
           rowIndex={rowIndex}
           colIndex={6}
-          value={visit?.author || ''}
-          placeholder="-"
-          menuTitle="작성자 수정 (로그만 변경)"
-          className="text-center justify-center text-gray-400 font-bold bg-transparent text-sm xl:text-base"
-          onCommit={(val, skipSync, navDir) => handleChange('author', val || '', skipSync, 6, navDir)}
+          value={visit?.memo || ''}
+          placeholder=""
+          menuTitle="메모 수정 (로그만 변경)"
+          className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-sm xl:text-base"
+          onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 6, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
-          forceUpperCase={true}
           suppressEnterNav={isDraft}
         />
       </td>

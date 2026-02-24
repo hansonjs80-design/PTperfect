@@ -21,11 +21,11 @@ export const PatientLogTableHeader: React.FC = () => {
         <th className="py-3 px-1 text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider w-[38px] md:w-[70px] xl:w-[60px] text-center border-r border-slate-300 dark:border-slate-600 last:border-r-0">
           상태
         </th>
-        <th className="py-3 px-1 text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider w-[45px] md:w-[160px] xl:w-[100px] text-center border-r border-slate-300 dark:border-slate-600 last:border-r-0">
-          메모
-        </th>
         <th className="py-3 px-1 text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider w-[30px] md:w-[70px] xl:w-[50px] text-center border-r border-slate-300 dark:border-slate-600 last:border-r-0">
           작성
+        </th>
+        <th className="py-3 px-1 text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider w-[45px] md:w-[160px] xl:w-[100px] text-center border-r border-slate-300 dark:border-slate-600 last:border-r-0">
+          메모
         </th>
         <th className="py-3 px-1 w-[20px] md:w-[24px]"></th>
       </tr>
