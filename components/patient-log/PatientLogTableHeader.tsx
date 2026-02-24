@@ -2,7 +2,7 @@
 import React from 'react';
 
 interface PatientLogTableHeaderProps {
-  onResizeStart?: (colIndex: number, clientX: number) => void;
+  onResizeStart?: (colIndex: number, clientX: number, invert?: boolean) => void;
   isResizing?: boolean;
 }
 
@@ -55,8 +55,29 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
           부위
           {handle(2)}
         </th>
-        <th className={`${thBase} w-[150px] md:w-auto`}>
+        <th className={`${thBase} w-[150px] md:w-auto relative`}>
           처방 목록
+          {onResizeStart && (
+            <div
+              className="absolute top-0 -right-[4px] w-[9px] h-full z-20 hidden md:portrait:flex lg:flex items-center justify-center cursor-col-resize touch-none"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onResizeStart(4, e.clientX, true);
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                onResizeStart(4, e.touches[0].clientX, true);
+              }}
+            >
+              <div
+                className={`w-[3px] h-[60%] rounded-full transition-colors duration-150 ${
+                  isResizing
+                    ? 'bg-blue-400/50'
+                    : 'bg-transparent hover:bg-blue-400/60'
+                }`}
+              />
+            </div>
+          )}
         </th>
         <th className={`${thBase} w-[38px] md:w-[70px] xl:w-[60px] relative`}>
           상태

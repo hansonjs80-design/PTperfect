@@ -11,6 +11,7 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
     colIndex: number;
     startX: number;
     startWidths: number[];
+    invert: boolean;
   } | null>(null);
 
   const captureWidths = useCallback((): number[] | null => {
@@ -20,12 +21,12 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
     return Array.from(ths).map(th => th.getBoundingClientRect().width);
   }, [tableRef]);
 
-  const onResizeStart = useCallback((colIndex: number, clientX: number) => {
+  const onResizeStart = useCallback((colIndex: number, clientX: number, invert = false) => {
     const widths = columnWidths ?? captureWidths();
     if (!widths) return;
     if (!columnWidths) setColumnWidths(widths);
 
-    stateRef.current = { colIndex, startX: clientX, startWidths: [...widths] };
+    stateRef.current = { colIndex, startX: clientX, startWidths: [...widths], invert };
     setIsResizing(true);
   }, [columnWidths, captureWidths]);
 
@@ -36,7 +37,7 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
       const s = stateRef.current;
       if (!s) return;
       const delta = clientX - s.startX;
-      const newWidth = Math.max(MIN_COL_WIDTH, s.startWidths[s.colIndex] + delta);
+      const newWidth = Math.max(MIN_COL_WIDTH, s.startWidths[s.colIndex] + (s.invert ? -delta : delta));
 
       setColumnWidths(prev => {
         if (!prev) return prev;
