@@ -1,5 +1,6 @@
 
 import React, { memo, useRef, useEffect, useState, useCallback } from 'react';
+import { Plus } from 'lucide-react';
 import { PatientVisit, BedState, Preset } from '../../types';
 import { PatientLogRow } from './PatientLogRow';
 import { PatientLogTableHeader } from './PatientLogTableHeader';
@@ -37,7 +38,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   onPrevStep,
   onClearBed
 }) => {
-  const EMPTY_ROWS_COUNT = 10;
+  const [totalRows, setTotalRows] = useState(120);
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
 
   // Column resize (desktop & tablet portrait)
@@ -91,7 +92,9 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
   const handleBulkAuthorUpdate = useCallback((val: string) => {
     visits.forEach(v => {
-      onUpdate(v.id, { author: val }, true);
+      if (!v.author || v.author.trim() === '') {
+        onUpdate(v.id, { author: val }, true);
+      }
     });
   }, [visits, onUpdate]);
 
@@ -160,16 +163,29 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
             );
           })}
 
-          {Array.from({ length: EMPTY_ROWS_COUNT }).map((_, index) => (
+          {Array.from({ length: Math.max(0, totalRows - visits.length) }).map((_, index) => (
             <PatientLogRow
               key={`draft-${index}`}
               rowIndex={visits.length + index}
               isDraft={true}
-              onCreate={handleDraftCreate} // Pass the wrapper function
+              onCreate={handleDraftCreate}
               onSelectLog={(id) => onSelectLog(id, null)}
               activeBedIds={activeBedIds}
             />
           ))}
+
+          {/* +10행 추가 버튼 */}
+          <tr>
+            <td colSpan={8} className="p-0 border-b border-gray-300 dark:border-slate-600">
+              <button
+                onClick={() => setTotalRows(prev => prev + 10)}
+                className="w-full py-2.5 flex items-center justify-center gap-1.5 text-xs font-bold text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:text-brand-400 dark:hover:bg-brand-900/20 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                10행 추가
+              </button>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
