@@ -335,7 +335,11 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           onSelect={async (val) => {
             if (isDraft && onCreate) {
               await onCreate({ author: val }, 5);
+            } else if (visit && visit.author && visit.author.trim() !== '') {
+              // 이미 입력된 셀 → 해당 셀만 변경
+              if (onUpdate) onUpdate(visit.id, { author: val }, true);
             } else if (onBulkAuthorUpdate) {
+              // 빈 셀 → 빈 셀 전체 벌크 업데이트
               onBulkAuthorUpdate(val);
             }
           }}
@@ -351,7 +355,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.memo || ''}
           placeholder=""
           menuTitle="메모 수정 (로그만 변경)"
-          className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-[12.6px] xl:text-[14.4px]"
+          className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-[11.3px] xl:text-[13px]"
           onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 6, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}

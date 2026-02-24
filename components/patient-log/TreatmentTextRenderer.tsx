@@ -64,7 +64,7 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
                   {part.trim()}
                 </span>
                 {showTimer && (
-                  <span className={`ml-1 text-[11px] sm:text-xs font-black tabular-nums ${timerColorClass} ${timerAnimClass} ${isPaused ? 'opacity-50' : ''}`}>
+                  <span className={`ml-1 text-[12px] sm:text-[13px] font-black tabular-nums ${timerColorClass} ${timerAnimClass} ${isPaused ? 'opacity-50' : ''}`}>
                     {timerStatus === 'overtime' && '+'}{formatTime(remainingTime!)}
                   </span>
                 )}
