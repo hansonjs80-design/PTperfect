@@ -1,5 +1,5 @@
 
-import React, { memo, useRef, useEffect, useState } from 'react';
+import React, { memo, useRef, useEffect, useState, useCallback } from 'react';
 import { PatientVisit, BedState, Preset } from '../../types';
 import { PatientLogRow } from './PatientLogRow';
 import { PatientLogTableHeader } from './PatientLogTableHeader';
@@ -89,6 +89,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     return await onCreate(updates);
   };
 
+  const handleBulkAuthorUpdate = useCallback((val: string) => {
+    visits.forEach(v => {
+      onUpdate(v.id, { author: val }, true);
+    });
+  }, [visits, onUpdate]);
+
   return (
     <div className="flex-1 overflow-y-auto overflow-x-auto xl:overflow-x-hidden log-scrollbar bg-white dark:bg-slate-900">
       <table ref={tableRef} className="w-full min-w-[500px] md:min-w-full border-collapse table-fixed">
@@ -149,6 +155,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
                 onNextStep={handleNextStep}
                 onPrevStep={handlePrevStep}
                 onClearBed={handleClearBed}
+                onBulkAuthorUpdate={handleBulkAuthorUpdate}
               />
             );
           })}

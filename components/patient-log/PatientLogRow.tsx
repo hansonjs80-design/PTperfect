@@ -31,6 +31,7 @@ interface PatientLogRowProps {
   onNextStep?: () => void;
   onPrevStep?: () => void;
   onClearBed?: () => void;
+  onBulkAuthorUpdate?: (val: string) => void;
 }
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
@@ -54,7 +55,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   isPaused,
   onNextStep,
   onPrevStep,
-  onClearBed
+  onClearBed,
+  onBulkAuthorUpdate
 }) => {
   const { handleGridKeyDown } = useGridNavigation(8);
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
@@ -333,8 +335,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           onSelect={async (val) => {
             if (isDraft && onCreate) {
               await onCreate({ author: val }, 5);
-            } else if (!isDraft && visit && onUpdate) {
-              onUpdate(visit.id, { author: val }, true);
+            } else if (onBulkAuthorUpdate) {
+              onBulkAuthorUpdate(val);
             }
           }}
           isDraft={isDraft}
