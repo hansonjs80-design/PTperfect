@@ -5,6 +5,7 @@ import { EditableCell } from './EditableCell';
 import { BedSelectorCell } from './BedSelectorCell';
 import { TreatmentSelectorCell } from './TreatmentSelectorCell';
 import { PatientStatusCell } from './PatientStatusCell';
+import { AuthorSelectorCell } from './AuthorSelectorCell';
 import { PatientVisit } from '../../types';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 
@@ -317,19 +318,19 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       <td className={`${cellBorderClass} p-0`}>
-        <EditableCell
+        <AuthorSelectorCell
           gridId={`${rowIndex}-5`}
           rowIndex={rowIndex}
           colIndex={5}
           value={visit?.author || ''}
-          placeholder="-"
-          menuTitle="작성자 수정 (로그만 변경)"
-          className="text-center justify-center text-gray-400 font-bold bg-transparent text-sm xl:text-base"
-          onCommit={(val, skipSync, navDir) => handleChange('author', val || '', skipSync, 5, navDir)}
-          directEdit={true}
-          syncOnDirectEdit={false}
-          forceUpperCase={true}
-          suppressEnterNav={isDraft}
+          onSelect={async (val) => {
+            if (isDraft && onCreate) {
+              await onCreate({ author: val }, 5);
+            } else if (!isDraft && visit && onUpdate) {
+              onUpdate(visit.id, { author: val }, true);
+            }
+          }}
+          isDraft={isDraft}
         />
       </td>
 
