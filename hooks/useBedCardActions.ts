@@ -44,10 +44,15 @@ export const useBedCardActions = (
     }
   }, [swapSourceIndex, swapSteps]);
 
+  const cancelSwap = useCallback(() => {
+    setSwapSourceIndex(null);
+  }, []);
+
   return {
     trashState,
     handleTrashClick,
     swapSourceIndex,
-    handleSwapRequest
+    handleSwapRequest,
+    cancelSwap
   };
 };

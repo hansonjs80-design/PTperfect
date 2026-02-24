@@ -2,6 +2,9 @@
 import React, { useRef, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { QuickTreatment } from '../../types';
+import { computePopupPosition } from '../../utils/popupUtils';
+
+const POPUP_WIDTH = 200;
 
 interface StepReplacePopupProps {
   quickTreatments: QuickTreatment[];
@@ -17,24 +20,20 @@ export const StepReplacePopup: React.FC<StepReplacePopupProps> = ({
   onClose,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
+  // Pre-compute initial position using estimated height (avoids -9999 off-screen jump)
+  const [pos, setPos] = useState(() => {
+    const estRows = Math.ceil(quickTreatments.length / 3);
+    const estHeight = Math.min(estRows * 48 + 12, 280) + 36;
+    return computePopupPosition(clickPos, POPUP_WIDTH, estHeight);
+  });
+
+  // Refine with actual measured dimensions (runs synchronously before paint)
   useLayoutEffect(() => {
     if (!panelRef.current) return;
     const rect = panelRef.current.getBoundingClientRect();
-    const sw = window.innerWidth;
-    const sh = window.innerHeight;
-    const pad = 8;
-
-    let left = clickPos.x;
-    let top = clickPos.y;
-
-    if (left + rect.width > sw - pad) left = sw - rect.width - pad;
-    if (left < pad) left = pad;
-    if (top + rect.height > sh - pad) top = clickPos.y - rect.height;
-    if (top < pad) top = pad;
-
-    setPos({ top, left });
+    const refined = computePopupPosition(clickPos, rect.width, rect.height);
+    setPos(refined);
   }, [clickPos]);
 
   return createPortal(
@@ -43,10 +42,9 @@ export const StepReplacePopup: React.FC<StepReplacePopupProps> = ({
         ref={panelRef}
         className="absolute bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-gray-200 dark:border-slate-600 overflow-hidden animate-in zoom-in-95 duration-100"
         style={{
-          top: pos ? pos.top : -9999,
-          left: pos ? pos.left : -9999,
-          opacity: pos ? 1 : 0,
-          width: 200,
+          top: pos.top,
+          left: pos.left,
+          width: POPUP_WIDTH,
         }}
         onClick={(e) => e.stopPropagation()}
       >

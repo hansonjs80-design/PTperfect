@@ -62,7 +62,7 @@ interface TreatmentContextType {
   toggleTraction: (bedId: number) => void;
   toggleESWT: (bedId: number) => void;
   toggleManual: (bedId: number) => void;
-  updateBedSteps: (bedId: number, steps: TreatmentStep[]) => void;
+  updateBedSteps: (bedId: number, steps: TreatmentStep[], newStepIndex?: number) => void;
   updateMemo: (bedId: number, stepIndex: number, memo: string | null) => void;
   updateBedDuration: (bedId: number, duration: number) => void;
   clearBed: (bedId: number) => void;

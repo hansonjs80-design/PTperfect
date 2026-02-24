@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, memo } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { PatientVisit } from '../../types';
 import { PatientStatusIcons } from './PatientStatusIcons';
@@ -17,7 +17,7 @@ interface PatientStatusCellProps {
   colIndex: number;
 }
 
-export const PatientStatusCell: React.FC<PatientStatusCellProps> = ({ 
+export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   visit, 
   rowStatus = 'none',
   onUpdate,
@@ -140,4 +140,4 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = ({
         )}
     </>
   );
-};
+});

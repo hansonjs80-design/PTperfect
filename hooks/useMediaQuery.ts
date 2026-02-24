@@ -13,17 +13,12 @@ export function useMediaQuery(query: string): boolean {
 
     const media = window.matchMedia(query);
     const listener = (e: MediaQueryListEvent) => setMatches(e.matches);
-    
-    // Modern browsers support addEventListener on MediaQueryList
+
     media.addEventListener('change', listener);
-    
-    // Double check in case it changed between init and effect
-    if (media.matches !== matches) {
-        setMatches(media.matches);
-    }
+    setMatches(media.matches);
 
     return () => media.removeEventListener('change', listener);
-  }, [query, matches]);
+  }, [query]);
 
   return matches;
 }

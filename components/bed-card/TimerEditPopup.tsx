@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Minus, Plus, Save, X, Clock } from 'lucide-react';
+import { computePopupPosition } from '../../utils/popupUtils';
 
 interface TimerEditPopupProps {
   title: string;
@@ -20,7 +21,12 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
 }) => {
   // 초기값을 분 단위로 변환 (최소 1분)
   const [minutes, setMinutes] = useState(Math.ceil(Math.max(60, initialSeconds) / 60));
-  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
+  // Pre-compute initial popup style (estimated height ~280px for the timer popup)
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>(() => {
+    if (!position) return {};
+    const p = computePopupPosition(position, 256, 280, { preferAbove: true, centerOnClick: true, gap: 20 });
+    return { top: p.top, left: p.left, position: 'absolute' as const };
+  });
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -43,40 +49,14 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
     return () => window.removeEventListener('keydown', handleWindowKeyDown);
   }, [onCancel]);
 
-  // Smart Positioning: Place ABOVE the click by default
+  // Refine positioning with actual measured dimensions
   useLayoutEffect(() => {
     if (position && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const screenW = window.innerWidth;
-      const screenH = window.innerHeight;
-      
-      const GAP = 10;
-      // Default: Center horizontally on click, Place ABOVE click
-      let left = position.x - (rect.width / 2);
-      let top = position.y - rect.height - GAP - 10; // 10px offset up
-
-      // 1. Vertical Check
-      // If it goes off top, flip to BELOW
-      if (top < GAP) {
-        top = position.y + 20;
-      }
-      // If flipping to below goes off bottom, pin to bottom
-      if (top + rect.height > screenH - GAP) {
-        top = screenH - rect.height - GAP;
-      }
-
-      // 2. Horizontal Check
-      // Left edge
-      if (left < GAP) left = GAP;
-      // Right edge
-      if (left + rect.width > screenW - GAP) {
-        left = screenW - rect.width - GAP;
-      }
-
-      setPopupStyle({ top, left, position: 'absolute' });
+      const refined = computePopupPosition(position, rect.width, rect.height, { preferAbove: true, centerOnClick: true, gap: 20 });
+      setPopupStyle({ top: refined.top, left: refined.left, position: 'absolute' });
     } else if (!position) {
-      // Fallback: Centered
-      setPopupStyle({}); 
+      setPopupStyle({});
     }
   }, [position]);
 

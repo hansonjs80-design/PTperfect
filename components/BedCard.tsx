@@ -1,5 +1,5 @@
 
-import React, { memo, useMemo, useRef, useCallback } from 'react';
+import React, { memo, useMemo, useRef, useCallback, useEffect } from 'react';
 import { BedState, BedStatus, Preset, QuickTreatment } from '../types';
 import { BedHeader } from './BedHeader';
 import { BedContent } from './BedContent';
@@ -8,6 +8,7 @@ import { BedEmptyState } from './BedEmptyState';
 import { getBedCardStyles } from '../utils/styleUtils';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { useBedCardActions } from '../hooks/useBedCardActions';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 interface BedCardProps {
   bed: BedState;
@@ -39,12 +40,16 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     quickTreatments
   } = useTreatmentContext();
 
-  const { 
-    trashState, 
-    handleTrashClick, 
-    swapSourceIndex, 
-    handleSwapRequest 
+  const {
+    trashState,
+    handleTrashClick,
+    swapSourceIndex,
+    handleSwapRequest,
+    cancelSwap
   } = useBedCardActions(bed.status, bed.id, clearBed, swapSteps);
+
+  // Desktop only (>= 768px)
+  const isDesktop = useMediaQuery('(min-width: 768px)');
 
   const currentPreset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
   const currentStep = currentPreset?.steps[bed.currentStepIndex];
@@ -106,6 +111,38 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       }
     }
   };
+
+  // Desktop only: Backspace/Delete removes the swap-selected step
+  useEffect(() => {
+    if (swapSourceIndex === null || !isDesktop) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        // Prevent deleting the last remaining step
+        if (steps.length <= 1) {
+          cancelSwap();
+          return;
+        }
+        const deletedIdx = swapSourceIndex;
+        const newSteps = steps.filter((_, i) => i !== deletedIdx);
+        // Adjust currentStepIndex if the deleted step was before it
+        let newIdx = bed.currentStepIndex;
+        if (deletedIdx < bed.currentStepIndex) {
+          newIdx = bed.currentStepIndex - 1;
+        } else if (deletedIdx === bed.currentStepIndex && deletedIdx >= newSteps.length) {
+          newIdx = Math.max(0, newSteps.length - 1);
+        }
+        updateBedSteps(bed.id, newSteps, newIdx);
+        cancelSwap();
+      } else if (e.key === 'Escape') {
+        cancelSwap();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [swapSourceIndex, isDesktop, steps, bed.id, bed.currentStepIndex, updateBedSteps, cancelSwap]);
 
   return (
     <div className={`${containerClass} transform transition-transform duration-200 active:scale-[0.99]`}>

@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { X, Plus, Trash2, Settings } from 'lucide-react';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { computePopupPosition } from '../../utils/popupUtils';
 
 const DEFAULT_AUTHORS = ['K', 'J', 'M', 'L'];
 
@@ -38,22 +39,12 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
 
   const { handleGridKeyDown } = useGridNavigation(8);
 
+  // Refine dropdown position with actual measured dimensions
   useLayoutEffect(() => {
     if (menuOpen && dropdownRef.current) {
       const rect = dropdownRef.current.getBoundingClientRect();
-      const screenW = window.innerWidth;
-      const screenH = window.innerHeight;
-      const W = 180;
-
-      let left = menuClickPos.x - W / 2;
-      let top = menuClickPos.y + 4;
-
-      if (left + W > screenW - 10) left = screenW - W - 10;
-      if (left < 10) left = 10;
-      if (top + rect.height > screenH - 10) top = menuClickPos.y - rect.height - 10;
-      if (top < 10) top = 10;
-
-      setDropdownPos({ top, left });
+      const refined = computePopupPosition(menuClickPos, rect.width, rect.height, { centerOnClick: true, gap: 4 });
+      setDropdownPos(refined);
     }
   }, [menuOpen, menuClickPos, isEditMode, authorOptions.length]);
 
@@ -61,15 +52,18 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
     e.preventDefault();
     e.stopPropagation();
 
+    let clickPos: { x: number; y: number };
     if (isKeyboard && cellRef.current) {
       const rect = cellRef.current.getBoundingClientRect();
-      setMenuClickPos({ x: rect.left + rect.width / 2, y: rect.bottom });
+      clickPos = { x: rect.left + rect.width / 2, y: rect.bottom };
     } else {
       const me = e as React.MouseEvent;
-      setMenuClickPos({ x: me.clientX, y: me.clientY });
+      clickPos = { x: me.clientX, y: me.clientY };
     }
+    setMenuClickPos(clickPos);
     setIsEditMode(false);
-    setDropdownPos(null);
+    // Pre-compute initial position (estimated height ~200px)
+    setDropdownPos(computePopupPosition(clickPos, 180, 200, { centerOnClick: true, gap: 4 }));
     setMenuOpen(true);
   };
 
@@ -145,9 +139,8 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
             ref={dropdownRef}
             className="absolute bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col"
             style={{
-              top: dropdownPos ? dropdownPos.top : '-9999px',
-              left: dropdownPos ? dropdownPos.left : '-9999px',
-              opacity: dropdownPos ? 1 : 0,
+              top: dropdownPos?.top ?? 0,
+              left: dropdownPos?.left ?? 0,
               width: 180
             }}
             onClick={(e) => e.stopPropagation()}

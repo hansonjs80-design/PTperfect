@@ -128,12 +128,14 @@ export const usePatientLog = () => {
     if (isOnlineMode() && supabase) {
       const { data, error } = await supabase
         .from('patient_visits')
-        .insert([newVisit]) 
+        .insert([newVisit])
         .select()
         .single();
 
       if (error) {
         console.error('Error adding visit to DB:', error);
+        // Revert optimistic update on failure
+        fetchVisits(currentDate);
       } else if (data) {
         // Confirm sync
         setVisits(prev => {
@@ -141,12 +143,12 @@ export const usePatientLog = () => {
           saveToLocalCache(currentDate, updated);
           return updated;
         });
-        return data.id; 
+        return data.id;
       }
     }
-    
-    return tempId; 
-  }, [currentDate]);
+
+    return tempId;
+  }, [currentDate, fetchVisits]);
 
   const updateVisit = useCallback(async (id: string, updates: Partial<PatientVisit>) => {
     // Optimistic Update
@@ -165,9 +167,11 @@ export const usePatientLog = () => {
 
       if (error) {
         console.error('Error updating visit:', error);
+        // Revert optimistic update by re-fetching server state
+        fetchVisits(currentDate);
       }
     }
-  }, [currentDate]);
+  }, [currentDate, fetchVisits]);
 
   const deleteVisit = useCallback(async (id: string) => {
     // Optimistic Update

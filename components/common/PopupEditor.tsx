@@ -2,6 +2,7 @@
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Save, X } from 'lucide-react';
+import { computePopupPosition } from '../../utils/popupUtils';
 
 interface PopupEditorProps {
   title: string;
@@ -25,7 +26,12 @@ export const PopupEditor: React.FC<PopupEditorProps> = ({
   suffix
 }) => {
   const [value, setValue] = useState(String(initialValue));
-  const [pos, setPos] = useState(position || { x: 0, y: 0 });
+  // Pre-compute initial position using estimated height ~200px (w-72 = 288px)
+  const [pos, setPos] = useState(() => {
+    if (!position || centered) return position || { x: 0, y: 0 };
+    const p = computePopupPosition(position, 288, 200);
+    return { x: p.left, y: p.top };
+  });
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -48,33 +54,13 @@ export const PopupEditor: React.FC<PopupEditorProps> = ({
     return () => window.removeEventListener('keydown', handleWindowKeyDown);
   }, [onCancel]);
 
-  // Smart Positioning: 화면 밖으로 나가지 않게 조정 (centered 모드가 아닐 때만)
+  // Refine positioning with actual measured dimensions
   useLayoutEffect(() => {
     if (centered || !position) return;
-
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const screenW = window.innerWidth;
-      const screenH = window.innerHeight;
-      
-      let newX = position.x;
-      let newY = position.y;
-
-      // 오른쪽 끝 처리
-      if (newX + rect.width > screenW) {
-        newX = screenW - rect.width - 10;
-      }
-      // 왼쪽 끝 처리
-      if (newX < 10) newX = 10;
-
-      // 아래쪽 끝 처리 (팝업을 위로 올림)
-      if (newY + rect.height > screenH) {
-        newY = position.y - rect.height - 10;
-      }
-      // 위쪽 끝 처리
-      if (newY < 10) newY = 10;
-
-      setPos({ x: newX, y: newY });
+      const refined = computePopupPosition(position, rect.width, rect.height);
+      setPos({ x: refined.left, y: refined.top });
     }
   }, [position, centered]);
 

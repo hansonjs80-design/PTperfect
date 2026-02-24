@@ -5,6 +5,7 @@ import { Edit3, PlayCircle, Hash, Check, X } from 'lucide-react';
 import { ContextMenu } from '../common/ContextMenu';
 import { BedSelectionGrid } from './BedSelectionGrid';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
+import { computePopupPosition } from '../../utils/popupUtils';
 
 interface BedSelectorCellProps {
   value: number | null;
@@ -59,21 +60,14 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
     if (mode === 'select_target' && gridRef.current) {
       const width = gridRef.current.offsetWidth || 230;
       const height = gridRef.current.offsetHeight || 180;
-      const smartPos = getSmartPosition(menuPos, width, height);
-      setGridPos({ top: smartPos.top || 0, left: smartPos.left || 0 });
+      const refined = computePopupPosition(menuPos, width, height, { preferAbove: true, centerOnClick: true, gap: 10 });
+      setGridPos(refined);
     }
   }, [mode, menuPos]);
 
   const getSmartPosition = (pos: {x: number, y: number}, w: number = 160, h: number = 80) => {
-      if (!pos) return {};
-      const GAP = 10;
-      let left = pos.x - (w / 2);
-      let top = pos.y - h - GAP; 
-      const screenW = window.innerWidth;
-      if (left + w > screenW - GAP) left = screenW - w - GAP;
-      if (left < GAP) left = GAP;
-      if (top < GAP) top = pos.y + GAP + 20; 
-      return { top, left, width: w };
+      if (!pos) return { top: 0, left: 0 };
+      return computePopupPosition(pos, w, h, { preferAbove: true, centerOnClick: true, gap: 10 });
   };
 
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent, isKeyboard: boolean = false) => {
@@ -91,16 +85,21 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
     }
     
     setMenuPos(clickPos);
+    // Pre-compute grid position for select_target mode (estimated 230x180)
+    const preGridPos = computePopupPosition(clickPos, 230, 180, { preferAbove: true, centerOnClick: true, gap: 10 });
 
     if (isLogEditMode) {
+        setGridPos(preGridPos);
         setMode('select_target');
         return;
     }
     if (!value) {
+        setGridPos(preGridPos);
         setMode('select_target');
         return;
     }
     if (!hasTreatment) {
+        setGridPos(preGridPos);
         setMode('select_target');
         return;
     }
@@ -204,7 +203,7 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
                 <div
                     ref={gridRef}
                     className="absolute bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col w-[230px]"
-                    style={{ top: gridPos ? gridPos.top : '-9999px', left: gridPos ? gridPos.left : '-9999px', opacity: gridPos ? 1 : 0 }}
+                    style={{ top: gridPos?.top ?? 0, left: gridPos?.left ?? 0 }}
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className="px-3 py-2.5 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50 shrink-0">

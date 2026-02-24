@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { Edit3, RefreshCw } from 'lucide-react';
 import { ContextMenu } from '../common/ContextMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
@@ -20,7 +20,7 @@ interface EditableCellProps {
   suppressEnterNav?: boolean;
 }
 
-export const EditableCell: React.FC<EditableCellProps> = ({ 
+export const EditableCell: React.FC<EditableCellProps> = memo(({
   value, 
   onCommit, 
   type = 'text', 
@@ -229,4 +229,4 @@ export const EditableCell: React.FC<EditableCellProps> = ({
       )}
     </>
   );
-};
+});

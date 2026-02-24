@@ -93,14 +93,17 @@ export const useBedIntegration = (
         clearBed(fromBedId);
     }, [updateBedState, clearBed]);
 
-    const updateBedSteps = useCallback((bedId: number, newSteps: TreatmentStep[]) => {
+    const updateBedSteps = useCallback((bedId: number, newSteps: TreatmentStep[], newStepIndex?: number) => {
         const bed = bedsRef.current.find(b => b.id === bedId);
         if (!bed) return;
 
         const oldSteps = bed.customPreset?.steps || presets.find(p => p.id === bed.currentPresetId)?.steps || [];
-        const currentIdx = bed.currentStepIndex;
+        // Use provided index or keep the current one, clamped to valid range
+        const currentIdx = newStepIndex !== undefined
+            ? Math.max(0, Math.min(newStepIndex, newSteps.length - 1))
+            : bed.currentStepIndex;
 
-        const oldCurrentStep = oldSteps[currentIdx];
+        const oldCurrentStep = oldSteps[bed.currentStepIndex];
         const newCurrentStep = newSteps[currentIdx];
 
         const isCurrentStepChanged = !newCurrentStep ||
@@ -109,7 +112,8 @@ export const useBedIntegration = (
             newCurrentStep.duration !== oldCurrentStep.duration;
 
         const updates: Partial<BedState> = {
-            customPreset: { id: `custom-edit-${Date.now()}`, name: '치료(수정됨)', steps: newSteps }
+            customPreset: { id: `custom-edit-${Date.now()}`, name: '치료(수정됨)', steps: newSteps },
+            currentStepIndex: currentIdx
         };
 
         if (isCurrentStepChanged) {
