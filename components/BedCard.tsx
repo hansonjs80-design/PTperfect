@@ -73,6 +73,18 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     updateBedSteps(bed.id, newSteps);
   }, [steps, bed.id, updateBedSteps]);
 
+  const handleAddStep = useCallback((qt: QuickTreatment) => {
+    const newStep = {
+      id: crypto.randomUUID(),
+      name: qt.name,
+      label: qt.label,
+      duration: qt.duration * 60,
+      enableTimer: qt.enableTimer,
+      color: qt.color,
+    };
+    updateBedSteps(bed.id, [...steps, newStep]);
+  }, [steps, bed.id, updateBedSteps]);
+
   const lastClickTimeRef = useRef<number>(0);
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -139,15 +151,17 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       </div>
 
       {bed.status !== BedStatus.IDLE && (
-        <BedFooter 
-          bed={bed} 
-          steps={steps} 
-          onNext={nextStep} 
-          onPrev={prevStep} 
+        <BedFooter
+          bed={bed}
+          steps={steps}
+          onNext={nextStep}
+          onPrev={prevStep}
           onClear={clearBed}
           trashState={trashState}
           onTrashClick={handleTrashClick}
           onEditClick={setEditingBedId}
+          onAddStep={handleAddStep}
+          quickTreatments={quickTreatments}
         />
       )}
     </div>
