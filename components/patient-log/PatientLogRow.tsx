@@ -6,7 +6,7 @@ import { BedSelectorCell } from './BedSelectorCell';
 import { TreatmentSelectorCell } from './TreatmentSelectorCell';
 import { PatientStatusCell } from './PatientStatusCell';
 import { AuthorSelectorCell } from './AuthorSelectorCell';
-import { PatientVisit } from '../../types';
+import { PatientVisit, QuickTreatment } from '../../types';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 
 interface PatientLogRowProps {
@@ -31,6 +31,8 @@ interface PatientLogRowProps {
   onNextStep?: () => void;
   onPrevStep?: () => void;
   onClearBed?: () => void;
+  quickTreatments?: QuickTreatment[];
+  onQuickApply?: (bedId: number, template: QuickTreatment) => void;
 }
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
@@ -54,7 +56,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   isPaused,
   onNextStep,
   onPrevStep,
-  onClearBed
+  onClearBed,
+  quickTreatments,
+  onQuickApply
 }) => {
   const { handleGridKeyDown } = useGridNavigation(8);
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
@@ -308,6 +312,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           onNextStep={onNextStep}
           onPrevStep={onPrevStep}
           onClearBed={onClearBed}
+          quickTreatments={quickTreatments}
+          onQuickApply={visit?.bed_id && onQuickApply ? (template) => onQuickApply(visit.bed_id!, template) : undefined}
         />
       </td>
 

@@ -36,12 +36,21 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
       const s = stateRef.current;
       if (!s) return;
       const delta = clientX - s.startX;
-      const newWidth = Math.max(MIN_COL_WIDTH, s.startWidths[s.colIndex] + delta);
 
       setColumnWidths(prev => {
         if (!prev) return prev;
         const next = [...prev];
-        next[s.colIndex] = newWidth;
+
+        if (s.colIndex === FLEX_COL_INDEX) {
+          // Flex column: dragging its right border resizes the next column inversely
+          const nextCol = FLEX_COL_INDEX + 1;
+          if (nextCol < next.length) {
+            next[nextCol] = Math.max(MIN_COL_WIDTH, s.startWidths[nextCol] - delta);
+          }
+        } else {
+          next[s.colIndex] = Math.max(MIN_COL_WIDTH, s.startWidths[s.colIndex] + delta);
+        }
+
         return next;
       });
     };

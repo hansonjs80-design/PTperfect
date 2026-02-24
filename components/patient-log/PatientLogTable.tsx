@@ -1,6 +1,6 @@
 
 import React, { memo, useRef, useEffect, useState } from 'react';
-import { PatientVisit, BedState, Preset } from '../../types';
+import { PatientVisit, BedState, Preset, QuickTreatment } from '../../types';
 import { PatientLogRow } from './PatientLogRow';
 import { PatientLogTableHeader } from './PatientLogTableHeader';
 import { getRowActiveStatus } from '../../utils/patientLogUtils';
@@ -20,6 +20,8 @@ interface PatientLogTableProps {
   onNextStep?: (bedId: number) => void;
   onPrevStep?: (bedId: number) => void;
   onClearBed?: (bedId: number) => void;
+  quickTreatments?: QuickTreatment[];
+  onQuickApply?: (bedId: number, template: QuickTreatment) => void;
 }
 
 export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
@@ -35,7 +37,9 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   onEditActive,
   onNextStep,
   onPrevStep,
-  onClearBed
+  onClearBed,
+  quickTreatments,
+  onQuickApply
 }) => {
   const EMPTY_ROWS_COUNT = 10;
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
@@ -149,6 +153,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
                 onNextStep={handleNextStep}
                 onPrevStep={handlePrevStep}
                 onClearBed={handleClearBed}
+                quickTreatments={quickTreatments}
+                onQuickApply={onQuickApply}
               />
             );
           })}

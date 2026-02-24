@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit3, List, Check, X } from 'lucide-react';
-import { PatientVisit } from '../../types';
+import { Edit3, List, Check, X, Zap } from 'lucide-react';
+import { PatientVisit, QuickTreatment } from '../../types';
 import { ContextMenu } from '../common/ContextMenu';
 import { TreatmentTextRenderer } from './TreatmentTextRenderer';
 import { TreatmentControlButtons } from './TreatmentControlButtons';
@@ -29,6 +29,8 @@ interface TreatmentSelectorCellProps {
     gridId?: string;
     rowIndex: number;
     colIndex: number;
+    quickTreatments?: QuickTreatment[];
+    onQuickApply?: (template: QuickTreatment) => void;
 }
 
 export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
@@ -51,10 +53,13 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     onClearBed,
     gridId,
     rowIndex,
-    colIndex
+    colIndex,
+    quickTreatments = [],
+    onQuickApply
 }) => {
     const [mode, setMode] = useState<'view' | 'menu' | 'edit_text'>('view');
     const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+    const [quickMenuPos, setQuickMenuPos] = useState<{ x: number; y: number } | null>(null);
     const [popupState, setPopupState] = useState<{ type: 'prev' | 'next' | 'clear', x: number, y: number } | null>(null);
     const [hoverInfo, setHoverInfo] = useState<{ x: number, y: number, width: number } | null>(null);
     const cellRef = useRef<HTMLDivElement>(null);
@@ -124,6 +129,21 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         }
     };
 
+    // Desktop right-click: show compact quick treatment list when bed is active
+    const handleContextMenu = (e: React.MouseEvent) => {
+        if (window.innerWidth < 1024) return; // Desktop only
+        if (rowStatus !== 'active' || !onQuickApply || quickTreatments.length === 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setHoverInfo(null);
+        setQuickMenuPos({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleQuickSelect = (template: QuickTreatment) => {
+        if (onQuickApply) onQuickApply(template);
+        setQuickMenuPos(null);
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             executeInteraction(e, true);
@@ -190,6 +210,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                 ref={cellRef}
                 className="relative w-full h-full focus:ring-2 focus:ring-sky-400 focus:outline-none focus:z-10"
                 onClick={handleInteraction}
+                onContextMenu={handleContextMenu}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
                 onKeyDown={handleKeyDown}
@@ -261,6 +282,40 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                         <div><span className="block text-sm font-bold text-gray-800 dark:text-gray-200">처방 변경 및 동기화</span><span className="block text-[10px] text-gray-500 dark:text-gray-400">프리셋 선택 & 배드 상태 반영</span></div>
                     </button>
                 </ContextMenu>
+            )}
+
+            {quickMenuPos && createPortal(
+                <div
+                    className="fixed inset-0 z-[9999] bg-transparent"
+                    onClick={() => setQuickMenuPos(null)}
+                    onContextMenu={(e) => { e.preventDefault(); setQuickMenuPos(null); }}
+                >
+                    <div
+                        className="absolute bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150 origin-top-left w-[220px]"
+                        style={{ top: quickMenuPos.y, left: quickMenuPos.x }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="px-3 py-2 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 flex items-center gap-2">
+                            <Zap className="w-3.5 h-3.5 text-amber-500" />
+                            <span className="font-bold text-[11px] text-gray-700 dark:text-gray-200">단일 치료 변경</span>
+                        </div>
+                        <div className="p-1.5 grid grid-cols-3 gap-1 max-h-[240px] overflow-y-auto custom-scrollbar">
+                            {quickTreatments.map((qt) => (
+                                <button
+                                    key={qt.id}
+                                    onClick={() => handleQuickSelect(qt)}
+                                    className="flex flex-col items-center gap-0.5 p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors group"
+                                >
+                                    <div className={`w-7 h-7 rounded-full ${qt.color} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}>
+                                        <span className="text-[9px] font-black text-white leading-none">{qt.label}</span>
+                                    </div>
+                                    <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400 truncate w-full text-center leading-tight">{qt.duration}분</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>,
+                document.body
             )}
         </>
     );

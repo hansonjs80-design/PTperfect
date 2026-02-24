@@ -16,19 +16,21 @@ interface PatientLogPanelProps {
 }
 
 export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => {
-  const { 
-    setSelectingLogId, 
-    setSelectingBedId, 
-    beds, 
-    presets, 
-    nextStep, 
-    prevStep, 
-    movePatient, 
-    updateVisitWithBedSync, 
-    setEditingBedId, 
+  const {
+    setSelectingLogId,
+    setSelectingBedId,
+    beds,
+    presets,
+    nextStep,
+    prevStep,
+    movePatient,
+    updateVisitWithBedSync,
+    setEditingBedId,
     clearBed,
     isPrintModalOpen,
-    setPrintModalOpen
+    setPrintModalOpen,
+    quickTreatments,
+    startQuickTreatment
   } = useTreatmentContext();
   
   const { visits, currentDate, setCurrentDate, changeDate, addVisit, deleteVisit } = usePatientLogContext();
@@ -93,6 +95,20 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     }
   }, [visits, getRowStatus, clearBed, deleteVisit]);
 
+  // Quick treatment apply from right-click context menu (desktop)
+  // Preserves current bed flags and replaces treatment with a single quick treatment
+  const handleQuickApply = useCallback((bedId: number, template: any) => {
+    const bed = beds.find(b => b.id === bedId);
+    const currentOptions = bed ? {
+      isInjection: bed.isInjection,
+      isFluid: bed.isFluid,
+      isTraction: bed.isTraction,
+      isESWT: bed.isESWT,
+      isManual: bed.isManual
+    } : {};
+    startQuickTreatment(bedId, template, currentOptions);
+  }, [beds, startQuickTreatment]);
+
   return (
     <>
       <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-xl print:hidden">
@@ -123,6 +139,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           onNextStep={nextStep}
           onPrevStep={prevStep}
           onClearBed={clearBed}
+          quickTreatments={quickTreatments}
+          onQuickApply={handleQuickApply}
         />
 
         <div className="p-2 border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 shrink-0 text-center">
