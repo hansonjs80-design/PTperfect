@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, ReactNode, useRef, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, ReactNode, useRef, useEffect, useCallback, useMemo } from 'react';
 import { BedState, Preset, TreatmentStep, PatientVisit, QuickTreatment } from '../types';
 import { usePresetManager } from '../hooks/usePresetManager';
 import { useQuickTreatmentManager } from '../hooks/useQuickTreatmentManager';
@@ -76,6 +76,9 @@ interface TreatmentContextType {
   canUndo: boolean;
   canRedo: boolean;
   
+  // Bed-Patient Name Mapping
+  bedPatientNames: Record<number, string>;
+
   // Exposed for Log Component usage
   updateVisitWithBedSync: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => Promise<void>;
 }
@@ -92,6 +95,26 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const visitsRef = useRef(visits);
   useEffect(() => { visitsRef.current = visits; }, [visits]);
+
+  // Bed ID → Patient Name mapping (latest visit per bed)
+  const bedPatientNames = useMemo(() => {
+    const map: Record<number, string> = {};
+    const visitsByBed: Record<number, PatientVisit[]> = {};
+    visits.forEach(v => {
+      if (v.bed_id) {
+        if (!visitsByBed[v.bed_id]) visitsByBed[v.bed_id] = [];
+        visitsByBed[v.bed_id].push(v);
+      }
+    });
+    Object.entries(visitsByBed).forEach(([bedIdStr, bedVisits]) => {
+      bedVisits.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+      const latest = bedVisits[bedVisits.length - 1];
+      if (latest?.patient_name) {
+        map[parseInt(bedIdStr)] = latest.patient_name;
+      }
+    });
+    return map;
+  }, [visits]);
 
   const logUpdateHandlerRef = useRef<(bedId: number, updates: Partial<PatientVisit>) => void>(() => {});
 
@@ -243,6 +266,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     resetAll,
     refreshBeds,
     movePatient,
+    bedPatientNames,
     updateVisitWithBedSync,
     undo,
     redo,

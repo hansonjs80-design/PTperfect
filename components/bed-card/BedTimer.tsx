@@ -12,6 +12,7 @@ interface BedTimerProps {
   onTimerClick: (e: React.MouseEvent) => void;
   onTimerTouchClick?: (e: React.MouseEvent) => void; // Deprecated
   onTogglePause: (e: React.MouseEvent) => void;
+  compact?: boolean;
 }
 
 export const BedTimer: React.FC<BedTimerProps> = memo(({
@@ -20,7 +21,8 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
   isOvertime,
   isNearEnd,
   onTimerClick,
-  onTogglePause
+  onTogglePause,
+  compact = false
 }) => {
   if (!isTimerActive) {
     if (bed.status === BedStatus.COMPLETED) {
@@ -34,13 +36,19 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
     return null;
   }
 
+  // compact: md+ portrait에서 이름이 있을 때 타이머 축소
+  // 모바일(sm 이하)은 원래 크기 유지
+  const timerSizeClass = compact
+    ? 'text-3xl sm:text-[33px] md:portrait:text-[28px] lg:portrait:text-[32px] md:landscape:text-[38px] lg:landscape:text-[44px]'
+    : 'text-3xl sm:text-[33px] md:text-[38px] lg:text-[44px]';
+
   return (
     <div
       className={`flex items-center justify-end gap-[5px] sm:gap-[10px] cursor-pointer transition-all scale-[0.95] lg:scale-100 origin-right lg:origin-center ${bed.isPaused ? 'opacity-50 grayscale' : ''}`}
     >
       <span
         onClick={onTimerClick}
-        className={`font-black text-3xl sm:text-[33px] md:text-[38px] lg:text-[44px] tracking-[-0.08em] sm:tracking-tighter leading-[0.75] tabular-nums ${isOvertime ? 'text-red-500 animate-pulse' :
+        className={`font-black ${timerSizeClass} tracking-[-0.08em] sm:tracking-tighter leading-[0.75] tabular-nums ${isOvertime ? 'text-red-500 animate-pulse' :
           isNearEnd ? 'text-orange-500 animate-pulse' :
             'text-slate-700 dark:text-slate-200'
           }`}>

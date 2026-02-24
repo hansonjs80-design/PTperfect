@@ -39,7 +39,8 @@ export const BedHeader = memo(({
   onToggleESWT,
   onToggleManual
 }: BedHeaderProps) => {
-  const { setMovingPatientState } = useTreatmentContext();
+  const { setMovingPatientState, bedPatientNames } = useTreatmentContext();
+  const patientName = bed.status !== BedStatus.IDLE ? bedPatientNames[bed.id] : undefined;
 
   // Changed from boolean to coordinates object to support positioning
   const [timerMenuPos, setTimerMenuPos] = useState<{ x: number, y: number } | null>(null);
@@ -93,8 +94,13 @@ export const BedHeader = memo(({
           onEditStatus={handleStatusInteraction}
         />
 
-        {/* Right Section: Timer & Actions */}
+        {/* Right Section: Patient Name + Timer & Actions */}
         <div className="flex-1 flex justify-end items-center gap-0 sm:gap-1 lg:gap-2 pl-0 sm:pl-2">
+          {patientName && (
+            <span className="hidden md:portrait:inline-block text-sm md:text-base lg:text-lg font-black text-slate-700 dark:text-slate-200 truncate max-w-[70px] lg:max-w-[90px] mr-1 lg:mr-2">
+              {patientName}
+            </span>
+          )}
           <BedTimer
             bed={bed}
             isTimerActive={isTimerActive}
@@ -102,6 +108,7 @@ export const BedHeader = memo(({
             isNearEnd={isNearEnd}
             onTimerClick={handleTimerInteraction}
             onTogglePause={handleTogglePause}
+            compact={!!patientName}
           />
         </div>
       </div>
