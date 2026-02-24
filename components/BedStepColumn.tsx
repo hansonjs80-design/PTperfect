@@ -1,9 +1,10 @@
 
 import React, { memo, useState, useRef } from 'react';
-import { TreatmentStep } from '../types';
+import { TreatmentStep, QuickTreatment } from '../types';
 import { getStepLabel } from '../utils/bedUtils';
 import { getStepColor } from '../utils/styleUtils';
 import { PopupEditor } from './common/PopupEditor';
+import { StepReplacePopup } from './bed-card/StepReplacePopup';
 import { ArrowRightLeft } from 'lucide-react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
@@ -18,6 +19,8 @@ interface BedStepColumnProps {
   bedId: number;
   onSwapRequest?: (id: number, idx: number) => void;
   onUpdateMemo?: (id: number, idx: number, val: string | null) => void;
+  onReplaceStep?: (idx: number, qt: QuickTreatment) => void;
+  quickTreatments?: QuickTreatment[];
 }
 
 export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
@@ -30,15 +33,25 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
   memo,
   bedId,
   onSwapRequest,
-  onUpdateMemo
+  onUpdateMemo,
+  onReplaceStep,
+  quickTreatments
 }) => {
   const [isEditingMemo, setIsEditingMemo] = useState(false);
+  const [replacePopup, setReplacePopup] = useState<{ x: number; y: number } | null>(null);
   const colorClass = getStepColor(step, isActive, isPast, false, isCompleted);
   const lastMemoClickRef = useRef<number>(0);
   const lastSwapClickRef = useRef<number>(0);
-  
+
   // Desktop/Tablet check (>= 768px)
   const isDesktopOrTablet = useMediaQuery('(min-width: 768px)');
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (!isDesktopOrTablet || !onReplaceStep || !quickTreatments?.length) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setReplacePopup({ x: e.clientX, y: e.clientY });
+  };
 
   const handleMemoDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -119,6 +132,7 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
           ${isSelectedForSwap ? 'z-20 scale-[0.98]' : ''}
         `}
         onClick={handleSwapInteraction}
+        onContextMenu={handleContextMenu}
       >
         {/* Step Visual Block */}
         <div className={`
@@ -182,6 +196,18 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
           centered={true}
           onConfirm={handleMemoSave}
           onCancel={() => setIsEditingMemo(false)}
+        />
+      )}
+
+      {replacePopup && quickTreatments && onReplaceStep && (
+        <StepReplacePopup
+          quickTreatments={quickTreatments}
+          clickPos={replacePopup}
+          onSelect={(qt) => {
+            onReplaceStep(index, qt);
+            setReplacePopup(null);
+          }}
+          onClose={() => setReplacePopup(null)}
         />
       )}
     </>

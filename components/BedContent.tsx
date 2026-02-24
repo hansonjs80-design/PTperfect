@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { TreatmentStep, BedState, BedStatus } from '../types';
+import { TreatmentStep, BedState, BedStatus, QuickTreatment } from '../types';
 import { BedStepColumn } from './BedStepColumn';
 
 interface BedContentProps {
@@ -10,14 +10,18 @@ interface BedContentProps {
   onSwapRequest?: (id: number, idx: number) => void;
   swapSourceIndex?: number | null;
   onUpdateMemo?: (id: number, idx: number, val: string | null) => void;
+  onReplaceStep?: (idx: number, qt: QuickTreatment) => void;
+  quickTreatments?: QuickTreatment[];
 }
 
-export const BedContent: React.FC<BedContentProps> = memo(({ 
-  steps, 
-  bed, 
+export const BedContent: React.FC<BedContentProps> = memo(({
+  steps,
+  bed,
   onSwapRequest,
   swapSourceIndex,
-  onUpdateMemo 
+  onUpdateMemo,
+  onReplaceStep,
+  quickTreatments
 }) => {
   const isCompleted = bed.status === BedStatus.COMPLETED;
 
@@ -43,6 +47,8 @@ export const BedContent: React.FC<BedContentProps> = memo(({
             bedId={bed.id}
             onSwapRequest={onSwapRequest}
             onUpdateMemo={onUpdateMemo}
+            onReplaceStep={onReplaceStep}
+            quickTreatments={quickTreatments}
           />
         );
       })}

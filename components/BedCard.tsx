@@ -1,6 +1,6 @@
 
-import React, { memo, useMemo, useRef } from 'react';
-import { BedState, BedStatus, Preset } from '../types';
+import React, { memo, useMemo, useRef, useCallback } from 'react';
+import { BedState, BedStatus, Preset, QuickTreatment } from '../types';
 import { BedHeader } from './BedHeader';
 import { BedContent } from './BedContent';
 import { BedFooter } from './BedFooter';
@@ -34,7 +34,9 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     toggleFluid,
     toggleTraction,
     toggleESWT,
-    toggleManual
+    toggleManual,
+    updateBedSteps,
+    quickTreatments
   } = useTreatmentContext();
 
   const { 
@@ -55,6 +57,21 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const containerClass = useMemo(() => getBedCardStyles(bed, isOvertime, isNearEnd), [
     bed.status, bed.isInjection, bed.isFluid, bed.isESWT, bed.isTraction, bed.isManual, isOvertime, isNearEnd
   ]);
+
+  const handleReplaceStep = useCallback((idx: number, qt: QuickTreatment) => {
+    const newSteps = steps.map((s, i) => {
+      if (i !== idx) return s;
+      return {
+        id: crypto.randomUUID(),
+        name: qt.name,
+        label: qt.label,
+        duration: qt.duration * 60,
+        enableTimer: qt.enableTimer,
+        color: qt.color,
+      };
+    });
+    updateBedSteps(bed.id, newSteps);
+  }, [steps, bed.id, updateBedSteps]);
 
   const lastClickTimeRef = useRef<number>(0);
 
@@ -106,13 +123,15 @@ export const BedCard: React.FC<BedCardProps> = memo(({
               onDoubleClick={handleDoubleClick}
               onClick={handleTouchClick}
             >
-              <BedContent 
+              <BedContent
                 steps={steps}
                 bed={bed}
                 queue={[]}
                 onSwapRequest={handleSwapRequest}
                 swapSourceIndex={swapSourceIndex}
                 onUpdateMemo={updateMemo}
+                onReplaceStep={handleReplaceStep}
+                quickTreatments={quickTreatments}
               />
             </div>
           )}
