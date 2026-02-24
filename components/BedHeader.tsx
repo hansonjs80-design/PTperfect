@@ -97,7 +97,7 @@ export const BedHeader = memo(({
         {/* Right Section: Patient Name + Timer & Actions */}
         <div className="flex-1 flex justify-end items-center gap-0 sm:gap-1 lg:gap-2 pl-0 sm:pl-2">
           {patientName && (
-            <span className="hidden md:portrait:inline-block text-sm md:text-base lg:text-lg font-black text-slate-700 dark:text-slate-200 truncate max-w-[70px] lg:max-w-[90px] mr-1 lg:mr-2">
+            <span className="hidden md:portrait:inline-block lg:inline-block text-sm md:text-base lg:text-lg font-black text-slate-700 dark:text-slate-200 truncate max-w-[70px] lg:max-w-[90px] mr-1 lg:mr-2">
               {patientName}
             </span>
           )}
