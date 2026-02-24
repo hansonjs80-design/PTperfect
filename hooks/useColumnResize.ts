@@ -3,9 +3,19 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 
 const MIN_COL_WIDTH = 24;
 export const FLEX_COL_INDEX = 3; // 처방 목록 — always auto (absorbs remaining space)
+const STORAGE_KEY = 'physio-column-widths';
 
 export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | null>) {
-  const [columnWidths, setColumnWidths] = useState<number[] | null>(null);
+  const [columnWidths, setColumnWidths] = useState<number[] | null>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch { /* ignore */ }
+    return null;
+  });
   const [isResizing, setIsResizing] = useState(false);
   const stateRef = useRef<{
     colIndex: number;
@@ -13,6 +23,10 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
     startWidths: number[];
     invert: boolean;
   } | null>(null);
+  const widthsRef = useRef<number[] | null>(columnWidths);
+
+  // Keep ref in sync for access inside event listeners
+  useEffect(() => { widthsRef.current = columnWidths; }, [columnWidths]);
 
   const captureWidths = useCallback((): number[] | null => {
     if (!tableRef.current) return null;
@@ -54,6 +68,11 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
     const onEnd = () => {
       stateRef.current = null;
       setIsResizing(false);
+      // Persist column widths to localStorage
+      const current = widthsRef.current;
+      if (current) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(current)); } catch { /* ignore */ }
+      }
     };
 
     document.body.style.cursor = 'col-resize';
