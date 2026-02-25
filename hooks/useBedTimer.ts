@@ -31,32 +31,35 @@ export const useBedTimer = (
 
       setBeds((currentBeds) => {
         let hasChanges = false;
-        
+
         const newBeds = currentBeds.map((bed) => {
           // 1. Calculate Time using shared utility (Relies on Date.now() delta)
           const newRemaining = calculateRemainingTime(bed, currentPresets);
-          
+
           // 2. Check Alarm Condition
           if (bed.status === BedStatus.ACTIVE && !bed.isPaused) {
-             const preset = bed.customPreset || currentPresets.find(p => p.id === bed.currentPresetId);
-             const step = preset?.steps[bed.currentStepIndex];
-             
-             if (step?.enableTimer) {
-                 if (newRemaining <= 0) {
-                     // Trigger alarm only once per expiration
-                     if (!alertedBedsRef.current.has(bed.id)) {
-                         const stepName = step ? getAbbreviation(step.name) : '';
-                         playAlarmPattern(bed.id, stepName, !soundEnabled);
-                         alertedBedsRef.current.add(bed.id);
-                     }
-                 } else {
-                     // Reset alert tracker if time is added/reset (e.g. paused then resumed with more time)
-                     alertedBedsRef.current.delete(bed.id);
-                 }
-             }
+            const preset = bed.customPreset || currentPresets.find(p => p.id === bed.currentPresetId);
+            const step = preset?.steps[bed.currentStepIndex];
+
+            if (step?.enableTimer) {
+              if (newRemaining <= 0) {
+                // Trigger alarm only once per expiration
+                if (!alertedBedsRef.current.has(bed.id)) {
+                  const stepName = step ? getAbbreviation(step.name) : '';
+                  const nextStep = preset?.steps[bed.currentStepIndex + 1];
+                  const nextStepName = nextStep ? getAbbreviation(nextStep.name) : undefined;
+
+                  playAlarmPattern(bed.id, stepName, nextStepName, !soundEnabled);
+                  alertedBedsRef.current.add(bed.id);
+                }
+              } else {
+                // Reset alert tracker if time is added/reset (e.g. paused then resumed with more time)
+                alertedBedsRef.current.delete(bed.id);
+              }
+            }
           } else {
-             // Cleanup if bed becomes idle or paused
-             alertedBedsRef.current.delete(bed.id);
+            // Cleanup if bed becomes idle or paused
+            alertedBedsRef.current.delete(bed.id);
           }
 
           // Only update state if the remaining time actually changed (prevents unnecessary re-renders)
