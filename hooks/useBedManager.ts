@@ -14,7 +14,7 @@ import { useBedControls } from './useBedControls';
 import { useBedIntegration } from './useBedIntegration';
 
 export const useBedManager = (
-  presets: Preset[], 
+  presets: Preset[],
   quickTreatments: any[], // Type tweak to avoid circular dep issues if any
   isSoundEnabled: boolean,
   isBackgroundKeepAlive: boolean,
@@ -32,46 +32,48 @@ export const useBedManager = (
 
   // 4. Complex Integration Logic (Log Override, Moving Beds)
   const integration = useBedIntegration(
-    bedsRef, 
-    updateBedState, 
-    presets, 
-    quickTreatments, 
-    controls.clearBed, 
+    bedsRef,
+    updateBedState,
+    presets,
+    quickTreatments,
+    controls.clearBed,
     onUpdateVisit
   );
 
   // 5. Facade: Expose unified API
-  return { 
-    beds, 
+  return {
+    beds,
     // From Actions
-    selectPreset: actions.selectPreset, 
-    startCustomPreset: actions.startCustomPreset, 
-    startQuickTreatment: actions.startQuickTreatment, 
+    selectPreset: actions.selectPreset,
+    startCustomPreset: actions.startCustomPreset,
+    startQuickTreatment: actions.startQuickTreatment,
     startTraction: actions.startTraction,
     // From Controls
     nextStep: controls.nextStep,
     prevStep: controls.prevStep,
-    swapSteps: controls.swapSteps, 
+    swapSteps: controls.swapSteps,
     togglePause: controls.togglePause,
     toggleInjection: (id: number) => controls.toggleFlag(id, 'isInjection'),
     toggleFluid: (id: number) => controls.toggleFlag(id, 'isFluid'),
     toggleTraction: (id: number) => controls.toggleFlag(id, 'isTraction'),
     toggleESWT: (id: number) => controls.toggleFlag(id, 'isESWT'),
     toggleManual: (id: number) => controls.toggleFlag(id, 'isManual'),
+    toggleInjectionCompleted: (id: number) => controls.toggleFlag(id, 'isInjectionCompleted'),
     updateMemo: controls.updateMemo,
+    updatePatientMemo: controls.updatePatientMemo,
     updateBedDuration: controls.updateBedDuration,
-    clearBed: controls.clearBed, 
+    clearBed: controls.clearBed,
     resetAll: () => bedsRef.current.forEach(bed => controls.clearBed(bed.id)),
     // From Integration
     updateBedSteps: integration.updateBedSteps,
     overrideBedFromLog: integration.overrideBedFromLog,
     moveBedState: integration.moveBedState,
-    
+
     // Core & Utils
     updateBedState,
     restoreBeds, // EXPOSED
     refreshBeds, // EXPOSED
-    jumpToStep: (bedId: number, stepIndex: number) => {}, 
+    jumpToStep: (bedId: number, stepIndex: number) => { },
     realtimeStatus
   };
 };

@@ -8,6 +8,7 @@ import { PatientStatusCell } from './PatientStatusCell';
 import { AuthorSelectorCell } from './AuthorSelectorCell';
 import { PatientVisit } from '../../types';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
+import { PatientMemoModal } from '../modals/PatientMemoModal';
 
 interface PatientLogRowProps {
   rowIndex: number;
@@ -60,6 +61,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 }) => {
   const { handleGridKeyDown } = useGridNavigation(8);
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
+  const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clean up timeout on unmount
@@ -256,8 +258,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           placeholder=""
           menuTitle="이름 수정 (로그만 변경)"
           className={`bg-transparent justify-center text-center ${!visit?.patient_name
-              ? 'font-normal text-gray-300 dark:text-gray-500'
-              : 'font-black text-slate-800 dark:text-slate-100'
+            ? 'font-normal text-gray-300 dark:text-gray-500'
+            : 'font-black text-slate-800 dark:text-slate-100'
             } ${isDraft ? 'placeholder-gray-300 font-normal' : ''} text-[13.5px] sm:text-[14.4px]`}
           onCommit={(val, skipSync, navDir) => handleChange('patient_name', val || '', skipSync, 1, navDir)}
           directEdit={true}
@@ -348,19 +350,28 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       <td className={`${cellBorderClass} p-0`}>
-        <EditableCell
-          gridId={`${rowIndex}-6`}
-          rowIndex={rowIndex}
-          colIndex={6}
-          value={visit?.memo || ''}
-          placeholder=""
-          menuTitle="메모 수정 (로그만 변경)"
-          className="text-gray-600 dark:text-gray-400 font-bold bg-transparent justify-center text-center text-[11.3px] xl:text-[13px]"
-          onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 6, navDir)}
-          directEdit={true}
-          syncOnDirectEdit={false}
-          suppressEnterNav={isDraft}
-        />
+        <div
+          className="w-full h-full min-h-[36px] flex items-center justify-center cursor-pointer transition-colors text-gray-600 dark:text-gray-400 font-bold bg-transparent text-center text-[11.3px] xl:text-[13px] hover:bg-gray-50 dark:hover:bg-slate-700/50 outline-none focus:ring-2 focus:ring-sky-400 focus:z-10"
+          onClick={() => {
+            if (!isDraft) setIsMemoModalOpen(true);
+          }}
+          tabIndex={0}
+          data-grid-id={`${rowIndex}-6`}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              if (!isDraft) setIsMemoModalOpen(true);
+            } else {
+              handleGridKeyDown(e, rowIndex, 6);
+            }
+          }}
+          title={!isDraft ? "클릭하여 메모 작성/보기" : undefined}
+        >
+          {visit?.memo ? (
+            <span className="truncate max-w-[80px] px-2">{visit.memo}</span>
+          ) : (
+            <span className="text-gray-300 dark:text-gray-600"></span>
+          )}
+        </div>
       </td>
 
       <td className="p-0 text-center">
@@ -391,6 +402,16 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           </div>
         )}
       </td>
+
+      {!isDraft && visit && (
+        <PatientMemoModal
+          isOpen={isMemoModalOpen}
+          onClose={() => setIsMemoModalOpen(false)}
+          initialMemo={visit.memo || ''}
+          onSave={(newMemo) => handleChange('memo', newMemo, false, 6)}
+          patientName={visit.patient_name}
+        />
+      )}
     </tr>
   );
 });

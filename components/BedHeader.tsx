@@ -1,5 +1,5 @@
 
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useCallback } from 'react';
 import { BedState, BedStatus, TreatmentStep } from '../types';
 import { getBedHeaderStyles } from '../utils/styleUtils';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
@@ -8,6 +8,7 @@ import { BedStatusPopup } from './bed-card/BedStatusPopup';
 import { BedNumberAndStatus } from './bed-card/BedNumberAndStatus';
 import { BedTimer } from './bed-card/BedTimer';
 import { useResponsiveClick } from '../hooks/useResponsiveClick';
+import { PatientMemoModal } from './modals/PatientMemoModal';
 
 interface BedHeaderProps {
   bed: BedState;
@@ -23,6 +24,7 @@ interface BedHeaderProps {
   onToggleTraction: (id: number) => void;
   onToggleESWT: (id: number) => void;
   onToggleManual: (id: number) => void;
+  onToggleInjectionCompleted: (id: number) => void;
 }
 
 export const BedHeader = memo(({
@@ -37,14 +39,16 @@ export const BedHeader = memo(({
   onToggleFluid,
   onToggleTraction,
   onToggleESWT,
-  onToggleManual
+  onToggleManual,
+  onToggleInjectionCompleted
 }: BedHeaderProps) => {
-  const { setMovingPatientState, bedPatientNames } = useTreatmentContext();
+  const { setMovingPatientState, bedPatientNames, updatePatientMemo } = useTreatmentContext();
   const patientName = bed.status !== BedStatus.IDLE ? bedPatientNames[bed.id] : undefined;
 
   // Changed from boolean to coordinates object to support positioning
   const [timerMenuPos, setTimerMenuPos] = useState<{ x: number, y: number } | null>(null);
   const [statusMenuPos, setStatusMenuPos] = useState<{ x: number, y: number } | null>(null);
+  const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
 
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
   const isOvertime = isTimerActive && bed.remainingTime <= 0;
@@ -70,6 +74,12 @@ export const BedHeader = memo(({
     setStatusMenuPos({ x: e.clientX, y: e.clientY });
   });
 
+  // 4. Memo Icon Click handler via BedNumberAndStatus (BedStatusBadges intercept)
+  const handleMemoClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMemoModalOpen(true);
+  }, []);
+
   const handleTimerSave = (newSeconds: number) => {
     if (onUpdateDuration) onUpdateDuration(bed.id, newSeconds);
     setTimerMenuPos(null);
@@ -92,6 +102,7 @@ export const BedHeader = memo(({
           bed={bed}
           onMovePatient={handleBedNumberInteraction}
           onEditStatus={handleStatusInteraction}
+          onMemoClick={handleMemoClick}
         />
 
         {/* Right Section: Patient Name + Timer & Actions */}
@@ -133,6 +144,7 @@ export const BedHeader = memo(({
           onToggleTraction={onToggleTraction}
           onToggleESWT={onToggleESWT}
           onToggleManual={onToggleManual}
+          onToggleInjectionCompleted={onToggleInjectionCompleted}
         />
       )}
     </>

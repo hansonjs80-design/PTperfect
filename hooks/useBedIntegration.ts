@@ -48,6 +48,8 @@ export const useBedIntegration = (
             isTraction: visit.is_traction || false,
             isESWT: visit.is_eswt || false,
             isManual: visit.is_manual || false,
+            isInjectionCompleted: visit.is_injection_completed || false,
+            patientMemo: visit.memo || undefined,
         };
 
         if (forceRestart || bed.status !== BedStatus.ACTIVE || isStepsChanged) {
@@ -86,6 +88,8 @@ export const useBedIntegration = (
             isTraction: fromBed.isTraction,
             isESWT: fromBed.isESWT,
             isManual: fromBed.isManual,
+            isInjectionCompleted: fromBed.isInjectionCompleted,
+            patientMemo: fromBed.patientMemo,
             memos: fromBed.memos
         };
 

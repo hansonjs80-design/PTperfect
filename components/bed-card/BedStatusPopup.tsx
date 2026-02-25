@@ -15,6 +15,7 @@ interface BedStatusPopupProps {
   onToggleTraction: (id: number) => void;
   onToggleESWT: (id: number) => void;
   onToggleManual: (id: number) => void;
+  onToggleInjectionCompleted: (id: number) => void;
 }
 
 export const BedStatusPopup: React.FC<BedStatusPopupProps> = ({
@@ -25,7 +26,8 @@ export const BedStatusPopup: React.FC<BedStatusPopupProps> = ({
   onToggleFluid,
   onToggleTraction,
   onToggleESWT,
-  onToggleManual
+  onToggleManual,
+  onToggleInjectionCompleted
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -93,33 +95,34 @@ export const BedStatusPopup: React.FC<BedStatusPopupProps> = ({
         </div>
 
         <div className="p-4 bg-white dark:bg-slate-900">
-           <BedEditFlags
-             bed={bed}
-             onToggleInjection={onToggleInjection}
-             onToggleFluid={onToggleFluid}
-             onToggleManual={onToggleManual}
-             onToggleESWT={onToggleESWT}
-             onToggleTraction={onToggleTraction}
-           />
+          <BedEditFlags
+            bed={bed}
+            onToggleInjection={onToggleInjection}
+            onToggleFluid={onToggleFluid}
+            onToggleManual={onToggleManual}
+            onToggleESWT={onToggleESWT}
+            onToggleTraction={onToggleTraction}
+            onToggleInjectionCompleted={onToggleInjectionCompleted}
+          />
         </div>
 
         <div className="p-3 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50 flex justify-end">
-           <button
-             onClick={onClose}
-             className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
-           >
-             완료
-           </button>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
+          >
+            완료
+          </button>
         </div>
 
         {/* Decorative arrow for desktop popup */}
         {isDesktop && (
-           <div
-             className={`absolute w-3 h-3 bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 transform rotate-45 ${safePos.y > position.y ? '-top-1.5 border-t border-l' : '-bottom-1.5 border-b border-r'}`}
-             style={{
-               left: Math.max(10, Math.min(320, position.x - safePos.x - 6))
-             }}
-           />
+          <div
+            className={`absolute w-3 h-3 bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 transform rotate-45 ${safePos.y > position.y ? '-top-1.5 border-t border-l' : '-bottom-1.5 border-b border-r'}`}
+            style={{
+              left: Math.max(10, Math.min(320, position.x - safePos.x - 6))
+            }}
+          />
         )}
       </div>
     </div>,

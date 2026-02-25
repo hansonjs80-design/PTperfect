@@ -46,6 +46,8 @@ export interface BedState {
   isTraction: boolean; // Tracks if the patient needs traction
   isESWT: boolean; // Tracks if the patient needs Shockwave (ESWT)
   isManual: boolean; // Tracks if the patient needs Manual Therapy (Do-su)
+  isInjectionCompleted?: boolean; // Tracks if the injection is completed
+  patientMemo?: string; // Memo for the patient in this bed
   memos: Record<number, string>; // Map of step index to memo string
   updatedAt?: string; // ISO String from DB, used for sync conflict resolution
   lastUpdateTimestamp?: number; // Local-only: timestamp of last user action to debounce server echoes
@@ -63,6 +65,7 @@ export interface PatientVisit {
   created_at?: string;
   // Status Flags
   is_injection?: boolean;
+  is_injection_completed?: boolean;
   is_fluid?: boolean;
   is_traction?: boolean;
   is_eswt?: boolean;
@@ -84,6 +87,7 @@ export interface BedLayoutProps {
 
 export interface SelectPresetOptions {
   isInjection?: boolean;
+  isInjectionCompleted?: boolean;
   isFluid?: boolean;
   isTraction?: boolean;
   isESWT?: boolean;

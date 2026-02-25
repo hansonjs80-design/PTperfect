@@ -16,9 +16,9 @@ interface BedCardProps {
   isCompact: boolean;
 }
 
-export const BedCard: React.FC<BedCardProps> = memo(({ 
-  bed, 
-  presets, 
+export const BedCard: React.FC<BedCardProps> = memo(({
+  bed,
+  presets,
   isCompact
 }) => {
   const {
@@ -36,6 +36,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     toggleTraction,
     toggleESWT,
     toggleManual,
+    toggleInjectionCompleted,
     updateBedSteps,
     quickTreatments
   } = useTreatmentContext();
@@ -54,11 +55,11 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const currentPreset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
   const currentStep = currentPreset?.steps[bed.currentStepIndex];
   const steps = currentPreset?.steps || [];
-  
+
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
   const isOvertime = isTimerActive && bed.remainingTime <= 0;
   const isNearEnd = isTimerActive && bed.remainingTime > 0 && bed.remainingTime <= 60;
-  
+
   const containerClass = useMemo(() => getBedCardStyles(bed, isOvertime, isNearEnd), [
     bed.status, bed.isInjection, bed.isFluid, bed.isESWT, bed.isTraction, bed.isManual, isOvertime, isNearEnd
   ]);
@@ -146,10 +147,10 @@ export const BedCard: React.FC<BedCardProps> = memo(({
 
   return (
     <div className={`${containerClass} transform transition-transform duration-200 active:scale-[0.99]`}>
-      <BedHeader 
-        bed={bed} 
-        currentStep={currentStep} 
-        onTrashClick={handleTrashClick} 
+      <BedHeader
+        bed={bed}
+        currentStep={currentStep}
+        onTrashClick={handleTrashClick}
         trashState={trashState}
         onEditClick={setEditingBedId}
         onTogglePause={togglePause}
@@ -159,6 +160,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
         onToggleTraction={toggleTraction}
         onToggleESWT={toggleESWT}
         onToggleManual={toggleManual}
+        onToggleInjectionCompleted={toggleInjectionCompleted}
       />
 
       {/* Main Content Area */}
@@ -167,7 +169,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
           {bed.status === BedStatus.IDLE ? (
             <BedEmptyState onOpenSelector={() => setSelectingBedId(bed.id)} />
           ) : (
-            <div 
+            <div
               className="w-full h-full min-h-0"
               onDoubleClick={handleDoubleClick}
               onClick={handleTouchClick}
@@ -210,12 +212,14 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     prevProps.bed.currentStepIndex === nextProps.bed.currentStepIndex &&
     prevProps.bed.isPaused === nextProps.bed.isPaused &&
     prevProps.bed.isInjection === nextProps.bed.isInjection &&
-    prevProps.bed.isFluid === nextProps.bed.isFluid && 
+    prevProps.bed.isFluid === nextProps.bed.isFluid &&
     prevProps.bed.isManual === nextProps.bed.isManual &&
+    prevProps.bed.isInjectionCompleted === nextProps.bed.isInjectionCompleted &&
+    prevProps.bed.patientMemo === nextProps.bed.patientMemo &&
     prevProps.bed.isESWT === nextProps.bed.isESWT &&
     prevProps.bed.isTraction === nextProps.bed.isTraction &&
-    prevProps.bed.customPreset === nextProps.bed.customPreset && 
-    prevProps.presets === nextProps.presets && 
+    prevProps.bed.customPreset === nextProps.bed.customPreset &&
+    prevProps.presets === nextProps.presets &&
     prevProps.isCompact === nextProps.isCompact
   );
 });

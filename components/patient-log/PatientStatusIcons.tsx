@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet } from 'lucide-react';
+import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet, Star } from 'lucide-react';
 import { PatientVisit } from '../../types';
 
 interface PatientStatusIconsProps {
@@ -9,7 +9,7 @@ interface PatientStatusIconsProps {
 
 export const PatientStatusIcons: React.FC<PatientStatusIconsProps> = ({ visit }) => {
   // Check if any flag is active to conditionally render
-  const hasStatus = visit.is_injection || visit.is_fluid || visit.is_manual || visit.is_eswt || visit.is_traction;
+  const hasStatus = visit.is_injection || visit.is_injection_completed || visit.is_fluid || visit.is_manual || visit.is_eswt || visit.is_traction || !!visit.memo;
 
   if (!hasStatus) return null;
 
@@ -19,6 +19,11 @@ export const PatientStatusIcons: React.FC<PatientStatusIconsProps> = ({ visit })
       {visit.is_injection && (
         <div title="주사" className="flex">
           <Syringe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" strokeWidth={2.5} />
+        </div>
+      )}
+      {visit.is_injection_completed && (
+        <div title="주사 완료" className="flex">
+          <Syringe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" strokeWidth={2.5} />
         </div>
       )}
       {visit.is_fluid && (
@@ -39,6 +44,11 @@ export const PatientStatusIcons: React.FC<PatientStatusIconsProps> = ({ visit })
       {visit.is_traction && (
         <div title="견인" className="flex">
           <ArrowUpFromLine className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500" strokeWidth={2.5} />
+        </div>
+      )}
+      {visit.memo && (
+        <div title={visit.memo} className="flex">
+          <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" strokeWidth={2} fill="currentColor" />
         </div>
       )}
     </div>

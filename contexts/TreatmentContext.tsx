@@ -24,7 +24,7 @@ interface TreatmentContextType {
   updatePresets: (presets: Preset[]) => void;
   quickTreatments: QuickTreatment[];
   updateQuickTreatments: (items: QuickTreatment[]) => void;
-  
+
   // Settings
   isSoundEnabled: boolean;
   toggleSound: () => void;
@@ -36,17 +36,17 @@ interface TreatmentContextType {
   // UI State for Modals
   selectingBedId: number | null;
   setSelectingBedId: (id: number | null) => void;
-  selectingLogId: string | null; 
+  selectingLogId: string | null;
   setSelectingLogId: (id: string | null) => void;
   editingBedId: number | null;
   setEditingBedId: (id: number | null) => void;
   isPrintModalOpen: boolean;
   setPrintModalOpen: (isOpen: boolean) => void;
-  
+
   // Patient Move State
   movingPatientState: MovingPatientState | null;
   setMovingPatientState: (state: MovingPatientState | null) => void;
-  
+
   // Actions
   selectPreset: (bedId: number, presetId: string, options: any) => void;
   startCustomPreset: (bedId: number, name: string, steps: TreatmentStep[], options: any) => void;
@@ -62,20 +62,22 @@ interface TreatmentContextType {
   toggleTraction: (bedId: number) => void;
   toggleESWT: (bedId: number) => void;
   toggleManual: (bedId: number) => void;
+  toggleInjectionCompleted: (bedId: number) => void;
   updateBedSteps: (bedId: number, steps: TreatmentStep[], newStepIndex?: number) => void;
   updateMemo: (bedId: number, stepIndex: number, memo: string | null) => void;
+  updatePatientMemo: (bedId: number, memo: string | undefined) => void;
   updateBedDuration: (bedId: number, duration: number) => void;
   clearBed: (bedId: number) => void;
   resetAll: () => void;
   refreshBeds: () => void; // Added
   movePatient: (fromBedId: number, toBedId: number) => Promise<void>;
-  
+
   // Undo/Redo System
   undo: () => Promise<boolean>;
   redo: () => Promise<boolean>;
   canUndo: boolean;
   canRedo: boolean;
-  
+
   // Bed-Patient Name Mapping
   bedPatientNames: Record<number, string>;
 
@@ -116,21 +118,21 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     return map;
   }, [visits]);
 
-  const logUpdateHandlerRef = useRef<(bedId: number, updates: Partial<PatientVisit>) => void>(() => {});
+  const logUpdateHandlerRef = useRef<(bedId: number, updates: Partial<PatientVisit>) => void>(() => { });
 
   const bedManager = useBedManager(
-      presets,
-      quickTreatments,
-      settings.isSoundEnabled, 
-      settings.isBackgroundKeepAlive,
-      addVisit, 
-      (bedId, updates) => logUpdateHandlerRef.current(bedId, updates)
+    presets,
+    quickTreatments,
+    settings.isSoundEnabled,
+    settings.isBackgroundKeepAlive,
+    addVisit,
+    (bedId, updates) => logUpdateHandlerRef.current(bedId, updates)
   );
 
-  const { 
-    beds, 
+  const {
+    beds,
     updateBedState,
-    restoreBeds, 
+    restoreBeds,
     refreshBeds, // Destructure
     // Destructure original actions to wrap them with snapshot logic
     selectPreset: _selectPreset,
@@ -147,6 +149,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     toggleTraction: _toggleTraction,
     toggleESWT: _toggleESWT,
     toggleManual: _toggleManual,
+    toggleInjectionCompleted: _toggleInjectionCompleted,
     updateBedSteps: _updateBedSteps
   } = bedManager;
 
@@ -166,7 +169,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, [handleLogUpdate]);
 
   // --- Snapshot Wrappers for Actions ---
-  
+
   const withSnapshot = useCallback((action: (...args: any[]) => void) => {
     return (...args: any[]) => {
       saveSnapshot(bedsRef.current, visitsRef.current);
@@ -181,14 +184,15 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const nextStep = withSnapshot(_nextStep);
   const prevStep = withSnapshot(_prevStep);
   const swapSteps = withSnapshot(_swapSteps);
-  const togglePause = withSnapshot(_togglePause); 
+  const togglePause = withSnapshot(_togglePause);
   const clearBed = withSnapshot(_clearBed);
-  
+
   const toggleInjection = withSnapshot(_toggleInjection);
   const toggleFluid = withSnapshot(_toggleFluid);
   const toggleTraction = withSnapshot(_toggleTraction);
   const toggleESWT = withSnapshot(_toggleESWT);
   const toggleManual = withSnapshot(_toggleManual);
+  const toggleInjectionCompleted = withSnapshot(_toggleInjectionCompleted);
   const updateBedSteps = withSnapshot(_updateBedSteps);
 
   const resetAll = useCallback(() => {
@@ -210,9 +214,9 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     await restoreBeds(prevState.beds);
     setVisits(prevState.visits);
-    
+
     if (isOnlineMode() && supabase) {
-      const rows = prevState.visits.map(v => ({...v, updated_at: new Date().toISOString()}));
+      const rows = prevState.visits.map(v => ({ ...v, updated_at: new Date().toISOString() }));
       if (rows.length > 0) {
         await supabase.from('patient_visits').upsert(rows);
       }
@@ -230,7 +234,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     setVisits(nextState.visits);
 
     if (isOnlineMode() && supabase) {
-      const rows = nextState.visits.map(v => ({...v, updated_at: new Date().toISOString()}));
+      const rows = nextState.visits.map(v => ({ ...v, updated_at: new Date().toISOString() }));
       if (rows.length > 0) {
         await supabase.from('patient_visits').upsert(rows);
       }
@@ -238,7 +242,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     return true;
   }, [redoOp, restoreBeds, setVisits]);
 
-  useNotificationBridge(nextStep); 
+  useNotificationBridge(nextStep);
 
   const value = {
     presets,
@@ -247,7 +251,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     updateQuickTreatments,
     ...settings,
     ...uiState,
-    ...bedManager, 
+    ...bedManager,
     selectPreset,
     startCustomPreset,
     startQuickTreatment,
@@ -261,6 +265,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     toggleTraction,
     toggleESWT,
     toggleManual,
+    toggleInjectionCompleted,
     updateBedSteps,
     clearBed,
     resetAll,

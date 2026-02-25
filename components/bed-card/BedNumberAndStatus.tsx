@@ -10,12 +10,14 @@ interface BedNumberAndStatusProps {
   onMovePatient: (e: React.MouseEvent) => void;
   onMovePatientClick?: (e: React.MouseEvent) => void; // Deprecated but kept for compatibility if needed
   onEditStatus: (e: React.MouseEvent) => void;
+  onMemoClick?: (e: React.MouseEvent) => void;
 }
 
 export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({
   bed,
   onMovePatient,
-  onEditStatus
+  onEditStatus,
+  onMemoClick
 }) => {
   const isBedT = bed.id === 11;
   const isIdle = bed.status === BedStatus.IDLE;
@@ -49,7 +51,9 @@ export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({
         onClick={onEditStatus}
         title={getTooltip("상태 아이콘 설정")}
       >
-        <BedStatusBadges bed={bed} />
+        <div onClick={bed.patientMemo ? onMemoClick : undefined} className={bed.patientMemo ? "cursor-pointer" : ""}>
+          <BedStatusBadges bed={bed} />
+        </div>
 
         {showPlaceholder && (
           <MoreHorizontal

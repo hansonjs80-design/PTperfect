@@ -14,12 +14,12 @@ export const useBedControls = (
   const nextStep = useCallback((bedId: number) => {
     const bed = bedsRef.current.find(b => b.id === bedId);
     if (!bed || bed.status === BedStatus.IDLE) return;
-    
+
     const preset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
     if (!preset) return;
-    
+
     const nextIndex = bed.currentStepIndex + 1;
-    
+
     if (nextIndex < preset.steps.length) {
       const nextStepItem = preset.steps[nextIndex];
       updateBedState(bedId, {
@@ -39,15 +39,15 @@ export const useBedControls = (
     const bed = bedsRef.current.find(b => b.id === bedId);
     // ACTIVE 또는 COMPLETED 상태일 때만 이전 단계로 이동 가능
     if (!bed || (bed.status !== BedStatus.ACTIVE && bed.status !== BedStatus.COMPLETED)) return;
-    
+
     const preset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
     if (!preset) return;
 
     // 만약 완료 상태라면 마지막 인덱스로 돌아가고, 아니면 현재 인덱스에서 -1
-    let prevIndex = bed.status === BedStatus.COMPLETED 
-        ? preset.steps.length - 1 
-        : bed.currentStepIndex - 1;
-    
+    let prevIndex = bed.status === BedStatus.COMPLETED
+      ? preset.steps.length - 1
+      : bed.currentStepIndex - 1;
+
     if (prevIndex >= 0) {
       const prevStepItem = preset.steps[prevIndex];
       updateBedState(bedId, {
@@ -66,30 +66,30 @@ export const useBedControls = (
     if (!bed) return;
 
     const swapResult = createSwappedPreset(
-      bed.customPreset, 
-      bed.currentPresetId, 
-      presets, 
-      idx1, 
+      bed.customPreset,
+      bed.currentPresetId,
+      presets,
+      idx1,
       idx2
     );
 
     if (!swapResult) return;
 
     const updates: Partial<BedState> = {
-       customPreset: swapResult.preset,
-       memos: {
-         ...bed.memos,
-         [idx1]: bed.memos[idx2],
-         [idx2]: bed.memos[idx1]
-       }
+      customPreset: swapResult.preset,
+      memos: {
+        ...bed.memos,
+        [idx1]: bed.memos[idx2],
+        [idx2]: bed.memos[idx1]
+      }
     };
-    
+
     if (bed.status === BedStatus.ACTIVE && (bed.currentStepIndex === idx1 || bed.currentStepIndex === idx2)) {
-       const currentStepItem = swapResult.steps[bed.currentStepIndex];
-       updates.remainingTime = currentStepItem.duration;
-       updates.originalDuration = currentStepItem.duration;
-       updates.startTime = Date.now();
-       updates.isPaused = false;
+      const currentStepItem = swapResult.steps[bed.currentStepIndex];
+      updates.remainingTime = currentStepItem.duration;
+      updates.originalDuration = currentStepItem.duration;
+      updates.startTime = Date.now();
+      updates.isPaused = false;
     }
 
     updateBedState(bedId, updates);
@@ -101,15 +101,15 @@ export const useBedControls = (
 
     if (!bed.isPaused) {
       const currentRemaining = calculateRemainingTime(bed, presets);
-      updateBedState(bedId, { 
-        isPaused: true, 
-        remainingTime: currentRemaining 
+      updateBedState(bedId, {
+        isPaused: true,
+        remainingTime: currentRemaining
       });
     } else {
-      updateBedState(bedId, { 
-        isPaused: false, 
+      updateBedState(bedId, {
+        isPaused: false,
         startTime: Date.now(),
-        originalDuration: bed.remainingTime 
+        originalDuration: bed.remainingTime
       });
     }
   }, [presets, updateBedState]);
@@ -130,6 +130,8 @@ export const useBedControls = (
       isTraction: false,
       isESWT: false,
       isManual: false,
+      isInjectionCompleted: false,
+      patientMemo: undefined,
       memos: {}
     });
   }, [updateBedState]);
@@ -137,22 +139,23 @@ export const useBedControls = (
   const toggleFlag = useCallback((bedId: number, flag: keyof BedState) => {
     const bed = bedsRef.current.find(b => b.id === bedId);
     if (bed) {
-        const newVal = !bed[flag];
-        updateBedState(bedId, { [flag]: newVal });
-        
-        if (onUpdateVisit) {
-            const map: Record<string, keyof PatientVisit> = {
-                'isInjection': 'is_injection',
-                'isFluid': 'is_fluid',
-                'isTraction': 'is_traction',
-                'isESWT': 'is_eswt',
-                'isManual': 'is_manual'
-            };
-            const logKey = map[flag as string];
-            if (logKey) {
-                onUpdateVisit(bedId, { [logKey]: newVal });
-            }
+      const newVal = !bed[flag];
+      updateBedState(bedId, { [flag]: newVal });
+
+      if (onUpdateVisit) {
+        const map: Record<string, keyof PatientVisit> = {
+          'isInjection': 'is_injection',
+          'isInjectionCompleted': 'is_injection_completed',
+          'isFluid': 'is_fluid',
+          'isTraction': 'is_traction',
+          'isESWT': 'is_eswt',
+          'isManual': 'is_manual'
+        };
+        const logKey = map[flag as string];
+        if (logKey) {
+          onUpdateVisit(bedId, { [logKey]: newVal });
         }
+      }
     }
   }, [updateBedState, onUpdateVisit]);
 
@@ -165,13 +168,20 @@ export const useBedControls = (
   }, [updateBedState]);
 
   const updateBedDuration = useCallback((bedId: number, dur: number) => {
-    updateBedState(bedId, { 
-        startTime: Date.now(), 
-        remainingTime: dur, 
-        originalDuration: dur, 
-        isPaused: false 
+    updateBedState(bedId, {
+      startTime: Date.now(),
+      remainingTime: dur,
+      originalDuration: dur,
+      isPaused: false
     });
   }, [updateBedState]);
+
+  const updatePatientMemo = useCallback((bedId: number, memo: string | undefined) => {
+    updateBedState(bedId, { patientMemo: memo });
+    if (onUpdateVisit) {
+      onUpdateVisit(bedId, { memo: memo });
+    }
+  }, [updateBedState, onUpdateVisit]);
 
   return {
     nextStep,
@@ -181,6 +191,7 @@ export const useBedControls = (
     clearBed,
     toggleFlag,
     updateMemo,
-    updateBedDuration
+    updateBedDuration,
+    updatePatientMemo
   };
 };
