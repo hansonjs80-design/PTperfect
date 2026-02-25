@@ -17,7 +17,7 @@ interface BadgeConfig {
 
 const BADGES: BadgeConfig[] = [
   { key: 'isInjection', label: '주사', icon: Syringe, colorClass: 'text-red-500' },
-  { key: 'isInjectionCompleted', label: '완료', icon: Syringe, colorClass: 'text-gray-500', renderText: true },
+  { key: 'isInjectionCompleted', label: '완료', icon: Syringe, colorClass: 'text-gray-500' },
   { key: 'isFluid', label: '수액', icon: Droplet, colorClass: 'text-cyan-500' },
   { key: 'isManual', label: '도수', icon: Hand, colorClass: 'text-violet-500' },
   { key: 'isESWT', label: '충격파', icon: Zap, colorClass: 'text-blue-500' },
@@ -47,13 +47,13 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
   let iconSizeClass = "";
 
   if (count >= 3) {
-    iconSizeClass = "w-3.5 h-3.5"; // 30% smaller
+    iconSizeClass = "w-3 h-3"; // ~15% reduction from 3.5
   } else {
-    iconSizeClass = "w-4 h-4";     // 20% smaller (for 1 or 2)
+    iconSizeClass = "w-3.5 h-3.5"; // ~15% reduction from 4
   }
 
   // Combine with desktop override
-  iconSizeClass += " sm:w-[31px] sm:h-[31px] md:w-[34px] md:h-[34px]";
+  iconSizeClass += " sm:w-[26px] sm:h-[26px] md:w-[29px] md:h-[29px]";
 
   return (
     <div className={layoutClass}>

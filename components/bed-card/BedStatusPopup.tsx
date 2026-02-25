@@ -16,6 +16,7 @@ interface BedStatusPopupProps {
   onToggleESWT: (id: number) => void;
   onToggleManual: (id: number) => void;
   onToggleInjectionCompleted: (id: number) => void;
+  onEditMemo: (id: number) => void;
 }
 
 export const BedStatusPopup: React.FC<BedStatusPopupProps> = ({
@@ -27,7 +28,8 @@ export const BedStatusPopup: React.FC<BedStatusPopupProps> = ({
   onToggleTraction,
   onToggleESWT,
   onToggleManual,
-  onToggleInjectionCompleted
+  onToggleInjectionCompleted,
+  onEditMemo
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -103,6 +105,7 @@ export const BedStatusPopup: React.FC<BedStatusPopupProps> = ({
             onToggleESWT={onToggleESWT}
             onToggleTraction={onToggleTraction}
             onToggleInjectionCompleted={onToggleInjectionCompleted}
+            onEditMemo={onEditMemo}
           />
         </div>
 

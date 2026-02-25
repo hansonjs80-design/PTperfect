@@ -51,7 +51,7 @@ export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({
         onClick={onEditStatus}
         title={getTooltip("상태 아이콘 설정")}
       >
-        <div onClick={bed.patientMemo ? onMemoClick : undefined} className={bed.patientMemo ? "cursor-pointer" : ""}>
+        <div>
           <BedStatusBadges bed={bed} />
         </div>
 

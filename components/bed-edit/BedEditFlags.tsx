@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet } from 'lucide-react';
+import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet, Star } from 'lucide-react';
 import { BedState } from '../../types';
 
 interface BedEditFlagsProps {
@@ -11,6 +11,7 @@ interface BedEditFlagsProps {
   onToggleESWT?: (bedId: number) => void;
   onToggleTraction?: (bedId: number) => void;
   onToggleInjectionCompleted?: (bedId: number) => void;
+  onEditMemo?: (bedId: number) => void;
 }
 
 export const BedEditFlags: React.FC<BedEditFlagsProps> = ({
@@ -20,7 +21,8 @@ export const BedEditFlags: React.FC<BedEditFlagsProps> = ({
   onToggleManual,
   onToggleESWT,
   onToggleTraction,
-  onToggleInjectionCompleted
+  onToggleInjectionCompleted,
+  onEditMemo
 }) => {
   const toggles = [
     { key: 'isInjection', label: '주사', icon: Syringe, activeClass: 'bg-red-500 text-white shadow-red-200 border-transparent', onClick: onToggleInjection },
@@ -29,6 +31,7 @@ export const BedEditFlags: React.FC<BedEditFlagsProps> = ({
     { key: 'isManual', label: '도수', icon: Hand, activeClass: 'bg-violet-500 text-white shadow-violet-200 border-transparent', onClick: onToggleManual },
     { key: 'isESWT', label: '충격파', icon: Zap, activeClass: 'bg-blue-500 text-white shadow-blue-200 border-transparent', onClick: onToggleESWT },
     { key: 'isTraction', label: '견인', icon: ArrowUpFromLine, activeClass: 'bg-orange-500 text-white shadow-orange-200 border-transparent', onClick: onToggleTraction },
+    { key: 'patientMemo', label: '메모', icon: Star, activeClass: 'bg-yellow-400 text-white shadow-yellow-100 border-transparent', onClick: onEditMemo },
   ];
 
   return (
@@ -36,9 +39,9 @@ export const BedEditFlags: React.FC<BedEditFlagsProps> = ({
       <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-2 px-1">
         상태 표시 (Status)
       </span>
-      <div className="grid grid-cols-6 gap-2">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {toggles.map((item) => {
-          const isActive = bed[item.key as keyof BedState];
+          const isActive = item.key === 'patientMemo' ? !!bed.patientMemo : (bed as any)[item.key];
           return (
             <button
               key={item.key}
@@ -51,7 +54,7 @@ export const BedEditFlags: React.FC<BedEditFlagsProps> = ({
                 }
                  `}
             >
-              <item.icon className={`w-4 h-4 mb-1 ${isActive ? 'animate-bounce' : 'grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all'}`} strokeWidth={2.5} />
+              <item.icon className={`w-4 h-4 mb-1 ${isActive ? 'animate-bounce' : 'grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all'}`} strokeWidth={2.5} fill={item.key === 'patientMemo' && isActive ? 'currentColor' : 'none'} />
               <span className="text-[10px] font-bold leading-none">{item.label}</span>
 
               {isActive && (
