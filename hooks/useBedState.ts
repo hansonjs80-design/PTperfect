@@ -16,7 +16,7 @@ export const useBedState = (
   isBackgroundKeepAlive: boolean
 ) => {
   // 1. Local Storage & State Initialization
-  const [localBeds, setLocalBeds] = useLocalStorage<BedState[]>('physio-beds-v8', 
+  const [localBeds, setLocalBeds] = useLocalStorage<BedState[]>('physio-beds-v8',
     Array.from({ length: TOTAL_BEDS }, (_, i) => ({
       id: i + 1,
       status: BedStatus.IDLE,
@@ -31,13 +31,14 @@ export const useBedState = (
       isTraction: false,
       isESWT: false,
       isManual: false,
+      isInjectionCompleted: false,
       memos: {}
     }))
   );
 
   const [beds, setBeds] = useState<BedState[]>(localBeds);
   const bedsRef = useRef(beds);
-  
+
   // Sync Ref
   useEffect(() => {
     bedsRef.current = beds;
@@ -60,7 +61,7 @@ export const useBedState = (
   const updateBedState = useCallback(async (bedId: number, updates: Partial<BedState>) => {
     const timestamp = Date.now();
     const updateWithTimestamp = { ...updates, lastUpdateTimestamp: timestamp };
-    
+
     // Optimistic Update
     setBeds(prev => prev.map(b => b.id === bedId ? { ...b, ...updateWithTimestamp } : b));
     setLocalBeds(prev => prev.map(b => b.id === bedId ? { ...b, ...updateWithTimestamp } : b));
@@ -84,13 +85,13 @@ export const useBedState = (
       const updates = restoredBeds.map(bed => {
         const payload = mapBedToDbPayload(bed);
         payload.id = bed.id;
-        
+
         // Critical for Undo: Explicitly nullify fields that are undefined in the snapshot
         // (because mapBedToDbPayload skips undefined fields, but we need to clear them in DB if reverting to IDLE)
         if (!bed.customPreset) payload.custom_preset_json = null;
         if (!bed.currentPresetId) payload.current_preset_id = null;
         if (!bed.queue) payload.queue = [];
-        
+
         return payload;
       });
 
@@ -99,12 +100,12 @@ export const useBedState = (
     }
   }, [setLocalBeds]);
 
-  return { 
-    beds, 
-    bedsRef, 
+  return {
+    beds,
+    bedsRef,
     updateBedState,
     restoreBeds, // Exported for Undo logic
     refreshBeds: refresh, // Exported for Manual Refresh
-    realtimeStatus 
+    realtimeStatus
   };
 };

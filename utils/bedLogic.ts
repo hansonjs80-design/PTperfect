@@ -26,6 +26,7 @@ export const mapRowToBed = (row: any): Partial<BedState> => {
   if (row.is_traction !== undefined) result.isTraction = !!row.is_traction;
   if (row.is_eswt !== undefined) result.isESWT = !!row.is_eswt;
   if (row.is_manual !== undefined) result.isManual = !!row.is_manual;
+  if (row.is_injection_completed !== undefined) result.isInjectionCompleted = !!row.is_injection_completed;
   if (row.memos !== undefined) result.memos = row.memos || {};
   if (row.updated_at !== undefined) result.updatedAt = row.updated_at;
 
@@ -46,6 +47,7 @@ export const mapBedToDbPayload = (updates: Partial<BedState>): any => {
   if (updates.isTraction !== undefined) payload.is_traction = updates.isTraction;
   if (updates.isESWT !== undefined) payload.is_eswt = updates.isESWT;
   if (updates.isManual !== undefined) payload.is_manual = updates.isManual;
+  if (updates.isInjectionCompleted !== undefined) payload.is_injection_completed = updates.isInjectionCompleted;
   if (updates.memos !== undefined) payload.memos = updates.memos;
   if (updates.customPreset !== undefined) payload.custom_preset_json = updates.customPreset;
   if (updates.originalDuration !== undefined) payload.original_duration = updates.originalDuration;

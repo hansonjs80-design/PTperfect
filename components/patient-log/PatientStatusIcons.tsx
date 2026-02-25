@@ -23,7 +23,7 @@ export const PatientStatusIcons: React.FC<PatientStatusIconsProps> = ({ visit })
       )}
       {visit.is_injection_completed && (
         <div title="주사 완료" className="flex">
-          <Syringe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" strokeWidth={2.5} />
+          <Syringe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" strokeWidth={2.5} />
         </div>
       )}
       {visit.is_fluid && (
