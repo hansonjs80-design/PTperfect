@@ -3,7 +3,6 @@ import React, { useEffect, useRef } from 'react';
 import { BedState, Preset, BedStatus } from '../types';
 import { calculateRemainingTime } from '../utils/bedLogic';
 import { playAlarmPattern } from '../utils/alarm';
-import { getAbbreviation } from '../utils/bedUtils';
 
 export const useBedTimer = (
   setBeds: React.Dispatch<React.SetStateAction<BedState[]>>,
@@ -45,9 +44,9 @@ export const useBedTimer = (
               if (newRemaining <= 0) {
                 // Trigger alarm only once per expiration
                 if (!alertedBedsRef.current.has(bed.id)) {
-                  const stepName = step ? getAbbreviation(step.name) : '';
+                  const stepName = step ? step.name : '';
                   const nextStep = preset?.steps[bed.currentStepIndex + 1];
-                  const nextStepName = nextStep ? getAbbreviation(nextStep.name) : undefined;
+                  const nextStepName = nextStep ? nextStep.name : undefined;
 
                   playAlarmPattern(bed.id, stepName, nextStepName, !soundEnabled);
                   alertedBedsRef.current.add(bed.id);

@@ -1,5 +1,16 @@
 
 // 알람, 진동, 시스템 알림 관련 로직 분리
+
+// 숫자를 한자어 읽기로 변환 (1→일, 2→이, ... 10→십)
+const toSinoKorean = (num: number): string => {
+  const digits = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+  if (num <= 0) return String(num);
+  if (num < 10) return digits[num];
+  if (num === 10) return '십';
+  if (num < 20) return '십' + digits[num % 10];
+  return String(num); // fallback
+};
+
 export const playAlarmPattern = async (
   bedId?: number,
   treatmentName?: string,
@@ -22,7 +33,7 @@ export const playAlarmPattern = async (
   // Only play if NOT silent
   if (!isSilent && typeof window !== 'undefined' && 'speechSynthesis' in window) {
     try {
-      const bedLabel = bedId === 11 ? '견인치료기' : `${bedId}번 배드`;
+      const bedLabel = bedId === 11 ? '견인치료기' : `${toSinoKorean(bedId!)}번 배드`;
       const currentLabel = treatmentName ? ` ${treatmentName}` : '';
 
       let message = `${bedLabel}${currentLabel} 종료되었습니다.`;
