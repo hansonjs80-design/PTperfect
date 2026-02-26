@@ -52,11 +52,16 @@ export const useBedRealtime = (
         setBeds((prev) => {
           const newBeds = prev.map((bed) => {
             if (bed.id === updatedBedFields.id) {
-              if (shouldIgnoreServerUpdate(bed, updatedBedFields)) return bed;
+              // IDLE 전환(침상 비우기)은 shouldIgnoreServerUpdate/디바운스 건너뛰기 — 즉시 반영
+              const isServerClearingBed = updatedBedFields.status === BedStatus.IDLE && bed.status !== BedStatus.IDLE;
 
-              if (bed.status === BedStatus.IDLE && updatedBedFields.status === BedStatus.ACTIVE) {
-                const timeSinceClear = Date.now() - (bed.lastUpdateTimestamp || 0);
-                if (timeSinceClear < 2000) return bed; // 2s debounce (was 10s)
+              if (!isServerClearingBed) {
+                if (shouldIgnoreServerUpdate(bed, updatedBedFields)) return bed;
+
+                if (bed.status === BedStatus.IDLE && updatedBedFields.status === BedStatus.ACTIVE) {
+                  const timeSinceClear = Date.now() - (bed.lastUpdateTimestamp || 0);
+                  if (timeSinceClear < 2000) return bed; // 2s debounce
+                }
               }
 
               const mergedBed = { ...bed, ...updatedBedFields };

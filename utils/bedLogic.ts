@@ -58,6 +58,8 @@ export const mapBedToDbPayload = (updates: Partial<BedState>): any => {
 };
 
 export const shouldIgnoreServerUpdate = (localBed: BedState, serverBed: Partial<BedState>): boolean => {
+  // IDLE 전환(침상 비우기)은 절대 무시하지 않음 — 다른 기기의 비우기 동기화 보장
+  if (serverBed.status === BedStatus.IDLE && localBed.status !== BedStatus.IDLE) return false;
   if (!localBed.lastUpdateTimestamp) return false;
   const serverUpdateTime = serverBed.updatedAt ? new Date(serverBed.updatedAt).getTime() : 0;
   // Allow 500ms clock-skew margin: only ignore if local write is clearly MORE recent than server
