@@ -4,6 +4,28 @@ import { BedState, BedStatus } from '../types';
 import { supabase, isOnlineMode } from '../lib/supabase';
 import { mapRowToBed, shouldIgnoreServerUpdate } from '../utils/bedLogic';
 
+/** IDLE 전환 시 bed를 완전 초기화 */
+const forceIdleBed = (bed: Partial<BedState>): Partial<BedState> => ({
+  ...bed,
+  status: BedStatus.IDLE,
+  remainingTime: 0,
+  customPreset: undefined,
+  currentPresetId: null,
+  currentStepIndex: 0,
+  queue: [],
+  startTime: null,
+  isPaused: false,
+  isInjection: false,
+  isFluid: false,
+  isTraction: false,
+  isESWT: false,
+  isManual: false,
+  isInjectionCompleted: false,
+  patientMemo: undefined,
+  originalDuration: undefined,
+  lastUpdateTimestamp: undefined, // 리셋하여 이후 서버 업데이트 수락 보장
+});
+
 export const useBedRealtime = (
   setBeds: React.Dispatch<React.SetStateAction<BedState[]>>,
   setLocalBeds: (value: BedState[] | ((val: BedState[]) => BedState[])) => void
@@ -23,10 +45,19 @@ export const useBedRealtime = (
       setBeds((currentBeds) => {
         const newBeds = serverBeds.map(serverBed => {
           const localBed = currentBeds.find(b => b.id === serverBed.id);
-          if (localBed && shouldIgnoreServerUpdate(localBed, serverBed)) return localBed;
+          if (!localBed) return serverBed;
+
+          // IDLE 전환은 절대 무시하지 않음
+          const isServerClearing = serverBed.status === BedStatus.IDLE && localBed.status !== BedStatus.IDLE;
+          if (isServerClearing) {
+            console.log(`[Realtime:fetch] Bed ${serverBed.id}: 서버 IDLE 전환 수락 (로컬: ${localBed.status})`);
+            return forceIdleBed(serverBed) as BedState;
+          }
+
+          if (shouldIgnoreServerUpdate(localBed, serverBed)) return localBed;
           return serverBed;
         });
-        setLocalBeds(newBeds); // Sync local storage
+        setLocalBeds(newBeds);
         return newBeds;
       });
     }
@@ -55,6 +86,10 @@ export const useBedRealtime = (
               // IDLE 전환(침상 비우기)은 shouldIgnoreServerUpdate/디바운스 건너뛰기 — 즉시 반영
               const isServerClearingBed = updatedBedFields.status === BedStatus.IDLE && bed.status !== BedStatus.IDLE;
 
+              if (isServerClearingBed) {
+                console.log(`[Realtime] Bed ${bed.id}: 서버 IDLE 전환 수락 (로컬: ${bed.status})`);
+              }
+
               if (!isServerClearingBed) {
                 if (shouldIgnoreServerUpdate(bed, updatedBedFields)) return bed;
 
@@ -64,10 +99,14 @@ export const useBedRealtime = (
                 }
               }
 
+              // IDLE 전환인 경우 forceIdleBed로 완전 초기화
+              if (isServerClearingBed) {
+                return forceIdleBed({ ...bed, id: bed.id }) as BedState;
+              }
+
               const mergedBed = { ...bed, ...updatedBedFields };
 
               // IDLE 상태로 전환이 아닐 때만 로컬 patientMemo 보존
-              // (침상 비우기로 IDLE이 되면 메모도 지워져야 함)
               if (updatedBedFields.status !== BedStatus.IDLE && !updatedBedFields.patientMemo && bed.patientMemo) {
                 mergedBed.patientMemo = bed.patientMemo;
               }
@@ -83,12 +122,9 @@ export const useBedRealtime = (
                 mergedBed.remainingTime = bed.remainingTime;
               }
 
+              // 서버 상태가 IDLE인 경우 (예: 서버가 IDLE→IDLE일 때도 처리)
               if (mergedBed.status === BedStatus.IDLE) {
-                mergedBed.remainingTime = 0;
-                mergedBed.customPreset = undefined;
-                mergedBed.currentPresetId = null;
-                mergedBed.queue = [];
-                mergedBed.patientMemo = undefined;
+                return forceIdleBed({ ...mergedBed, id: bed.id }) as BedState;
               }
 
               return mergedBed;
@@ -101,6 +137,7 @@ export const useBedRealtime = (
         });
       })
       .subscribe((status) => {
+        console.log(`[Realtime] Channel status: ${status}`);
         setRealtimeStatus(status as any);
       });
 

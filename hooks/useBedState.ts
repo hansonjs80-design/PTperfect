@@ -68,8 +68,15 @@ export const useBedState = (
     // Database Update
     if (isOnlineMode() && supabase) {
       const dbPayload = mapBedToDbPayload(updates);
+      if (updates.status === 'IDLE') {
+        console.log(`[BedState] Bed ${bedId}: IDLE 전환 DB 저장`, JSON.stringify(dbPayload));
+      }
       const { error } = await supabase.from('beds').update(dbPayload).eq('id', bedId);
-      if (error) console.error(`[BedState] DB Update Failed:`, error.message);
+      if (error) {
+        console.error(`[BedState] DB Update Failed (bed ${bedId}):`, error.message);
+      } else if (updates.status === 'IDLE') {
+        console.log(`[BedState] Bed ${bedId}: IDLE 전환 DB 저장 완료`);
+      }
     }
   }, [setLocalBeds]);
 
