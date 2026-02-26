@@ -37,10 +37,10 @@ export const mapRowToBed = (row: any): Partial<BedState> => {
 export const mapBedToDbPayload = (updates: Partial<BedState>): any => {
   const payload: any = {};
   if (updates.status !== undefined) payload.status = updates.status;
-  if (updates.currentPresetId !== undefined) payload.current_preset_id = updates.currentPresetId;
+  if ('currentPresetId' in updates) payload.current_preset_id = updates.currentPresetId ?? null;
   if (updates.currentStepIndex !== undefined) payload.current_step_index = updates.currentStepIndex;
-  if (updates.queue !== undefined) payload.queue = updates.queue;
-  if (updates.startTime !== undefined) payload.start_time = updates.startTime;
+  if ('queue' in updates) payload.queue = updates.queue ?? [];
+  if ('startTime' in updates) payload.start_time = updates.startTime ?? null;
   if (updates.isPaused !== undefined) payload.is_paused = updates.isPaused;
   if (updates.isInjection !== undefined) payload.is_injection = updates.isInjection;
   if (updates.isFluid !== undefined) payload.is_fluid = updates.isFluid;
