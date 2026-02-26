@@ -55,7 +55,10 @@ export const playAlarmPattern = async (
 
   // 3. System Notification (Native Sound/Vibration - iOS & Android PWA)
   // Always trigger notification for visual cue, but suppress sound/vibrate if silent
-  if ('Notification' in window && Notification.permission === 'granted') {
+  // 데스크탑 모드에서는 알림 창(Notification)을 띄우지 않음
+  const isDesktop = typeof navigator !== 'undefined' && !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+  if (!isDesktop && 'Notification' in window && Notification.permission === 'granted') {
     const bedLabel = bedId === 11 ? '견인치료' : `${bedId}번`;
     const stepLabel = treatmentName ? ` ${treatmentName}` : '';
 
