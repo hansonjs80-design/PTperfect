@@ -46,8 +46,7 @@ export const playAlarmPattern = async (
       utterance.rate = 1.0; // Normal speed
       utterance.pitch = 1.0; // Normal pitch
 
-      // Stop any currently playing audio so new alerts take precedence (or queue them if preferred, here we stop)
-      window.speechSynthesis.cancel();
+      // Queue alerts sequentially for beds ending at similar times
       window.speechSynthesis.speak(utterance);
     } catch (e) {
       console.error("TTS playback failed", e);
