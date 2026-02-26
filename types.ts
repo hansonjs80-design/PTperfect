@@ -62,6 +62,7 @@ export interface PatientVisit {
   memo?: string; // Added memo field
   author: string;
   created_at?: string;
+  updated_at?: string;
   // Status Flags
   is_injection?: boolean;
   is_injection_completed?: boolean;

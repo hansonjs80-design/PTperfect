@@ -2,32 +2,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { BedState, BedStatus } from '../types';
 import { supabase, isOnlineMode } from '../lib/supabase';
-import { mapRowToBed, shouldIgnoreServerUpdate } from '../utils/bedLogic';
+import { mapRowToBed, shouldIgnoreServerUpdate, forceIdleBed } from '../utils/bedLogic';
 
-/** IDLE 전환 시 bed를 완전 초기화 */
-const forceIdleBed = (bed: Partial<BedState>): Partial<BedState> => ({
-  ...bed,
-  status: BedStatus.IDLE,
-  remainingTime: 0,
-  customPreset: undefined,
-  currentPresetId: null,
-  currentStepIndex: 0,
-  queue: [],
-  startTime: null,
-  isPaused: false,
-  isInjection: false,
-  isFluid: false,
-  isTraction: false,
-  isESWT: false,
-  isManual: false,
-  isInjectionCompleted: false,
-  patientMemo: undefined,
-  originalDuration: undefined,
-  lastUpdateTimestamp: undefined,
-});
-
-/** 고유 탭 ID (같은 브라우저의 자기 자신 브로드캐스트 무시용) */
+/** 고유 탭 ID (자기 자신 브로드캐스트 무시용) */
 const TAB_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+/** 폴링 간격 (ms) */
+const POLL_INTERVAL = 5000;
 
 export const useBedRealtime = (
   setBeds: React.Dispatch<React.SetStateAction<BedState[]>>,
@@ -39,48 +20,39 @@ export const useBedRealtime = (
   // ── DB에서 bed 상태 가져오기 ──
   const fetchBeds = useCallback(async () => {
     const client = supabase;
-    if (!isOnlineMode() || !client) {
-      setRealtimeStatus('OFFLINE');
-      return;
-    }
+    if (!isOnlineMode() || !client) return;
 
     const { data, error } = await client.from('beds').select('*').order('id');
-    if (!error && data) {
-      const serverBeds: BedState[] = data.map(row => mapRowToBed(row) as BedState);
-      setBeds((currentBeds) => {
-        const newBeds = serverBeds.map(serverBed => {
-          const localBed = currentBeds.find(b => b.id === serverBed.id);
-          if (!localBed) return serverBed;
+    if (error || !data) return;
 
-          // 서버가 IDLE이면 무조건 수락
-          if (serverBed.status === BedStatus.IDLE && localBed.status !== BedStatus.IDLE) {
-            console.log(`[Realtime:fetch] Bed ${serverBed.id}: 서버 IDLE → 수락`);
-            return forceIdleBed(serverBed) as BedState;
-          }
-          // 서버와 로컬 모두 IDLE이면 서버 수락
-          if (serverBed.status === BedStatus.IDLE && localBed.status === BedStatus.IDLE) {
-            return serverBed;
-          }
+    const serverBeds: BedState[] = data.map(row => mapRowToBed(row) as BedState);
+    setBeds((currentBeds) => {
+      const newBeds = serverBeds.map(serverBed => {
+        const localBed = currentBeds.find(b => b.id === serverBed.id);
+        if (!localBed) return serverBed;
 
-          if (shouldIgnoreServerUpdate(localBed, serverBed)) return localBed;
-          return serverBed;
-        });
-        setLocalBeds(newBeds);
-        return newBeds;
+        // 서버가 IDLE이고 로컬이 아직 ACTIVE → 무조건 비우기
+        if (serverBed.status === BedStatus.IDLE && localBed.status !== BedStatus.IDLE) {
+          return forceIdleBed(serverBed);
+        }
+
+        // 로컬 timestamp 기반 충돌 해결
+        if (shouldIgnoreServerUpdate(localBed, serverBed)) return localBed;
+        return serverBed;
       });
-    }
+      setLocalBeds(newBeds);
+      return newBeds;
+    });
   }, [setBeds, setLocalBeds]);
 
-  // ── 특정 bed를 IDLE로 강제 초기화 ──
+  // ── Broadcast 수신: 특정 bed IDLE 처리 ──
   const handleBedClear = useCallback((bedId: number) => {
-    console.log(`[Realtime:broadcast] Bed ${bedId}: 비우기 브로드캐스트 수신 → IDLE 강제 적용`);
     setBeds((prev) => {
-      const newBeds = prev.map((bed) => {
-        if (bed.id === bedId && bed.status !== BedStatus.IDLE) {
-          return forceIdleBed({ ...bed, id: bed.id }) as BedState;
-        }
-        return bed;
-      });
+      const newBeds = prev.map((bed) =>
+        bed.id === bedId && bed.status !== BedStatus.IDLE
+          ? forceIdleBed({ ...bed })
+          : bed
+      );
       setLocalBeds(newBeds);
       return newBeds;
     });
@@ -96,105 +68,77 @@ export const useBedRealtime = (
     setRealtimeStatus('CONNECTING');
     fetchBeds();
 
-    // ══════ 1. postgres_changes (기존) ══════
+    // ── 1. postgres_changes ──
     const pgChannel = client
       .channel('public:beds')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'beds' }, (payload) => {
-        const updatedBedFields = mapRowToBed(payload.new);
-        console.log(`[Realtime:pg] Bed ${updatedBedFields.id}: 이벤트 수신, status=${updatedBedFields.status}`);
+        const updatedBed = mapRowToBed(payload.new);
 
         setBeds((prev) => {
           const newBeds = prev.map((bed) => {
-            if (bed.id === updatedBedFields.id) {
-              const isServerClearingBed = updatedBedFields.status === BedStatus.IDLE && bed.status !== BedStatus.IDLE;
+            if (bed.id !== updatedBed.id) return bed;
 
-              if (isServerClearingBed) {
-                console.log(`[Realtime:pg] Bed ${bed.id}: IDLE 전환 → forceIdleBed`);
-                return forceIdleBed({ ...bed, id: bed.id }) as BedState;
-              }
-
-              if (!isServerClearingBed) {
-                if (shouldIgnoreServerUpdate(bed, updatedBedFields)) return bed;
-                if (bed.status === BedStatus.IDLE && updatedBedFields.status === BedStatus.ACTIVE) {
-                  const timeSinceClear = Date.now() - (bed.lastUpdateTimestamp || 0);
-                  if (timeSinceClear < 2000) return bed;
-                }
-              }
-
-              const mergedBed = { ...bed, ...updatedBedFields };
-
-              if (updatedBedFields.status !== BedStatus.IDLE && !updatedBedFields.patientMemo && bed.patientMemo) {
-                mergedBed.patientMemo = bed.patientMemo;
-              }
-
-              const isTargetActive = mergedBed.status !== BedStatus.IDLE;
-              const hasLocalPrescription = !!bed.customPreset || !!bed.currentPresetId;
-              const serverHasNoPrescription = !mergedBed.customPreset && !mergedBed.currentPresetId;
-
-              if (isTargetActive && hasLocalPrescription && serverHasNoPrescription) {
-                mergedBed.customPreset = bed.customPreset;
-                mergedBed.currentPresetId = bed.currentPresetId;
-                mergedBed.queue = bed.queue;
-                mergedBed.remainingTime = bed.remainingTime;
-              }
-
-              if (mergedBed.status === BedStatus.IDLE) {
-                return forceIdleBed({ ...mergedBed, id: bed.id }) as BedState;
-              }
-
-              return mergedBed;
+            // IDLE 전환은 무조건 수락
+            if (updatedBed.status === BedStatus.IDLE) {
+              return forceIdleBed({ ...bed });
             }
-            return bed;
-          });
 
+            if (shouldIgnoreServerUpdate(bed, updatedBed)) return bed;
+
+            // IDLE→비IDLE 디바운스 (2초)
+            if (bed.status === BedStatus.IDLE) {
+              if (Date.now() - (bed.lastUpdateTimestamp || 0) < 2000) return bed;
+            }
+
+            const merged = { ...bed, ...updatedBed };
+            // 로컬 memo/처방 보존 (이 시점에서 updatedBed는 비IDLE)
+            if (!updatedBed.patientMemo && bed.patientMemo) {
+              merged.patientMemo = bed.patientMemo;
+            }
+            if (merged.status !== BedStatus.IDLE && (!!bed.customPreset || !!bed.currentPresetId) && !merged.customPreset && !merged.currentPresetId) {
+              merged.customPreset = bed.customPreset;
+              merged.currentPresetId = bed.currentPresetId;
+              merged.queue = bed.queue;
+              merged.remainingTime = bed.remainingTime;
+            }
+            return merged;
+          });
           setLocalBeds(newBeds);
           return newBeds;
         });
       })
-      .subscribe((status) => {
-        console.log(`[Realtime:pg] Channel status: ${status}`);
-        setRealtimeStatus(status as any);
-      });
+      .subscribe((status) => setRealtimeStatus(status as any));
 
-    // ══════ 2. Broadcast 채널 (침상 비우기 전용) ══════
+    // ── 2. Broadcast 채널 (침상 비우기 전용) ──
     const bcChannel = client
       .channel('bed-actions')
       .on('broadcast', { event: 'clear-bed' }, (payload: any) => {
         const { bedId, senderId } = payload.payload || {};
-        // 자기 자신이 보낸 이벤트는 무시
         if (senderId === TAB_ID) return;
         if (bedId) handleBedClear(bedId);
       })
-      .subscribe((status) => {
-        console.log(`[Realtime:broadcast] Channel status: ${status}`);
-      });
+      .subscribe();
 
     broadcastChannelRef.current = bcChannel;
 
-    // ══════ 3. 폴링 백업 (10초마다) ══════
-    const pollInterval = setInterval(() => {
-      fetchBeds();
-    }, 10000);
+    // ── 3. 폴링 (5초) ──
+    const poll = setInterval(fetchBeds, POLL_INTERVAL);
 
     return () => {
       client.removeChannel(pgChannel);
       client.removeChannel(bcChannel);
-      clearInterval(pollInterval);
+      clearInterval(poll);
       broadcastChannelRef.current = null;
     };
   }, [setBeds, setLocalBeds, fetchBeds, handleBedClear]);
 
-  // ── broadcastClearBed: clearBed 시 다른 디바이스에 알림 ──
+  // ── 비우기 브로드캐스트 전송 ──
   const broadcastClearBed = useCallback((bedId: number) => {
-    const bc = broadcastChannelRef.current;
-    if (bc) {
-      console.log(`[Realtime:broadcast] Bed ${bedId}: 비우기 브로드캐스트 전송`);
-      bc.send({
-        type: 'broadcast',
-        event: 'clear-bed',
-        payload: { bedId, senderId: TAB_ID }
-      });
-    }
+    broadcastChannelRef.current?.send({
+      type: 'broadcast',
+      event: 'clear-bed',
+      payload: { bedId, senderId: TAB_ID }
+    });
   }, []);
 
   return { realtimeStatus, refresh: fetchBeds, broadcastClearBed };

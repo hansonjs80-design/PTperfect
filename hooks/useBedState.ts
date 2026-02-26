@@ -56,28 +56,54 @@ export const useBedState = (
     if (!isOnlineMode()) setBeds(localBeds);
   }, [localBeds]);
 
+  // DB 쓰기 디바운스 (bed ID → timeout)
+  const dbWriteTimers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const pendingUpdates = useRef<Map<number, Partial<BedState>>>(new Map());
+
   // 4. Core State Updater (DB Sync included)
   const updateBedState = useCallback(async (bedId: number, updates: Partial<BedState>) => {
     const timestamp = Date.now();
     const updateWithTimestamp = { ...updates, lastUpdateTimestamp: timestamp };
 
-    // Optimistic Update
+    // Optimistic Update (즉시 UI 반영)
     setBeds(prev => prev.map(b => b.id === bedId ? { ...b, ...updateWithTimestamp } : b));
     setLocalBeds(prev => prev.map(b => b.id === bedId ? { ...b, ...updateWithTimestamp } : b));
 
     // Database Update
-    if (isOnlineMode() && supabase) {
+    if (!isOnlineMode() || !supabase) return;
+
+    // status 변경은 즉시 전송 (clearBed, 치료 시작 등)
+    const isStatusChange = updates.status !== undefined;
+    if (isStatusChange) {
+      // 진행 중인 디바운스 취소 후 즉시 전송
+      const existing = dbWriteTimers.current.get(bedId);
+      if (existing) {
+        clearTimeout(existing);
+        dbWriteTimers.current.delete(bedId);
+        pendingUpdates.current.delete(bedId);
+      }
       const dbPayload = mapBedToDbPayload(updates);
-      if (updates.status === 'IDLE') {
-        console.log(`[BedState] Bed ${bedId}: IDLE 전환 DB 저장`, JSON.stringify(dbPayload));
-      }
-      const { error } = await supabase.from('beds').update(dbPayload).eq('id', bedId);
-      if (error) {
-        console.error(`[BedState] DB Update Failed (bed ${bedId}):`, error.message);
-      } else if (updates.status === 'IDLE') {
-        console.log(`[BedState] Bed ${bedId}: IDLE 전환 DB 저장 완료`);
-      }
+      await supabase.from('beds').update(dbPayload).eq('id', bedId);
+      return;
     }
+
+    // 일반 업데이트는 300ms 디바운스
+    const prev = pendingUpdates.current.get(bedId) || {};
+    pendingUpdates.current.set(bedId, { ...prev, ...updates });
+
+    const existingTimer = dbWriteTimers.current.get(bedId);
+    if (existingTimer) clearTimeout(existingTimer);
+
+    dbWriteTimers.current.set(bedId, setTimeout(async () => {
+      dbWriteTimers.current.delete(bedId);
+      const merged = pendingUpdates.current.get(bedId);
+      pendingUpdates.current.delete(bedId);
+      if (!merged) return;
+
+      const dbPayload = mapBedToDbPayload(merged);
+      const { error } = await supabase!.from('beds').update(dbPayload).eq('id', bedId);
+      if (error) console.error(`[BedState] DB update failed (bed ${bedId}):`, error.message);
+    }, 300));
   }, [setLocalBeds]);
 
   // 5. Restore Full State (For Undo functionality)

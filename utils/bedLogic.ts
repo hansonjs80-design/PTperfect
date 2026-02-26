@@ -58,13 +58,15 @@ export const mapBedToDbPayload = (updates: Partial<BedState>): any => {
 };
 
 export const shouldIgnoreServerUpdate = (localBed: BedState, serverBed: Partial<BedState>): boolean => {
-  // IDLE 전환(침상 비우기)은 절대 무시하지 않음 — 다른 기기의 비우기 동기화 보장
+  // IDLE 전환(다른 기기에서 비우기)은 절대 무시하지 않음
   if (serverBed.status === BedStatus.IDLE && localBed.status !== BedStatus.IDLE) return false;
   if (!localBed.lastUpdateTimestamp) return false;
-  const serverUpdateTime = serverBed.updatedAt ? new Date(serverBed.updatedAt).getTime() : 0;
-  // Allow 500ms clock-skew margin: only ignore if local write is clearly MORE recent than server
-  const CLOCK_SKEW_MARGIN_MS = 500;
-  return localBed.lastUpdateTimestamp > (serverUpdateTime + CLOCK_SKEW_MARGIN_MS);
+
+  // 로컬에서 10초 이내에 변경한 bed는 서버 데이터로 덮어쓰지 않음
+  // → 폴링(5초)이 로컬 상태를 덮어쓰는 깜빡임 방지
+  const LOCAL_PROTECT_WINDOW_MS = 10000;
+  const localAge = Date.now() - localBed.lastUpdateTimestamp;
+  return localAge < LOCAL_PROTECT_WINDOW_MS;
 };
 
 export const calculateRemainingTime = (bed: BedState, presets: Preset[]): number => {
@@ -78,3 +80,25 @@ export const calculateRemainingTime = (bed: BedState, presets: Preset[]): number
   }
   return 0;
 };
+
+/** IDLE 전환 시 bed를 완전 초기화하는 유틸리티 */
+export const forceIdleBed = (bed: Partial<BedState>): BedState => ({
+  ...bed,
+  status: BedStatus.IDLE,
+  remainingTime: 0,
+  customPreset: undefined,
+  currentPresetId: null,
+  currentStepIndex: 0,
+  queue: [],
+  startTime: null,
+  isPaused: false,
+  isInjection: false,
+  isFluid: false,
+  isTraction: false,
+  isESWT: false,
+  isManual: false,
+  isInjectionCompleted: false,
+  patientMemo: undefined,
+  originalDuration: undefined,
+  lastUpdateTimestamp: undefined,
+} as BedState);
