@@ -48,7 +48,6 @@ export interface BedState {
   isManual: boolean; // Tracks if the patient needs Manual Therapy (Do-su)
   isInjectionCompleted?: boolean; // Tracks if the injection is completed
   patientMemo?: string; // Memo for the patient in this bed
-  memos: Record<number, string>; // Map of step index to memo string
   updatedAt?: string; // ISO String from DB, used for sync conflict resolution
   lastUpdateTimestamp?: number; // Local-only: timestamp of last user action to debounce server echoes
 }

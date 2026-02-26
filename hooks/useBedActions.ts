@@ -3,10 +3,10 @@ import { useCallback } from 'react';
 import { BedState, BedStatus, Preset, TreatmentStep, QuickTreatment, PatientVisit, SelectPresetOptions } from '../types';
 import { STANDARD_TREATMENTS } from '../constants';
 import { generateTreatmentString } from '../utils/bedUtils';
-import { 
-  createCustomPreset, 
-  createQuickStep, 
-  createTractionPreset 
+import {
+  createCustomPreset,
+  createQuickStep,
+  createTractionPreset
 } from '../utils/treatmentFactories';
 
 export const useBedActions = (
@@ -19,17 +19,17 @@ export const useBedActions = (
     const preset = presets.find(p => p.id === presetId);
     if (!preset) return;
     const firstStep = preset.steps[0];
-    
+
     if (onAddVisit) {
-        onAddVisit({
-            bed_id: bedId,
-            treatment_name: generateTreatmentString(preset.steps),
-            is_injection: options?.isInjection || false,
-            is_fluid: options?.isFluid || false,
-            is_traction: options?.isTraction || false,
-            is_eswt: options?.isESWT || false,
-            is_manual: options?.isManual || false,
-        });
+      onAddVisit({
+        bed_id: bedId,
+        treatment_name: generateTreatmentString(preset.steps),
+        is_injection: options?.isInjection || false,
+        is_fluid: options?.isFluid || false,
+        is_traction: options?.isTraction || false,
+        is_eswt: options?.isESWT || false,
+        is_manual: options?.isManual || false,
+      });
     }
 
     updateBedState(bedId, {
@@ -47,26 +47,25 @@ export const useBedActions = (
       isTraction: options?.isTraction || false,
       isESWT: options?.isESWT || false,
       isManual: options?.isManual || false,
-      memos: {}
     });
   }, [presets, updateBedState, onAddVisit]);
 
   const startCustomPreset = useCallback((bedId: number, name: string, steps: TreatmentStep[], options?: SelectPresetOptions) => {
     if (steps.length === 0) return;
-    
+
     const customPreset = createCustomPreset(name, steps);
     const firstStep = steps[0];
 
     if (onAddVisit) {
-        onAddVisit({
-            bed_id: bedId,
-            treatment_name: generateTreatmentString(steps),
-            is_injection: options?.isInjection || false,
-            is_fluid: options?.isFluid || false,
-            is_traction: options?.isTraction || false,
-            is_eswt: options?.isESWT || false,
-            is_manual: options?.isManual || false,
-        });
+      onAddVisit({
+        bed_id: bedId,
+        treatment_name: generateTreatmentString(steps),
+        is_injection: options?.isInjection || false,
+        is_fluid: options?.isFluid || false,
+        is_traction: options?.isTraction || false,
+        is_eswt: options?.isESWT || false,
+        is_manual: options?.isManual || false,
+      });
     }
 
     updateBedState(bedId, {
@@ -84,7 +83,6 @@ export const useBedActions = (
       isTraction: options?.isTraction || false,
       isESWT: options?.isESWT || false,
       isManual: options?.isManual || false,
-      memos: {}
     });
   }, [updateBedState, onAddVisit]);
 
@@ -99,29 +97,28 @@ export const useBedActions = (
     const firstStep = tractionPreset.steps[0];
 
     if (onAddVisit) {
-        onAddVisit({
-            bed_id: bedId,
-            treatment_name: '견인', 
-            is_traction: true, 
-            is_injection: options?.isInjection || false,
-            is_fluid: options?.isFluid || false,
-            is_eswt: options?.isESWT || false,
-            is_manual: options?.isManual || false,
-        });
+      onAddVisit({
+        bed_id: bedId,
+        treatment_name: '견인',
+        is_traction: true,
+        is_injection: options?.isInjection || false,
+        is_fluid: options?.isFluid || false,
+        is_eswt: options?.isESWT || false,
+        is_manual: options?.isManual || false,
+      });
     }
 
     updateBedState(bedId, {
-        status: BedStatus.ACTIVE,
-        currentPresetId: tractionPreset.id,
-        customPreset: tractionPreset,
-        currentStepIndex: 0,
-        queue: [],
-        startTime: Date.now(),
-        remainingTime: firstStep.duration,
-        originalDuration: firstStep.duration,
-        isPaused: false,
-        ...options,
-        memos: {}
+      status: BedStatus.ACTIVE,
+      currentPresetId: tractionPreset.id,
+      customPreset: tractionPreset,
+      currentStepIndex: 0,
+      queue: [],
+      startTime: Date.now(),
+      remainingTime: firstStep.duration,
+      originalDuration: firstStep.duration,
+      isPaused: false,
+      ...options,
     });
   }, [updateBedState, onAddVisit]);
 

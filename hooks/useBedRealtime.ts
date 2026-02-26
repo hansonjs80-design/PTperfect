@@ -48,19 +48,24 @@ export const useBedRealtime = (
       .channel('public:beds')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'beds' }, (payload) => {
         const updatedBedFields = mapRowToBed(payload.new);
-        
+
         setBeds((prev) => {
           const newBeds = prev.map((bed) => {
             if (bed.id === updatedBedFields.id) {
               if (shouldIgnoreServerUpdate(bed, updatedBedFields)) return bed;
-              
+
               if (bed.status === BedStatus.IDLE && updatedBedFields.status === BedStatus.ACTIVE) {
-                 const timeSinceClear = Date.now() - (bed.lastUpdateTimestamp || 0);
-                 if (timeSinceClear < 10000) return bed; 
+                const timeSinceClear = Date.now() - (bed.lastUpdateTimestamp || 0);
+                if (timeSinceClear < 2000) return bed; // 2s debounce (was 10s)
               }
 
               const mergedBed = { ...bed, ...updatedBedFields };
-              
+
+              // Preserve local patientMemo if server didn't send one
+              if (!updatedBedFields.patientMemo && bed.patientMemo) {
+                mergedBed.patientMemo = bed.patientMemo;
+              }
+
               const isTargetActive = mergedBed.status !== BedStatus.IDLE;
               const hasLocalPrescription = !!bed.customPreset || !!bed.currentPresetId;
               const serverHasNoPrescription = !mergedBed.customPreset && !mergedBed.currentPresetId;
@@ -83,7 +88,7 @@ export const useBedRealtime = (
             }
             return bed;
           });
-          
+
           setLocalBeds(newBeds);
           return newBeds;
         });

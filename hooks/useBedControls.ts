@@ -76,12 +76,7 @@ export const useBedControls = (
     if (!swapResult) return;
 
     const updates: Partial<BedState> = {
-      customPreset: swapResult.preset,
-      memos: {
-        ...bed.memos,
-        [idx1]: bed.memos[idx2],
-        [idx2]: bed.memos[idx1]
-      }
+      customPreset: swapResult.preset
     };
 
     if (bed.status === BedStatus.ACTIVE && (bed.currentStepIndex === idx1 || bed.currentStepIndex === idx2)) {
@@ -132,7 +127,6 @@ export const useBedControls = (
       isManual: false,
       isInjectionCompleted: false,
       patientMemo: undefined,
-      memos: {}
     });
   }, [updateBedState]);
 

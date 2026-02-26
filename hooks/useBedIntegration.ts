@@ -63,7 +63,6 @@ export const useBedIntegration = (
             updates.remainingTime = firstStep ? firstStep.duration : 0;
             updates.originalDuration = firstStep ? firstStep.duration : 0;
             updates.isPaused = false;
-            updates.memos = {};
         }
 
         updateBedState(bedId, updates);
@@ -90,7 +89,6 @@ export const useBedIntegration = (
             isManual: fromBed.isManual,
             isInjectionCompleted: fromBed.isInjectionCompleted,
             patientMemo: fromBed.patientMemo,
-            memos: fromBed.memos
         };
 
         await updateBedState(toBedId, stateToMove);

@@ -32,7 +32,6 @@ export const useBedState = (
       isESWT: false,
       isManual: false,
       isInjectionCompleted: false,
-      memos: {}
     }))
   );
 

@@ -9,7 +9,6 @@ interface BedContentProps {
   queue: number[];
   onSwapRequest?: (id: number, idx: number) => void;
   swapSourceIndex?: number | null;
-  onUpdateMemo?: (id: number, idx: number, val: string | null) => void;
   onReplaceStep?: (idx: number, qt: QuickTreatment) => void;
   quickTreatments?: QuickTreatment[];
 }
@@ -19,7 +18,6 @@ export const BedContent: React.FC<BedContentProps> = memo(({
   bed,
   onSwapRequest,
   swapSourceIndex,
-  onUpdateMemo,
   onReplaceStep,
   quickTreatments
 }) => {
@@ -31,7 +29,6 @@ export const BedContent: React.FC<BedContentProps> = memo(({
       {steps.map((step, idx) => {
         const isActive = idx === bed.currentStepIndex && bed.status === BedStatus.ACTIVE;
         const isPast = !isCompleted && idx < bed.currentStepIndex;
-        const memo = bed.memos?.[idx];
         const isSelectedForSwap = swapSourceIndex === idx;
 
         return (
@@ -61,8 +58,7 @@ export const BedContent: React.FC<BedContentProps> = memo(({
     pBed.status === nBed.status &&
     pBed.currentStepIndex === nBed.currentStepIndex &&
     pBed.currentPresetId === nBed.currentPresetId &&
-    pBed.customPreset === nBed.customPreset &&
-    pBed.memos === nBed.memos;
+    pBed.customPreset === nBed.customPreset;
 
   const isOtherPropsEqual =
     prevProps.steps === nextProps.steps &&

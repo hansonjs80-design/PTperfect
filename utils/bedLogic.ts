@@ -27,7 +27,7 @@ export const mapRowToBed = (row: any): Partial<BedState> => {
   if (row.is_eswt !== undefined) result.isESWT = !!row.is_eswt;
   if (row.is_manual !== undefined) result.isManual = !!row.is_manual;
   if (row.is_injection_completed !== undefined) result.isInjectionCompleted = !!row.is_injection_completed;
-  if (row.memos !== undefined) result.memos = row.memos || {};
+  if (row.patient_memo !== undefined) result.patientMemo = row.patient_memo || undefined;
   if (row.updated_at !== undefined) result.updatedAt = row.updated_at;
 
   return result;
@@ -48,7 +48,7 @@ export const mapBedToDbPayload = (updates: Partial<BedState>): any => {
   if (updates.isESWT !== undefined) payload.is_eswt = updates.isESWT;
   if (updates.isManual !== undefined) payload.is_manual = updates.isManual;
   if (updates.isInjectionCompleted !== undefined) payload.is_injection_completed = updates.isInjectionCompleted;
-  if (updates.memos !== undefined) payload.memos = updates.memos;
+  if (updates.patientMemo !== undefined) payload.patient_memo = updates.patientMemo;
   if (updates.customPreset !== undefined) payload.custom_preset_json = updates.customPreset;
   if (updates.originalDuration !== undefined) payload.original_duration = updates.originalDuration;
 
@@ -59,7 +59,9 @@ export const mapBedToDbPayload = (updates: Partial<BedState>): any => {
 export const shouldIgnoreServerUpdate = (localBed: BedState, serverBed: Partial<BedState>): boolean => {
   if (!localBed.lastUpdateTimestamp) return false;
   const serverUpdateTime = serverBed.updatedAt ? new Date(serverBed.updatedAt).getTime() : 0;
-  return localBed.lastUpdateTimestamp > serverUpdateTime;
+  // Allow 500ms clock-skew margin: only ignore if local write is clearly MORE recent than server
+  const CLOCK_SKEW_MARGIN_MS = 500;
+  return localBed.lastUpdateTimestamp > (serverUpdateTime + CLOCK_SKEW_MARGIN_MS);
 };
 
 export const calculateRemainingTime = (bed: BedState, presets: Preset[]): number => {

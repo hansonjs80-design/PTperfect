@@ -14,7 +14,7 @@ const getLocalDateString = () => {
 export const usePatientLog = () => {
   // 1. Current Date State (Persisted)
   const [currentDate, setCurrentDate] = useLocalStorage<string>('physio-log-date', getLocalDateString());
-  
+
   // 2. Visits State
   const [visits, setVisits] = useState<PatientVisit[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -81,11 +81,32 @@ export const usePatientLog = () => {
     if (client && isOnlineMode()) {
       const channel = client
         .channel(`public:patient_visits:${currentDate}`)
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'patient_visits', filter: `visit_date=eq.${currentDate}` }, 
-          () => {
-            // Re-fetch when DB changes
-            fetchVisits(currentDate);
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'patient_visits', filter: `visit_date=eq.${currentDate}` },
+          (payload) => {
+            const { eventType, new: newRow, old: oldRow } = payload;
+
+            if (eventType === 'INSERT' && newRow) {
+              setVisits(prev => {
+                // Avoid duplicates (may already be added optimistically)
+                if (prev.some(v => v.id === newRow.id)) return prev;
+                const updated = [...prev, newRow as PatientVisit];
+                saveToLocalCache(currentDate, updated);
+                return updated;
+              });
+            } else if (eventType === 'UPDATE' && newRow) {
+              setVisits(prev => {
+                const updated = prev.map(v => v.id === newRow.id ? { ...v, ...newRow } as PatientVisit : v);
+                saveToLocalCache(currentDate, updated);
+                return updated;
+              });
+            } else if (eventType === 'DELETE' && oldRow) {
+              setVisits(prev => {
+                const updated = prev.filter(v => v.id !== oldRow.id);
+                saveToLocalCache(currentDate, updated);
+                return updated;
+              });
+            }
           }
         )
         .subscribe();
