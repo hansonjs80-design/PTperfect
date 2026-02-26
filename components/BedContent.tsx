@@ -33,7 +33,7 @@ export const BedContent: React.FC<BedContentProps> = memo(({
         const isPast = !isCompleted && idx < bed.currentStepIndex;
         const memo = bed.memos?.[idx];
         const isSelectedForSwap = swapSourceIndex === idx;
-        
+
         return (
           <BedStepColumn
             key={step.id || idx}
@@ -43,10 +43,8 @@ export const BedContent: React.FC<BedContentProps> = memo(({
             isPast={isPast}
             isCompleted={isCompleted}
             isSelectedForSwap={isSelectedForSwap}
-            memo={memo}
             bedId={bed.id}
             onSwapRequest={onSwapRequest}
-            onUpdateMemo={onUpdateMemo}
             onReplaceStep={onReplaceStep}
             quickTreatments={quickTreatments}
           />
@@ -58,7 +56,7 @@ export const BedContent: React.FC<BedContentProps> = memo(({
   const pBed = prevProps.bed;
   const nBed = nextProps.bed;
 
-  const isBedEqual = 
+  const isBedEqual =
     pBed.id === nBed.id &&
     pBed.status === nBed.status &&
     pBed.currentStepIndex === nBed.currentStepIndex &&
@@ -66,7 +64,7 @@ export const BedContent: React.FC<BedContentProps> = memo(({
     pBed.customPreset === nBed.customPreset &&
     pBed.memos === nBed.memos;
 
-  const isOtherPropsEqual = 
+  const isOtherPropsEqual =
     prevProps.steps === nextProps.steps &&
     prevProps.swapSourceIndex === nextProps.swapSourceIndex;
 

@@ -9,7 +9,7 @@ interface PatientStatusIconsProps {
 
 export const PatientStatusIcons: React.FC<PatientStatusIconsProps> = ({ visit }) => {
   // Check if any flag is active to conditionally render
-  const hasStatus = visit.is_injection || visit.is_injection_completed || visit.is_fluid || visit.is_manual || visit.is_eswt || visit.is_traction || !!visit.memo;
+  const hasStatus = visit.is_injection || visit.is_fluid || visit.is_manual || visit.is_eswt || visit.is_traction || !!visit.memo;
 
   if (!hasStatus) return null;
 
@@ -21,11 +21,7 @@ export const PatientStatusIcons: React.FC<PatientStatusIconsProps> = ({ visit })
           <Syringe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" strokeWidth={2.5} />
         </div>
       )}
-      {visit.is_injection_completed && (
-        <div title="주사 완료" className="flex">
-          <Syringe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" strokeWidth={2.5} />
-        </div>
-      )}
+
       {visit.is_fluid && (
         <div title="수액" className="flex">
           <Droplet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-500" strokeWidth={2.5} />

@@ -64,7 +64,6 @@ interface TreatmentContextType {
   toggleManual: (bedId: number) => void;
   toggleInjectionCompleted: (bedId: number) => void;
   updateBedSteps: (bedId: number, steps: TreatmentStep[], newStepIndex?: number) => void;
-  updateMemo: (bedId: number, stepIndex: number, memo: string | null) => void;
   updatePatientMemo: (bedId: number, memo: string | undefined) => void;
   updateBedDuration: (bedId: number, duration: number) => void;
   clearBed: (bedId: number) => void;
@@ -258,11 +257,6 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     startTraction,
     nextStep,
     prevStep,
-    swapSteps,
-    togglePause,
-    toggleInjection,
-    toggleFluid,
-    toggleTraction,
     toggleESWT,
     toggleManual,
     toggleInjectionCompleted,

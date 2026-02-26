@@ -59,7 +59,6 @@ export const useBedManager = (
     toggleESWT: (id: number) => controls.toggleFlag(id, 'isESWT'),
     toggleManual: (id: number) => controls.toggleFlag(id, 'isManual'),
     toggleInjectionCompleted: (id: number) => controls.toggleFlag(id, 'isInjectionCompleted'),
-    updateMemo: controls.updateMemo,
     updatePatientMemo: controls.updatePatientMemo,
     updateBedDuration: controls.updateBedDuration,
     clearBed: controls.clearBed,

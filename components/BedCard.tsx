@@ -1,5 +1,5 @@
 
-import React, { memo, useMemo, useRef, useCallback, useEffect } from 'react';
+import React, { memo, useMemo, useRef, useCallback, useEffect, useState } from 'react';
 import { BedState, BedStatus, Preset, QuickTreatment } from '../types';
 import { BedHeader } from './BedHeader';
 import { BedContent } from './BedContent';
@@ -29,7 +29,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     togglePause,
     swapSteps,
     clearBed,
-    updateMemo,
+    updatePatientMemo,
     updateBedDuration,
     toggleInjection,
     toggleFluid,
@@ -93,6 +93,9 @@ export const BedCard: React.FC<BedCardProps> = memo(({
 
   const lastClickTimeRef = useRef<number>(0);
 
+  const [isEditingMemo, setIsEditingMemo] = useState(false);
+  const lastMemoClickTimeRef = useRef<number>(0);
+
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -110,6 +113,61 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       } else {
         lastClickTimeRef.current = now;
       }
+    }
+  };
+
+  const handleMemoDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsEditingMemo(true);
+  };
+
+  const handleMemoInteraction = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // Desktop: Click to Edit
+    if (isDesktop) {
+      setIsEditingMemo(true);
+      return;
+    }
+
+    // Tablet & Mobile
+    if (window.matchMedia('(pointer: coarse)').matches) {
+      // Find if it is a tablet (between 768 and 1024 width typically, or just not mobile width)
+      // using window.innerWidth
+      if (window.innerWidth >= 768) {
+        // Tablet: Single tap to edit
+        setIsEditingMemo(true);
+      } else {
+        // Mobile: Double tap to edit
+        const now = Date.now();
+        if (now - lastMemoClickTimeRef.current < 350) {
+          e.preventDefault();
+          setIsEditingMemo(true);
+          lastMemoClickTimeRef.current = 0;
+        } else {
+          lastMemoClickTimeRef.current = now;
+        }
+      }
+    }
+  };
+
+  const handleMemoSave = (val: string) => {
+    updatePatientMemo(bed.id, val === "" ? undefined : val);
+    setIsEditingMemo(false);
+  };
+
+  const handleMemoBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    handleMemoSave(e.target.value);
+  };
+
+  const handleMemoKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleMemoSave(e.currentTarget.value);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsEditingMemo(false);
     }
   };
 
@@ -180,13 +238,42 @@ export const BedCard: React.FC<BedCardProps> = memo(({
                 queue={[]}
                 onSwapRequest={handleSwapRequest}
                 swapSourceIndex={swapSourceIndex}
-                onUpdateMemo={updateMemo}
                 onReplaceStep={handleReplaceStep}
                 quickTreatments={quickTreatments}
               />
             </div>
           )}
         </div>
+
+        {/* Single Memo Area */}
+        {bed.status !== BedStatus.IDLE && (
+          <div
+            className="w-full h-[30px] sm:h-[36px] bg-white/80 dark:bg-slate-800/80 border-t border-black/5 dark:border-white/5 flex items-center justify-center px-2 cursor-pointer transition-colors hover:bg-white dark:hover:bg-slate-700"
+            onClick={handleMemoInteraction}
+            onDoubleClick={handleMemoDoubleClick}
+          >
+            {isEditingMemo && isDesktop ? (
+              <input
+                autoFocus
+                defaultValue={bed.patientMemo || ""}
+                className="w-full h-full bg-white dark:bg-slate-600 text-center border-2 border-brand-500 rounded-none outline-none p-0 text-base font-bold text-slate-800 dark:text-white leading-none"
+                onBlur={handleMemoBlur}
+                onKeyDown={handleMemoKeyDown}
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              bed.patientMemo ? (
+                <span className="text-base sm:text-lg font-bold leading-none text-center truncate w-full text-slate-700 dark:text-slate-300">
+                  {bed.patientMemo}
+                </span>
+              ) : (
+                <span className="text-xs sm:text-sm text-slate-400 dark:text-slate-500 font-bold opacity-50 hover:opacity-100 transition-opacity">
+                  + 메모 추가
+                </span>
+              )
+            )}
+          </div>
+        )}
       </div>
 
       {bed.status !== BedStatus.IDLE && (

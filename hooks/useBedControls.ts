@@ -159,14 +159,6 @@ export const useBedControls = (
     }
   }, [updateBedState, onUpdateVisit]);
 
-  const updateMemo = useCallback((bedId: number, idx: number, memo: string | null) => {
-    const bed = bedsRef.current.find(b => b.id === bedId);
-    if (!bed) return;
-    const newMemos = { ...bed.memos };
-    if (!memo) delete newMemos[idx]; else newMemos[idx] = memo;
-    updateBedState(bedId, { memos: newMemos });
-  }, [updateBedState]);
-
   const updateBedDuration = useCallback((bedId: number, dur: number) => {
     updateBedState(bedId, {
       startTime: Date.now(),
@@ -190,7 +182,6 @@ export const useBedControls = (
     togglePause,
     clearBed,
     toggleFlag,
-    updateMemo,
     updateBedDuration,
     updatePatientMemo
   };

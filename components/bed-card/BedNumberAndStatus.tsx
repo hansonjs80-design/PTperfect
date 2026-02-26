@@ -22,7 +22,7 @@ export const BedNumberAndStatus: React.FC<BedNumberAndStatusProps> = memo(({
   const isBedT = bed.id === 11;
   const isIdle = bed.status === BedStatus.IDLE;
 
-  const hasActiveBadges = bed.isInjection || bed.isFluid || bed.isManual || bed.isESWT || bed.isTraction || bed.isInjectionCompleted || !!bed.patientMemo;
+  const hasActiveBadges = bed.isInjection || bed.isFluid || bed.isManual || bed.isESWT || bed.isTraction || !!bed.patientMemo;
   const showPlaceholder = !hasActiveBadges && bed.status === BedStatus.ACTIVE;
 
   const getTooltip = (baseText: string) => {

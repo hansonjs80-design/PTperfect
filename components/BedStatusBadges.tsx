@@ -17,7 +17,7 @@ interface BadgeConfig {
 
 const BADGES: BadgeConfig[] = [
   { key: 'isInjection', label: '주사', icon: Syringe, colorClass: 'text-red-500' },
-  { key: 'isInjectionCompleted', label: '완료', icon: Syringe, colorClass: 'text-gray-500' },
+
   { key: 'isFluid', label: '수액', icon: Droplet, colorClass: 'text-cyan-500' },
   { key: 'isManual', label: '도수', icon: Hand, colorClass: 'text-violet-500' },
   { key: 'isESWT', label: '충격파', icon: Zap, colorClass: 'text-blue-500' },
@@ -78,7 +78,6 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
   return (
     pBed.status === nBed.status &&
     pBed.isInjection === nBed.isInjection &&
-    pBed.isInjectionCompleted === nBed.isInjectionCompleted &&
     pBed.patientMemo === nBed.patientMemo &&
     pBed.isFluid === nBed.isFluid &&
     pBed.isManual === nBed.isManual &&
