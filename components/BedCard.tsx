@@ -252,7 +252,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
             onClick={handleMemoInteraction}
             onDoubleClick={handleMemoDoubleClick}
           >
-            {isEditingMemo && isDesktop ? (
+            {isEditingMemo ? (
               <input
                 autoFocus
                 defaultValue={bed.patientMemo || ""}
