@@ -100,5 +100,5 @@ export const forceIdleBed = (bed: Partial<BedState>): BedState => ({
   isInjectionCompleted: false,
   patientMemo: undefined,
   originalDuration: undefined,
-  lastUpdateTimestamp: undefined,
+  lastUpdateTimestamp: Date.now(), // 폴링으로부터 10초간 보호
 } as BedState);
