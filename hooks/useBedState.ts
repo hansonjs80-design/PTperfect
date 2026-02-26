@@ -83,7 +83,13 @@ export const useBedState = (
         pendingUpdates.current.delete(bedId);
       }
       const dbPayload = mapBedToDbPayload(updates);
-      await supabase.from('beds').update(dbPayload).eq('id', bedId);
+      const { error } = await supabase.from('beds').update(dbPayload).eq('id', bedId);
+      if (error) {
+        console.error(`[BedState] DB status update failed (bed ${bedId}), retrying...`, error.message);
+        // 1회 재시도
+        const { error: retryError } = await supabase.from('beds').update(dbPayload).eq('id', bedId);
+        if (retryError) console.error(`[BedState] DB retry also failed (bed ${bedId}):`, retryError.message);
+      }
       return;
     }
 
