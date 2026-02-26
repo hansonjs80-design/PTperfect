@@ -61,8 +61,9 @@ export const useBedRealtime = (
 
               const mergedBed = { ...bed, ...updatedBedFields };
 
-              // Preserve local patientMemo if server didn't send one
-              if (!updatedBedFields.patientMemo && bed.patientMemo) {
+              // IDLE 상태로 전환이 아닐 때만 로컬 patientMemo 보존
+              // (침상 비우기로 IDLE이 되면 메모도 지워져야 함)
+              if (updatedBedFields.status !== BedStatus.IDLE && !updatedBedFields.patientMemo && bed.patientMemo) {
                 mergedBed.patientMemo = bed.patientMemo;
               }
 

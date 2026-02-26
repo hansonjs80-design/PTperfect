@@ -48,9 +48,10 @@ export const mapBedToDbPayload = (updates: Partial<BedState>): any => {
   if (updates.isESWT !== undefined) payload.is_eswt = updates.isESWT;
   if (updates.isManual !== undefined) payload.is_manual = updates.isManual;
   if (updates.isInjectionCompleted !== undefined) payload.is_injection_completed = updates.isInjectionCompleted;
-  if (updates.patientMemo !== undefined) payload.patient_memo = updates.patientMemo;
-  if (updates.customPreset !== undefined) payload.custom_preset_json = updates.customPreset;
-  if (updates.originalDuration !== undefined) payload.original_duration = updates.originalDuration;
+  // null도 명시적으로 저장해야 하므로 hasOwnProperty 체크 사용
+  if ('patientMemo' in updates) payload.patient_memo = updates.patientMemo ?? null;
+  if ('customPreset' in updates) payload.custom_preset_json = updates.customPreset ?? null;
+  if ('originalDuration' in updates) payload.original_duration = updates.originalDuration ?? null;
 
   payload.updated_at = new Date().toISOString();
   return payload;

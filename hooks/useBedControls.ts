@@ -117,7 +117,7 @@ export const useBedControls = (
       currentStepIndex: 0,
       queue: [],
       startTime: null,
-      originalDuration: undefined,
+      originalDuration: null as any, // null로 명시하여 DB에 저장
       remainingTime: 0,
       isPaused: false,
       isInjection: false,
@@ -126,7 +126,7 @@ export const useBedControls = (
       isESWT: false,
       isManual: false,
       isInjectionCompleted: false,
-      patientMemo: undefined,
+      patientMemo: null as any, // null로 명시하여 DB에 저장
     });
   }, [updateBedState]);
 
