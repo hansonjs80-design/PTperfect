@@ -83,6 +83,7 @@ export const useBedRealtime = (
                 mergedBed.customPreset = undefined;
                 mergedBed.currentPresetId = null;
                 mergedBed.queue = [];
+                mergedBed.patientMemo = undefined;
               }
 
               return mergedBed;
