@@ -45,7 +45,7 @@ export const useBedState = (
 
   // 2. Sub-hooks (Infrastructure)
   useBedTimer(setBeds, presets, isSoundEnabled, beds);
-  const { realtimeStatus, refresh } = useBedRealtime(setBeds, setLocalBeds);
+  const { realtimeStatus, refresh, broadcastClearBed } = useBedRealtime(setBeds, setLocalBeds);
 
   const hasActiveBeds = beds.some(b => b.status === BedStatus.ACTIVE && !b.isPaused);
   useWakeLock(hasActiveBeds);
@@ -112,6 +112,7 @@ export const useBedState = (
     updateBedState,
     restoreBeds, // Exported for Undo logic
     refreshBeds: refresh, // Exported for Manual Refresh
+    broadcastClearBed, // 침상 비우기 브로드캐스트
     realtimeStatus
   };
 };
