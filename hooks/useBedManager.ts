@@ -22,7 +22,7 @@ export const useBedManager = (
   onUpdateVisit?: (bedId: number, updates: any) => void
 ) => {
   // 1. Core State Management
-  const { beds, bedsRef, updateBedState, restoreBeds, refreshBeds, broadcastClearBed, realtimeStatus } = useBedState(presets, isSoundEnabled, isBackgroundKeepAlive);
+  const { beds, bedsRef, updateBedState, clearBedInDb, restoreBeds, refreshBeds, broadcastClearBed, realtimeStatus } = useBedState(presets, isSoundEnabled, isBackgroundKeepAlive);
 
   // 2. Runtime Controls (Pause, Next, Clear, Flags)
   const controls = useBedControls(bedsRef, updateBedState, presets, onUpdateVisit);
@@ -62,11 +62,13 @@ export const useBedManager = (
     updatePatientMemo: controls.updatePatientMemo,
     updateBedDuration: controls.updateBedDuration,
     clearBed: (bedId: number) => {
-      controls.clearBed(bedId);
-      broadcastClearBed(bedId); // 다른 디바이스에 비우기 알림
+      controls.clearBed(bedId);       // 로컬 UI 즉시 업데이트
+      clearBedInDb(bedId);            // DB 직접 upsert (3회 재시도)
+      broadcastClearBed(bedId);       // 다른 디바이스에 알림
     },
     resetAll: () => bedsRef.current.forEach(bed => {
       controls.clearBed(bed.id);
+      clearBedInDb(bed.id);
       broadcastClearBed(bed.id);
     }),
     // From Integration

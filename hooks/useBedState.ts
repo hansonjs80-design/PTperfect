@@ -75,7 +75,7 @@ export const useBedState = (
     // status 변경은 즉시 전송 (clearBed, 치료 시작 등)
     const isStatusChange = updates.status !== undefined;
     if (isStatusChange) {
-      // 진행 중인 디바운스 취소 후 즉시 전송
+      // 진행 중인 디바운스 취소
       const existing = dbWriteTimers.current.get(bedId);
       if (existing) {
         clearTimeout(existing);
@@ -85,10 +85,8 @@ export const useBedState = (
       const dbPayload = mapBedToDbPayload(updates);
       const { error } = await supabase.from('beds').update(dbPayload).eq('id', bedId);
       if (error) {
-        console.error(`[BedState] DB status update failed (bed ${bedId}), retrying...`, error.message);
-        // 1회 재시도
-        const { error: retryError } = await supabase.from('beds').update(dbPayload).eq('id', bedId);
-        if (retryError) console.error(`[BedState] DB retry also failed (bed ${bedId}):`, retryError.message);
+        console.error(`[BedState] DB status update failed (bed ${bedId}):`, error.message);
+        await supabase.from('beds').update(dbPayload).eq('id', bedId);
       }
       return;
     }
@@ -111,6 +109,46 @@ export const useBedState = (
       if (error) console.error(`[BedState] DB update failed (bed ${bedId}):`, error.message);
     }, 300));
   }, [setLocalBeds]);
+
+  // 4-B. clearBed 전용 DB 업데이트 (모든 필드 명시적 초기화 + 3회 재시도)
+  const clearBedInDb = useCallback(async (bedId: number) => {
+    if (!isOnlineMode() || !supabase) return;
+
+    // 진행 중인 디바운스 취소
+    const existing = dbWriteTimers.current.get(bedId);
+    if (existing) {
+      clearTimeout(existing);
+      dbWriteTimers.current.delete(bedId);
+      pendingUpdates.current.delete(bedId);
+    }
+
+    const idlePayload = {
+      id: bedId,
+      status: 'IDLE',
+      current_preset_id: null,
+      custom_preset_json: null,
+      current_step_index: 0,
+      queue: [],
+      start_time: null,
+      original_duration: null,
+      is_paused: false,
+      is_injection: false,
+      is_fluid: false,
+      is_traction: false,
+      is_eswt: false,
+      is_manual: false,
+      is_injection_completed: false,
+      patient_memo: null,
+      updated_at: new Date().toISOString(),
+    };
+
+    // 3회까지 재시도
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { error } = await supabase.from('beds').upsert(idlePayload);
+      if (!error) return;
+      console.error(`[BedState] clearBed DB attempt ${attempt + 1} failed (bed ${bedId}):`, error.message);
+    }
+  }, []);
 
   // 5. Restore Full State (For Undo functionality)
   const restoreBeds = useCallback(async (restoredBeds: BedState[]) => {
@@ -142,9 +180,10 @@ export const useBedState = (
     beds,
     bedsRef,
     updateBedState,
-    restoreBeds, // Exported for Undo logic
-    refreshBeds: refresh, // Exported for Manual Refresh
-    broadcastClearBed, // 침상 비우기 브로드캐스트
+    clearBedInDb, // clearBed 전용 DB 함수
+    restoreBeds,
+    refreshBeds: refresh,
+    broadcastClearBed,
     realtimeStatus
   };
 };
