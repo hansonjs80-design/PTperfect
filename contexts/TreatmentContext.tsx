@@ -67,7 +67,7 @@ interface TreatmentContextType {
   updatePatientMemo: (bedId: number, memo: string | undefined) => void;
   updateBedDuration: (bedId: number, duration: number) => void;
   clearBed: (bedId: number) => void;
-  resetAll: () => void;
+  resetAll: () => Promise<void>;
   refreshBeds: () => void; // Added
   movePatient: (fromBedId: number, toBedId: number) => Promise<void>;
 
@@ -143,6 +143,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     swapSteps: _swapSteps,
     togglePause: _togglePause,
     clearBed: _clearBed,
+    resetAll: _resetAll,
     toggleInjection: _toggleInjection,
     toggleFluid: _toggleFluid,
     toggleTraction: _toggleTraction,
@@ -194,10 +195,10 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const toggleInjectionCompleted = withSnapshot(_toggleInjectionCompleted);
   const updateBedSteps = withSnapshot(_updateBedSteps);
 
-  const resetAll = useCallback(() => {
+  const resetAll = useCallback(async () => {
     saveSnapshot(bedsRef.current, visitsRef.current);
-    bedsRef.current.forEach(bed => _clearBed(bed.id));
-  }, [_clearBed, saveSnapshot]);
+    await _resetAll(); // DB 쓰기 완료까지 대기 (리로드 전 반영 보장)
+  }, [_resetAll, saveSnapshot]);
 
   const movePatient = useCallback(async (fromBedId: number, toBedId: number) => {
     saveSnapshot(bedsRef.current, visitsRef.current);

@@ -58,11 +58,15 @@ export const useBedManager = (
       broadcastClearBed(bedId);       // 다른 디바이스에 즉시 알림
       clearBedInDb(bedId);            // DB 전체 필드 upsert (3회 재시도)
     },
-    resetAll: () => bedsRef.current.forEach(bed => {
-      controls.clearBed(bed.id);
-      broadcastClearBed(bed.id);
-      clearBedInDb(bed.id);
-    }),
+    resetAll: async () => {
+      // 1. 로컬 UI + 브로드캐스트 즉시 처리
+      bedsRef.current.forEach(bed => {
+        controls.clearBed(bed.id);
+        broadcastClearBed(bed.id);
+      });
+      // 2. DB 쓰기 병렬 실행 & 완료 대기 (리로드 전 DB 반영 보장)
+      await Promise.all(bedsRef.current.map(bed => clearBedInDb(bed.id)));
+    },
     // From Integration
     updateBedSteps: integration.updateBedSteps,
     overrideBedFromLog: integration.overrideBedFromLog,

@@ -57,25 +57,29 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     e.stopPropagation();
     e.preventDefault();
 
-    if (directEdit) {
-      skipSyncRef.current = !syncOnDirectEdit;
-      setMode('edit');
-      return;
-    }
-    
     setMenuPos({ x: e.clientX, y: e.clientY });
     setMode('menu');
   };
 
+  // directEdit=true: 클릭 시 네이티브 input 동작 유지 (커서 즉시 생성, 팝업 없음)
   const handleSingleClick = (e: React.MouseEvent) => {
+    if (directEdit) return; // 네이티브 input focus 유지
     if (window.innerWidth >= 768) {
       executeInteraction(e);
     }
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
+    if (directEdit) return; // 네이티브 input 동작 유지
     if (window.innerWidth < 768) {
       executeInteraction(e);
+    }
+  };
+
+  // directEdit=true: focus 이벤트에서 skipSync 설정
+  const handleFocus = () => {
+    if (directEdit) {
+      skipSyncRef.current = !syncOnDirectEdit;
     }
   };
 
@@ -163,6 +167,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     onChange: handleChange,
     onBlur: handleBlur,
     onKeyDown: handleKeyDown,
+    onFocus: handleFocus,
     "data-grid-id": gridId,
     placeholder: placeholder,
   };
@@ -184,9 +189,10 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
           {...commonInputProps}
           onClick={handleSingleClick}
           onDoubleClick={handleDoubleClick}
+          readOnly={!directEdit}
           className={`
             w-full h-full px-2 py-1 flex items-center bg-transparent border-none outline-none
-            cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-sm truncate 
+            ${directEdit ? 'cursor-text' : 'cursor-pointer'} hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-sm truncate
             focus:ring-2 focus:ring-sky-400 focus:z-10 focus:bg-white dark:focus:bg-slate-800
             ${!localValue ? 'placeholder-gray-300 italic' : ''} ${className}
           `}

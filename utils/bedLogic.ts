@@ -87,9 +87,9 @@ export const shouldIgnoreServerUpdate = (localBed: BedState, serverBed: Partial<
   if (serverBed.status === BedStatus.IDLE && localBed.status !== BedStatus.IDLE) return false;
   if (!localBed.lastUpdateTimestamp) return false;
 
-  // 로컬에서 10초 이내에 변경한 bed는 서버 데이터로 덮어쓰지 않음
-  // → 폴링(5초)이 로컬 상태를 덮어쓰는 깜빡임 방지
-  const LOCAL_PROTECT_WINDOW_MS = 10000;
+  // 로컬에서 30초 이내에 변경한 bed는 서버 데이터로 덮어쓰지 않음
+  // → 폴링(5초)이 로컬 상태를 덮어쓰는 깜빡임 방지 (일괄 비우기 시 DB 지연 대응)
+  const LOCAL_PROTECT_WINDOW_MS = 30000;
   const localAge = Date.now() - localBed.lastUpdateTimestamp;
   return localAge < LOCAL_PROTECT_WINDOW_MS;
 };
