@@ -33,18 +33,28 @@ export const playAlarmPattern = async (
   // Only play if NOT silent
   if (!isSilent && typeof window !== 'undefined' && 'speechSynthesis' in window) {
     try {
+      // ★ 첫 음절 잘림 방지: 짧은 무음 utterance를 먼저 재생하여 오디오 파이프라인을 활성화
+      // 일부 디바이스/브라우저에서 speechSynthesis가 처음 시작될 때 오디오 출력이 지연됨
+      window.speechSynthesis.cancel(); // 이전 큐 정리
+      const warmup = new SpeechSynthesisUtterance(' ');
+      warmup.lang = 'ko-KR';
+      warmup.volume = 0.01; // 거의 무음
+      warmup.rate = 2.0; // 빠르게 끝내기
+      window.speechSynthesis.speak(warmup);
+
       const bedLabel = bedId === 11 ? '견인치료기' : `${toSinoKorean(bedId!)}번 배드`;
       const currentLabel = treatmentName ? ` ${treatmentName}` : '';
 
-      let message = `${bedLabel}${currentLabel} 종료되었습니다.`;
+      // 앞에 쉼표를 추가하여 자연스러운 pause 확보 (첫 음절 보호)
+      let message = `, ${bedLabel}${currentLabel} 종료되었습니다.`;
       if (nextTreatmentName) {
         message += ` 다음 치료는 ${nextTreatmentName} 입니다.`;
       }
 
       const utterance = new SpeechSynthesisUtterance(message);
       utterance.lang = 'ko-KR';
-      utterance.rate = 1.0; // Normal speed
-      utterance.pitch = 1.0; // Normal pitch
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
 
       // Queue alerts sequentially for beds ending at similar times
       window.speechSynthesis.speak(utterance);

@@ -26,7 +26,6 @@ export const BedEditFlags: React.FC<BedEditFlagsProps> = ({
 }) => {
   const toggles = [
     { key: 'isInjection', label: '주사', icon: Syringe, activeClass: 'bg-red-500 text-white shadow-red-200 border-transparent', onClick: onToggleInjection },
-    { key: 'isInjectionCompleted', label: '완료', icon: Syringe, activeClass: 'bg-gray-500 text-white shadow-gray-200 border-transparent', onClick: onToggleInjectionCompleted },
     { key: 'isFluid', label: '수액', icon: Droplet, activeClass: 'bg-cyan-500 text-white shadow-cyan-200 border-transparent', onClick: onToggleFluid },
     { key: 'isManual', label: '도수', icon: Hand, activeClass: 'bg-violet-500 text-white shadow-violet-200 border-transparent', onClick: onToggleManual },
     { key: 'isESWT', label: '충격파', icon: Zap, activeClass: 'bg-blue-500 text-white shadow-blue-200 border-transparent', onClick: onToggleESWT },
@@ -39,7 +38,7 @@ export const BedEditFlags: React.FC<BedEditFlagsProps> = ({
       <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-2 px-1">
         상태 표시 (Status)
       </span>
-      <div className="grid grid-cols-7 gap-1 sm:gap-2">
+      <div className="grid grid-cols-6 gap-1 sm:gap-2">
         {toggles.map((item) => {
           const isActive = item.key === 'patientMemo' ? !!bed.patientMemo : (bed as any)[item.key];
           return (

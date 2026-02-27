@@ -21,7 +21,6 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 }) => {
   const statusOptions = [
     { key: 'is_injection', label: '주사 (Injection)', icon: Syringe, color: 'text-red-500' },
-    { key: 'is_injection_completed', label: '주사 완료 (Completed)', icon: Syringe, color: 'text-gray-400' },
     { key: 'is_fluid', label: '수액 (Fluid)', icon: Droplet, color: 'text-cyan-500' },
     { key: 'is_manual', label: '도수 (Manual)', icon: Hand, color: 'text-violet-500' },
     { key: 'is_eswt', label: '충격파 (ESWT)', icon: Zap, color: 'text-blue-500' },

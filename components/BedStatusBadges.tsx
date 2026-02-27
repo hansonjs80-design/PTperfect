@@ -47,13 +47,13 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
   let iconSizeClass = "";
 
   if (count >= 3) {
-    iconSizeClass = "w-3 h-3"; // ~15% reduction from 3.5
+    iconSizeClass = "w-2.5 h-2.5"; // 15% reduction from w-3
   } else {
-    iconSizeClass = "w-3.5 h-3.5"; // ~15% reduction from 4
+    iconSizeClass = "w-3 h-3"; // 15% reduction from w-3.5
   }
 
-  // Combine with desktop override
-  iconSizeClass += " sm:w-[26px] sm:h-[26px] md:w-[29px] md:h-[29px]";
+  // Combine with desktop override (15% reduction: 26→22, 29→25)
+  iconSizeClass += " sm:w-[22px] sm:h-[22px] md:w-[25px] md:h-[25px]";
 
   return (
     <div className={layoutClass}>
