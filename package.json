@@ -4,7 +4,8 @@
   "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
+    "dev": "vite --host 0.0.0.0 --port 5173 --strictPort",
+    "dev:open": "vite --host 0.0.0.0 --port 5173 --strictPort --open",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
