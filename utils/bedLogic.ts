@@ -12,6 +12,31 @@ export const mapRowToBed = (row: any): Partial<BedState> => {
     startTime = null;
   }
 
+  // ★ IDLE 상태인데 preset 등 stale 데이터가 남아있으면 강제 정리
+  // → DB에서 clearBedInDb의 upsert가 아직 반영되지 않은 중간 상태 방지
+  if (status === BedStatus.IDLE) {
+    return {
+      id: row.id,
+      status: BedStatus.IDLE,
+      currentPresetId: null,
+      customPreset: undefined,
+      currentStepIndex: 0,
+      queue: [],
+      startTime: null,
+      isPaused: false,
+      remainingTime: 0,
+      originalDuration: undefined,
+      isInjection: false,
+      isFluid: false,
+      isTraction: false,
+      isESWT: false,
+      isManual: false,
+      isInjectionCompleted: false,
+      patientMemo: undefined,
+      updatedAt: row.updated_at,
+    };
+  }
+
   const result: any = { id: row.id };
   if (status !== undefined) result.status = status;
   if (row.current_preset_id !== undefined) result.currentPresetId = row.current_preset_id;

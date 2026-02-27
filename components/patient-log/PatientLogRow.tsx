@@ -337,12 +337,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           onSelect={async (val) => {
             if (isDraft && onCreate) {
               await onCreate({ author: val }, 5);
-            } else if (visit && visit.author && visit.author.trim() !== '') {
-              // 이미 입력된 셀 → 해당 셀만 변경
-              if (onUpdate) onUpdate(visit.id, { author: val }, true);
-            } else if (onBulkAuthorUpdate) {
-              // 빈 셀 → 빈 셀 전체 벌크 업데이트
-              onBulkAuthorUpdate(val);
+            } else if (visit && onUpdate) {
+              // 선택한 셀만 변경 (빈 셀이든 이미 입력된 셀이든 동일하게 처리)
+              onUpdate(visit.id, { author: val }, true);
             }
           }}
           isDraft={isDraft}

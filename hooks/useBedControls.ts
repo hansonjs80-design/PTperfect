@@ -6,7 +6,7 @@ import { createSwappedPreset } from '../utils/treatmentFactories';
 
 export const useBedControls = (
   bedsRef: React.MutableRefObject<BedState[]>,
-  updateBedState: (id: number, updates: Partial<BedState>) => void,
+  updateBedState: (id: number, updates: Partial<BedState>, skipDbWrite?: boolean) => void,
   presets: Preset[],
   onUpdateVisit?: (bedId: number, updates: Partial<PatientVisit>) => void
 ) => {
@@ -110,6 +110,8 @@ export const useBedControls = (
   }, [presets, updateBedState]);
 
   const clearBed = useCallback((bedId: number) => {
+    // skipDbWrite=true: 로컬만 즉시 초기화, DB는 clearBedInDb가 전체 필드를 한 번에 upsert
+    // → race condition(status만 IDLE로 변경된 뒤 폴링이 stale preset 데이터를 복원하는 문제) 방지
     updateBedState(bedId, {
       status: BedStatus.IDLE,
       currentPresetId: null,
@@ -117,7 +119,7 @@ export const useBedControls = (
       currentStepIndex: 0,
       queue: [],
       startTime: null,
-      originalDuration: null as any, // null로 명시하여 DB에 저장
+      originalDuration: null as any,
       remainingTime: 0,
       isPaused: false,
       isInjection: false,
@@ -126,8 +128,8 @@ export const useBedControls = (
       isESWT: false,
       isManual: false,
       isInjectionCompleted: false,
-      patientMemo: null as any, // null로 명시하여 DB에 저장
-    });
+      patientMemo: null as any,
+    }, true); // skipDbWrite=true
   }, [updateBedState]);
 
   const toggleFlag = useCallback((bedId: number, flag: keyof BedState) => {

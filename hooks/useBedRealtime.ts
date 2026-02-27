@@ -51,6 +51,18 @@ export const useBedRealtime = (
           return forceIdleBed(serverBed);
         }
 
+        // ★ 고스트 카드 방지: 로컬이 IDLE인데 서버가 비IDLE
+        // → clearBedInDb가 아직 완료되지 않은 stale 데이터일 수 있음
+        // → 로컬 보호 기간(10초) 내라면 로컬 IDLE 유지
+        if (localBed.status === BedStatus.IDLE && serverBed.status !== BedStatus.IDLE) {
+          if (localBed.lastUpdateTimestamp && Date.now() - localBed.lastUpdateTimestamp < 10000) {
+            return localBed; // 로컬 IDLE 보호 — 고스트 카드 재생성 차단
+          }
+          // 보호 기간 지남 → 서버 데이터 수락 (정상적인 다른 디바이스 활성화)
+          changed = true;
+          return serverBed;
+        }
+
         // 로컬에서 최근 변경한 bed는 보호
         if (shouldIgnoreServerUpdate(localBed, serverBed)) return localBed;
 
@@ -101,9 +113,13 @@ export const useBedRealtime = (
         setBeds((prev) => {
           const newBeds = prev.map((bed) => {
             if (bed.id !== updatedBed.id) return bed;
+            // 서버가 IDLE → 무조건 비우기
             if (updatedBed.status === BedStatus.IDLE) return forceIdleBed({ ...bed });
+            // 로컬 변경 보호
             if (shouldIgnoreServerUpdate(bed, updatedBed)) return bed;
-            if (bed.status === BedStatus.IDLE && Date.now() - (bed.lastUpdateTimestamp || 0) < 2000) return bed;
+            // ★ 고스트 카드 방지: 로컬이 IDLE인데 서버 이벤트가 비IDLE
+            // → clearBedInDb 전의 stale 이벤트일 수 있음 (보호 기간 10초로 확대)
+            if (bed.status === BedStatus.IDLE && Date.now() - (bed.lastUpdateTimestamp || 0) < 10000) return bed;
             const merged = { ...bed, ...updatedBed };
             if (!updatedBed.patientMemo && bed.patientMemo) merged.patientMemo = bed.patientMemo;
             if (merged.status !== BedStatus.IDLE && (!!bed.customPreset || !!bed.currentPresetId) && !merged.customPreset && !merged.currentPresetId) {

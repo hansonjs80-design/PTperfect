@@ -1,14 +1,6 @@
 
-import { useEffect, useCallback, useState, useRef } from 'react';
-import { BedState, BedStatus, Preset, TreatmentStep } from '../types';
-import { useLocalStorage } from './useLocalStorage';
-import { TOTAL_BEDS, STANDARD_TREATMENTS } from '../constants';
-import { supabase, isOnlineMode } from '../lib/supabase';
-import { useBedTimer } from './useBedTimer';
-import { useBedRealtime } from './useBedRealtime';
-import { useWakeLock } from './useWakeLock';
-import { mapBedToDbPayload, calculateRemainingTime } from '../utils/bedLogic';
-import { useBedState } from './useBedState'; // Import useBedState
+import { Preset } from '../types';
+import { useBedState } from './useBedState';
 import { useBedActions } from './useBedActions';
 import { useBedControls } from './useBedControls';
 import { useBedIntegration } from './useBedIntegration';
@@ -62,14 +54,14 @@ export const useBedManager = (
     updatePatientMemo: controls.updatePatientMemo,
     updateBedDuration: controls.updateBedDuration,
     clearBed: (bedId: number) => {
-      controls.clearBed(bedId);       // 로컬 UI 즉시 업데이트
-      clearBedInDb(bedId);            // DB 직접 upsert (3회 재시도)
-      broadcastClearBed(bedId);       // 다른 디바이스에 알림
+      controls.clearBed(bedId);       // 로컬 UI 즉시 업데이트 (skipDbWrite=true)
+      broadcastClearBed(bedId);       // 다른 디바이스에 즉시 알림
+      clearBedInDb(bedId);            // DB 전체 필드 upsert (3회 재시도)
     },
     resetAll: () => bedsRef.current.forEach(bed => {
       controls.clearBed(bed.id);
-      clearBedInDb(bed.id);
       broadcastClearBed(bed.id);
+      clearBedInDb(bed.id);
     }),
     // From Integration
     updateBedSteps: integration.updateBedSteps,

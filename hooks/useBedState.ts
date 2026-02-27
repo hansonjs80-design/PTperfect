@@ -61,7 +61,8 @@ export const useBedState = (
   const pendingUpdates = useRef<Map<number, Partial<BedState>>>(new Map());
 
   // 4. Core State Updater (DB Sync included)
-  const updateBedState = useCallback(async (bedId: number, updates: Partial<BedState>) => {
+  // skipDbWrite: clearBed 시 updateBedState는 로컬만 업데이트하고, DB는 clearBedInDb가 담당
+  const updateBedState = useCallback(async (bedId: number, updates: Partial<BedState>, skipDbWrite: boolean = false) => {
     const timestamp = Date.now();
     const updateWithTimestamp = { ...updates, lastUpdateTimestamp: timestamp };
 
@@ -69,10 +70,22 @@ export const useBedState = (
     setBeds(prev => prev.map(b => b.id === bedId ? { ...b, ...updateWithTimestamp } : b));
     setLocalBeds(prev => prev.map(b => b.id === bedId ? { ...b, ...updateWithTimestamp } : b));
 
+    // skipDbWrite=true이면 DB 쓰기 건너뜀 (clearBed 전용 — clearBedInDb가 전체 필드를 직접 upsert)
+    if (skipDbWrite) {
+      // 진행 중인 디바운스도 취소 (stale 데이터 전송 방지)
+      const existing = dbWriteTimers.current.get(bedId);
+      if (existing) {
+        clearTimeout(existing);
+        dbWriteTimers.current.delete(bedId);
+        pendingUpdates.current.delete(bedId);
+      }
+      return;
+    }
+
     // Database Update
     if (!isOnlineMode() || !supabase) return;
 
-    // status 변경은 즉시 전송 (clearBed, 치료 시작 등)
+    // status 변경은 즉시 전송 (치료 시작 등)
     const isStatusChange = updates.status !== undefined;
     if (isStatusChange) {
       // 진행 중인 디바운스 취소
