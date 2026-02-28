@@ -1,5 +1,5 @@
 
-import React, { memo, useState, useCallback, useEffect } from 'react';
+import React, { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { BedState, BedStatus, TreatmentStep } from '../types';
 import { getBedHeaderStyles } from '../utils/styleUtils';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
@@ -49,6 +49,8 @@ export const BedHeader = memo(({
   const [isEditingBodyPart, setIsEditingBodyPart] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
   const [bodyPartDraft, setBodyPartDraft] = useState('');
+  const bodyPartInputRef = useRef<HTMLInputElement | null>(null);
+  const moveFocusToBodyPartRef = useRef(false);
 
   useEffect(() => {
     setNameDraft(patientName || '');
@@ -57,6 +59,18 @@ export const BedHeader = memo(({
   useEffect(() => {
     setBodyPartDraft(patientBodyPart || '');
   }, [patientBodyPart, bed.id]);
+
+  useEffect(() => {
+    if (!isEditingBodyPart || !moveFocusToBodyPartRef.current) return;
+
+    const id = requestAnimationFrame(() => {
+      bodyPartInputRef.current?.focus();
+      bodyPartInputRef.current?.select();
+      moveFocusToBodyPartRef.current = false;
+    });
+
+    return () => cancelAnimationFrame(id);
+  }, [isEditingBodyPart]);
 
 
   // Changed from boolean to coordinates object to support positioning
@@ -146,9 +160,11 @@ export const BedHeader = memo(({
                   onChange={(e) => setNameDraft(e.target.value)}
                   onBlur={(e) => { e.stopPropagation(); commitName(e.target.value); }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' || e.key === 'Tab') {
                       e.preventDefault();
+                      moveFocusToBodyPartRef.current = true;
                       commitName((e.target as HTMLInputElement).value);
+                      setIsEditingBodyPart(true);
                     } else if (e.key === 'Escape') {
                       e.preventDefault();
                       setNameDraft(patientName || '');
@@ -173,6 +189,7 @@ export const BedHeader = memo(({
               {isEditingBodyPart ? (
                 <input
                   autoFocus
+                  ref={bodyPartInputRef}
                   value={bodyPartDraft}
                   onChange={(e) => setBodyPartDraft(e.target.value)}
                   onBlur={(e) => { e.stopPropagation(); commitBodyPart(e.target.value); }}
