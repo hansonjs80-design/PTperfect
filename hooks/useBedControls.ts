@@ -3,6 +3,7 @@ import React, { useCallback } from 'react';
 import { BedState, BedStatus, Preset, PatientVisit } from '../types';
 import { calculateRemainingTime } from '../utils/bedLogic';
 import { createSwappedPreset } from '../utils/treatmentFactories';
+import { generateTreatmentString } from '../utils/bedUtils';
 
 export const useBedControls = (
   bedsRef: React.MutableRefObject<BedState[]>,
@@ -88,7 +89,11 @@ export const useBedControls = (
     }
 
     updateBedState(bedId, updates);
-  }, [presets, updateBedState]);
+
+    if (onUpdateVisit) {
+      onUpdateVisit(bedId, { treatment_name: generateTreatmentString(swapResult.steps) });
+    }
+  }, [presets, updateBedState, onUpdateVisit]);
 
   const togglePause = useCallback((bedId: number) => {
     const bed = bedsRef.current.find(b => b.id === bedId);

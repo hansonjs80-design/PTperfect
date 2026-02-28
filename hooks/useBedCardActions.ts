@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { BedStatus } from '../types';
 
 export const useBedCardActions = (
@@ -10,6 +10,8 @@ export const useBedCardActions = (
 ) => {
   const [trashState, setTrashState] = useState<'idle' | 'confirm' | 'deleting'>('idle');
   const [swapSourceIndex, setSwapSourceIndex] = useState<number | null>(null);
+  const lastMoveTsRef = useRef(0);
+  const MOVE_COOLDOWN_MS = 120;
 
   useEffect(() => {
     if (bedStatus === BedStatus.IDLE) {
@@ -32,17 +34,30 @@ export const useBedCardActions = (
   }, [trashState, bedId, clearBed]);
 
   const handleSwapRequest = useCallback((targetBedId: number, idx: number) => {
-    if (swapSourceIndex === null) {
-      // First click: Select source
-      setSwapSourceIndex(idx);
-    } else {
-      // Second click: Execute swap or cancel if same
-      if (swapSourceIndex !== idx) {
-        swapSteps(targetBedId, swapSourceIndex, idx);
+    setSwapSourceIndex((prev) => {
+      if (prev === null) return idx;
+      if (prev !== idx) {
+        swapSteps(targetBedId, prev, idx);
       }
-      setSwapSourceIndex(null);
-    }
-  }, [swapSourceIndex, swapSteps]);
+      return null;
+    });
+  }, [swapSteps]);
+
+  const handleMoveSelectedStep = useCallback((direction: 'left' | 'right', totalSteps: number) => {
+    const now = Date.now();
+    if (now - lastMoveTsRef.current < MOVE_COOLDOWN_MS) return;
+
+    setSwapSourceIndex((prev) => {
+      if (prev === null) return prev;
+
+      const targetIndex = direction === 'left' ? prev - 1 : prev + 1;
+      if (targetIndex < 0 || targetIndex >= totalSteps) return prev;
+
+      lastMoveTsRef.current = now;
+      swapSteps(bedId, prev, targetIndex);
+      return targetIndex;
+    });
+  }, [swapSteps, bedId]);
 
   const cancelSwap = useCallback(() => {
     setSwapSourceIndex(null);
@@ -53,6 +68,7 @@ export const useBedCardActions = (
     handleTrashClick,
     swapSourceIndex,
     handleSwapRequest,
+    handleMoveSelectedStep,
     cancelSwap
   };
 };

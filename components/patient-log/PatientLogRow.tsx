@@ -174,7 +174,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     if (isDraft && onCreate) {
       await onCreate({ [field]: value }, colIndex, navDirection);
     } else if (!isDraft && visit && onUpdate) {
-      onUpdate(visit.id, { [field]: value }, skipSync);
+      const shouldKeepLogOnly = field === 'memo' && rowStatus !== 'active';
+      onUpdate(visit.id, { [field]: value }, shouldKeepLogOnly || skipSync);
     }
   };
 

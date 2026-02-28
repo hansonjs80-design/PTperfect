@@ -1,4 +1,3 @@
-
 // 알람, 진동, 시스템 알림 관련 로직 분리
 
 // 숫자를 한자어 읽기로 변환 (1→일, 2→이, ... 10→십)
@@ -9,6 +8,33 @@ const toSinoKorean = (num: number): string => {
   if (num === 10) return '십';
   if (num < 20) return '십' + digits[num % 10];
   return String(num); // fallback
+};
+
+// TTS가 겹치는 경우 잘림/중단이 발생하므로 전역 직렬 큐로 처리
+let ttsQueue: Promise<void> = Promise.resolve();
+
+const speakSequentially = (message: string): Promise<void> => {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve) => {
+    try {
+      const utterance = new SpeechSynthesisUtterance(message);
+      utterance.lang = 'ko-KR';
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+
+      const finish = () => resolve();
+      utterance.onend = finish;
+      utterance.onerror = finish;
+
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.error('TTS playback failed', e);
+      resolve();
+    }
+  });
 };
 
 export const playAlarmPattern = async (
@@ -29,38 +55,18 @@ export const playAlarmPattern = async (
     }
   }
 
-  // 2. TTS Audio (Web Speech API) - replaces the old AudioContext beep
-  // Only play if NOT silent
-  if (!isSilent && typeof window !== 'undefined' && 'speechSynthesis' in window) {
-    try {
-      // ★ 첫 음절 잘림 방지: 짧은 무음 utterance를 먼저 재생하여 오디오 파이프라인을 활성화
-      // 일부 디바이스/브라우저에서 speechSynthesis가 처음 시작될 때 오디오 출력이 지연됨
-      window.speechSynthesis.cancel(); // 이전 큐 정리
-      const warmup = new SpeechSynthesisUtterance(' ');
-      warmup.lang = 'ko-KR';
-      warmup.volume = 0.01; // 거의 무음
-      warmup.rate = 2.0; // 빠르게 끝내기
-      window.speechSynthesis.speak(warmup);
+  // 2. TTS Audio (Web Speech API)
+  // 겹치는 종료 알림도 순차적으로 모두 재생되도록 cancel 없이 직렬 큐 처리
+  if (!isSilent) {
+    const bedLabel = bedId === 11 ? '견인치료기' : `${toSinoKorean(bedId!)}번 배드`;
+    const currentLabel = treatmentName ? ` ${treatmentName}` : '';
 
-      const bedLabel = bedId === 11 ? '견인치료기' : `${toSinoKorean(bedId!)}번 배드`;
-      const currentLabel = treatmentName ? ` ${treatmentName}` : '';
-
-      // 앞에 쉼표를 추가하여 자연스러운 pause 확보 (첫 음절 보호)
-      let message = `, ${bedLabel}${currentLabel} 종료되었습니다.`;
-      if (nextTreatmentName) {
-        message += ` 다음 치료는 ${nextTreatmentName} 입니다.`;
-      }
-
-      const utterance = new SpeechSynthesisUtterance(message);
-      utterance.lang = 'ko-KR';
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-
-      // Queue alerts sequentially for beds ending at similar times
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.error("TTS playback failed", e);
+    let message = `${bedLabel}${currentLabel} 종료되었습니다.`;
+    if (nextTreatmentName) {
+      message += ` 다음 치료는 ${nextTreatmentName} 입니다.`;
     }
+
+    ttsQueue = ttsQueue.then(() => speakSequentially(message));
   }
 
   // 3. System Notification (Native Sound/Vibration - iOS & Android PWA)
