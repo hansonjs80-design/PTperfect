@@ -81,8 +81,9 @@ interface TreatmentContextType {
   bedPatientNames: Record<number, string>;
   bedPatientBodyParts: Record<number, string>;
 
-  // Exposed for Log Component usage
+  // Exposed for Log/Bed Header usage
   updateVisitWithBedSync: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => Promise<void>;
+  updateActiveVisitFields: (bedId: number, updates: Partial<PatientVisit>) => Promise<void>;
 }
 
 const TreatmentContext = createContext<TreatmentContextType | undefined>(undefined);
@@ -206,6 +207,23 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   useEffect(() => {
     logUpdateHandlerRef.current = handleLogUpdate;
   }, [handleLogUpdate]);
+
+
+  const updateActiveVisitFields = useCallback(async (bedId: number, updates: Partial<PatientVisit>) => {
+    const bedVisits = visitsRef.current
+      .filter(v => v.bed_id === bedId)
+      .sort((a, b) => {
+        const aTs = new Date(a.updated_at || a.created_at || 0).getTime();
+        const bTs = new Date(b.updated_at || b.created_at || 0).getTime();
+        return aTs - bTs;
+      });
+
+    const latestVisit = bedVisits[bedVisits.length - 1];
+    if (!latestVisit) return;
+
+    await updateLogVisit(latestVisit.id, updates);
+  }, [updateLogVisit, visitsRef]);
+
 
   // Active bed memo hydration: keep bed-card memo aligned with latest active patient log memo
   // so memo survives reload and cross-device realtime scenarios.
@@ -337,6 +355,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     bedPatientNames,
     bedPatientBodyParts,
     updateVisitWithBedSync,
+    updateActiveVisitFields,
     undo,
     redo,
     canUndo,
