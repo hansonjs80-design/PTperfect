@@ -65,7 +65,10 @@ export const usePatientBedSync = (
 
       if (skipBedSync) return;
 
-      const mergedVisit = { ...oldVisit, ...updates };
+      // Re-read latest visit after optimistic update so rapid sequential edits
+      // (e.g. bed_id then treatment_name) don't lose freshly changed fields.
+      const latestVisit = visitsRef.current.find(v => v.id === id);
+      const mergedVisit = { ...oldVisit, ...(latestVisit || {}), ...updates };
 
       if (mergedVisit.bed_id && updates.memo !== undefined) {
           updateBedMemoFromLog(mergedVisit.bed_id, updates.memo || undefined);
