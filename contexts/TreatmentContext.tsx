@@ -162,6 +162,18 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     return sessionVisits[sessionVisits.length - 1];
   }, [getBedSessionVisits]);
 
+  const getLatestNonEmptyVisitField = useCallback(
+    (bed: BedState, allVisits: PatientVisit[], field: 'patient_name' | 'body_part') => {
+      const sessionVisits = getBedSessionVisits(bed, allVisits);
+      for (let i = sessionVisits.length - 1; i >= 0; i -= 1) {
+        const value = sessionVisits[i][field]?.trim();
+        if (value) return value;
+      }
+      return undefined;
+    },
+    [getBedSessionVisits]
+  );
+
   // Bed ID → Patient Name mapping (latest visit per active bed)
   const bedPatientNames = useMemo(() => {
     const map: Record<number, string> = {};
@@ -169,15 +181,14 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     beds.forEach((bed) => {
       if (!bed.id || bed.status === BedStatus.IDLE) return;
 
-      const latestVisit = getLatestVisitForBed(bed, visits);
-      const latestName = latestVisit?.patient_name?.trim();
+      const latestName = getLatestNonEmptyVisitField(bed, visits, 'patient_name');
       if (latestName) {
         map[bed.id] = latestName;
       }
     });
 
     return map;
-  }, [visits, beds, getLatestVisitForBed]);
+  }, [visits, beds, getLatestNonEmptyVisitField]);
 
 
   const bedPatientBodyParts = useMemo(() => {
@@ -186,15 +197,14 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     beds.forEach((bed) => {
       if (!bed.id || bed.status === BedStatus.IDLE) return;
 
-      const latestVisit = getLatestVisitForBed(bed, visits);
-      const latestBodyPart = latestVisit?.body_part?.trim();
+      const latestBodyPart = getLatestNonEmptyVisitField(bed, visits, 'body_part');
       if (latestBodyPart) {
         map[bed.id] = latestBodyPart;
       }
     });
 
     return map;
-  }, [visits, beds, getLatestVisitForBed]);
+  }, [visits, beds, getLatestNonEmptyVisitField]);
 
   const { handleLogUpdate, movePatient: _movePatient, updateVisitWithBedSync } = usePatientBedSync(
     bedsRef,
