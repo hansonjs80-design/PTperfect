@@ -144,17 +144,12 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, []);
 
   const getBedSessionVisits = useCallback((bed: BedState, allVisits: PatientVisit[]) => {
-    const visitsForBed = allVisits
+    // NOTE: bed.startTime 은 단계 전환(nextStep) 때마다 갱신되는 타이머 기준 시간이라
+    // 환자 세션 구분 기준으로 사용하면 이름/부위가 단계 이동 시 누락될 수 있다.
+    // 따라서 bed_id 기준 최신 방문 기록 정렬만 사용한다.
+    return allVisits
       .filter((visit) => visit.bed_id === bed.id)
       .sort((a, b) => getVisitCreatedTimestamp(a) - getVisitCreatedTimestamp(b));
-
-    if (!bed.startTime) return visitsForBed;
-
-    // 새 세션 시작 이전의 오래된 방문 기록은 현재 카드 표시값 후보에서 제외
-    return visitsForBed.filter((visit) => {
-      const visitTs = getVisitCreatedTimestamp(visit);
-      return !(visitTs > 0 && visitTs + 5000 < bed.startTime!);
-    });
   }, [getVisitCreatedTimestamp]);
 
   const getLatestVisitForBed = useCallback((bed: BedState, allVisits: PatientVisit[]) => {
