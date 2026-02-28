@@ -10,6 +10,7 @@ import { AuthorSelectorCell } from './AuthorSelectorCell';
 import { PatientVisit } from '../../types';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { PatientMemoModal } from '../modals/PatientMemoModal';
+import { formatBodyPartText } from '../../utils/patientLogUtils';
 
 interface PatientLogRowProps {
   rowIndex: number;
@@ -340,10 +341,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           menuTitle="치료 부위 수정 (로그만 변경)"
           className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[12.6px] sm:text-[13.5px] xl:text-[14.4px]"
           onCommit={(val, skipSync, navDir) => {
-            let formattedVal = (val || '').replace(/\b\w/g, (c) => c.toUpperCase());
-            const upperCaseWords = ['ITB', 'TFL', 'SIJ', 'LS', 'CT', 'TL', 'TMJ', 'ACL', 'MCL', 'ATFL', 'PV', 'AC', 'SC'];
-            const pattern = new RegExp(`\\b(${upperCaseWords.join('|')})\\b`, 'gi');
-            formattedVal = formattedVal.replace(pattern, (match) => match.toUpperCase());
+            const formattedVal = formatBodyPartText(val || '');
             handleChange('body_part', formattedVal, skipSync, 2, navDir);
           }}
           directEdit={true}
