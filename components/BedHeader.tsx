@@ -2,6 +2,7 @@
 import React, { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { BedState, BedStatus, TreatmentStep } from '../types';
 import { getBedHeaderStyles } from '../utils/styleUtils';
+import { formatBodyPartText } from '../utils/patientLogUtils';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { TimerEditPopup } from './bed-card/TimerEditPopup';
 import { BedStatusPopup } from './bed-card/BedStatusPopup';
@@ -117,7 +118,7 @@ export const BedHeader = memo(({
   }, [bed.id, patientName, updateActiveVisitFields]);
 
   const commitBodyPart = useCallback(async (raw: string) => {
-    const val = raw.trim();
+    const val = formatBodyPartText(raw.trim());
     setIsEditingBodyPart(false);
     if ((patientBodyPart || '') === val) return;
     await updateActiveVisitFields(bed.id, { body_part: val });
