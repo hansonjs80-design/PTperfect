@@ -153,7 +153,7 @@ export const BedHeader = memo(({
         {/* Right Section: Patient Name + Timer & Actions */}
         <div className="flex-1 flex justify-end items-center gap-0 sm:gap-1 lg:gap-2 pl-0 sm:pl-2">
           {bed.status !== BedStatus.IDLE && (
-            <div className="hidden md:portrait:flex lg:flex flex-col items-end max-w-[88px] lg:max-w-[120px] mr-1 lg:mr-2 leading-tight">
+            <div className="hidden md:flex flex-col items-end max-w-[88px] lg:max-w-[120px] mr-1 lg:mr-2 leading-tight">
               {isEditingName ? (
                 <input
                   autoFocus

@@ -139,23 +139,28 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const bedsRef = useRef(beds);
   useEffect(() => { bedsRef.current = beds; }, [beds]);
 
-  const getVisitTimestamp = useCallback((visit: PatientVisit) => {
-    return new Date(visit.updated_at || visit.created_at || 0).getTime();
+  const getVisitCreatedTimestamp = useCallback((visit: PatientVisit) => {
+    return new Date(visit.created_at || visit.updated_at || 0).getTime();
   }, []);
 
   const getBedSessionVisits = useCallback((bed: BedState, allVisits: PatientVisit[]) => {
     const visitsForBed = allVisits
       .filter((visit) => visit.bed_id === bed.id)
-      .sort((a, b) => getVisitTimestamp(a) - getVisitTimestamp(b));
+      .sort((a, b) => getVisitCreatedTimestamp(a) - getVisitCreatedTimestamp(b));
 
     if (!bed.startTime) return visitsForBed;
 
     // 새 세션 시작 이전의 오래된 방문 기록은 현재 카드 표시값 후보에서 제외
     return visitsForBed.filter((visit) => {
-      const visitTs = getVisitTimestamp(visit);
+      const visitTs = getVisitCreatedTimestamp(visit);
       return !(visitTs > 0 && visitTs + 5000 < bed.startTime!);
     });
-  }, [getVisitTimestamp]);
+  }, [getVisitCreatedTimestamp]);
+
+  const getLatestVisitForBed = useCallback((bed: BedState, allVisits: PatientVisit[]) => {
+    const sessionVisits = getBedSessionVisits(bed, allVisits);
+    return sessionVisits[sessionVisits.length - 1];
+  }, [getBedSessionVisits]);
 
   // Bed ID → Patient Name mapping (latest visit per active bed)
   const bedPatientNames = useMemo(() => {
@@ -164,17 +169,15 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     beds.forEach((bed) => {
       if (!bed.id || bed.status === BedStatus.IDLE) return;
 
-      const bedVisits = getBedSessionVisits(bed, visits);
-      for (let i = bedVisits.length - 1; i >= 0; i -= 1) {
-        const latestName = bedVisits[i].patient_name?.trim();
-        if (!latestName) continue;
+      const latestVisit = getLatestVisitForBed(bed, visits);
+      const latestName = latestVisit?.patient_name?.trim();
+      if (latestName) {
         map[bed.id] = latestName;
-        break;
       }
     });
 
     return map;
-  }, [visits, beds, getBedSessionVisits]);
+  }, [visits, beds, getLatestVisitForBed]);
 
 
   const bedPatientBodyParts = useMemo(() => {
@@ -183,17 +186,15 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     beds.forEach((bed) => {
       if (!bed.id || bed.status === BedStatus.IDLE) return;
 
-      const bedVisits = getBedSessionVisits(bed, visits);
-      for (let i = bedVisits.length - 1; i >= 0; i -= 1) {
-        const latestBodyPart = bedVisits[i].body_part?.trim();
-        if (!latestBodyPart) continue;
+      const latestVisit = getLatestVisitForBed(bed, visits);
+      const latestBodyPart = latestVisit?.body_part?.trim();
+      if (latestBodyPart) {
         map[bed.id] = latestBodyPart;
-        break;
       }
     });
 
     return map;
-  }, [visits, beds, getBedSessionVisits]);
+  }, [visits, beds, getLatestVisitForBed]);
 
   const { handleLogUpdate, movePatient: _movePatient, updateVisitWithBedSync } = usePatientBedSync(
     bedsRef,
@@ -212,13 +213,11 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     const bed = bedsRef.current.find((item) => item.id === bedId);
     if (!bed || bed.status === BedStatus.IDLE) return;
 
-    const bedVisits = getBedSessionVisits(bed, visitsRef.current);
-
-    const latestVisit = bedVisits[bedVisits.length - 1];
+    const latestVisit = getLatestVisitForBed(bed, visitsRef.current);
     if (!latestVisit) return;
 
     await updateLogVisit(latestVisit.id, updates);
-  }, [updateLogVisit, getBedSessionVisits]);
+  }, [updateLogVisit, getLatestVisitForBed]);
 
 
   // Active bed memo hydration: keep bed-card memo aligned with latest active patient log memo
