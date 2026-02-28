@@ -42,8 +42,9 @@ export const BedHeader = memo(({
   onToggleManual,
   onToggleInjectionCompleted
 }: BedHeaderProps) => {
-  const { setMovingPatientState, bedPatientNames, updatePatientMemo } = useTreatmentContext();
+  const { setMovingPatientState, bedPatientNames, bedPatientBodyParts, updatePatientMemo } = useTreatmentContext();
   const patientName = bed.status !== BedStatus.IDLE ? bedPatientNames[bed.id] : undefined;
+  const patientBodyPart = bed.status !== BedStatus.IDLE ? bedPatientBodyParts[bed.id] : undefined;
 
   // Changed from boolean to coordinates object to support positioning
   const [timerMenuPos, setTimerMenuPos] = useState<{ x: number, y: number } | null>(null);
@@ -108,9 +109,16 @@ export const BedHeader = memo(({
         {/* Right Section: Patient Name + Timer & Actions */}
         <div className="flex-1 flex justify-end items-center gap-0 sm:gap-1 lg:gap-2 pl-0 sm:pl-2">
           {patientName && (
-            <span className="hidden md:portrait:inline-block lg:inline-block text-sm md:text-base lg:text-lg font-black text-slate-700 dark:text-slate-200 truncate max-w-[70px] lg:max-w-[90px] mr-1 lg:mr-2">
-              {patientName}
-            </span>
+            <div className="hidden md:portrait:flex lg:flex flex-col items-end max-w-[78px] lg:max-w-[110px] mr-1 lg:mr-2 leading-tight">
+              <span className="text-sm md:text-base lg:text-lg font-black text-slate-700 dark:text-slate-200 truncate w-full text-right">
+                {patientName}
+              </span>
+              {patientBodyPart && (
+                <span className="text-[10px] md:text-xs lg:text-sm font-bold text-slate-500 dark:text-slate-400 truncate w-full text-right">
+                  {patientBodyPart}
+                </span>
+              )}
+            </div>
           )}
           <BedTimer
             bed={bed}

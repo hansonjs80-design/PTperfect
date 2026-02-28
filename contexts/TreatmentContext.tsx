@@ -77,8 +77,9 @@ interface TreatmentContextType {
   canUndo: boolean;
   canRedo: boolean;
 
-  // Bed-Patient Name Mapping
+  // Bed-Patient Name/BodyPart Mapping
   bedPatientNames: Record<number, string>;
+  bedPatientBodyParts: Record<number, string>;
 
   // Exposed for Log Component usage
   updateVisitWithBedSync: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => Promise<void>;
@@ -161,6 +162,34 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
       if (bed.startTime && latestVisitTs > 0 && latestVisitTs + 5000 < bed.startTime) return;
 
       map[bed.id] = latestName;
+    });
+
+    return map;
+  }, [visits, beds]);
+
+
+  const bedPatientBodyParts = useMemo(() => {
+    const map: Record<number, string> = {};
+
+    beds.forEach((bed) => {
+      if (!bed.id || bed.status === BedStatus.IDLE) return;
+
+      const bedVisits = visits
+        .filter((v) => v.bed_id === bed.id)
+        .sort((a, b) => {
+          const aTs = new Date(a.updated_at || a.created_at || 0).getTime();
+          const bTs = new Date(b.updated_at || b.created_at || 0).getTime();
+          return aTs - bTs;
+        });
+
+      const latest = bedVisits[bedVisits.length - 1];
+      const latestBodyPart = latest?.body_part?.trim();
+      if (!latest || !latestBodyPart) return;
+
+      const latestVisitTs = new Date(latest.updated_at || latest.created_at || 0).getTime();
+      if (bed.startTime && latestVisitTs > 0 && latestVisitTs + 5000 < bed.startTime) return;
+
+      map[bed.id] = latestBodyPart;
     });
 
     return map;
@@ -306,6 +335,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     refreshBeds,
     movePatient,
     bedPatientNames,
+    bedPatientBodyParts,
     updateVisitWithBedSync,
     undo,
     redo,
