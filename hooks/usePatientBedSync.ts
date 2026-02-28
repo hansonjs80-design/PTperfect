@@ -10,7 +10,7 @@ export const usePatientBedSync = (
   clearBed: (id: number) => void,
   bedIntegration: ReturnType<typeof useBedIntegration>
 ) => {
-  const { overrideBedFromLog, moveBedState } = bedIntegration;
+  const { overrideBedFromLog, moveBedState, updateBedMemoFromLog } = bedIntegration;
 
   // Handler to sync bed status changes (Bed -> Log)
   const handleLogUpdate = useCallback((bedId: number, updates: Partial<PatientVisit>) => {
@@ -67,6 +67,10 @@ export const usePatientBedSync = (
 
       const mergedVisit = { ...oldVisit, ...updates };
 
+      if (mergedVisit.bed_id && updates.memo !== undefined) {
+          updateBedMemoFromLog(mergedVisit.bed_id, updates.memo || undefined);
+      }
+
       if (oldVisit.bed_id && updates.bed_id === null) {
           clearBed(oldVisit.bed_id); 
           return;
@@ -86,7 +90,7 @@ export const usePatientBedSync = (
              overrideBedFromLog(mergedVisit.bed_id, mergedVisit, shouldForceRestart);
           }
       }
-  }, [updateLogVisit, clearBed, overrideBedFromLog, bedsRef, visitsRef]);
+  }, [updateLogVisit, clearBed, overrideBedFromLog, updateBedMemoFromLog, bedsRef, visitsRef]);
 
   const movePatient = useCallback(async (fromBedId: number, toBedId: number) => {
     if (fromBedId === toBedId) return;

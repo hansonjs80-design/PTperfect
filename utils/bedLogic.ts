@@ -83,6 +83,21 @@ export const mapBedToDbPayload = (updates: Partial<BedState>): any => {
 };
 
 export const shouldIgnoreServerUpdate = (localBed: BedState, serverBed: Partial<BedState>): boolean => {
+  // 메모 변경은 디바이스 간 즉시 동기화가 중요하므로 로컬 보호 예외 처리
+  if ('patientMemo' in serverBed && serverBed.patientMemo !== localBed.patientMemo) return false;
+
+  // 상태 변경(특히 처방 시작/종료)은 즉시 반영
+  if (serverBed.status !== undefined && serverBed.status !== localBed.status) return false;
+
+  // 처방/진행 정보 변경은 즉시 반영 (다른 디바이스 초기 적용 지연 방지)
+  const hasPrescriptionChange =
+    (serverBed.currentPresetId !== undefined && serverBed.currentPresetId !== localBed.currentPresetId) ||
+    (serverBed.customPreset !== undefined && JSON.stringify(serverBed.customPreset) !== JSON.stringify(localBed.customPreset)) ||
+    (serverBed.currentStepIndex !== undefined && serverBed.currentStepIndex !== localBed.currentStepIndex) ||
+    (serverBed.startTime !== undefined && serverBed.startTime !== localBed.startTime) ||
+    (serverBed.queue !== undefined && JSON.stringify(serverBed.queue) !== JSON.stringify(localBed.queue));
+  if (hasPrescriptionChange) return false;
+
   // IDLE 전환(다른 기기에서 비우기)은 절대 무시하지 않음
   if (serverBed.status === BedStatus.IDLE && localBed.status !== BedStatus.IDLE) return false;
   if (!localBed.lastUpdateTimestamp) return false;

@@ -7,6 +7,31 @@ import { mapRowToBed, shouldIgnoreServerUpdate, forceIdleBed } from '../utils/be
 const TAB_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const POLL_INTERVAL = 5000;
 
+const toEpochMs = (iso?: string): number => {
+  if (!iso) return 0;
+  const parsed = Date.parse(iso);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const shouldKeepLocalIdle = (localBed: BedState, serverBed: BedState): boolean => {
+  if (localBed.status !== BedStatus.IDLE || serverBed.status === BedStatus.IDLE) return false;
+  if (!localBed.lastUpdateTimestamp) return false;
+
+  // 서버 updated_at이 로컬 clear 시점보다 오래됐으면 stale 이벤트/폴링으로 간주하고 차단
+  const serverUpdatedAtMs = toEpochMs(serverBed.updatedAt);
+  if (serverUpdatedAtMs > 0 && serverUpdatedAtMs <= localBed.lastUpdateTimestamp) return true;
+
+  // updated_at이 없거나 신뢰할 수 없는 경우 보호 윈도우를 길게 유지해 고스트 카드 재생성 방지
+  const FALLBACK_PROTECT_MS = 45 * 1000;
+  return Date.now() - localBed.lastUpdateTimestamp < FALLBACK_PROTECT_MS;
+};
+
+const isServerNewer = (localBed: BedState, serverBed: BedState): boolean => {
+  const localUpdatedAtMs = toEpochMs(localBed.updatedAt);
+  const serverUpdatedAtMs = toEpochMs(serverBed.updatedAt);
+  if (localUpdatedAtMs === 0 || serverUpdatedAtMs === 0) return true;
+  return serverUpdatedAtMs > localUpdatedAtMs;
+};
 export const useBedRealtime = (
   setBeds: React.Dispatch<React.SetStateAction<BedState[]>>,
   setLocalBeds: (value: BedState[] | ((val: BedState[]) => BedState[])) => void
@@ -24,21 +49,17 @@ export const useBedRealtime = (
     if (error || !data) return;
 
     const serverBeds: BedState[] = data.map(row => mapRowToBed(row) as BedState);
+    const serverBedsById = new Map(serverBeds.map((bed) => [bed.id, bed]));
 
     setBeds((currentBeds) => {
-      const merged = serverBeds.map(serverBed => {
-        const localBed = currentBeds.find(b => b.id === serverBed.id);
-        if (!localBed) return serverBed;
+      const merged = currentBeds.map(localBed => {
+        const serverBed = serverBedsById.get(localBed.id);
+        if (!serverBed) return localBed;
 
         // ★ 고스트 카드 방지 (리로드 시): 로컬이 IDLE이고 서버가 비IDLE일 때
         // → clearBedInDb가 아직 반영되지 않은 stale 데이터일 수 있음
         // → localStorage에 저장된 lastUpdateTimestamp로 최근 비우기 여부 판단
-        if (localBed.status === BedStatus.IDLE && serverBed.status !== BedStatus.IDLE) {
-          const RELOAD_PROTECT_MS = 30000; // 30초
-          if (localBed.lastUpdateTimestamp && Date.now() - localBed.lastUpdateTimestamp < RELOAD_PROTECT_MS) {
-            return localBed; // 최근 비운 bed → 서버 데이터로 덮어쓰지 않음
-          }
-        }
+        if (shouldKeepLocalIdle(localBed, serverBed)) return localBed;
 
         // 서버가 IDLE → 무조건 수락 (다른 디바이스에서 비우기)
         if (serverBed.status === BedStatus.IDLE && localBed.status !== BedStatus.IDLE) {
@@ -63,11 +84,13 @@ export const useBedRealtime = (
     if (error || !data) return;
 
     const serverBeds: BedState[] = data.map(row => mapRowToBed(row) as BedState);
+    const serverBedsById = new Map(serverBeds.map((bed) => [bed.id, bed]));
+
     setBeds((currentBeds) => {
       let changed = false;
-      const newBeds = serverBeds.map(serverBed => {
-        const localBed = currentBeds.find(b => b.id === serverBed.id);
-        if (!localBed) { changed = true; return serverBed; }
+      const newBeds = currentBeds.map(localBed => {
+        const serverBed = serverBedsById.get(localBed.id);
+        if (!serverBed) return localBed;
 
         // 서버가 IDLE이고 로컬이 아직 비IDLE → 무조건 비우기
         if (serverBed.status === BedStatus.IDLE && localBed.status !== BedStatus.IDLE) {
@@ -79,9 +102,7 @@ export const useBedRealtime = (
         // → clearBedInDb가 아직 완료되지 않은 stale 데이터일 수 있음
         // → 로컬 보호 기간(30초) 내라면 로컬 IDLE 유지
         if (localBed.status === BedStatus.IDLE && serverBed.status !== BedStatus.IDLE) {
-          if (localBed.lastUpdateTimestamp && Date.now() - localBed.lastUpdateTimestamp < 30000) {
-            return localBed; // 로컬 IDLE 보호 — 고스트 카드 재생성 차단
-          }
+          if (shouldKeepLocalIdle(localBed, serverBed)) return localBed;
           // 보호 기간 지남 → 서버 데이터 수락 (정상적인 다른 디바이스 활성화)
           changed = true;
           return serverBed;
@@ -90,8 +111,14 @@ export const useBedRealtime = (
         // 로컬에서 최근 변경한 bed는 보호
         if (shouldIgnoreServerUpdate(localBed, serverBed)) return localBed;
 
-        // 상태가 달라졌으면 서버 수락
-        if (localBed.status !== serverBed.status) {
+        // 메모 변경은 상태가 같아도 즉시 동기화
+        if (localBed.patientMemo !== serverBed.patientMemo) {
+          changed = true;
+          return serverBed;
+        }
+
+        // 상태가 달라졌거나 서버 데이터가 더 최신이면 서버 수락 (디바이스간 연동)
+        if (localBed.status !== serverBed.status || isServerNewer(localBed, serverBed)) {
           changed = true;
           return serverBed;
         }
@@ -141,9 +168,13 @@ export const useBedRealtime = (
             if (updatedBed.status === BedStatus.IDLE) return forceIdleBed({ ...bed });
             // 로컬 변경 보호
             if (shouldIgnoreServerUpdate(bed, updatedBed)) return bed;
+            if (bed.patientMemo !== updatedBed.patientMemo) {
+              return { ...bed, ...updatedBed };
+            }
             // ★ 고스트 카드 방지: 로컬이 IDLE인데 서버 이벤트가 비IDLE
             // → clearBedInDb 전의 stale 이벤트일 수 있음 (보호 기간 30초)
-            if (bed.status === BedStatus.IDLE && Date.now() - (bed.lastUpdateTimestamp || 0) < 30000) return bed;
+            if (shouldKeepLocalIdle(bed, updatedBed as BedState)) return bed;
+            if (!isServerNewer(bed, updatedBed as BedState) && bed.status === updatedBed.status) return bed;
             const merged = { ...bed, ...updatedBed };
             if (!updatedBed.patientMemo && bed.patientMemo) merged.patientMemo = bed.patientMemo;
             if (merged.status !== BedStatus.IDLE && (!!bed.customPreset || !!bed.currentPresetId) && !merged.customPreset && !merged.currentPresetId) {
