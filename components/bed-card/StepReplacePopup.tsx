@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { QuickTreatment } from '../../types';
 import { computePopupPosition } from '../../utils/popupUtils';
 
-const POPUP_WIDTH = 260;
+const POPUP_WIDTH = 340;
 
 interface StepReplacePopupProps {
   quickTreatments: QuickTreatment[];
@@ -22,8 +22,8 @@ export const StepReplacePopup: React.FC<StepReplacePopupProps> = ({
 
   // Pre-compute initial position using estimated height (avoids -9999 off-screen jump)
   const [pos, setPos] = useState(() => {
-    const estRows = Math.max(quickTreatments.length, 1);
-    const estHeight = Math.min(estRows * 38 + 12, 320) + 36;
+    const estRows = Math.max(Math.ceil(quickTreatments.length / 2), 1);
+    const estHeight = Math.min(estRows * 46 + 12, 320) + 36;
     return computePopupPosition(clickPos, POPUP_WIDTH, estHeight);
   });
 
@@ -50,7 +50,7 @@ export const StepReplacePopup: React.FC<StepReplacePopupProps> = ({
         <div className="px-2.5 py-1.5 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50">
           <span className="font-bold text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">처방 변경</span>
         </div>
-        <div className="p-1.5 flex flex-col gap-1 max-h-[320px] overflow-y-auto">
+        <div className="p-1.5 grid grid-cols-2 gap-1 max-h-[320px] overflow-y-auto">
           {quickTreatments.map((qt) => (
             <button
               key={qt.id}
