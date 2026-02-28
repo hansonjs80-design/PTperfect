@@ -10,6 +10,7 @@ import { useTreatmentSettings } from '../hooks/useTreatmentSettings';
 import { useTreatmentUI } from '../hooks/useTreatmentUI';
 import { usePatientBedSync } from '../hooks/usePatientBedSync';
 import { useHistory } from '../hooks/useHistory';
+import { useBedPatientFields } from '../hooks/useBedPatientFields';
 import { supabase, isOnlineMode } from '../lib/supabase';
 
 interface MovingPatientState {
@@ -139,67 +140,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const bedsRef = useRef(beds);
   useEffect(() => { bedsRef.current = beds; }, [beds]);
 
-  const getVisitCreatedTimestamp = useCallback((visit: PatientVisit) => {
-    return new Date(visit.created_at || visit.updated_at || 0).getTime();
-  }, []);
-
-  const getBedSessionVisits = useCallback((bed: BedState, allVisits: PatientVisit[]) => {
-    // NOTE: bed.startTime 은 단계 전환(nextStep) 때마다 갱신되는 타이머 기준 시간이라
-    // 환자 세션 구분 기준으로 사용하면 이름/부위가 단계 이동 시 누락될 수 있다.
-    // 따라서 bed_id 기준 최신 방문 기록 정렬만 사용한다.
-    return allVisits
-      .filter((visit) => visit.bed_id === bed.id)
-      .sort((a, b) => getVisitCreatedTimestamp(a) - getVisitCreatedTimestamp(b));
-  }, [getVisitCreatedTimestamp]);
-
-  const getLatestVisitForBed = useCallback((bed: BedState, allVisits: PatientVisit[]) => {
-    const sessionVisits = getBedSessionVisits(bed, allVisits);
-    return sessionVisits[sessionVisits.length - 1];
-  }, [getBedSessionVisits]);
-
-  const getLatestNonEmptyVisitField = useCallback(
-    (bed: BedState, allVisits: PatientVisit[], field: 'patient_name' | 'body_part') => {
-      const sessionVisits = getBedSessionVisits(bed, allVisits);
-      for (let i = sessionVisits.length - 1; i >= 0; i -= 1) {
-        const value = sessionVisits[i][field]?.trim();
-        if (value) return value;
-      }
-      return undefined;
-    },
-    [getBedSessionVisits]
-  );
-
-  // Bed ID → Patient Name mapping (latest visit per active bed)
-  const bedPatientNames = useMemo(() => {
-    const map: Record<number, string> = {};
-
-    beds.forEach((bed) => {
-      if (!bed.id || bed.status === BedStatus.IDLE) return;
-
-      const latestName = getLatestNonEmptyVisitField(bed, visits, 'patient_name');
-      if (latestName) {
-        map[bed.id] = latestName;
-      }
-    });
-
-    return map;
-  }, [visits, beds, getLatestNonEmptyVisitField]);
-
-
-  const bedPatientBodyParts = useMemo(() => {
-    const map: Record<number, string> = {};
-
-    beds.forEach((bed) => {
-      if (!bed.id || bed.status === BedStatus.IDLE) return;
-
-      const latestBodyPart = getLatestNonEmptyVisitField(bed, visits, 'body_part');
-      if (latestBodyPart) {
-        map[bed.id] = latestBodyPart;
-      }
-    });
-
-    return map;
-  }, [visits, beds, getLatestNonEmptyVisitField]);
+  const { bedPatientNames, bedPatientBodyParts, getLatestVisitForBed } = useBedPatientFields(beds, visits);
 
   const { handleLogUpdate, movePatient: _movePatient, updateVisitWithBedSync } = usePatientBedSync(
     bedsRef,
@@ -218,7 +159,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     const bed = bedsRef.current.find((item) => item.id === bedId);
     if (!bed || bed.status === BedStatus.IDLE) return;
 
-    const latestVisit = getLatestVisitForBed(bed, visitsRef.current);
+    const latestVisit = getLatestVisitForBed(bedId, visitsRef.current);
     if (!latestVisit) return;
 
     await updateLogVisit(latestVisit.id, updates);
