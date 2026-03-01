@@ -44,6 +44,31 @@ const isServerNewer = (localBed: BedState, serverBed: BedState): boolean => {
   if (localUpdatedAtMs === 0 || serverUpdatedAtMs === 0) return true;
   return serverUpdatedAtMs > localUpdatedAtMs;
 };
+
+
+const shouldKeepLocalProgressAfterActivation = (localBed: BedState, serverBed: BedState): boolean => {
+  if (localBed.status !== BedStatus.ACTIVE || serverBed.status !== BedStatus.ACTIVE) return false;
+  if (!localBed.lastUpdateTimestamp) return false;
+
+  // 활성화 직후 짧은 구간은 서버의 지연/역전 이벤트로부터 진행 상태를 보호
+  const ACTIVATION_PROTECT_MS = 20 * 1000;
+  if (Date.now() - localBed.lastUpdateTimestamp > ACTIVATION_PROTECT_MS) return false;
+
+  const serverUpdatedAtMs = toEpochMs(serverBed.updatedAt);
+  const serverIsOlderThanLocalMutation = serverUpdatedAtMs > 0 && serverUpdatedAtMs <= localBed.lastUpdateTimestamp;
+
+  const serverLooksBehindInTime =
+    typeof localBed.startTime === 'number' &&
+    typeof serverBed.startTime === 'number' &&
+    serverBed.startTime < localBed.startTime;
+
+  const serverJumpsStepAhead =
+    typeof serverBed.currentStepIndex === 'number' &&
+    typeof localBed.currentStepIndex === 'number' &&
+    serverBed.currentStepIndex > localBed.currentStepIndex;
+
+  return serverJumpsStepAhead && (serverIsOlderThanLocalMutation || serverLooksBehindInTime);
+};
 export const useBedRealtime = (
   setBeds: React.Dispatch<React.SetStateAction<BedState[]>>,
   setLocalBeds: (value: BedState[] | ((val: BedState[]) => BedState[])) => void
@@ -122,6 +147,9 @@ export const useBedRealtime = (
           return serverBed;
         }
 
+        // 활성화 직후 서버가 마지막 스텝 등으로 점프시키는 stale 업데이트 보호
+        if (shouldKeepLocalProgressAfterActivation(localBed, serverBed)) return localBed;
+
         // 로컬에서 최근 변경한 bed는 보호
         if (shouldIgnoreServerUpdate(localBed, serverBed)) return localBed;
 
@@ -184,6 +212,9 @@ export const useBedRealtime = (
               if (shouldKeepLocalActive(bed, updatedBed as BedState)) return bed;
               return forceIdleBed({ ...bed });
             }
+
+            // 활성화 직후 서버가 마지막 스텝 등으로 점프시키는 stale 업데이트 보호
+            if (shouldKeepLocalProgressAfterActivation(bed, updatedBed as BedState)) return bed;
 
             // 로컬 변경 보호
             if (shouldIgnoreServerUpdate(bed, updatedBed)) return bed;
