@@ -21,6 +21,7 @@ interface BedStepColumnProps {
   onReplaceStep?: (idx: number, qt: QuickTreatment) => void;
   quickTreatments?: QuickTreatment[];
   onOpenTreatmentSelector?: (bedId: number) => void;
+  onOpenBedEdit?: (bedId: number) => void;
 }
 
 export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
@@ -36,7 +37,8 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
   totalSteps = 0,
   onReplaceStep,
   quickTreatments,
-  onOpenTreatmentSelector
+  onOpenTreatmentSelector,
+  onOpenBedEdit
 }) => {
   const [replacePopup, setReplacePopup] = useState<{ x: number; y: number } | null>(null);
   const colorClass = getStepColor(step, isActive, isPast, false, isCompleted);
@@ -74,6 +76,10 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
   const handleStepDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (onOpenBedEdit) {
+      onOpenBedEdit(bedId);
+      return;
+    }
     onOpenTreatmentSelector?.(bedId);
   };
 

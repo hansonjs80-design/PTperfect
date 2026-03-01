@@ -271,6 +271,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
                 onReplaceStep={handleReplaceStep}
                 quickTreatments={quickTreatments}
                 onOpenTreatmentSelector={openTreatmentSelectorForBed}
+                onOpenBedEdit={setEditingBedId}
               />
             </div>
           )}
