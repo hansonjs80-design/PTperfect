@@ -64,7 +64,8 @@ export const useBedState = (
   // skipDbWrite: clearBed 시 updateBedState는 로컬만 업데이트하고, DB는 clearBedInDb가 담당
   const updateBedState = useCallback(async (bedId: number, updates: Partial<BedState>, skipDbWrite: boolean = false) => {
     const timestamp = Date.now();
-    const updateWithTimestamp = { ...updates, lastUpdateTimestamp: timestamp };
+    const localUpdatedAt = new Date(timestamp).toISOString();
+    const updateWithTimestamp = { ...updates, lastUpdateTimestamp: timestamp, updatedAt: localUpdatedAt };
 
     // Optimistic Update (즉시 UI 반영)
     setBeds(prev => prev.map(b => b.id === bedId ? { ...b, ...updateWithTimestamp } : b));
