@@ -44,7 +44,8 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const {
     trashState,
     handleTrashClick,
-    swapSourceIndex,
+    swapSourceStepId,
+    getSelectedSwapIndex,
     handleSwapRequest,
     handleMoveSelectedStep,
     cancelSwap
@@ -56,6 +57,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const currentPreset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
   const currentStep = currentPreset?.steps[bed.currentStepIndex];
   const steps = currentPreset?.steps || [];
+  const swapSourceIndex = getSelectedSwapIndex(steps);
 
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
   const isOvertime = isTimerActive && bed.remainingTime <= 0;
@@ -200,11 +202,11 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       } else if (e.key === 'ArrowLeft') {
         if (e.repeat) return;
         e.preventDefault();
-        handleMoveSelectedStep('left', steps.length);
+        handleMoveSelectedStep('left', steps);
       } else if (e.key === 'ArrowRight') {
         if (e.repeat) return;
         e.preventDefault();
-        handleMoveSelectedStep('right', steps.length);
+        handleMoveSelectedStep('right', steps);
       } else if (e.key === 'Escape') {
         cancelSwap();
       }
@@ -247,9 +249,9 @@ export const BedCard: React.FC<BedCardProps> = memo(({
                 steps={steps}
                 bed={bed}
                 queue={[]}
-                onSwapRequest={handleSwapRequest}
+                onSwapRequest={(targetBedId, idx) => handleSwapRequest(targetBedId, idx, steps)}
                 swapSourceIndex={swapSourceIndex}
-                onMoveSelectedStep={handleMoveSelectedStep}
+                onMoveSelectedStep={(direction) => handleMoveSelectedStep(direction, steps)}
                 totalSteps={steps.length}
                 onBackgroundTap={cancelSwap}
                 onReplaceStep={handleReplaceStep}

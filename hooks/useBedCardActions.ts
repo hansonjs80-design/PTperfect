@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { BedStatus } from '../types';
+import { BedStatus, TreatmentStep } from '../types';
 
 export const useBedCardActions = (
   bedStatus: BedStatus,
@@ -9,14 +9,14 @@ export const useBedCardActions = (
   swapSteps: (id: number, idx1: number, idx2: number) => void
 ) => {
   const [trashState, setTrashState] = useState<'idle' | 'confirm' | 'deleting'>('idle');
-  const [swapSourceIndex, setSwapSourceIndex] = useState<number | null>(null);
+  const [swapSourceStepId, setSwapSourceStepId] = useState<string | null>(null);
   const lastMoveTsRef = useRef(0);
   const MOVE_COOLDOWN_MS = 120;
 
   useEffect(() => {
     if (bedStatus === BedStatus.IDLE) {
       setTrashState('idle');
-      setSwapSourceIndex(null);
+      setSwapSourceStepId(null);
     }
   }, [bedStatus]);
 
@@ -33,40 +33,51 @@ export const useBedCardActions = (
     }
   }, [trashState, bedId, clearBed]);
 
-  const handleSwapRequest = useCallback((targetBedId: number, idx: number) => {
-    setSwapSourceIndex((prev) => {
-      if (prev === null) return idx;
-      if (prev !== idx) {
-        swapSteps(targetBedId, prev, idx);
-      }
-      return null;
-    });
-  }, [swapSteps]);
+  const getSelectedSwapIndex = useCallback((steps: TreatmentStep[]) => {
+    if (!swapSourceStepId) return null;
+    const idx = steps.findIndex((step) => step.id === swapSourceStepId);
+    return idx >= 0 ? idx : null;
+  }, [swapSourceStepId]);
 
-  const handleMoveSelectedStep = useCallback((direction: 'left' | 'right', totalSteps: number) => {
+  const handleSwapRequest = useCallback((targetBedId: number, idx: number, steps: TreatmentStep[]) => {
+    const targetStep = steps[idx];
+    if (!targetStep) return;
+
+    const selectedIdx = getSelectedSwapIndex(steps);
+    if (selectedIdx === null) {
+      setSwapSourceStepId(targetStep.id);
+      return;
+    }
+
+    if (selectedIdx !== idx) {
+      swapSteps(targetBedId, selectedIdx, idx);
+    }
+    setSwapSourceStepId(null);
+  }, [getSelectedSwapIndex, swapSteps]);
+
+  const handleMoveSelectedStep = useCallback((direction: 'left' | 'right', steps: TreatmentStep[]) => {
     const now = Date.now();
     if (now - lastMoveTsRef.current < MOVE_COOLDOWN_MS) return;
 
-    setSwapSourceIndex((prev) => {
-      if (prev === null) return prev;
+    const selectedIdx = getSelectedSwapIndex(steps);
+    if (selectedIdx === null) return;
 
-      const targetIndex = direction === 'left' ? prev - 1 : prev + 1;
-      if (targetIndex < 0 || targetIndex >= totalSteps) return prev;
+    const targetIndex = direction === 'left' ? selectedIdx - 1 : selectedIdx + 1;
+    if (targetIndex < 0 || targetIndex >= steps.length) return;
 
-      lastMoveTsRef.current = now;
-      swapSteps(bedId, prev, targetIndex);
-      return targetIndex;
-    });
-  }, [swapSteps, bedId]);
+    lastMoveTsRef.current = now;
+    swapSteps(bedId, selectedIdx, targetIndex);
+  }, [getSelectedSwapIndex, swapSteps, bedId]);
 
   const cancelSwap = useCallback(() => {
-    setSwapSourceIndex(null);
+    setSwapSourceStepId(null);
   }, []);
 
   return {
     trashState,
     handleTrashClick,
-    swapSourceIndex,
+    swapSourceStepId,
+    getSelectedSwapIndex,
     handleSwapRequest,
     handleMoveSelectedStep,
     cancelSwap

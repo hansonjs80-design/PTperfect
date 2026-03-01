@@ -9,7 +9,7 @@ interface BedContentProps {
   queue: number[];
   onSwapRequest?: (id: number, idx: number) => void;
   swapSourceIndex?: number | null;
-  onMoveSelectedStep?: (direction: 'left' | 'right', totalSteps: number) => void;
+  onMoveSelectedStep?: (direction: 'left' | 'right') => void;
   totalSteps?: number;
   onBackgroundTap?: () => void;
   onReplaceStep?: (idx: number, qt: QuickTreatment) => void;

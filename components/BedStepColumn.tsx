@@ -16,7 +16,7 @@ interface BedStepColumnProps {
   isSelectedForSwap: boolean;
   bedId: number;
   onSwapRequest?: (id: number, idx: number) => void;
-  onMoveSelectedStep?: (direction: 'left' | 'right', totalSteps: number) => void;
+  onMoveSelectedStep?: (direction: 'left' | 'right') => void;
   totalSteps?: number;
   onReplaceStep?: (idx: number, qt: QuickTreatment) => void;
   quickTreatments?: QuickTreatment[];
@@ -58,14 +58,14 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
     e.preventDefault();
     e.stopPropagation();
     if (!canMoveLeft) return;
-    onMoveSelectedStep && onMoveSelectedStep('left', totalSteps);
+    onMoveSelectedStep && onMoveSelectedStep('left');
   };
 
   const handleMoveRight = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!canMoveRight) return;
-    onMoveSelectedStep && onMoveSelectedStep('right', totalSteps);
+    onMoveSelectedStep && onMoveSelectedStep('right');
   };
 
   const handleSwapInteraction = (e: React.MouseEvent) => {
