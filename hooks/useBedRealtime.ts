@@ -26,6 +26,18 @@ const shouldKeepLocalIdle = (localBed: BedState, serverBed: BedState): boolean =
   return Date.now() - localBed.lastUpdateTimestamp < FALLBACK_PROTECT_MS;
 };
 
+
+const shouldKeepLocalActive = (localBed: BedState, serverBed: BedState): boolean => {
+  if (localBed.status === BedStatus.IDLE || serverBed.status !== BedStatus.IDLE) return false;
+  if (!localBed.lastUpdateTimestamp) return false;
+
+  const serverUpdatedAtMs = toEpochMs(serverBed.updatedAt);
+  if (serverUpdatedAtMs > 0 && serverUpdatedAtMs <= localBed.lastUpdateTimestamp) return true;
+
+  // 서버가 잠깐 늦게 따라오는 동안(로그->배드 활성화 직후) 로컬 ACTIVE 보호
+  const FALLBACK_PROTECT_MS = 15 * 1000;
+  return Date.now() - localBed.lastUpdateTimestamp < FALLBACK_PROTECT_MS;
+};
 const isServerNewer = (localBed: BedState, serverBed: BedState): boolean => {
   const localUpdatedAtMs = toEpochMs(localBed.updatedAt);
   const serverUpdatedAtMs = toEpochMs(serverBed.updatedAt);
@@ -61,8 +73,9 @@ export const useBedRealtime = (
         // → localStorage에 저장된 lastUpdateTimestamp로 최근 비우기 여부 판단
         if (shouldKeepLocalIdle(localBed, serverBed)) return localBed;
 
-        // 서버가 IDLE → 무조건 수락 (다른 디바이스에서 비우기)
+        // 서버 IDLE 수신 시에도, 방금 로컬에서 활성화한 경우 stale 업데이트일 수 있어 보호
         if (serverBed.status === BedStatus.IDLE && localBed.status !== BedStatus.IDLE) {
+          if (shouldKeepLocalActive(localBed, serverBed)) return localBed;
           return forceIdleBed(serverBed);
         }
 
@@ -92,8 +105,9 @@ export const useBedRealtime = (
         const serverBed = serverBedsById.get(localBed.id);
         if (!serverBed) return localBed;
 
-        // 서버가 IDLE이고 로컬이 아직 비IDLE → 무조건 비우기
+        // 서버가 IDLE이어도 최근 로컬 활성화 직후면 stale일 수 있어 보호
         if (serverBed.status === BedStatus.IDLE && localBed.status !== BedStatus.IDLE) {
+          if (shouldKeepLocalActive(localBed, serverBed)) return localBed;
           changed = true;
           return forceIdleBed(serverBed);
         }
