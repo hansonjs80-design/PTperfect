@@ -12,19 +12,33 @@ export const usePatientBedSync = (
 ) => {
   const { overrideBedFromLog, moveBedState, updateBedMemoFromLog } = bedIntegration;
 
+
+  const getVisitTimestamp = useCallback((visit: PatientVisit) => {
+    return new Date(visit.updated_at || visit.created_at || 0).getTime();
+  }, []);
+
+  const isLatestVisitForBed = useCallback((visitId: string, bedId: number) => {
+    const latestVisit = visitsRef.current
+      .filter(v => v.bed_id === bedId)
+      .sort((a, b) => getVisitTimestamp(a) - getVisitTimestamp(b))
+      .pop();
+
+    return !!latestVisit && latestVisit.id === visitId;
+  }, [visitsRef, getVisitTimestamp]);
+
   // Handler to sync bed status changes (Bed -> Log)
   const handleLogUpdate = useCallback((bedId: number, updates: Partial<PatientVisit>) => {
      const currentVisits = visitsRef.current;
      const bedVisits = currentVisits.filter(v => v.bed_id === bedId);
      
-     // Sort by created_at to guarantee we pick the latest session
-     bedVisits.sort((a, b) => (new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()));
+     // Sort by latest mutation time so we always patch the newest row for the bed.
+     bedVisits.sort((a, b) => getVisitTimestamp(a) - getVisitTimestamp(b));
 
      if (bedVisits.length > 0) {
         const lastVisit = bedVisits[bedVisits.length - 1];
         updateLogVisit(lastVisit.id, updates);
      }
-  }, [updateLogVisit, visitsRef]);
+  }, [updateLogVisit, visitsRef, getVisitTimestamp]);
 
   // Cross-Domain Logic (Bed <-> Log Sync)
   const updateVisitWithBedSync = useCallback(async (id: string, updates: Partial<PatientVisit>, skipBedSync: boolean = false) => {
@@ -75,13 +89,8 @@ export const usePatientBedSync = (
       }
 
       if (oldVisit.bed_id && updates.bed_id === null) {
-          const latestVisitForBed = visitsRef.current
-            .filter(v => v.bed_id === oldVisit.bed_id)
-            .sort((a, b) => (new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()))
-            .pop();
-
           // 최신 활성 행이 아닌 과거 행의 bed 해제 변경으로 현재 배드가 비워지는 것을 방지
-          if (latestVisitForBed && latestVisitForBed.id !== id) {
+          if (!isLatestVisitForBed(id, oldVisit.bed_id)) {
             return;
           }
 
@@ -91,7 +100,10 @@ export const usePatientBedSync = (
 
       if (mergedVisit.bed_id) {
           if (oldVisit.bed_id && updates.bed_id && oldVisit.bed_id !== updates.bed_id) {
-             clearBed(oldVisit.bed_id);
+             // 과거 행의 bed 이동 변경으로 현재 활성 배드가 비워지지 않도록 최신 행일 때만 clear
+             if (isLatestVisitForBed(id, oldVisit.bed_id)) {
+               clearBed(oldVisit.bed_id);
+             }
              shouldForceRestart = true;
           }
           // NOTE:
@@ -104,7 +116,7 @@ export const usePatientBedSync = (
 
           overrideBedFromLog(mergedVisit.bed_id, mergedVisit, shouldForceRestart);
       }
-  }, [updateLogVisit, clearBed, overrideBedFromLog, updateBedMemoFromLog, bedsRef, visitsRef]);
+  }, [updateLogVisit, clearBed, overrideBedFromLog, updateBedMemoFromLog, bedsRef, visitsRef, isLatestVisitForBed]);
 
   const movePatient = useCallback(async (fromBedId: number, toBedId: number) => {
     if (fromBedId === toBedId) return;
@@ -116,7 +128,7 @@ export const usePatientBedSync = (
     const isSourceActive = sourceBed && sourceBed.status === BedStatus.ACTIVE;
 
     const visitsForBed = visitsRef.current.filter(v => v.bed_id === fromBedId);
-    visitsForBed.sort((a, b) => (new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()));
+    visitsForBed.sort((a, b) => getVisitTimestamp(a) - getVisitTimestamp(b));
     const latestVisit = visitsForBed[visitsForBed.length - 1];
 
     if (isSourceActive) {
@@ -132,7 +144,7 @@ export const usePatientBedSync = (
     } else {
        alert(`${fromBedId}번 배드는 비어있어 이동할 데이터가 없습니다.`);
     }
-  }, [moveBedState, updateLogVisit, clearBed, overrideBedFromLog, bedsRef, visitsRef]);
+  }, [moveBedState, updateLogVisit, clearBed, overrideBedFromLog, bedsRef, visitsRef, getVisitTimestamp]);
 
   return {
     handleLogUpdate,
