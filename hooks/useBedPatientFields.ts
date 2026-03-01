@@ -17,17 +17,6 @@ export const useBedPatientFields = (beds: BedState[], visits: PatientVisit[]) =>
     return visitsForBed[visitsForBed.length - 1];
   }, [getVisitsForBed]);
 
-  const getLatestNonEmptyVisitField = useCallback(
-    (bedId: number, allVisits: PatientVisit[], field: 'patient_name' | 'body_part') => {
-      const visitsForBed = getVisitsForBed(bedId, allVisits);
-      for (let i = visitsForBed.length - 1; i >= 0; i -= 1) {
-        const value = visitsForBed[i][field]?.trim();
-        if (value) return value;
-      }
-      return undefined;
-    },
-    [getVisitsForBed]
-  );
 
   const bedPatientNames = useMemo(() => {
     const map: Record<number, string> = {};
@@ -35,12 +24,13 @@ export const useBedPatientFields = (beds: BedState[], visits: PatientVisit[]) =>
     beds.forEach((bed) => {
       if (!bed.id || bed.status === BedStatus.IDLE) return;
 
-      const patientName = getLatestNonEmptyVisitField(bed.id, visits, 'patient_name');
+      const latestVisit = getLatestVisitForBed(bed.id, visits);
+      const patientName = latestVisit?.patient_name?.trim();
       if (patientName) map[bed.id] = patientName;
     });
 
     return map;
-  }, [beds, visits, getLatestNonEmptyVisitField]);
+  }, [beds, visits, getLatestVisitForBed]);
 
   const bedPatientBodyParts = useMemo(() => {
     const map: Record<number, string> = {};
@@ -48,12 +38,13 @@ export const useBedPatientFields = (beds: BedState[], visits: PatientVisit[]) =>
     beds.forEach((bed) => {
       if (!bed.id || bed.status === BedStatus.IDLE) return;
 
-      const bodyPart = getLatestNonEmptyVisitField(bed.id, visits, 'body_part');
+      const latestVisit = getLatestVisitForBed(bed.id, visits);
+      const bodyPart = latestVisit?.body_part?.trim();
       if (bodyPart) map[bed.id] = bodyPart;
     });
 
     return map;
-  }, [beds, visits, getLatestNonEmptyVisitField]);
+  }, [beds, visits, getLatestVisitForBed]);
 
   return {
     bedPatientNames,
