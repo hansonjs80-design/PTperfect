@@ -75,7 +75,17 @@ export const usePatientBedSync = (
       }
 
       if (oldVisit.bed_id && updates.bed_id === null) {
-          clearBed(oldVisit.bed_id); 
+          const latestVisitForBed = visitsRef.current
+            .filter(v => v.bed_id === oldVisit.bed_id)
+            .sort((a, b) => (new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()))
+            .pop();
+
+          // 최신 활성 행이 아닌 과거 행의 bed 해제 변경으로 현재 배드가 비워지는 것을 방지
+          if (latestVisitForBed && latestVisitForBed.id !== id) {
+            return;
+          }
+
+          clearBed(oldVisit.bed_id);
           return;
       }
 

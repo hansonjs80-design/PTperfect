@@ -102,6 +102,13 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('[data-swap-cell="true"]')) {
+      setSelectingBedId(bed.id);
+      return;
+    }
+
     setEditingBedId(bed.id);
   };
 
@@ -111,7 +118,14 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       if (now - lastClickTimeRef.current < 350) {
         e.preventDefault();
         e.stopPropagation();
-        setEditingBedId(bed.id);
+
+        const target = e.target as HTMLElement | null;
+        if (target?.closest('[data-swap-cell="true"]')) {
+          setSelectingBedId(bed.id);
+        } else {
+          setEditingBedId(bed.id);
+        }
+
         lastClickTimeRef.current = 0;
       } else {
         lastClickTimeRef.current = now;
