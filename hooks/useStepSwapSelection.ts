@@ -29,10 +29,13 @@ export const useStepSwapSelection = (
       const target = event.target as HTMLElement | null;
       if (!target) return;
 
-      // 처방 셀/이동 버튼 등 스왑 인터랙션 영역 내부 클릭은 선택 유지
-      if (target.closest('[data-swap-scope="true"]')) return;
+      const inSwapScope = !!target.closest('[data-swap-scope="true"]');
+      const inSwapCell = !!target.closest('[data-swap-cell="true"]');
 
-      // 그 외(헤더 버튼, +버튼, 환자현황창 셀 클릭 등)는 선택 해제
+      // 스텝 셀 내부 클릭만 선택 유지. 스코프 내부의 빈 공간 클릭도 선택 해제.
+      if (inSwapScope && inSwapCell) return;
+
+      // 헤더 버튼, +버튼, 환자현황창 셀 클릭, 빈 공간 클릭 등은 선택 해제
       setSwapSourceStepId(null);
       emitSwapSelectionChange(null);
     };

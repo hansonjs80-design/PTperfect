@@ -92,6 +92,7 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
   return (
     <>
       <div
+        data-swap-cell="true"
         className={`
           flex-1 flex flex-col h-full min-w-0 group/col relative transition-all duration-300
           ${isActive ? 'z-10 shadow-md transform scale-[1.02] rounded-lg my-[-1px]' : ''}
