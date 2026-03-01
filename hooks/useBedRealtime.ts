@@ -178,17 +178,36 @@ export const useBedRealtime = (
         setBeds((prev) => {
           const newBeds = prev.map((bed) => {
             if (bed.id !== updatedBed.id) return bed;
-            // 서버가 IDLE → 무조건 비우기
-            if (updatedBed.status === BedStatus.IDLE) return forceIdleBed({ ...bed });
+
+            // 서버가 IDLE로 내려와도, 방금 로컬에서 ACTIVE 전환한 직후라면 stale 이벤트일 수 있어 보호
+            if (updatedBed.status === BedStatus.IDLE) {
+              if (shouldKeepLocalActive(bed, updatedBed as BedState)) return bed;
+              return forceIdleBed({ ...bed });
+            }
+
             // 로컬 변경 보호
             if (shouldIgnoreServerUpdate(bed, updatedBed)) return bed;
             if (bed.patientMemo !== updatedBed.patientMemo) {
               return { ...bed, ...updatedBed };
             }
+
             // ★ 고스트 카드 방지: 로컬이 IDLE인데 서버 이벤트가 비IDLE
             // → clearBedInDb 전의 stale 이벤트일 수 있음 (보호 기간 30초)
             if (shouldKeepLocalIdle(bed, updatedBed as BedState)) return bed;
-            if (!isServerNewer(bed, updatedBed as BedState) && bed.status === updatedBed.status) return bed;
+
+            const serverIsNewer = isServerNewer(bed, updatedBed as BedState);
+
+            // 상태가 다르더라도 서버 이벤트가 로컬보다 오래되면 무시 (ACTIVE→COMPLETED/IDLE 튐 방지)
+            if (updatedBed.status !== bed.status && !serverIsNewer) {
+              if (bed.lastUpdateTimestamp) {
+                const serverUpdatedAtMs = toEpochMs((updatedBed as BedState).updatedAt);
+                if (serverUpdatedAtMs > 0 && serverUpdatedAtMs <= bed.lastUpdateTimestamp) {
+                  return bed;
+                }
+              }
+            }
+
+            if (!serverIsNewer && bed.status === updatedBed.status) return bed;
             const merged = { ...bed, ...updatedBed };
             if (!updatedBed.patientMemo && bed.patientMemo) merged.patientMemo = bed.patientMemo;
             if (merged.status !== BedStatus.IDLE && (!!bed.customPreset || !!bed.currentPresetId) && !merged.customPreset && !merged.currentPresetId) {
