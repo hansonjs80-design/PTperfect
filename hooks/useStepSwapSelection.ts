@@ -25,8 +25,21 @@ export const useStepSwapSelection = (
       }
     };
 
+    const onAnyButtonPointerDown = (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (!target.closest('button')) return;
+      setSwapSourceStepId(null);
+      emitSwapSelectionChange(null);
+    };
+
     window.addEventListener(SWAP_SELECTION_EVENT, onSwapSelectionChange as EventListener);
-    return () => window.removeEventListener(SWAP_SELECTION_EVENT, onSwapSelectionChange as EventListener);
+    document.addEventListener('pointerdown', onAnyButtonPointerDown, true);
+
+    return () => {
+      window.removeEventListener(SWAP_SELECTION_EVENT, onSwapSelectionChange as EventListener);
+      document.removeEventListener('pointerdown', onAnyButtonPointerDown, true);
+    };
   }, [bedId]);
 
   const getSelectedSwapIndex = useCallback((steps: TreatmentStep[]) => {
