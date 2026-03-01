@@ -84,14 +84,15 @@ export const usePatientBedSync = (
              clearBed(oldVisit.bed_id);
              shouldForceRestart = true;
           }
-          // If no treatment_name, just clear the bed (don't activate)
+          // NOTE:
+          // treatment_name can be temporarily empty during rapid/partial row edits.
+          // Never auto-clear an active bed in that transient state unless user explicitly clears bed_id.
           const hasTreatment = !!mergedVisit.treatment_name && mergedVisit.treatment_name.trim() !== '';
-          if (!hasTreatment && shouldForceRestart) {
-             // No treatment to activate — just clear the previously active bed
-             clearBed(mergedVisit.bed_id);
-          } else {
-             overrideBedFromLog(mergedVisit.bed_id, mergedVisit, shouldForceRestart);
+          if (!hasTreatment) {
+             return;
           }
+
+          overrideBedFromLog(mergedVisit.bed_id, mergedVisit, shouldForceRestart);
       }
   }, [updateLogVisit, clearBed, overrideBedFromLog, updateBedMemoFromLog, bedsRef, visitsRef]);
 
