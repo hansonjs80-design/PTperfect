@@ -69,6 +69,21 @@ const shouldKeepLocalProgressAfterActivation = (localBed: BedState, serverBed: B
 
   return serverJumpsStepAhead && (serverIsOlderThanLocalMutation || serverLooksBehindInTime);
 };
+
+
+const shouldKeepLocalSessionAfterActivation = (localBed: BedState, serverBed: BedState): boolean => {
+  if (localBed.status !== BedStatus.ACTIVE || serverBed.status === BedStatus.IDLE) return false;
+  if (!localBed.lastUpdateTimestamp) return false;
+
+  // 환자현황에서 활성화한 직후에는 이전 세션(과거 startTime) 복원이 절대 일어나지 않도록 강하게 보호
+  const SESSION_GUARD_MS = 45 * 1000;
+  if (Date.now() - localBed.lastUpdateTimestamp > SESSION_GUARD_MS) return false;
+
+  if (typeof localBed.startTime !== 'number' || typeof serverBed.startTime !== 'number') return false;
+
+  // 서버 startTime이 로컬 세션보다 과거면 stale 세션으로 간주
+  return serverBed.startTime < localBed.startTime;
+};
 export const useBedRealtime = (
   setBeds: React.Dispatch<React.SetStateAction<BedState[]>>,
   setLocalBeds: (value: BedState[] | ((val: BedState[]) => BedState[])) => void
@@ -147,6 +162,9 @@ export const useBedRealtime = (
           return serverBed;
         }
 
+        // 활성화 직후 이전 세션(startTime이 더 과거) 복원 차단
+        if (shouldKeepLocalSessionAfterActivation(localBed, serverBed)) return localBed;
+
         // 활성화 직후 서버가 마지막 스텝 등으로 점프시키는 stale 업데이트 보호
         if (shouldKeepLocalProgressAfterActivation(localBed, serverBed)) return localBed;
 
@@ -212,6 +230,9 @@ export const useBedRealtime = (
               if (shouldKeepLocalActive(bed, updatedBed as BedState)) return bed;
               return forceIdleBed({ ...bed });
             }
+
+            // 활성화 직후 이전 세션(startTime이 더 과거) 복원 차단
+            if (shouldKeepLocalSessionAfterActivation(bed, updatedBed as BedState)) return bed;
 
             // 활성화 직후 서버가 마지막 스텝 등으로 점프시키는 stale 업데이트 보호
             if (shouldKeepLocalProgressAfterActivation(bed, updatedBed as BedState)) return bed;
