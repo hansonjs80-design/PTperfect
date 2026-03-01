@@ -256,6 +256,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
                 onBackgroundTap={cancelSwap}
                 onReplaceStep={handleReplaceStep}
                 quickTreatments={quickTreatments}
+                onOpenTreatmentSelector={setSelectingBedId}
               />
             </div>
           )}

@@ -14,6 +14,7 @@ interface BedContentProps {
   onBackgroundTap?: () => void;
   onReplaceStep?: (idx: number, qt: QuickTreatment) => void;
   quickTreatments?: QuickTreatment[];
+  onOpenTreatmentSelector?: (bedId: number) => void;
 }
 
 export const BedContent: React.FC<BedContentProps> = memo(({
@@ -25,7 +26,8 @@ export const BedContent: React.FC<BedContentProps> = memo(({
   totalSteps,
   onBackgroundTap,
   onReplaceStep,
-  quickTreatments
+  quickTreatments,
+  onOpenTreatmentSelector
 }) => {
   const isCompleted = bed.status === BedStatus.COMPLETED;
 
@@ -56,6 +58,7 @@ export const BedContent: React.FC<BedContentProps> = memo(({
             totalSteps={totalSteps ?? steps.length}
             onReplaceStep={onReplaceStep}
             quickTreatments={quickTreatments}
+            onOpenTreatmentSelector={onOpenTreatmentSelector}
           />
         );
       })}
