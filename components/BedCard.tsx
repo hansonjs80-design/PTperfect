@@ -44,8 +44,10 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const {
     trashState,
     handleTrashClick,
-    swapSourceIndex,
+    swapSourceStepId,
+    getSelectedSwapIndex,
     handleSwapRequest,
+    handleMoveSelectedStep,
     cancelSwap
   } = useBedCardActions(bed.status, bed.id, clearBed, swapSteps);
 
@@ -55,6 +57,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const currentPreset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
   const currentStep = currentPreset?.steps[bed.currentStepIndex];
   const steps = currentPreset?.steps || [];
+  const swapSourceIndex = getSelectedSwapIndex(steps);
 
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
   const isOvertime = isTimerActive && bed.remainingTime <= 0;
@@ -152,6 +155,8 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     }
   };
 
+
+
   const handleMemoSave = (val: string) => {
     updatePatientMemo(bed.id, val === "" ? undefined : val);
     setIsEditingMemo(false);
@@ -194,6 +199,14 @@ export const BedCard: React.FC<BedCardProps> = memo(({
         }
         updateBedSteps(bed.id, newSteps, newIdx);
         cancelSwap();
+      } else if (e.key === 'ArrowLeft') {
+        if (e.repeat) return;
+        e.preventDefault();
+        handleMoveSelectedStep('left', steps);
+      } else if (e.key === 'ArrowRight') {
+        if (e.repeat) return;
+        e.preventDefault();
+        handleMoveSelectedStep('right', steps);
       } else if (e.key === 'Escape') {
         cancelSwap();
       }
@@ -201,7 +214,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [swapSourceIndex, isDesktop, steps, bed.id, bed.currentStepIndex, updateBedSteps, cancelSwap]);
+  }, [swapSourceIndex, isDesktop, steps, bed.id, bed.currentStepIndex, updateBedSteps, handleMoveSelectedStep, cancelSwap]);
 
   return (
     <div className={`${containerClass} transform transition-transform duration-200 active:scale-[0.99]`}>
@@ -236,8 +249,11 @@ export const BedCard: React.FC<BedCardProps> = memo(({
                 steps={steps}
                 bed={bed}
                 queue={[]}
-                onSwapRequest={handleSwapRequest}
+                onSwapRequest={(targetBedId, idx) => handleSwapRequest(targetBedId, idx, steps)}
                 swapSourceIndex={swapSourceIndex}
+                onMoveSelectedStep={(direction) => handleMoveSelectedStep(direction, steps)}
+                totalSteps={steps.length}
+                onBackgroundTap={cancelSwap}
                 onReplaceStep={handleReplaceStep}
                 quickTreatments={quickTreatments}
               />

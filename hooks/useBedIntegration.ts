@@ -12,6 +12,13 @@ export const useBedIntegration = (
     onUpdateVisit?: (bedId: number, updates: Partial<PatientVisit>) => void
 ) => {
 
+    const updateBedMemoFromLog = useCallback((bedId: number, memo?: string) => {
+        const bed = bedsRef.current.find(b => b.id === bedId);
+        if (!bed || bed.status === BedStatus.IDLE) return;
+
+        updateBedState(bedId, { patientMemo: memo || undefined });
+    }, [bedsRef, updateBedState]);
+
     const overrideBedFromLog = useCallback((bedId: number, visit: PatientVisit, forceRestart: boolean) => {
         const treatmentName = visit.treatment_name || "";
         const matchingPreset = findMatchingPreset(presets, treatmentName, quickTreatments);
@@ -140,6 +147,7 @@ export const useBedIntegration = (
     return {
         overrideBedFromLog,
         moveBedState,
-        updateBedSteps
+        updateBedSteps,
+        updateBedMemoFromLog
     };
 };

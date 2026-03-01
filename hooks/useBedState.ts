@@ -127,6 +127,9 @@ export const useBedState = (
   const clearBedInDb = useCallback(async (bedId: number) => {
     if (!isOnlineMode() || !supabase) return;
 
+    // 이 clear 요청 시점 이후에 같은 bed가 다시 활성화되면 stale clear write를 중단한다.
+    const clearRequestedAt = Date.now();
+
     // 진행 중인 디바운스 취소
     const existing = dbWriteTimers.current.get(bedId);
     if (existing) {
@@ -157,6 +160,14 @@ export const useBedState = (
 
     // 3회까지 재시도
     for (let attempt = 0; attempt < 3; attempt++) {
+      const currentBed = bedsRef.current.find(b => b.id === bedId);
+      if (!currentBed) return;
+
+      // clear 요청 이후 더 최신 로컬 변경(재시작 포함)이 있으면 stale IDLE 덮어쓰기 중단
+      if (currentBed.status !== BedStatus.IDLE || (currentBed.lastUpdateTimestamp && currentBed.lastUpdateTimestamp > clearRequestedAt)) {
+        return;
+      }
+
       const { error } = await supabase.from('beds').upsert(idlePayload);
       if (!error) return;
       console.error(`[BedState] clearBed DB attempt ${attempt + 1} failed (bed ${bedId}):`, error.message);

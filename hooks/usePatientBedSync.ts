@@ -10,7 +10,7 @@ export const usePatientBedSync = (
   clearBed: (id: number) => void,
   bedIntegration: ReturnType<typeof useBedIntegration>
 ) => {
-  const { overrideBedFromLog, moveBedState } = bedIntegration;
+  const { overrideBedFromLog, moveBedState, updateBedMemoFromLog } = bedIntegration;
 
   // Handler to sync bed status changes (Bed -> Log)
   const handleLogUpdate = useCallback((bedId: number, updates: Partial<PatientVisit>) => {
@@ -65,7 +65,14 @@ export const usePatientBedSync = (
 
       if (skipBedSync) return;
 
-      const mergedVisit = { ...oldVisit, ...updates };
+      // Re-read latest visit after optimistic update so rapid sequential edits
+      // (e.g. bed_id then treatment_name) don't lose freshly changed fields.
+      const latestVisit = visitsRef.current.find(v => v.id === id);
+      const mergedVisit = { ...oldVisit, ...(latestVisit || {}), ...updates };
+
+      if (mergedVisit.bed_id && updates.memo !== undefined) {
+          updateBedMemoFromLog(mergedVisit.bed_id, updates.memo || undefined);
+      }
 
       if (oldVisit.bed_id && updates.bed_id === null) {
           clearBed(oldVisit.bed_id); 
@@ -77,16 +84,17 @@ export const usePatientBedSync = (
              clearBed(oldVisit.bed_id);
              shouldForceRestart = true;
           }
-          // If no treatment_name, just clear the bed (don't activate)
+          // NOTE:
+          // treatment_name can be temporarily empty during rapid/partial row edits.
+          // Never auto-clear an active bed in that transient state unless user explicitly clears bed_id.
           const hasTreatment = !!mergedVisit.treatment_name && mergedVisit.treatment_name.trim() !== '';
-          if (!hasTreatment && shouldForceRestart) {
-             // No treatment to activate — just clear the previously active bed
-             clearBed(mergedVisit.bed_id);
-          } else {
-             overrideBedFromLog(mergedVisit.bed_id, mergedVisit, shouldForceRestart);
+          if (!hasTreatment) {
+             return;
           }
+
+          overrideBedFromLog(mergedVisit.bed_id, mergedVisit, shouldForceRestart);
       }
-  }, [updateLogVisit, clearBed, overrideBedFromLog, bedsRef, visitsRef]);
+  }, [updateLogVisit, clearBed, overrideBedFromLog, updateBedMemoFromLog, bedsRef, visitsRef]);
 
   const movePatient = useCallback(async (fromBedId: number, toBedId: number) => {
     if (fromBedId === toBedId) return;

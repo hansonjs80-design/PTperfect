@@ -3,6 +3,7 @@ import React, { useCallback } from 'react';
 import { BedState, BedStatus, Preset, PatientVisit } from '../types';
 import { calculateRemainingTime } from '../utils/bedLogic';
 import { createSwappedPreset } from '../utils/treatmentFactories';
+import { generateTreatmentString } from '../utils/bedUtils';
 
 export const useBedControls = (
   bedsRef: React.MutableRefObject<BedState[]>,
@@ -79,16 +80,13 @@ export const useBedControls = (
       customPreset: swapResult.preset
     };
 
-    if (bed.status === BedStatus.ACTIVE && (bed.currentStepIndex === idx1 || bed.currentStepIndex === idx2)) {
-      const currentStepItem = swapResult.steps[bed.currentStepIndex];
-      updates.remainingTime = currentStepItem.duration;
-      updates.originalDuration = currentStepItem.duration;
-      updates.startTime = Date.now();
-      updates.isPaused = false;
-    }
-
+    // 순서 변경/자리 교환은 타이머 상태를 건드리지 않고 목록 위치만 변경한다.
     updateBedState(bedId, updates);
-  }, [presets, updateBedState]);
+
+    if (onUpdateVisit) {
+      onUpdateVisit(bedId, { treatment_name: generateTreatmentString(swapResult.steps) });
+    }
+  }, [presets, updateBedState, onUpdateVisit]);
 
   const togglePause = useCallback((bedId: number) => {
     const bed = bedsRef.current.find(b => b.id === bedId);

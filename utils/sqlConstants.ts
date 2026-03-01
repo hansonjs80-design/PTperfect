@@ -34,6 +34,8 @@ create table if not exists public.beds (
   is_traction boolean default false,
   is_eswt boolean default false,
   is_manual boolean default false,
+  is_injection_completed boolean default false,
+  patient_memo text,
   memos jsonb default '{}'::jsonb,
   updated_at timestamptz default now()
 );
@@ -56,6 +58,9 @@ begin
   if not exists (select 1 from information_schema.columns where table_name = 'beds' and column_name = 'is_injection') then
     alter table public.beds add column is_injection boolean default false;
   end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'beds' and column_name = 'is_injection_completed') then
+    alter table public.beds add column is_injection_completed boolean default false;
+  end if;
   if not exists (select 1 from information_schema.columns where table_name = 'beds' and column_name = 'original_duration') then
     alter table public.beds add column original_duration integer default 0;
   end if;
@@ -64,6 +69,9 @@ begin
   end if;
   if not exists (select 1 from information_schema.columns where table_name = 'beds' and column_name = 'queue') then
     alter table public.beds add column queue jsonb default '[]'::jsonb;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'beds' and column_name = 'patient_memo') then
+    alter table public.beds add column patient_memo text;
   end if;
 end $$;
 
