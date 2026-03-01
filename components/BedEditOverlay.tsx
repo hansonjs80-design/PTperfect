@@ -102,16 +102,9 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
           </div>
 
           <div className="flex-1 min-h-0 p-3 overflow-y-auto custom-scrollbar landscape:overflow-visible landscape:h-auto landscape:flex-none lg:landscape:flex-1 lg:landscape:overflow-y-auto lg:landscape:h-full lg:landscape:min-h-0">
-            <BedEditStepList
-              bed={bed}
-              steps={steps || []}
-              onUpdateSteps={onUpdateSteps}
-              onUpdateDuration={onUpdateDuration}
-            />
-
-            <div className="mt-3 rounded-2xl border border-brand-200/80 dark:border-brand-800/70 bg-white dark:bg-slate-900 p-3 space-y-3">
+            <div className="rounded-2xl border border-brand-200/80 dark:border-brand-800/70 bg-white dark:bg-slate-900 p-3 space-y-3">
               <div>
-                <h4 className="text-sm font-black text-brand-700 dark:text-brand-300">세트 목록으로 한번에 수정</h4>
+                <h4 className="text-sm font-black text-brand-700 dark:text-brand-300">치료 시작 구성으로 세트 변경</h4>
                 <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">치료 시작 창과 같은 목록에서 선택하여 현재 처방을 즉시 교체합니다.</p>
               </div>
 
@@ -131,6 +124,15 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
               ) : (
                 <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">빠른 치료 목록이 없어 세트 처방만 선택할 수 있습니다.</p>
               )}
+            </div>
+
+            <div className="mt-3">
+              <BedEditStepList
+                bed={bed}
+                steps={steps || []}
+                onUpdateSteps={onUpdateSteps}
+                onUpdateDuration={onUpdateDuration}
+              />
             </div>
           </div>
 
