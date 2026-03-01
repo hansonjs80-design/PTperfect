@@ -1,7 +1,14 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { TreatmentStep } from '../types';
 
 const MOVE_COOLDOWN_MS = 120;
+
+
+const SWAP_SELECTION_EVENT = 'bed-swap-selection-changed';
+
+const emitSwapSelectionChange = (bedId: number | null) => {
+  window.dispatchEvent(new CustomEvent<number | null>(SWAP_SELECTION_EVENT, { detail: bedId }));
+};
 
 export const useStepSwapSelection = (
   bedId: number,
@@ -9,6 +16,18 @@ export const useStepSwapSelection = (
 ) => {
   const [swapSourceStepId, setSwapSourceStepId] = useState<string | null>(null);
   const lastMoveTsRef = useRef(0);
+
+  useEffect(() => {
+    const onSwapSelectionChange = (event: Event) => {
+      const detail = (event as CustomEvent<number | null>).detail;
+      if (detail !== bedId) {
+        setSwapSourceStepId(null);
+      }
+    };
+
+    window.addEventListener(SWAP_SELECTION_EVENT, onSwapSelectionChange as EventListener);
+    return () => window.removeEventListener(SWAP_SELECTION_EVENT, onSwapSelectionChange as EventListener);
+  }, [bedId]);
 
   const getSelectedSwapIndex = useCallback((steps: TreatmentStep[]) => {
     if (!swapSourceStepId) return null;
@@ -23,6 +42,7 @@ export const useStepSwapSelection = (
     const selectedIdx = getSelectedSwapIndex(steps);
     if (selectedIdx === null) {
       setSwapSourceStepId(targetStep.id);
+      emitSwapSelectionChange(bedId);
       return;
     }
 
@@ -30,7 +50,8 @@ export const useStepSwapSelection = (
       swapSteps(targetBedId, selectedIdx, idx);
     }
     setSwapSourceStepId(null);
-  }, [getSelectedSwapIndex, swapSteps]);
+    emitSwapSelectionChange(null);
+  }, [bedId, getSelectedSwapIndex, swapSteps]);
 
   const handleMoveSelectedStep = useCallback((direction: 'left' | 'right', steps: TreatmentStep[]) => {
     const now = Date.now();
@@ -48,6 +69,7 @@ export const useStepSwapSelection = (
 
   const clearSwapSelection = useCallback(() => {
     setSwapSourceStepId(null);
+    emitSwapSelectionChange(null);
   }, []);
 
   return {
