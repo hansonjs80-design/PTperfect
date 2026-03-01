@@ -25,20 +25,24 @@ export const useStepSwapSelection = (
       }
     };
 
-    const onAnyButtonPointerDown = (event: Event) => {
+    const onGlobalPointerDown = (event: Event) => {
       const target = event.target as HTMLElement | null;
       if (!target) return;
-      if (!target.closest('button')) return;
+
+      // 처방 셀/이동 버튼 등 스왑 인터랙션 영역 내부 클릭은 선택 유지
+      if (target.closest('[data-swap-scope="true"]')) return;
+
+      // 그 외(헤더 버튼, +버튼, 환자현황창 셀 클릭 등)는 선택 해제
       setSwapSourceStepId(null);
       emitSwapSelectionChange(null);
     };
 
     window.addEventListener(SWAP_SELECTION_EVENT, onSwapSelectionChange as EventListener);
-    document.addEventListener('pointerdown', onAnyButtonPointerDown, true);
+    document.addEventListener('pointerdown', onGlobalPointerDown, true);
 
     return () => {
       window.removeEventListener(SWAP_SELECTION_EVENT, onSwapSelectionChange as EventListener);
-      document.removeEventListener('pointerdown', onAnyButtonPointerDown, true);
+      document.removeEventListener('pointerdown', onGlobalPointerDown, true);
     };
   }, [bedId]);
 

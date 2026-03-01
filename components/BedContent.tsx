@@ -32,6 +32,7 @@ export const BedContent: React.FC<BedContentProps> = memo(({
   return (
     // Reduced min-h from 45px to 40px for tighter mobile view
     <div
+      data-swap-scope="true"
       className="w-full h-auto sm:h-full min-h-[40px] flex flex-row gap-[1px] bg-slate-100 dark:bg-slate-700/50 p-[1px] overflow-hidden"
       onClick={(e) => { if (e.target === e.currentTarget) onBackgroundTap && onBackgroundTap(); }}
     >
