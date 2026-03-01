@@ -22,7 +22,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   isCompact
 }) => {
   const {
-    setSelectingBedId,
+    openTreatmentSelectorForBed,
     setEditingBedId,
     nextStep,
     prevStep,
@@ -105,7 +105,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
 
     const target = e.target as HTMLElement | null;
     if (target?.closest('[data-swap-cell="true"]')) {
-      setSelectingBedId(bed.id);
+      openTreatmentSelectorForBed(bed.id);
       return;
     }
 
@@ -121,7 +121,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
 
         const target = e.target as HTMLElement | null;
         if (target?.closest('[data-swap-cell="true"]')) {
-          setSelectingBedId(bed.id);
+          openTreatmentSelectorForBed(bed.id);
         } else {
           setEditingBedId(bed.id);
         }
@@ -252,7 +252,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       <div className={`${bed.status === BedStatus.IDLE ? 'flex-1' : 'flex-none sm:flex-1'} flex flex-col w-full min-h-0 relative bg-white/40 dark:bg-slate-800/20 backdrop-blur-xs`}>
         <div className={`${bed.status === BedStatus.IDLE ? 'flex-1' : 'flex-none h-auto sm:flex-1 sm:h-full sm:landscape:flex-none sm:landscape:h-auto lg:landscape:flex-1 lg:landscape:h-full'} flex flex-row w-full min-h-0`}>
           {bed.status === BedStatus.IDLE ? (
-            <BedEmptyState onOpenSelector={() => setSelectingBedId(bed.id)} />
+            <BedEmptyState onOpenSelector={() => openTreatmentSelectorForBed(bed.id)} />
           ) : (
             <div
               className="w-full h-full min-h-0"
@@ -270,7 +270,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
                 onBackgroundTap={cancelSwap}
                 onReplaceStep={handleReplaceStep}
                 quickTreatments={quickTreatments}
-                onOpenTreatmentSelector={setSelectingBedId}
+                onOpenTreatmentSelector={openTreatmentSelectorForBed}
               />
             </div>
           )}

@@ -37,6 +37,7 @@ interface TreatmentContextType {
   // UI State for Modals
   selectingBedId: number | null;
   setSelectingBedId: (id: number | null) => void;
+  openTreatmentSelectorForBed: (bedId: number) => void;
   selectingLogId: string | null;
   setSelectingLogId: (id: string | null) => void;
   editingBedId: number | null;
@@ -164,6 +165,21 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     await updateLogVisit(latestVisit.id, updates);
   }, [updateLogVisit, getLatestVisitForBed]);
+
+  const openTreatmentSelectorForBed = useCallback((bedId: number) => {
+    const bed = bedsRef.current.find((item) => item.id === bedId);
+    if (!bed) return;
+
+    if (bed.status !== BedStatus.IDLE) {
+      const latestVisit = getLatestVisitForBed(bedId, visitsRef.current);
+      uiState.setSelectingLogId(latestVisit?.id || null);
+    } else {
+      uiState.setSelectingLogId(null);
+    }
+
+    uiState.setSelectingBedId(bedId);
+  }, [getLatestVisitForBed, uiState]);
+
 
 
   // Active bed memo hydration: keep bed-card memo aligned with latest active patient log memo
@@ -297,6 +313,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     bedPatientBodyParts,
     updateVisitWithBedSync,
     updateActiveVisitFields,
+    openTreatmentSelectorForBed,
     undo,
     redo,
     canUndo,
