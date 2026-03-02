@@ -74,10 +74,17 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   }, [position]);
 
   const handleAdjustByMode = (direction: 1 | -1) => {
-    // 1분/5분 조정 시에는 초를 항상 00으로 맞춘 뒤 분 단위 증감한다.
+    // 1분/5분 조정 시에는 초를 항상 00으로 맞춘 뒤 증감한다.
     if (adjustMode === 'minute' || adjustMode === 'minute5') {
       const minuteAligned = Math.floor(totalSeconds / 60) * 60;
       setClampedSeconds(minuteAligned + direction * currentStepSeconds);
+      return;
+    }
+
+    // 30초 모드에서는 초 칸이 00/30만 보이도록 30초 경계에 정렬 후 증감한다.
+    if (adjustMode === 'second30') {
+      const halfMinuteAligned = Math.floor(totalSeconds / 30) * 30;
+      setClampedSeconds(halfMinuteAligned + direction * currentStepSeconds);
       return;
     }
 
