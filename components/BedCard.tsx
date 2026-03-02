@@ -22,7 +22,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   isCompact
 }) => {
   const {
-    setSelectingBedId,
+    openTreatmentSelectorForBed,
     setEditingBedId,
     nextStep,
     prevStep,
@@ -44,8 +44,10 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const {
     trashState,
     handleTrashClick,
-    swapSourceIndex,
+    swapSourceStepId,
+    getSelectedSwapIndex,
     handleSwapRequest,
+    handleMoveSelectedStep,
     cancelSwap
   } = useBedCardActions(bed.status, bed.id, clearBed, swapSteps);
 
@@ -55,6 +57,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const currentPreset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
   const currentStep = currentPreset?.steps[bed.currentStepIndex];
   const steps = currentPreset?.steps || [];
+  const swapSourceIndex = getSelectedSwapIndex(steps);
 
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
   const isOvertime = isTimerActive && bed.remainingTime <= 0;
@@ -99,6 +102,13 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('[data-swap-cell="true"]')) {
+      openTreatmentSelectorForBed(bed.id);
+      return;
+    }
+
     setEditingBedId(bed.id);
   };
 
@@ -108,7 +118,14 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       if (now - lastClickTimeRef.current < 350) {
         e.preventDefault();
         e.stopPropagation();
-        setEditingBedId(bed.id);
+
+        const target = e.target as HTMLElement | null;
+        if (target?.closest('[data-swap-cell="true"]')) {
+          openTreatmentSelectorForBed(bed.id);
+        } else {
+          setEditingBedId(bed.id);
+        }
+
         lastClickTimeRef.current = 0;
       } else {
         lastClickTimeRef.current = now;
@@ -152,6 +169,8 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     }
   };
 
+
+
   const handleMemoSave = (val: string) => {
     updatePatientMemo(bed.id, val === "" ? undefined : val);
     setIsEditingMemo(false);
@@ -171,6 +190,26 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     }
   };
 
+  const handleDeleteSelectedStep = useCallback(() => {
+    if (swapSourceIndex === null || steps.length <= 1) {
+      cancelSwap();
+      return;
+    }
+
+    const deletedIdx = swapSourceIndex;
+    const newSteps = steps.filter((_, i) => i !== deletedIdx);
+    let newIdx = bed.currentStepIndex;
+
+    if (deletedIdx < bed.currentStepIndex) {
+      newIdx = bed.currentStepIndex - 1;
+    } else if (deletedIdx === bed.currentStepIndex && deletedIdx >= newSteps.length) {
+      newIdx = Math.max(0, newSteps.length - 1);
+    }
+
+    updateBedSteps(bed.id, newSteps, newIdx);
+    cancelSwap();
+  }, [swapSourceIndex, steps, bed.currentStepIndex, bed.id, updateBedSteps, cancelSwap]);
+
   // Desktop only: Backspace/Delete removes the swap-selected step
   useEffect(() => {
     if (swapSourceIndex === null || !isDesktop) return;
@@ -178,22 +217,15 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Backspace' || e.key === 'Delete') {
         e.preventDefault();
-        // Prevent deleting the last remaining step
-        if (steps.length <= 1) {
-          cancelSwap();
-          return;
-        }
-        const deletedIdx = swapSourceIndex;
-        const newSteps = steps.filter((_, i) => i !== deletedIdx);
-        // Adjust currentStepIndex if the deleted step was before it
-        let newIdx = bed.currentStepIndex;
-        if (deletedIdx < bed.currentStepIndex) {
-          newIdx = bed.currentStepIndex - 1;
-        } else if (deletedIdx === bed.currentStepIndex && deletedIdx >= newSteps.length) {
-          newIdx = Math.max(0, newSteps.length - 1);
-        }
-        updateBedSteps(bed.id, newSteps, newIdx);
-        cancelSwap();
+        handleDeleteSelectedStep();
+      } else if (e.key === 'ArrowLeft') {
+        if (e.repeat) return;
+        e.preventDefault();
+        handleMoveSelectedStep('left', steps);
+      } else if (e.key === 'ArrowRight') {
+        if (e.repeat) return;
+        e.preventDefault();
+        handleMoveSelectedStep('right', steps);
       } else if (e.key === 'Escape') {
         cancelSwap();
       }
@@ -201,7 +233,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [swapSourceIndex, isDesktop, steps, bed.id, bed.currentStepIndex, updateBedSteps, cancelSwap]);
+  }, [swapSourceIndex, isDesktop, steps, handleMoveSelectedStep, cancelSwap, handleDeleteSelectedStep]);
 
   return (
     <div className={`${containerClass} transform transition-transform duration-200 active:scale-[0.99]`}>
@@ -225,7 +257,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       <div className={`${bed.status === BedStatus.IDLE ? 'flex-1' : 'flex-none sm:flex-1'} flex flex-col w-full min-h-0 relative bg-white/40 dark:bg-slate-800/20 backdrop-blur-xs`}>
         <div className={`${bed.status === BedStatus.IDLE ? 'flex-1' : 'flex-none h-auto sm:flex-1 sm:h-full sm:landscape:flex-none sm:landscape:h-auto lg:landscape:flex-1 lg:landscape:h-full'} flex flex-row w-full min-h-0`}>
           {bed.status === BedStatus.IDLE ? (
-            <BedEmptyState onOpenSelector={() => setSelectingBedId(bed.id)} />
+            <BedEmptyState onOpenSelector={() => openTreatmentSelectorForBed(bed.id)} />
           ) : (
             <div
               className="w-full h-full min-h-0"
@@ -236,10 +268,17 @@ export const BedCard: React.FC<BedCardProps> = memo(({
                 steps={steps}
                 bed={bed}
                 queue={[]}
-                onSwapRequest={handleSwapRequest}
+                onSwapRequest={(targetBedId, idx) => handleSwapRequest(targetBedId, idx, steps)}
                 swapSourceIndex={swapSourceIndex}
+                onMoveSelectedStep={(direction) => handleMoveSelectedStep(direction, steps)}
+                totalSteps={steps.length}
+                onBackgroundTap={cancelSwap}
+                onDeleteSelectedStep={handleDeleteSelectedStep}
+                onCancelSelection={cancelSwap}
                 onReplaceStep={handleReplaceStep}
                 quickTreatments={quickTreatments}
+                onOpenTreatmentSelector={openTreatmentSelectorForBed}
+                onOpenBedEdit={setEditingBedId}
               />
             </div>
           )}
