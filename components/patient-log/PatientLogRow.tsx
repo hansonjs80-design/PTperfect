@@ -361,7 +361,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
             const formattedVal = formatBodyPartText(val || '');
             handleChange('body_part', formattedVal, skipSync, 2, navDir);
           }}
-          forceUpperCase={true}
           directEdit={true}
           syncOnDirectEdit={false}
           suppressEnterNav={isDraft}

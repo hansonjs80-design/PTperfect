@@ -116,8 +116,13 @@ export const useBedIntegration = (
             patientMemo: fromBed.patientMemo,
         };
 
+        // 1) 먼저 대상 배드에 상태를 복원
         await updateBedState(toBedId, stateToMove);
+        // 2) 원본 배드를 비우고
         clearBed(fromBedId);
+        // 3) clear/realtime 레이스로 대상이 잠깐 비워지는 경우를 방지하기 위해
+        //    동일 스냅샷을 한 번 더 덮어써 최종 상태를 고정한다.
+        await updateBedState(toBedId, stateToMove);
     }, [updateBedState, clearBed, bedsRef]);
 
     const updateBedSteps = useCallback((bedId: number, newSteps: TreatmentStep[], newStepIndex?: number) => {
