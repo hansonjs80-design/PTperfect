@@ -11,6 +11,7 @@ import { useTreatmentUI } from '../hooks/useTreatmentUI';
 import { usePatientBedSync } from '../hooks/usePatientBedSync';
 import { useHistory } from '../hooks/useHistory';
 import { useBedPatientFields } from '../hooks/useBedPatientFields';
+import { useActiveBedStability } from '../hooks/useActiveBedStability';
 import { supabase, isOnlineMode } from '../lib/supabase';
 
 interface MovingPatientState {
@@ -141,9 +142,6 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const bedsRef = useRef(beds);
   useEffect(() => { bedsRef.current = beds; }, [beds]);
-  const staleCleanupRef = useRef<Map<number, number>>(new Map());
-  const missingVisitCountRef = useRef<Map<number, number>>(new Map());
-
   const { bedPatientNames, bedPatientBodyParts, getLatestVisitForBed } = useBedPatientFields(beds, visits);
 
   const { handleLogUpdate, movePatient: _movePatient, updateVisitWithBedSync, activateVisitFromLog } = usePatientBedSync(
@@ -186,74 +184,13 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
 
 
 
-  // Active bed memo hydration: keep bed-card memo aligned with latest active patient log memo
-  // so memo survives reload and cross-device realtime scenarios.
-  useEffect(() => {
-    beds.forEach((bed) => {
-      if (!bed.id || bed.status !== BedStatus.ACTIVE) return;
-
-      const bedVisits = visits
-        .filter((v) => v.bed_id === bed.id)
-        .sort((a, b) => {
-          const aTs = new Date(a.updated_at || a.created_at || 0).getTime();
-          const bTs = new Date(b.updated_at || b.created_at || 0).getTime();
-          return aTs - bTs;
-        });
-
-      const latest = bedVisits[bedVisits.length - 1];
-      if (!latest) return;
-
-      // Prevent old memo from previous sessions being restored into a newly started card.
-      const latestVisitTs = new Date(latest.updated_at || latest.created_at || 0).getTime();
-      if (bed.startTime && latestVisitTs > 0 && latestVisitTs + 5000 < bed.startTime) return;
-
-      const latestMemo = latest.memo || undefined;
-      const currentMemo = bed.patientMemo || undefined;
-      if (latestMemo !== currentMemo) {
-        updateBedMemoFromLog(bed.id, latestMemo);
-      }
-    });
-  }, [beds, visits, updateBedMemoFromLog]);
-
-  // Active bed sanity guard (strictly minimal):
-  // clear only when no valid row for current date exists for the bed.
-  // Do NOT clear by transient treatment text gaps to avoid dropping freshly activated sessions.
-  useEffect(() => {
-    const now = Date.now();
-    const LOCAL_START_GRACE_MS = 120000;
-    const CLEAR_THROTTLE_MS = 8000;
-    const MIN_MISS_COUNT_TO_CLEAR = 4;
-
-    beds.forEach((bed) => {
-      if (!bed.id || bed.status === BedStatus.IDLE) {
-        if (bed?.id) missingVisitCountRef.current.delete(bed.id);
-        return;
-      }
-
-      const latestVisit = getLatestVisitForBed(bed.id, visits);
-      const localSessionTs = bed.lastUpdateTimestamp || bed.startTime || 0;
-      const localAge = localSessionTs > 0 ? now - localSessionTs : Number.MAX_SAFE_INTEGER;
-      if (localAge < LOCAL_START_GRACE_MS) {
-        missingVisitCountRef.current.set(bed.id, 0);
-        return;
-      }
-
-      const hasValidTodayRow = !!latestVisit && latestVisit.visit_date === currentDate;
-      if (hasValidTodayRow) {
-        missingVisitCountRef.current.set(bed.id, 0);
-        return;
-      }
-
-      const missCount = (missingVisitCountRef.current.get(bed.id) || 0) + 1;
-      missingVisitCountRef.current.set(bed.id, missCount);
-      if (missCount < MIN_MISS_COUNT_TO_CLEAR) return;
-
-      const lastClearedAt = staleCleanupRef.current.get(bed.id) || 0;
-      if (now - lastClearedAt < CLEAR_THROTTLE_MS) return;
-      staleCleanupRef.current.set(bed.id, now);
-      _clearBed(bed.id);
-    });
-  }, [beds, visits, currentDate, getLatestVisitForBed, _clearBed]);
+  useActiveBedStability({
+    beds,
+    visits,
+    currentDate,
+    clearBed: _clearBed,
+    updateBedMemoFromLog,
+  });
 
   // --- Snapshot Wrappers for Actions ---
 
