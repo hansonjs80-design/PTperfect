@@ -11,47 +11,6 @@ const toSinoKorean = (num: number): string => {
 };
 
 
-const playBeepPattern = () => {
-  if (typeof window === 'undefined') return;
-
-  const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
-  if (!AudioCtx) return;
-
-  try {
-    const ctx = new AudioCtx();
-    const now = ctx.currentTime;
-    const pattern: Array<[number, number]> = [
-      [0.00, 0.22],
-      [0.45, 0.22],
-      [0.90, 0.22],
-    ];
-
-    pattern.forEach(([startOffset, dur]) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, now + startOffset);
-
-      gain.gain.setValueAtTime(0.0001, now + startOffset);
-      gain.gain.exponentialRampToValueAtTime(0.18, now + startOffset + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + startOffset + dur);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now + startOffset);
-      osc.stop(now + startOffset + dur + 0.02);
-    });
-
-    const closeAfter = 1800;
-    window.setTimeout(() => {
-      if (ctx.state !== 'closed') void ctx.close();
-    }, closeAfter);
-  } catch (e) {
-    console.error('Alarm beep playback failed', e);
-  }
-};
-
 // TTS가 겹치는 경우 잘림/중단이 발생하므로 전역 직렬 큐로 처리
 let ttsQueue: Promise<void> = Promise.resolve();
 
@@ -61,20 +20,35 @@ const speakSequentially = (message: string): Promise<void> => {
   }
 
   return new Promise<void>((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      resolve();
+    };
+
+    const safetyTimer = window.setTimeout(finish, 8000);
+
     try {
       const utterance = new SpeechSynthesisUtterance(message);
       utterance.lang = 'ko-KR';
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
+      utterance.onend = () => {
+        window.clearTimeout(safetyTimer);
+        finish();
+      };
+      utterance.onerror = () => {
+        window.clearTimeout(safetyTimer);
+        finish();
+      };
 
-      const finish = () => resolve();
-      utterance.onend = finish;
-      utterance.onerror = finish;
-
+      window.speechSynthesis.resume();
       window.speechSynthesis.speak(utterance);
     } catch (e) {
+      window.clearTimeout(safetyTimer);
       console.error('TTS playback failed', e);
-      resolve();
+      finish();
     }
   });
 };
@@ -97,14 +71,9 @@ export const playAlarmPattern = async (
     }
   }
 
-  // 2. Beep Audio (Web Audio API)
-  if (!isSilent) {
-    playBeepPattern();
-  }
-
-  // 3. TTS Audio (Web Speech API)
+  // 2. TTS Audio (Web Speech API)
   // 겹치는 종료 알림도 순차적으로 모두 재생되도록 cancel 없이 직렬 큐 처리
-  if (!isSilent) {
+  {
     const bedLabel = bedId === 11 ? '견인치료기' : `${toSinoKorean(bedId!)}번 배드`;
     const currentLabel = treatmentName ? ` ${treatmentName} 치료` : ' 치료';
 
@@ -118,7 +87,7 @@ export const playAlarmPattern = async (
     ttsQueue = ttsQueue.then(() => speakSequentially(message));
   }
 
-  // 4. System Notification (Native Sound/Vibration - iOS & Android PWA)
+  // 3. System Notification (visual only, no notification sound)
   // Always trigger notification for visual cue, but suppress sound/vibrate if silent
   // 데스크탑 모드에서는 알림 창(Notification)을 띄우지 않음
   const isDesktop = typeof navigator !== 'undefined' && !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -135,7 +104,7 @@ export const playAlarmPattern = async (
     }
 
     // Native vibration control via Notification API option
-    const notificationVibrate = isSilent ? [] : VIBRATION_PATTERN;
+    const notificationVibrate: number[] = [];
 
     try {
       if ('serviceWorker' in navigator) {
@@ -145,7 +114,7 @@ export const playAlarmPattern = async (
             body: body,
             icon: 'https://cdn-icons-png.flaticon.com/512/3063/3063176.png',
             vibrate: notificationVibrate,
-            silent: isSilent, // Suppress system sound if silent is true
+            silent: true,
             tag: bedId ? `bed-${bedId}` : 'test-alarm',
             renotify: true,
             requireInteraction: true,
@@ -162,7 +131,7 @@ export const playAlarmPattern = async (
       new Notification(title, {
         body: body,
         icon: 'https://cdn-icons-png.flaticon.com/512/3063/3063176.png',
-        silent: isSilent,
+        silent: true,
         // @ts-ignore
         vibrate: notificationVibrate
       });
