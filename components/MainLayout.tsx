@@ -9,7 +9,6 @@ import { GlobalModals } from './GlobalModals';
 import { useSidebarResize } from '../hooks/useSidebarResize';
 import { usePatientLogVisibility } from '../hooks/usePatientLogVisibility';
 import { useLayoutStyles } from '../hooks/useLayoutStyles';
-import { DigitalClock } from './common/DigitalClock';
 
 const PatientLogPanel = React.lazy(() => import('./PatientLogPanel').then(module => ({ default: module.PatientLogPanel })));
 
@@ -103,13 +102,6 @@ export const MainLayout: React.FC = () => {
           >
             <Minimize className="w-4 h-4 sm:w-6 sm:h-6" />
           </button>
-        )}
-
-
-        {!isFullScreen && (
-          <div className="pointer-events-none absolute bottom-2 left-2 z-20 hidden xl:block h-[120px] w-[min(34vw,520px)]">
-            <DigitalClock />
-          </div>
         )}
 
         {/* Desktop Sidebar Resizer */}
