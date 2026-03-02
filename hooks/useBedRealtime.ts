@@ -93,6 +93,25 @@ const shouldRejectOlderActiveSession = (localBed: BedState, serverBed: BedState)
   // timestamp(updated_at)와 무관하게, startTime이 과거인 ACTIVE 세션은 무조건 stale로 본다.
   return serverBed.startTime < localBed.startTime;
 };
+
+
+const shouldProtectCurrentActiveSession = (localBed: BedState, serverBed: BedState): boolean => {
+  if (localBed.status !== BedStatus.ACTIVE || serverBed.status !== BedStatus.ACTIVE) return false;
+
+  // 로컬 세션 시작시각이 있는 경우, 서버 ACTIVE 스냅샷은 동일/신규 세션만 허용
+  if (typeof localBed.startTime === 'number') {
+    if (typeof serverBed.startTime !== 'number') return true;
+    if (serverBed.startTime < localBed.startTime) return true;
+  }
+
+  // 로컬 변경 이후 시각보다 오래된 서버 스냅샷이면 현재 세션 보호
+  if (localBed.lastUpdateTimestamp) {
+    const serverUpdatedAtMs = toEpochMs(serverBed.updatedAt);
+    if (serverUpdatedAtMs > 0 && serverUpdatedAtMs <= localBed.lastUpdateTimestamp) return true;
+  }
+
+  return false;
+};
 export const useBedRealtime = (
   setBeds: React.Dispatch<React.SetStateAction<BedState[]>>,
   setLocalBeds: (value: BedState[] | ((val: BedState[]) => BedState[])) => void
@@ -127,6 +146,9 @@ export const useBedRealtime = (
           if (shouldKeepLocalActive(localBed, serverBed)) return localBed;
           return forceIdleBed(serverBed);
         }
+
+        // 현재 ACTIVE 세션 보호 (직전/모호한 서버 ACTIVE 스냅샷 차단)
+        if (shouldProtectCurrentActiveSession(localBed, serverBed)) return localBed;
 
         // 직전 ACTIVE 세션(startTime이 더 과거) 덮어쓰기는 항상 차단
         if (shouldRejectOlderActiveSession(localBed, serverBed)) return localBed;
@@ -173,6 +195,9 @@ export const useBedRealtime = (
           changed = true;
           return serverBed;
         }
+
+        // 현재 ACTIVE 세션 보호 (직전/모호한 서버 ACTIVE 스냅샷 차단)
+        if (shouldProtectCurrentActiveSession(localBed, serverBed)) return localBed;
 
         // 직전 ACTIVE 세션(startTime이 더 과거) 덮어쓰기는 항상 차단
         if (shouldRejectOlderActiveSession(localBed, serverBed)) return localBed;
@@ -245,6 +270,9 @@ export const useBedRealtime = (
               if (shouldKeepLocalActive(bed, updatedBed as BedState)) return bed;
               return forceIdleBed({ ...bed });
             }
+
+            // 현재 ACTIVE 세션 보호 (직전/모호한 서버 ACTIVE 스냅샷 차단)
+            if (shouldProtectCurrentActiveSession(bed, updatedBed as BedState)) return bed;
 
             // 직전 ACTIVE 세션(startTime이 더 과거) 덮어쓰기는 항상 차단
             if (shouldRejectOlderActiveSession(bed, updatedBed as BedState)) return bed;

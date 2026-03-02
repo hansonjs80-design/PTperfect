@@ -24,6 +24,7 @@ export const useBedControls = (
     if (nextIndex < preset.steps.length) {
       const nextStepItem = preset.steps[nextIndex];
       updateBedState(bedId, {
+        status: BedStatus.ACTIVE,
         currentStepIndex: nextIndex,
         queue: [],
         startTime: Date.now(),
