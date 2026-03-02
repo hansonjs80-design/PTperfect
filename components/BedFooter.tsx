@@ -7,19 +7,21 @@ import { FooterButton } from './bed-card/FooterButton';
 import { StepReplacePopup } from './bed-card/StepReplacePopup';
 
 interface BedFooterProps {
+  isSwapControlMode?: boolean;
+
   bed: BedState;
   steps: TreatmentStep[];
   onNext: (bedId: number) => void;
   onPrev?: (bedId: number) => void;
   onClear: (bedId: number) => void;
   trashState?: 'idle' | 'confirm' | 'deleting';
-  onTrashClick?: (e: React.MouseEvent) => void;
+  onTrashClick?: () => void;
   onEditClick?: (bedId: number) => void;
   onAddStep?: (qt: QuickTreatment) => void;
   quickTreatments?: QuickTreatment[];
 }
 
-export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState, onTrashClick, onEditClick, onAddStep, quickTreatments }: BedFooterProps) => {
+export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState, onTrashClick, onEditClick, onAddStep, quickTreatments, isSwapControlMode = false }: BedFooterProps) => {
   const [addPopup, setAddPopup] = useState<{ x: number; y: number } | null>(null);
   const totalSteps = steps.length || 0;
   const isLastStep = bed.currentStepIndex === totalSteps - 1;
@@ -57,12 +59,24 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
     <>
       <div className="p-1 shrink-0 bg-white dark:bg-slate-800">
         <div className="flex gap-1.5 h-[32px] sm:h-9">
-           {trashState && onTrashClick && (
-             <BedTrashButton
-               trashState={trashState}
-               onClick={onTrashClick}
-               className="flex-1 h-full"
-             />
+           {onTrashClick && (
+             isSwapControlMode ? (
+               <FooterButton
+                 onClick={() => onTrashClick()}
+                 className="flex-1 h-full bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-900/60 text-red-600 dark:text-red-300 font-black"
+                 title="선택 단계 삭제"
+               >
+                 <X className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={3} />
+               </FooterButton>
+             ) : (
+               trashState && (
+                 <BedTrashButton
+                   trashState={trashState}
+                   onClick={(e) => { e.preventDefault(); onTrashClick(); }}
+                   className="flex-1 h-full"
+                 />
+               )
+             )
            )}
 
            {onEditClick && (
@@ -99,18 +113,26 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
              className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
              title="이전"
            >
-             <SkipBack className="w-[18px] h-[18px] md:w-5 md:h-5" />
+             {isSwapControlMode ? (
+               <span className="text-lg md:text-xl font-black leading-none">&lt;</span>
+             ) : (
+               <SkipBack className="w-[18px] h-[18px] md:w-5 md:h-5" />
+             )}
            </FooterButton>
 
            <FooterButton
              onClick={() => onNext(bed.id)}
              className={`flex-1 ${
-               isLastStep
-                 ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-red-200 dark:shadow-none'
-                 : 'bg-brand-100 hover:bg-brand-200 dark:bg-brand-900/40 dark:hover:bg-brand-900/60 text-brand-700 dark:text-brand-300 font-bold'
+               isSwapControlMode
+                 ? 'bg-brand-100 hover:bg-brand-200 dark:bg-brand-900/40 dark:hover:bg-brand-900/60 text-brand-700 dark:text-brand-300 font-black'
+                 : (isLastStep
+                   ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-red-200 dark:shadow-none'
+                   : 'bg-brand-100 hover:bg-brand-200 dark:bg-brand-900/40 dark:hover:bg-brand-900/60 text-brand-700 dark:text-brand-300 font-bold')
              }`}
            >
-             {isLastStep ? (
+             {isSwapControlMode ? (
+               <span className="text-lg md:text-xl font-black leading-none">&gt;</span>
+             ) : isLastStep ? (
                <Check className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={3} />
              ) : (
                <SkipForward className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={3} />
