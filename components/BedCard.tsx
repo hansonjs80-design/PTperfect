@@ -22,7 +22,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   isCompact
 }) => {
   const {
-    setSelectingBedId,
+    openTreatmentSelectorForBed,
     setEditingBedId,
     nextStep,
     prevStep,
@@ -44,8 +44,10 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const {
     trashState,
     handleTrashClick,
-    swapSourceIndex,
+    swapSourceStepId,
+    getSelectedSwapIndex,
     handleSwapRequest,
+    handleMoveSelectedStep,
     cancelSwap
   } = useBedCardActions(bed.status, bed.id, clearBed, swapSteps);
 
@@ -55,6 +57,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const currentPreset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
   const currentStep = currentPreset?.steps[bed.currentStepIndex];
   const steps = currentPreset?.steps || [];
+  const swapSourceIndex = getSelectedSwapIndex(steps);
 
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
   const isOvertime = isTimerActive && bed.remainingTime <= 0;
@@ -99,6 +102,13 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('[data-swap-cell="true"]')) {
+      openTreatmentSelectorForBed(bed.id);
+      return;
+    }
+
     setEditingBedId(bed.id);
   };
 
@@ -108,7 +118,14 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       if (now - lastClickTimeRef.current < 350) {
         e.preventDefault();
         e.stopPropagation();
-        setEditingBedId(bed.id);
+
+        const target = e.target as HTMLElement | null;
+        if (target?.closest('[data-swap-cell="true"]')) {
+          openTreatmentSelectorForBed(bed.id);
+        } else {
+          setEditingBedId(bed.id);
+        }
+
         lastClickTimeRef.current = 0;
       } else {
         lastClickTimeRef.current = now;
@@ -152,6 +169,8 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     }
   };
 
+
+
   const handleMemoSave = (val: string) => {
     updatePatientMemo(bed.id, val === "" ? undefined : val);
     setIsEditingMemo(false);
@@ -194,6 +213,14 @@ export const BedCard: React.FC<BedCardProps> = memo(({
         }
         updateBedSteps(bed.id, newSteps, newIdx);
         cancelSwap();
+      } else if (e.key === 'ArrowLeft') {
+        if (e.repeat) return;
+        e.preventDefault();
+        handleMoveSelectedStep('left', steps);
+      } else if (e.key === 'ArrowRight') {
+        if (e.repeat) return;
+        e.preventDefault();
+        handleMoveSelectedStep('right', steps);
       } else if (e.key === 'Escape') {
         cancelSwap();
       }
@@ -201,7 +228,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [swapSourceIndex, isDesktop, steps, bed.id, bed.currentStepIndex, updateBedSteps, cancelSwap]);
+  }, [swapSourceIndex, isDesktop, steps, bed.id, bed.currentStepIndex, updateBedSteps, handleMoveSelectedStep, cancelSwap]);
 
   return (
     <div className={`${containerClass} transform transition-transform duration-200 active:scale-[0.99]`}>
@@ -225,7 +252,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       <div className={`${bed.status === BedStatus.IDLE ? 'flex-1' : 'flex-none sm:flex-1'} flex flex-col w-full min-h-0 relative bg-white/40 dark:bg-slate-800/20 backdrop-blur-xs`}>
         <div className={`${bed.status === BedStatus.IDLE ? 'flex-1' : 'flex-none h-auto sm:flex-1 sm:h-full sm:landscape:flex-none sm:landscape:h-auto lg:landscape:flex-1 lg:landscape:h-full'} flex flex-row w-full min-h-0`}>
           {bed.status === BedStatus.IDLE ? (
-            <BedEmptyState onOpenSelector={() => setSelectingBedId(bed.id)} />
+            <BedEmptyState onOpenSelector={() => openTreatmentSelectorForBed(bed.id)} />
           ) : (
             <div
               className="w-full h-full min-h-0"
@@ -236,10 +263,15 @@ export const BedCard: React.FC<BedCardProps> = memo(({
                 steps={steps}
                 bed={bed}
                 queue={[]}
-                onSwapRequest={handleSwapRequest}
+                onSwapRequest={(targetBedId, idx) => handleSwapRequest(targetBedId, idx, steps)}
                 swapSourceIndex={swapSourceIndex}
+                onMoveSelectedStep={(direction) => handleMoveSelectedStep(direction, steps)}
+                totalSteps={steps.length}
+                onBackgroundTap={cancelSwap}
                 onReplaceStep={handleReplaceStep}
                 quickTreatments={quickTreatments}
+                onOpenTreatmentSelector={openTreatmentSelectorForBed}
+                onOpenBedEdit={setEditingBedId}
               />
             </div>
           )}
