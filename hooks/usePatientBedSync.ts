@@ -5,11 +5,20 @@ import { useBedIntegration } from './useBedIntegration';
 export const usePatientBedSync = (
   bedsRef: React.MutableRefObject<BedState[]>,
   visitsRef: React.MutableRefObject<PatientVisit[]>,
+  currentDate: string,
   updateLogVisit: (id: string, updates: Partial<PatientVisit>) => Promise<void>,
   clearBed: (id: number) => void,
   bedIntegration: ReturnType<typeof useBedIntegration>
 ) => {
   const { overrideBedFromLog, moveBedState, updateBedMemoFromLog } = bedIntegration;
+
+  const getLocalISODate = useCallback(() => {
+    const now = new Date();
+    const offsetMs = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offsetMs).toISOString().split('T')[0];
+  }, []);
+
+  const isTodayMode = useCallback(() => currentDate === getLocalISODate(), [currentDate, getLocalISODate]);
 
   const getVisitTimestamp = useCallback((visit: PatientVisit) => {
     return new Date(visit.updated_at || visit.created_at || 0).getTime();
@@ -39,17 +48,20 @@ export const usePatientBedSync = (
 
   // Handler to sync bed status changes (Bed -> Log)
   const handleLogUpdate = useCallback((bedId: number, updates: Partial<PatientVisit>) => {
+    if (!isTodayMode()) return;
     const latestVisit = getLatestVisitForBed(bedId);
     if (!latestVisit) return;
     if (!hasMeaningfulUpdates(latestVisit, updates)) return;
 
     void updateLogVisit(latestVisit.id, updates);
-  }, [updateLogVisit, getLatestVisitForBed, hasMeaningfulUpdates]);
+  }, [updateLogVisit, getLatestVisitForBed, hasMeaningfulUpdates, isTodayMode]);
 
   // Cross-Domain Logic (Bed <-> Log Sync)
   const updateVisitWithBedSync = useCallback(async (id: string, updates: Partial<PatientVisit>, skipBedSync: boolean = false) => {
     const oldVisit = visitsRef.current.find(v => v.id === id);
     if (!oldVisit) return;
+    if (!isTodayMode()) return;
+    if (oldVisit.visit_date && oldVisit.visit_date !== currentDate) return;
     if (!hasMeaningfulUpdates(oldVisit, updates)) return;
 
     let shouldForceRestart = false;
@@ -90,6 +102,7 @@ export const usePatientBedSync = (
     // (e.g. bed_id then treatment_name) don't lose freshly changed fields.
     const latestVisit = visitsRef.current.find(v => v.id === id);
     const mergedVisit = { ...oldVisit, ...(latestVisit || {}), ...updates };
+    if (mergedVisit.visit_date && mergedVisit.visit_date !== currentDate) return;
 
     if (mergedVisit.bed_id && updates.memo !== undefined) {
       updateBedMemoFromLog(mergedVisit.bed_id, updates.memo || undefined);
@@ -123,9 +136,10 @@ export const usePatientBedSync = (
 
       overrideBedFromLog(mergedVisit.bed_id, mergedVisit, shouldForceRestart);
     }
-  }, [updateLogVisit, clearBed, overrideBedFromLog, updateBedMemoFromLog, bedsRef, visitsRef, isLatestVisitForBed, hasMeaningfulUpdates]);
+  }, [updateLogVisit, clearBed, overrideBedFromLog, updateBedMemoFromLog, bedsRef, visitsRef, isLatestVisitForBed, hasMeaningfulUpdates, isTodayMode, currentDate]);
 
   const movePatient = useCallback(async (fromBedId: number, toBedId: number) => {
+    if (!isTodayMode()) return;
     if (fromBedId === toBedId) return;
 
     const sourceBed = bedsRef.current.find(b => b.id === fromBedId);
@@ -146,7 +160,7 @@ export const usePatientBedSync = (
     } else {
       alert(`${fromBedId}번 배드는 비어있어 이동할 데이터가 없습니다.`);
     }
-  }, [moveBedState, updateLogVisit, clearBed, overrideBedFromLog, bedsRef, getLatestVisitForBed]);
+  }, [moveBedState, updateLogVisit, clearBed, overrideBedFromLog, bedsRef, getLatestVisitForBed, isTodayMode]);
 
   return {
     handleLogUpdate,

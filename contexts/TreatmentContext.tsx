@@ -147,6 +147,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const { handleLogUpdate, movePatient: _movePatient, updateVisitWithBedSync } = usePatientBedSync(
     bedsRef,
     visitsRef,
+    currentDate,
     updateLogVisit,
     _clearBed,
     bedManager
