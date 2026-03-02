@@ -59,11 +59,13 @@ export const playAlarmPattern = async (
   // 겹치는 종료 알림도 순차적으로 모두 재생되도록 cancel 없이 직렬 큐 처리
   if (!isSilent) {
     const bedLabel = bedId === 11 ? '견인치료기' : `${toSinoKorean(bedId!)}번 배드`;
-    const currentLabel = treatmentName ? ` ${treatmentName}` : '';
+    const currentLabel = treatmentName ? ` ${treatmentName} 치료` : ' 치료';
 
     let message = `${bedLabel}${currentLabel} 종료되었습니다.`;
     if (nextTreatmentName) {
       message += ` 다음 치료는 ${nextTreatmentName} 입니다.`;
+    } else {
+      message += ' 다음 치료가 없습니다.';
     }
 
     ttsQueue = ttsQueue.then(() => speakSequentially(message));
