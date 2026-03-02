@@ -142,6 +142,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const bedsRef = useRef(beds);
   useEffect(() => { bedsRef.current = beds; }, [beds]);
   const staleCleanupRef = useRef<Map<number, number>>(new Map());
+  const missingVisitCountRef = useRef<Map<number, number>>(new Map());
 
   const { bedPatientNames, bedPatientBodyParts, getLatestVisitForBed } = useBedPatientFields(beds, visits);
 
@@ -219,19 +220,33 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   // Do NOT clear by transient treatment text gaps to avoid dropping freshly activated sessions.
   useEffect(() => {
     const now = Date.now();
-    const LOCAL_START_GRACE_MS = 10000;
-    const CLEAR_THROTTLE_MS = 3000;
+    const LOCAL_START_GRACE_MS = 120000;
+    const CLEAR_THROTTLE_MS = 8000;
+    const MIN_MISS_COUNT_TO_CLEAR = 4;
 
     beds.forEach((bed) => {
-      if (!bed.id || bed.status === BedStatus.IDLE) return;
+      if (!bed.id || bed.status === BedStatus.IDLE) {
+        if (bed?.id) missingVisitCountRef.current.delete(bed.id);
+        return;
+      }
 
       const latestVisit = getLatestVisitForBed(bed.id, visits);
       const localSessionTs = bed.lastUpdateTimestamp || bed.startTime || 0;
       const localAge = localSessionTs > 0 ? now - localSessionTs : Number.MAX_SAFE_INTEGER;
-      if (localAge < LOCAL_START_GRACE_MS) return;
+      if (localAge < LOCAL_START_GRACE_MS) {
+        missingVisitCountRef.current.set(bed.id, 0);
+        return;
+      }
 
       const hasValidTodayRow = !!latestVisit && latestVisit.visit_date === currentDate;
-      if (hasValidTodayRow) return;
+      if (hasValidTodayRow) {
+        missingVisitCountRef.current.set(bed.id, 0);
+        return;
+      }
+
+      const missCount = (missingVisitCountRef.current.get(bed.id) || 0) + 1;
+      missingVisitCountRef.current.set(bed.id, missCount);
+      if (missCount < MIN_MISS_COUNT_TO_CLEAR) return;
 
       const lastClearedAt = staleCleanupRef.current.get(bed.id) || 0;
       if (now - lastClearedAt < CLEAR_THROTTLE_MS) return;
