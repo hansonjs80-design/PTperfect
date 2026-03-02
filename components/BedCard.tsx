@@ -96,10 +96,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     updateBedSteps(bed.id, [...steps, newStep]);
   }, [steps, bed.id, updateBedSteps]);
 
-  const lastClickTimeRef = useRef<number>(0);
-
   const [isEditingMemo, setIsEditingMemo] = useState(false);
-  const lastMemoClickTimeRef = useRef<number>(0);
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -115,23 +112,15 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   };
 
   const handleTouchClick = (e: React.MouseEvent) => {
-    if (window.matchMedia('(pointer: coarse)').matches) {
-      const now = Date.now();
-      if (now - lastClickTimeRef.current < 350) {
-        e.preventDefault();
-        e.stopPropagation();
+    if (!window.matchMedia('(pointer: coarse)').matches) return;
+    e.preventDefault();
+    e.stopPropagation();
 
-        const target = e.target as HTMLElement | null;
-        if (target?.closest('[data-swap-cell="true"]')) {
-          openTreatmentSelectorForBed(bed.id);
-        } else {
-          setEditingBedId(bed.id);
-        }
-
-        lastClickTimeRef.current = 0;
-      } else {
-        lastClickTimeRef.current = now;
-      }
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('[data-swap-cell="true"]')) {
+      openTreatmentSelectorForBed(bed.id);
+    } else {
+      setEditingBedId(bed.id);
     }
   };
 
@@ -150,24 +139,9 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       return;
     }
 
-    // Tablet & Mobile
+    // Tablet & Mobile: single tap to edit
     if (window.matchMedia('(pointer: coarse)').matches) {
-      // Find if it is a tablet (between 768 and 1024 width typically, or just not mobile width)
-      // using window.innerWidth
-      if (window.innerWidth >= 768) {
-        // Tablet: Single tap to edit
-        setIsEditingMemo(true);
-      } else {
-        // Mobile: Double tap to edit
-        const now = Date.now();
-        if (now - lastMemoClickTimeRef.current < 350) {
-          e.preventDefault();
-          setIsEditingMemo(true);
-          lastMemoClickTimeRef.current = 0;
-        } else {
-          lastMemoClickTimeRef.current = now;
-        }
-      }
+      setIsEditingMemo(true);
     }
   };
 
@@ -359,6 +333,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
           onEditClick={setEditingBedId}
           onAddStep={handleAddStep}
           quickTreatments={quickTreatments}
+          swapSourceIndex={swapSourceIndex}
         />
       )}
     </div>

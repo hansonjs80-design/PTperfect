@@ -19,9 +19,10 @@ interface BedFooterProps {
   onEditClick?: (bedId: number) => void;
   onAddStep?: (qt: QuickTreatment) => void;
   quickTreatments?: QuickTreatment[];
+  swapSourceIndex?: number | null;
 }
 
-export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState, onTrashClick, onEditClick, onAddStep, quickTreatments, isSwapControlMode = false }: BedFooterProps) => {
+export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState, onTrashClick, onEditClick, onAddStep, quickTreatments, isSwapControlMode = false, swapSourceIndex = null }: BedFooterProps) => {
   const [addPopup, setAddPopup] = useState<{ x: number; y: number } | null>(null);
   const totalSteps = steps.length || 0;
   const isLastStep = bed.currentStepIndex === totalSteps - 1;
@@ -109,7 +110,7 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
 
            <FooterButton
              onClick={() => onPrev && onPrev(bed.id)}
-             disabled={bed.currentStepIndex <= 0}
+             disabled={isSwapControlMode ? (swapSourceIndex === null || swapSourceIndex <= 0) : (bed.currentStepIndex <= 0)}
              className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
              title="이전"
            >
@@ -163,6 +164,7 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
     pBed.currentStepIndex === nBed.currentStepIndex &&
     prevProps.steps === nextProps.steps &&
     prevProps.trashState === nextProps.trashState &&
-    prevProps.isSwapControlMode === nextProps.isSwapControlMode
+    prevProps.isSwapControlMode === nextProps.isSwapControlMode &&
+    prevProps.swapSourceIndex === nextProps.swapSourceIndex
   );
 });
