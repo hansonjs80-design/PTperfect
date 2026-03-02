@@ -54,6 +54,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   // Desktop only (>= 768px)
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const isCoarsePointer = useMediaQuery('(pointer: coarse)');
+  const isTabletOrMobileLayout = useMediaQuery('(max-width: 1024px)');
 
   const currentPreset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
   const currentStep = currentPreset?.steps[bed.currentStepIndex];
@@ -214,7 +215,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
 
 
   const isStepSelected = swapSourceIndex !== null;
-  const isTouchSwapControlMode = isCoarsePointer && bed.status === BedStatus.ACTIVE && isStepSelected;
+  const isTouchSwapControlMode = (isCoarsePointer || isTabletOrMobileLayout) && bed.status === BedStatus.ACTIVE && isStepSelected;
 
   const handleFooterTrashClick = useCallback((e: React.MouseEvent) => {
     if (isTouchSwapControlMode) {
