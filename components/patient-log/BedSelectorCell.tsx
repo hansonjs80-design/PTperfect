@@ -253,6 +253,12 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
     if (mode === 'menu') {
         return (
             <ContextMenu title={`방 번호 수정 (현재: ${value === 11 ? 'T' : value || '-'})`} position={menuPos} onClose={() => setMode('view')}>
+                {onQuickActivate && (
+                  <button onClick={(e) => { handleQuickActivateClick(e); setMode('view'); }} className="flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors text-left group">
+                      <div className="p-2 bg-emerald-100 dark:bg-emerald-900/40 rounded-full group-hover:bg-white dark:group-hover:bg-emerald-800 shadow-sm"><PlayCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /></div>
+                      <div><span className="block text-sm font-bold text-gray-800 dark:text-gray-200">바로 시행</span><span className="block text-[10px] text-gray-500 dark:text-gray-400">현재 행을 즉시 활성화</span></div>
+                  </button>
+                )}
                 <button onClick={() => setMode('select_target')} className="flex items-center gap-3 p-3 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors text-left group">
                     <div className="p-2 bg-brand-100 dark:bg-brand-900 rounded-full group-hover:bg-white dark:group-hover:bg-brand-800 shadow-sm"><PlayCircle className="w-4 h-4 text-brand-600 dark:text-brand-400" /></div>
                     <div><span className="block text-sm font-bold text-gray-800 dark:text-gray-200">배드 선택 (이동/배정)</span><span className="block text-[10px] text-gray-500 dark:text-gray-400">목록에서 번호 선택</span></div>
@@ -291,17 +297,6 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
                 </span>
             ) : (
                 <span className="text-gray-300 dark:text-gray-600 text-sm xl:text-[12px] font-bold">-</span>
-            )}
-
-            {value && rowStatus !== 'active' && onQuickActivate && (
-              <button
-                type="button"
-                onClick={handleQuickActivateClick}
-                className="absolute bottom-0.5 right-0.5 px-1.5 py-[1px] rounded-md bg-brand-600 hover:bg-brand-700 text-white text-[9px] font-bold shadow-sm"
-                title="바로 시행"
-              >
-                시행
-              </button>
             )}
         </div>
         
