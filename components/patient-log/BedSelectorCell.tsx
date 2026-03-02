@@ -20,6 +20,7 @@ interface BedSelectorCellProps {
   gridId?: string;
   rowIndex: number;
   colIndex: number;
+  onQuickActivate?: (forceRestart?: boolean) => void;
 }
 
 export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({ 
@@ -34,12 +35,14 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
   isLogEditMode = false,
   gridId,
   rowIndex,
-  colIndex
+  colIndex,
+  onQuickActivate
 }) => {
   const [mode, setMode] = useState<'view' | 'menu' | 'edit_log' | 'edit_assign' | 'select_target'>('view');
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [activeConfirmPos, setActiveConfirmPos] = useState<{x: number, y: number} | null>(null);
   const [gridPos, setGridPos] = useState<{top: number, left: number} | null>(null);
+  const [quickStartConfirmPos, setQuickStartConfirmPos] = useState<{x: number, y: number} | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -196,6 +199,23 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
     setTimeout(() => cellRef.current?.focus(), 0);
   };
 
+
+
+  const handleQuickActivateClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!value || !onQuickActivate) return;
+
+    const isAlreadyActiveOnThisBed = activeBedIds.includes(value) && rowStatus !== 'active';
+    if (isAlreadyActiveOnThisBed) {
+      setQuickStartConfirmPos({ x: e.clientX, y: e.clientY });
+      return;
+    }
+
+    onQuickActivate(false);
+  };
+
   const renderContent = () => {
     if (mode === 'select_target') {
         return createPortal(
@@ -272,6 +292,17 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
             ) : (
                 <span className="text-gray-300 dark:text-gray-600 text-sm xl:text-[12px] font-bold">-</span>
             )}
+
+            {value && rowStatus !== 'active' && onQuickActivate && (
+              <button
+                type="button"
+                onClick={handleQuickActivateClick}
+                className="absolute bottom-0.5 right-0.5 px-1.5 py-[1px] rounded-md bg-brand-600 hover:bg-brand-700 text-white text-[9px] font-bold shadow-sm"
+                title="바로 시행"
+              >
+                시행
+              </button>
+            )}
         </div>
         
         {renderContent()}
@@ -291,6 +322,26 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
                     <div className="flex gap-1.5">
                         <button onClick={(e) => { setMenuPos({ x: e.clientX, y: e.clientY }); setActiveConfirmPos(null); setMode('select_target'); }} className="flex-1 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 shadow-sm transition-colors"><Check className="w-3 h-3" /> 예</button>
                         <button onClick={() => setActiveConfirmPos(null)} className="flex-1 py-1.5 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition-colors"><X className="w-3 h-3" /> 아니오</button>
+                    </div>
+                </div>
+            </div>, document.body
+        )}
+
+
+        {quickStartConfirmPos && createPortal(
+            <div className="fixed inset-0 z-[9999]" onClick={() => setQuickStartConfirmPos(null)}>
+                <div
+                    className="absolute bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-red-200 dark:border-red-800 p-2.5 animate-in zoom-in-95 duration-150 flex flex-col gap-2"
+                    style={getSmartPosition(quickStartConfirmPos, 190, 90)}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="text-center">
+                        <p className="text-[11px] font-bold text-gray-800 dark:text-white leading-tight">이미 활성화된 {value === 11 ? 'T' : value}번 배드가 있습니다.</p>
+                        <p className="text-[9px] text-gray-400 mt-0.5">기존 배드를 비우고 이 행을 시행할까요?</p>
+                    </div>
+                    <div className="flex gap-1.5">
+                        <button onClick={() => { setQuickStartConfirmPos(null); onQuickActivate?.(true); }} className="flex-1 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 shadow-sm transition-colors"><Check className="w-3 h-3" /> 예</button>
+                        <button onClick={() => setQuickStartConfirmPos(null)} className="flex-1 py-1.5 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition-colors"><X className="w-3 h-3" /> 아니오</button>
                     </div>
                 </div>
             </div>, document.body

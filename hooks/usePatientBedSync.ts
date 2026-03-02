@@ -143,6 +143,26 @@ export const usePatientBedSync = (
     }
   }, [updateLogVisit, clearBed, overrideBedFromLog, updateBedMemoFromLog, bedsRef, visitsRef, isLatestVisitForBed, hasMeaningfulUpdates, isTodayMode, currentDate]);
 
+
+  const activateVisitFromLog = useCallback((visitId: string, forceRestart: boolean = false) => {
+    if (!isTodayMode()) return { ok: false, reason: 'not_today' as const };
+
+    const visit = visitsRef.current.find(v => v.id === visitId);
+    if (!visit) return { ok: false, reason: 'not_found' as const };
+    if (!visit.bed_id) return { ok: false, reason: 'no_bed' as const };
+
+    const hasTreatment = !!visit.treatment_name && visit.treatment_name.trim() !== '';
+    if (!hasTreatment) return { ok: false, reason: 'no_treatment' as const };
+
+    const latestVisit = getLatestVisitForBed(visit.bed_id);
+    if (!latestVisit || latestVisit.id !== visitId) {
+      return { ok: false, reason: 'not_latest' as const };
+    }
+
+    overrideBedFromLog(visit.bed_id, visit, forceRestart);
+    return { ok: true as const };
+  }, [isTodayMode, visitsRef, getLatestVisitForBed, overrideBedFromLog]);
+
   const movePatient = useCallback(async (fromBedId: number, toBedId: number) => {
     if (!isTodayMode()) return;
     if (fromBedId === toBedId) return;
@@ -170,6 +190,7 @@ export const usePatientBedSync = (
   return {
     handleLogUpdate,
     updateVisitWithBedSync,
+    activateVisitFromLog,
     movePatient
   };
 };

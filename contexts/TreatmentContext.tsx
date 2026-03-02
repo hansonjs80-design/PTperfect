@@ -86,6 +86,7 @@ interface TreatmentContextType {
   // Exposed for Log/Bed Header usage
   updateVisitWithBedSync: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => Promise<void>;
   updateActiveVisitFields: (bedId: number, updates: Partial<PatientVisit>) => Promise<void>;
+  activateVisitFromLog: (visitId: string, forceRestart?: boolean) => { ok: boolean; reason?: string };
 }
 
 const TreatmentContext = createContext<TreatmentContextType | undefined>(undefined);
@@ -144,7 +145,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const { bedPatientNames, bedPatientBodyParts, getLatestVisitForBed } = useBedPatientFields(beds, visits);
 
-  const { handleLogUpdate, movePatient: _movePatient, updateVisitWithBedSync } = usePatientBedSync(
+  const { handleLogUpdate, movePatient: _movePatient, updateVisitWithBedSync, activateVisitFromLog } = usePatientBedSync(
     bedsRef,
     visitsRef,
     currentDate,
@@ -341,6 +342,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     bedPatientBodyParts,
     updateVisitWithBedSync,
     updateActiveVisitFields,
+    activateVisitFromLog,
     openTreatmentSelectorForBed,
     undo,
     redo,

@@ -11,6 +11,7 @@ import { PatientVisit } from '../../types';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { PatientMemoModal } from '../modals/PatientMemoModal';
 import { formatBodyPartText } from '../../utils/patientLogUtils';
+import { useTreatmentContext } from '../../contexts/TreatmentContext';
 
 interface PatientLogRowProps {
   rowIndex: number;
@@ -102,6 +103,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   onBulkAuthorUpdate
 }) => {
   const { handleGridKeyDown } = useGridNavigation(8);
+  const { activateVisitFromLog } = useTreatmentContext();
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
   const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -214,6 +216,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
   };
 
+
+
+  const handleQuickActivate = (forceRestart: boolean = false) => {
+    if (isDraft || !visit) return;
+    activateVisitFromLog(visit.id, forceRestart);
+  };
+
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (deleteStep === 'idle') {
@@ -301,6 +310,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           className={isDraft ? "opacity-50 hover:opacity-100" : ""}
           activeBedIds={activeBedIds}
           isLogEditMode={isLogEditMode}
+          onQuickActivate={handleQuickActivate}
         />
         {rowStatus !== 'none' && (
           <div className="absolute top-1.5 right-1 pointer-events-none">
