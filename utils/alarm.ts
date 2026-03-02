@@ -1,6 +1,6 @@
 // 알람, 진동, 시스템 알림 관련 로직 분리
 import { MOBILE_VIBRATION_PATTERN } from './alarmSpeech';
-import { announceGuide } from './guideAnnouncer';
+import { announceGuide, shouldAnnounceGuide } from './guideAnnouncer';
 
 export const playAlarmPattern = async (
   bedId?: number,
@@ -17,8 +17,10 @@ export const playAlarmPattern = async (
   }
 
   // 2. TTS Audio (Web Speech API)
-  // 겹치는 종료 알림도 순차적으로 모두 재생되도록 cancel 없이 직렬 큐 처리
-  announceGuide({ bedId, treatmentName, nextTreatmentName });
+  // 데스크탑/모바일 공통으로 사운드 설정이 켜져 있을 때만 안내 음성을 재생한다.
+  if (shouldAnnounceGuide(isSilent)) {
+    announceGuide({ bedId, treatmentName, nextTreatmentName });
+  }
 
   // 3. System Notification (visual only, no notification sound)
   // 데스크탑 모드에서는 알림 창(Notification)을 띄우지 않음

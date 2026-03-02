@@ -27,3 +27,10 @@ export const announceGuide = (params: GuideMessageParams) => {
   const message = createGuideMessage(params);
   queueGuideSpeech(message);
 };
+
+
+export const shouldAnnounceGuide = (isSilent: boolean): boolean => {
+  if (isSilent) return false;
+  if (typeof window === 'undefined') return false;
+  return 'speechSynthesis' in window;
+};
