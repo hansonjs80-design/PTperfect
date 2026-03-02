@@ -50,6 +50,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   // rowOffset = 1 (vertical: jump to new draft), rowOffset = 0 (horizontal: stay on created row)
   const focusTargetRef = useRef<{ rowOffset: number, colIndex: number } | null>(null);
   const prevVisitsLengthRef = useRef(visits.length);
+  const pendingAutoFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPointerDownAtRef = useRef(0);
 
   useEffect(() => {
     // If visits length increased, it means a row was added.
@@ -59,13 +61,30 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       const targetColIndex = focusTargetRef.current.colIndex;
 
       // Small delay to allow DOM to update
-      setTimeout(() => {
+      if (pendingAutoFocusTimerRef.current) {
+        clearTimeout(pendingAutoFocusTimerRef.current);
+      }
+
+      pendingAutoFocusTimerRef.current = setTimeout(() => {
+        // If the user manually clicked very recently, never steal focus to another cell.
+        if (Date.now() - lastPointerDownAtRef.current < 250) {
+          focusTargetRef.current = null;
+          return;
+        }
+
         const targetEl = document.querySelector(`[data-grid-id="${targetRowIndex}-${targetColIndex}"]`) as HTMLElement;
         if (targetEl) {
-          targetEl.focus();
-          // If it's an input, select text
-          if (targetEl.tagName === 'INPUT') {
-            (targetEl as HTMLInputElement).select();
+          const activeEl = document.activeElement as HTMLElement | null;
+          const activeGridId = activeEl?.getAttribute?.('data-grid-id');
+          const targetGridId = `${targetRowIndex}-${targetColIndex}`;
+
+          // If user focus is already on another grid cell, keep current user intent.
+          if (!activeGridId || activeGridId === targetGridId) {
+            targetEl.focus();
+            // If it's an input, select text
+            if (targetEl.tagName === 'INPUT') {
+              (targetEl as HTMLInputElement).select();
+            }
           }
         }
         focusTargetRef.current = null; // Reset
@@ -73,6 +92,16 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     }
     prevVisitsLengthRef.current = visits.length;
   }, [visits.length]);
+
+
+
+  useEffect(() => {
+    return () => {
+      if (pendingAutoFocusTimerRef.current) {
+        clearTimeout(pendingAutoFocusTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleDraftCreate = async (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => {
     if (colIndex !== undefined) {
@@ -99,7 +128,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   }, [visits, onUpdate]);
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-auto xl:overflow-x-hidden log-scrollbar bg-white dark:bg-slate-900">
+    <div className="flex-1 overflow-y-auto overflow-x-auto xl:overflow-x-hidden log-scrollbar bg-white dark:bg-slate-900" onMouseDownCapture={() => { lastPointerDownAtRef.current = Date.now(); }}>
       <table ref={tableRef} className="w-full min-w-[500px] md:min-w-full border-collapse table-fixed">
         {columnWidths && (
           <colgroup>
