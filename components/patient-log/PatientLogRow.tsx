@@ -18,7 +18,7 @@ interface PatientLogRowProps {
   visit?: PatientVisit;
   isDraft?: boolean;
   rowStatus?: 'active' | 'completed' | 'none';
-  onUpdate?: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => void;
+  onUpdate?: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => void | Promise<void>;
   onDelete?: (id: string) => void;
   onCreate?: (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => Promise<string>;
   onSelectLog?: (id: string, bedId?: number | null) => void;
@@ -218,8 +218,15 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
 
 
-  const handleQuickActivate = (forceRestart: boolean = false) => {
+  const handleQuickActivate = async (forceRestart: boolean = false) => {
     if (isDraft || !visit) return;
+
+    if (onUpdate) {
+      const reorderTimestamp = new Date().toISOString();
+      await Promise.resolve(onUpdate(visit.id, { created_at: reorderTimestamp }, true));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
     activateVisitFromLog(visit.id, forceRestart);
   };
 
