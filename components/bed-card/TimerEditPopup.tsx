@@ -20,7 +20,7 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   onConfirm,
   onCancel
 }) => {
-  const [totalSeconds, setTotalSeconds] = useState(Math.max(60, initialSeconds));
+  const [totalSeconds, setTotalSeconds] = useState(Math.max(30, initialSeconds));
   const [adjustMode, setAdjustMode] = useState<AdjustMode>('minute');
 
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>(() => {
@@ -37,7 +37,7 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   const secondsRemainder = totalSeconds % 60;
 
   const setClampedSeconds = (nextSeconds: number) => {
-    setTotalSeconds(Math.max(60, nextSeconds));
+    setTotalSeconds(Math.max(30, nextSeconds));
   };
 
   const currentStepSeconds = useMemo(() => {
@@ -100,7 +100,7 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   };
 
   const handleConfirm = () => {
-    onConfirm(Math.max(60, totalSeconds));
+    onConfirm(Math.max(30, totalSeconds));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
