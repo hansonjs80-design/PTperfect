@@ -24,8 +24,8 @@ export const useBedCardActions = (
     }
   }, [bedStatus, clearSwapSelection]);
 
-  const handleTrashClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleTrashClick = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (trashState === 'idle') {
       setTrashState('confirm');
       setTimeout(() => setTrashState(prev => prev === 'confirm' ? 'idle' : prev), 3000);

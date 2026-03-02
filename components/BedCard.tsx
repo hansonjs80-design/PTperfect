@@ -217,14 +217,12 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const isStepSelected = swapSourceIndex !== null;
   const isTouchSwapControlMode = (isCoarsePointer || isTabletOrMobileLayout) && bed.status === BedStatus.ACTIVE && isStepSelected;
 
-  const handleFooterTrashClick = useCallback((e: React.MouseEvent) => {
+  const handleFooterTrashClick = useCallback(() => {
     if (isTouchSwapControlMode) {
-      e.preventDefault();
-      e.stopPropagation();
       handleDeleteSelectedStep();
       return;
     }
-    handleTrashClick(e);
+    handleTrashClick();
   }, [isTouchSwapControlMode, handleDeleteSelectedStep, handleTrashClick]);
 
   const handleFooterPrev = useCallback((bedId: number) => {
@@ -357,6 +355,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
           onClear={clearBed}
           trashState={trashState}
           onTrashClick={handleFooterTrashClick}
+          isSwapControlMode={isTouchSwapControlMode}
           onEditClick={setEditingBedId}
           onAddStep={handleAddStep}
           quickTreatments={quickTreatments}
