@@ -95,7 +95,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const { quickTreatments, updateQuickTreatments } = useQuickTreatmentManager();
   const settings = useTreatmentSettings();
   const uiState = useTreatmentUI();
-  const { visits, addVisit, updateVisit: updateLogVisit, setVisits } = usePatientLogContext();
+  const { currentDate, visits, addVisit, updateVisit: updateLogVisit, setVisits } = usePatientLogContext();
   const { saveSnapshot, undoOp, redoOp, canUndo, canRedo } = useHistory(20);
 
   const visitsRef = useRef(visits);
@@ -140,6 +140,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const bedsRef = useRef(beds);
   useEffect(() => { bedsRef.current = beds; }, [beds]);
+  const staleCleanupRef = useRef<Map<number, number>>(new Map());
 
   const { bedPatientNames, bedPatientBodyParts, getLatestVisitForBed } = useBedPatientFields(beds, visits);
 
@@ -210,6 +211,37 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
       }
     });
   }, [beds, visits, updateBedMemoFromLog]);
+
+  // Active bed sanity guard: only today's active patient-log rows may keep bed cards alive.
+  // This blocks stale server/session rehydrate from resurrecting old treatment cards.
+  useEffect(() => {
+    const now = Date.now();
+    const LOCAL_START_GRACE_MS = 8000;
+    const CLEAR_THROTTLE_MS = 3000;
+
+    beds.forEach((bed) => {
+      if (!bed.id || bed.status === BedStatus.IDLE) return;
+
+      const latestVisit = getLatestVisitForBed(bed.id, visits);
+      const latestTreatment = latestVisit?.treatment_name?.trim();
+      const latestVisitTs = latestVisit
+        ? new Date(latestVisit.updated_at || latestVisit.created_at || 0).getTime()
+        : 0;
+
+      const localSessionTs = bed.lastUpdateTimestamp || bed.startTime || 0;
+      const localAge = localSessionTs > 0 ? now - localSessionTs : Number.MAX_SAFE_INTEGER;
+      if (localAge < LOCAL_START_GRACE_MS) return;
+
+      const isMissingActiveRow = !latestVisit || !latestTreatment;
+      const isStaleVisitSession = !!bed.startTime && latestVisitTs > 0 && latestVisitTs + LOCAL_START_GRACE_MS < bed.startTime;
+      if (!isMissingActiveRow && !isStaleVisitSession) return;
+
+      const lastClearedAt = staleCleanupRef.current.get(bed.id) || 0;
+      if (now - lastClearedAt < CLEAR_THROTTLE_MS) return;
+      staleCleanupRef.current.set(bed.id, now);
+      _clearBed(bed.id);
+    });
+  }, [beds, visits, currentDate, getLatestVisitForBed, _clearBed]);
 
   // --- Snapshot Wrappers for Actions ---
 
