@@ -1,5 +1,5 @@
 
-import React, { useRef, useCallback } from 'react';
+import React, { useCallback } from 'react';
 
 /**
  * Provides a click handler that adapts to device size:
@@ -15,8 +15,6 @@ export const useResponsiveClick = (
   preventDefault = true,
   stopPropagation = true
 ) => {
-  const lastClickTimeRef = useRef<number>(0);
-
   const handleClick = useCallback((e: React.MouseEvent) => {
     // 1. Tablet & Desktop (>= 768px) -> Single Click
     if (window.innerWidth >= 768) {
@@ -30,7 +28,6 @@ export const useResponsiveClick = (
     if (preventDefault) e.preventDefault();
     if (stopPropagation) e.stopPropagation();
     action(e);
-    lastClickTimeRef.current = Date.now();
   }, [action, preventDefault, stopPropagation]);
 
   return handleClick;

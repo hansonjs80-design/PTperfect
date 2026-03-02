@@ -3,10 +3,10 @@ import { BedState, BedStatus, PatientVisit } from '../types';
 
 const getVisitTimestamp = (visit: PatientVisit) => new Date(visit.updated_at || visit.created_at || 0).getTime();
 
-const buildLatestVisitMap = (visits: PatientVisit[]) => {
+const buildLatestVisitMap = (visits: PatientVisit[], currentDate: string) => {
   const map = new Map<number, PatientVisit>();
   for (const visit of visits) {
-    if (!visit.bed_id) continue;
+    if (!visit.bed_id || visit.visit_date !== currentDate) continue;
     const prev = map.get(visit.bed_id);
     if (!prev || getVisitTimestamp(visit) >= getVisitTimestamp(prev)) {
       map.set(visit.bed_id, visit);
@@ -33,7 +33,7 @@ export const useActiveBedStability = ({
   const staleCleanupRef = useRef<Map<number, number>>(new Map());
   const missingSinceRef = useRef<Map<number, number>>(new Map());
 
-  const latestVisitByBed = useMemo(() => buildLatestVisitMap(visits), [visits]);
+  const latestVisitByBed = useMemo(() => buildLatestVisitMap(visits, currentDate), [visits, currentDate]);
 
   // Keep bed memo synced with latest log memo (O(visits + beds), no per-bed sort).
   useEffect(() => {
@@ -74,8 +74,7 @@ export const useActiveBedStability = ({
       }
 
       const latestVisit = latestVisitByBed.get(bed.id);
-      const hasValidTodayRow = !!latestVisit && latestVisit.visit_date === currentDate;
-      if (hasValidTodayRow) {
+      if (latestVisit) {
         missingSinceRef.current.delete(bed.id);
         return;
       }
