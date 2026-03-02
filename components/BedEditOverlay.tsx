@@ -46,10 +46,11 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
   const safePresets = useMemo(() => (Array.isArray(presets) ? presets : []), [presets]);
   const hasQuickTreatments = quickTreatments.length > 0;
 
-  const applyPresetSteps = (nextSteps: TreatmentStep[]) => {
+  const applyPresetSteps = (nextSteps: TreatmentStep[], closeAfterApply: boolean = false) => {
     if (!onUpdateSteps) return;
     onUpdateSteps(bed.id, nextSteps, 0);
     setSelectedQuickItems([]);
+    if (closeAfterApply) onClose();
   };
 
   const handleQuickItemClick = (template: QuickTreatment) => {
@@ -75,7 +76,7 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
     const quickSteps = selectedQuickItems.map(item =>
       createQuickStep(item.name, item.duration, item.enableTimer, item.color, item.label)
     );
-    applyPresetSteps(quickSteps);
+    applyPresetSteps(quickSteps, true);
   };
 
   return (
@@ -110,7 +111,7 @@ export const BedEditOverlay: React.FC<BedEditOverlayProps> = memo(({
 
               <PresetListView
                 presets={safePresets}
-                onSelect={(preset) => applyPresetSteps(preset.steps)}
+                onSelect={(preset) => applyPresetSteps(preset.steps, true)}
               />
 
               {hasQuickTreatments ? (
