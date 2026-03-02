@@ -213,29 +213,24 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     });
   }, [beds, visits, updateBedMemoFromLog]);
 
-  // Active bed sanity guard: only today's active patient-log rows may keep bed cards alive.
-  // This blocks stale server/session rehydrate from resurrecting old treatment cards.
+  // Active bed sanity guard (strictly minimal):
+  // clear only when no valid row for current date exists for the bed.
+  // Do NOT clear by transient treatment text gaps to avoid dropping freshly activated sessions.
   useEffect(() => {
     const now = Date.now();
-    const LOCAL_START_GRACE_MS = 2000;
+    const LOCAL_START_GRACE_MS = 10000;
     const CLEAR_THROTTLE_MS = 3000;
 
     beds.forEach((bed) => {
       if (!bed.id || bed.status === BedStatus.IDLE) return;
 
       const latestVisit = getLatestVisitForBed(bed.id, visits);
-      const latestTreatment = latestVisit?.treatment_name?.trim();
-      const latestVisitTs = latestVisit
-        ? new Date(latestVisit.updated_at || latestVisit.created_at || 0).getTime()
-        : 0;
-
       const localSessionTs = bed.lastUpdateTimestamp || bed.startTime || 0;
       const localAge = localSessionTs > 0 ? now - localSessionTs : Number.MAX_SAFE_INTEGER;
       if (localAge < LOCAL_START_GRACE_MS) return;
 
-      const isMissingActiveRow = !latestVisit || !latestTreatment || latestVisit.visit_date !== currentDate;
-      const isStaleVisitSession = !!bed.startTime && latestVisitTs > 0 && latestVisitTs + LOCAL_START_GRACE_MS < bed.startTime;
-      if (!isMissingActiveRow && !isStaleVisitSession) return;
+      const hasValidTodayRow = !!latestVisit && latestVisit.visit_date === currentDate;
+      if (hasValidTodayRow) return;
 
       const lastClearedAt = staleCleanupRef.current.get(bed.id) || 0;
       if (now - lastClearedAt < CLEAR_THROTTLE_MS) return;
