@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TreatmentStep } from '../types';
 
-const MOVE_COOLDOWN_MS = 120;
+const MOVE_COOLDOWN_MS = 60;
 
 
 const SWAP_SELECTION_EVENT = 'bed-swap-selection-changed';

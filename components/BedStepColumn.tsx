@@ -90,6 +90,14 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
     onSwapRequest && onSwapRequest(bedId, index);
   };
 
+  const handleSwapPointerDown = (e: React.PointerEvent) => {
+    // 모바일/태블릿(터치 계열)은 pointerdown에서 즉시 선택 반영해 체감 지연을 줄인다.
+    if (e.pointerType === 'mouse') return;
+    e.preventDefault();
+    e.stopPropagation();
+    onSwapRequest && onSwapRequest(bedId, index);
+  };
+
   return (
     <>
       <div
@@ -99,6 +107,7 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
           ${isActive ? 'z-10 shadow-md transform scale-[1.02] rounded-lg my-[-1px]' : ''}
           ${isSelectedForSwap ? 'z-20 sm:scale-100 scale-[0.98]' : ''}
         `}
+        onPointerDown={handleSwapPointerDown}
         onClick={handleSwapInteraction}
         onContextMenu={handleContextMenu}
         onDoubleClick={handleStepDoubleClick}
