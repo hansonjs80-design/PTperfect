@@ -19,9 +19,27 @@ export const useBedControls = (
     const preset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
     if (!preset) return;
 
+    const totalSteps = preset.steps.length;
+    if (totalSteps === 0) return;
+
+    // stale sync 등으로 currentStepIndex가 비정상 범위가 되면 즉시 완료로 보내지 말고 0단계로 복구
+    if (bed.currentStepIndex < 0 || bed.currentStepIndex >= totalSteps) {
+      const firstStep = preset.steps[0];
+      updateBedState(bedId, {
+        status: BedStatus.ACTIVE,
+        currentStepIndex: 0,
+        queue: [],
+        startTime: Date.now(),
+        remainingTime: firstStep.duration,
+        originalDuration: firstStep.duration,
+        isPaused: false
+      });
+      return;
+    }
+
     const nextIndex = bed.currentStepIndex + 1;
 
-    if (nextIndex < preset.steps.length) {
+    if (nextIndex < totalSteps) {
       const nextStepItem = preset.steps[nextIndex];
       updateBedState(bedId, {
         status: BedStatus.ACTIVE,
