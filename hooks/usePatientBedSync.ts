@@ -108,6 +108,12 @@ export const usePatientBedSync = (
       updateBedMemoFromLog(mergedVisit.bed_id, updates.memo || undefined);
     }
 
+    const shouldApplyBedRuntimeSync = updates.bed_id !== undefined || updates.treatment_name !== undefined;
+    // 이름/부위/메모/상태/작성 등 로그 메타 편집은 배드 활성화/타이머 로직에 영향 주지 않음.
+    if (!shouldApplyBedRuntimeSync) {
+      return;
+    }
+
     if (oldVisit.bed_id && updates.bed_id === null) {
       // 최신 활성 행이 아닌 과거 행의 bed 해제 변경으로 현재 배드가 비워지는 것을 방지
       if (!isLatestVisitForBed(id, oldVisit.bed_id)) {
