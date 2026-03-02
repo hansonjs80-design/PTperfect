@@ -53,6 +53,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
 
   // Desktop only (>= 768px)
   const isDesktop = useMediaQuery('(min-width: 768px)');
+  const isCoarsePointer = useMediaQuery('(pointer: coarse)');
 
   const currentPreset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
   const currentStep = currentPreset?.steps[bed.currentStepIndex];
@@ -210,6 +211,36 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     cancelSwap();
   }, [swapSourceIndex, steps, bed.currentStepIndex, bed.id, updateBedSteps, cancelSwap]);
 
+
+
+  const isStepSelected = swapSourceIndex !== null;
+
+  const handleFooterTrashClick = useCallback((e: React.MouseEvent) => {
+    if (isCoarsePointer && isStepSelected) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleDeleteSelectedStep();
+      return;
+    }
+    handleTrashClick(e);
+  }, [isCoarsePointer, isStepSelected, handleDeleteSelectedStep, handleTrashClick]);
+
+  const handleFooterPrev = useCallback((bedId: number) => {
+    if (isCoarsePointer && isStepSelected) {
+      handleMoveSelectedStep('left', steps);
+      return;
+    }
+    prevStep(bedId);
+  }, [isCoarsePointer, isStepSelected, handleMoveSelectedStep, steps, prevStep]);
+
+  const handleFooterNext = useCallback((bedId: number) => {
+    if (isCoarsePointer && isStepSelected) {
+      handleMoveSelectedStep('right', steps);
+      return;
+    }
+    nextStep(bedId);
+  }, [isCoarsePointer, isStepSelected, handleMoveSelectedStep, steps, nextStep]);
+
   // Desktop only: Backspace/Delete removes the swap-selected step
   useEffect(() => {
     if (swapSourceIndex === null || !isDesktop) return;
@@ -319,11 +350,11 @@ export const BedCard: React.FC<BedCardProps> = memo(({
         <BedFooter
           bed={bed}
           steps={steps}
-          onNext={nextStep}
-          onPrev={prevStep}
+          onNext={handleFooterNext}
+          onPrev={handleFooterPrev}
           onClear={clearBed}
           trashState={trashState}
-          onTrashClick={handleTrashClick}
+          onTrashClick={handleFooterTrashClick}
           onEditClick={setEditingBedId}
           onAddStep={handleAddStep}
           quickTreatments={quickTreatments}
