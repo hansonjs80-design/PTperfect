@@ -84,6 +84,15 @@ const shouldKeepLocalSessionAfterActivation = (localBed: BedState, serverBed: Be
   // 서버 startTime이 로컬 세션보다 과거면 stale 세션으로 간주
   return serverBed.startTime < localBed.startTime;
 };
+
+
+const shouldRejectOlderActiveSession = (localBed: BedState, serverBed: BedState): boolean => {
+  if (localBed.status !== BedStatus.ACTIVE || serverBed.status !== BedStatus.ACTIVE) return false;
+  if (typeof localBed.startTime !== 'number' || typeof serverBed.startTime !== 'number') return false;
+
+  // timestamp(updated_at)와 무관하게, startTime이 과거인 ACTIVE 세션은 무조건 stale로 본다.
+  return serverBed.startTime < localBed.startTime;
+};
 export const useBedRealtime = (
   setBeds: React.Dispatch<React.SetStateAction<BedState[]>>,
   setLocalBeds: (value: BedState[] | ((val: BedState[]) => BedState[])) => void
@@ -118,6 +127,9 @@ export const useBedRealtime = (
           if (shouldKeepLocalActive(localBed, serverBed)) return localBed;
           return forceIdleBed(serverBed);
         }
+
+        // 직전 ACTIVE 세션(startTime이 더 과거) 덮어쓰기는 항상 차단
+        if (shouldRejectOlderActiveSession(localBed, serverBed)) return localBed;
 
         return serverBed; // 그 외에는 서버 권위
       });
@@ -161,6 +173,9 @@ export const useBedRealtime = (
           changed = true;
           return serverBed;
         }
+
+        // 직전 ACTIVE 세션(startTime이 더 과거) 덮어쓰기는 항상 차단
+        if (shouldRejectOlderActiveSession(localBed, serverBed)) return localBed;
 
         // 활성화 직후 이전 세션(startTime이 더 과거) 복원 차단
         if (shouldKeepLocalSessionAfterActivation(localBed, serverBed)) return localBed;
@@ -230,6 +245,9 @@ export const useBedRealtime = (
               if (shouldKeepLocalActive(bed, updatedBed as BedState)) return bed;
               return forceIdleBed({ ...bed });
             }
+
+            // 직전 ACTIVE 세션(startTime이 더 과거) 덮어쓰기는 항상 차단
+            if (shouldRejectOlderActiveSession(bed, updatedBed as BedState)) return bed;
 
             // 활성화 직후 이전 세션(startTime이 더 과거) 복원 차단
             if (shouldKeepLocalSessionAfterActivation(bed, updatedBed as BedState)) return bed;
