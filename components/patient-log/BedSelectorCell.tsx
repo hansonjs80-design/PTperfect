@@ -226,8 +226,20 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
                     style={{ top: gridPos?.top ?? 0, left: gridPos?.left ?? 0 }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div className="px-3 py-2.5 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50 shrink-0">
-                        <span className="font-bold text-gray-800 dark:text-white text-xs truncate">{isLogEditMode ? "방 번호 수정 (단순 변경)" : "배드 선택 (회색: 사용중)"}</span>
+                    <div className="px-3 py-2.5 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center gap-2 bg-gray-50 dark:bg-slate-900/50 shrink-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-bold text-gray-800 dark:text-white text-xs truncate">{isLogEditMode ? "방 번호 수정 (단순 변경)" : "배드 선택 (회색: 사용중)"}</span>
+                          {isLogEditMode && value && onQuickActivate && (
+                            <button
+                              type="button"
+                              onClick={(e) => { handleQuickActivateClick(e); setMode('view'); }}
+                              className="px-1.5 py-[2px] rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold whitespace-nowrap"
+                              title="해당 번호 배드카드 바로 활성화"
+                            >
+                              시행
+                            </button>
+                          )}
+                        </div>
                         <button onClick={() => setMode('view')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"><X className="w-4 h-4" /></button>
                     </div>
                     <div className="p-1">
