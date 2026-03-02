@@ -214,32 +214,33 @@ export const BedCard: React.FC<BedCardProps> = memo(({
 
 
   const isStepSelected = swapSourceIndex !== null;
+  const isTouchSwapControlMode = isCoarsePointer && bed.status === BedStatus.ACTIVE && isStepSelected;
 
   const handleFooterTrashClick = useCallback((e: React.MouseEvent) => {
-    if (isCoarsePointer && isStepSelected) {
+    if (isTouchSwapControlMode) {
       e.preventDefault();
       e.stopPropagation();
       handleDeleteSelectedStep();
       return;
     }
     handleTrashClick(e);
-  }, [isCoarsePointer, isStepSelected, handleDeleteSelectedStep, handleTrashClick]);
+  }, [isTouchSwapControlMode, handleDeleteSelectedStep, handleTrashClick]);
 
   const handleFooterPrev = useCallback((bedId: number) => {
-    if (isCoarsePointer && isStepSelected) {
+    if (isTouchSwapControlMode) {
       handleMoveSelectedStep('left', steps);
       return;
     }
     prevStep(bedId);
-  }, [isCoarsePointer, isStepSelected, handleMoveSelectedStep, steps, prevStep]);
+  }, [isTouchSwapControlMode, handleMoveSelectedStep, steps, prevStep]);
 
   const handleFooterNext = useCallback((bedId: number) => {
-    if (isCoarsePointer && isStepSelected) {
+    if (isTouchSwapControlMode) {
       handleMoveSelectedStep('right', steps);
       return;
     }
     nextStep(bedId);
-  }, [isCoarsePointer, isStepSelected, handleMoveSelectedStep, steps, nextStep]);
+  }, [isTouchSwapControlMode, handleMoveSelectedStep, steps, nextStep]);
 
   // Desktop only: Backspace/Delete removes the swap-selected step
   useEffect(() => {
