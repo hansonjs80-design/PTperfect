@@ -119,6 +119,11 @@ export const usePatientBedSync = (
     }
 
     if (mergedVisit.bed_id) {
+      // 과거 행/비최신 행이 현재 배드를 덮어쓰지 않도록 최신 행만 bed override 허용
+      if (!isLatestVisitForBed(id, mergedVisit.bed_id)) {
+        return;
+      }
+
       if (oldVisit.bed_id && updates.bed_id && oldVisit.bed_id !== updates.bed_id) {
         // 과거 행의 bed 이동 변경으로 현재 활성 배드가 비워지지 않도록 최신 행일 때만 clear
         if (isLatestVisitForBed(id, oldVisit.bed_id)) {

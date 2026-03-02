@@ -217,7 +217,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   // This blocks stale server/session rehydrate from resurrecting old treatment cards.
   useEffect(() => {
     const now = Date.now();
-    const LOCAL_START_GRACE_MS = 8000;
+    const LOCAL_START_GRACE_MS = 2000;
     const CLEAR_THROTTLE_MS = 3000;
 
     beds.forEach((bed) => {
@@ -233,7 +233,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
       const localAge = localSessionTs > 0 ? now - localSessionTs : Number.MAX_SAFE_INTEGER;
       if (localAge < LOCAL_START_GRACE_MS) return;
 
-      const isMissingActiveRow = !latestVisit || !latestTreatment;
+      const isMissingActiveRow = !latestVisit || !latestTreatment || latestVisit.visit_date !== currentDate;
       const isStaleVisitSession = !!bed.startTime && latestVisitTs > 0 && latestVisitTs + LOCAL_START_GRACE_MS < bed.startTime;
       if (!isMissingActiveRow && !isStaleVisitSession) return;
 
