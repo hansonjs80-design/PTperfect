@@ -195,9 +195,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   };
 
   const handleTreatmentSelectorOpen = async () => {
-    if (visit && visit.bed_id && !!visit.treatment_name?.trim() && onEditActive) {
+    const bedId = visit?.bed_id ?? null;
+    const hasBed = typeof bedId === 'number';
+    const hasTreatment = Boolean(visit?.treatment_name?.trim());
+
+    if (hasBed && hasTreatment && onEditActive && visit) {
       // 이미 처방이 입력된 행은 배드 카드와 동일한 편집 오버레이로 진입
-      onEditActive(visit.bed_id);
+      onEditActive(bedId);
       return;
     }
 
@@ -208,8 +212,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (!isDraft && visit && onSelectLog) {
-      if (visit.bed_id && (!visit.treatment_name || visit.treatment_name.trim() === '')) {
-        onSelectLog(visit.id, visit.bed_id);
+      if (hasBed && !hasTreatment) {
+        onSelectLog(visit.id, bedId);
       }
       else {
         onSelectLog(visit.id, null);
