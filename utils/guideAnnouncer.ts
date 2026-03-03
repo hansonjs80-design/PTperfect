@@ -1,4 +1,4 @@
-import { queueGuideSpeech, toSinoKorean } from './alarmSpeech';
+import { queueGuideSpeech } from './alarmSpeech';
 
 interface GuideMessageParams {
   bedId?: number;
@@ -8,16 +8,14 @@ interface GuideMessageParams {
 
 export const createGuideMessage = ({ bedId, treatmentName, nextTreatmentName }: GuideMessageParams): string => {
   const hasBedId = typeof bedId === 'number' && !Number.isNaN(bedId);
-  const bedLabel = hasBedId
-    ? (bedId === 11 ? '견인치료기' : `${toSinoKorean(bedId)}번 배드`)
-    : '치료';
-  const currentLabel = treatmentName ? ` ${treatmentName} 치료` : ' 치료';
+  const bedLabel = hasBedId ? `${bedId}번 배드` : '해당 배드';
+  const currentLabel = treatmentName && treatmentName.trim() !== '' ? treatmentName.trim() : '현재 치료';
 
-  let message = `${bedLabel}${currentLabel} 종료되었습니다.`;
-  if (nextTreatmentName) {
-    message += ` 다음 치료는 ${nextTreatmentName} 입니다.`;
+  let message = `${currentLabel}가(이) ${bedLabel}에서 종료되었습니다.`;
+  if (nextTreatmentName && nextTreatmentName.trim() !== '') {
+    message += ` 다음치료는 ${nextTreatmentName.trim()} 입니다.`;
   } else {
-    message += ' 다음 치료가 없습니다.';
+    message += ' 모든 치료가 종료 되었습니다.';
   }
 
   return message;
