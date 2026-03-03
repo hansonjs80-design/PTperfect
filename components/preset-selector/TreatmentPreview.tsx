@@ -4,6 +4,7 @@ import { Play, ChevronUp, ChevronDown, Minus, Plus, PlusCircle, Trash2, Check, C
 import { Preset, TreatmentStep, QuickTreatment } from '../../types';
 import { useTreatmentContext } from '../../contexts/TreatmentContext';
 import { mapBgToTextClass } from '../../utils/styleUtils';
+import { formatMinutesToKoreanLabel, formatSecondsToClock } from '../../utils/timeFormat';
 
 interface TreatmentPreviewProps {
   preset: Preset;
@@ -12,18 +13,6 @@ interface TreatmentPreviewProps {
   actionLabel?: string;
   isLogEdit?: boolean;
 }
-
-const formatDuration = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${String(secs).padStart(2, '0')}`;
-};
-
-const formatTotalDuration = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return secs === 0 ? `${mins}분` : `${mins}분 ${secs}초`;
-};
 
 export const TreatmentPreview: React.FC<TreatmentPreviewProps> = ({
   preset,
@@ -83,7 +72,7 @@ export const TreatmentPreview: React.FC<TreatmentPreviewProps> = ({
             {preset.steps.length > 0 ? preset.name : "치료 항목 없음"}
           </h4>
           <div className="text-xs font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-lg">
-            Total {formatTotalDuration(totalDurationSec)}
+            Total {formatMinutesToKoreanLabel(totalDurationSec / 60)}
           </div>
         </div>
       </div>
@@ -108,7 +97,7 @@ export const TreatmentPreview: React.FC<TreatmentPreviewProps> = ({
                 <div className="flex items-center gap-2 mt-0.5">
                   <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-md px-1.5 py-0.5">
                     <Clock className="w-3 h-3 text-slate-400" />
-                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{formatDuration(step.duration)}</span>
+                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{formatSecondsToClock(step.duration)}</span>
                   </div>
                 </div>
               </div>

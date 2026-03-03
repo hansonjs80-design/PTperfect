@@ -2,6 +2,7 @@
 import React from 'react';
 import { ChevronUp, ChevronDown, X, Minus, Plus, Clock, RefreshCw } from 'lucide-react';
 import { TreatmentStep } from '../../types';
+import { formatSecondsToClock } from '../../utils/timeFormat';
 
 interface BedEditStepRowProps {
   step: TreatmentStep;
@@ -14,12 +15,6 @@ interface BedEditStepRowProps {
   onDurationChange: (idx: number, changeSeconds: number) => void;
   onApplyDuration?: (duration: number) => void;
 }
-
-const formatDuration = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${String(secs).padStart(2, '0')}`;
-};
 
 export const BedEditStepRow: React.FC<BedEditStepRowProps> = ({
   step,
@@ -62,7 +57,7 @@ export const BedEditStepRow: React.FC<BedEditStepRowProps> = ({
         <div className="flex items-center bg-gray-50 dark:bg-slate-700 rounded-lg p-0.5 shadow-sm border border-gray-100 dark:border-slate-600">
           <button onClick={() => onDurationChange(index, -30)} className="w-6 h-6 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-slate-600 rounded-md text-slate-400 dark:text-slate-300 active:scale-90 transition-colors"><Minus className="w-3 h-3" strokeWidth={3} /></button>
           <div className="px-1 min-w-[38px] text-center">
-            <span className="text-[11px] font-black text-slate-700 dark:text-slate-200 tabular-nums">{formatDuration(duration)}</span>
+            <span className="text-[11px] font-black text-slate-700 dark:text-slate-200 tabular-nums">{formatSecondsToClock(duration)}</span>
           </div>
           <button onClick={() => onDurationChange(index, 30)} className="w-6 h-6 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-slate-600 rounded-md text-slate-400 dark:text-slate-300 active:scale-90 transition-colors"><Plus className="w-3 h-3" strokeWidth={3} /></button>
         </div>

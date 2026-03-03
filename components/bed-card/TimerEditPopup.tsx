@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 're
 import { createPortal } from 'react-dom';
 import { Minus, Plus, Save, X, Clock } from 'lucide-react';
 import { computePopupPosition } from '../../utils/popupUtils';
+import { clampSeconds, formatSecondsToClock } from '../../utils/timeFormat';
 
 type AdjustMode = 'minute' | 'second30' | 'minute5';
 type TimePart = 'minute' | 'second';
@@ -13,12 +14,6 @@ interface TimerEditPopupProps {
   onConfirm: (seconds: number) => void;
   onCancel: () => void;
 }
-
-const formatTimeInput = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-};
 
 const parseTimeInput = (raw: string): number | null => {
   const clean = raw.trim();
@@ -53,8 +48,8 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   onConfirm,
   onCancel
 }) => {
-  const [totalSeconds, setTotalSeconds] = useState(Math.max(30, initialSeconds));
-  const [timeInput, setTimeInput] = useState(formatTimeInput(Math.max(30, initialSeconds)));
+  const [totalSeconds, setTotalSeconds] = useState(clampSeconds(initialSeconds, 30));
+  const [timeInput, setTimeInput] = useState(formatSecondsToClock(clampSeconds(initialSeconds, 30)));
   const [activePart, setActivePart] = useState<TimePart>('minute');
   const [adjustMode, setAdjustMode] = useState<AdjustMode>('minute');
 
@@ -71,7 +66,7 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   const secondsRemainder = totalSeconds % 60;
 
   const setClampedSeconds = (nextSeconds: number) => {
-    setTotalSeconds(Math.max(30, nextSeconds));
+    setTotalSeconds(clampSeconds(nextSeconds, 30));
   };
 
   const selectTimePart = (part: TimePart) => {
@@ -93,7 +88,7 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   }, [adjustMode]);
 
   useEffect(() => {
-    setTimeInput(formatTimeInput(totalSeconds));
+    setTimeInput(formatSecondsToClock(totalSeconds));
   }, [totalSeconds]);
 
   useEffect(() => {
@@ -146,7 +141,7 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   };
 
   const handleConfirm = () => {
-    onConfirm(Math.max(30, totalSeconds));
+    onConfirm(clampSeconds(totalSeconds, 30));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -203,7 +198,7 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   };
 
   const handleInputBlur = () => {
-    setTimeInput(formatTimeInput(totalSeconds));
+    setTimeInput(formatSecondsToClock(totalSeconds));
   };
 
   const overlayClass = position
