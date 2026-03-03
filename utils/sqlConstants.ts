@@ -136,7 +136,7 @@ create table if not exists public.quick_treatments (
   id text primary key,
   name text not null,
   label text not null,
-  duration integer not null, -- minutes
+  duration numeric(6,1) not null, -- minutes (supports 0.5 = 30s)
   color text not null,
   enable_timer boolean not null,
   rank integer default 0,
@@ -148,6 +148,19 @@ do $$
 begin 
   if not exists (select 1 from information_schema.columns where table_name = 'quick_treatments' and column_name = 'rank') then
     alter table public.quick_treatments add column rank integer default 0;
+  end if;
+
+  -- 30초(0.5분) 단위를 저장할 수 있도록 duration 타입을 numeric으로 승격
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_name = 'quick_treatments'
+      and column_name = 'duration'
+      and data_type = 'integer'
+  ) then
+    alter table public.quick_treatments
+      alter column duration type numeric(6,1)
+      using duration::numeric(6,1);
   end if;
 end $$;
 
