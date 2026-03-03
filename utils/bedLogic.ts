@@ -12,6 +12,15 @@ export const mapRowToBed = (row: any): Partial<BedState> => {
     startTime = null;
   }
 
+  // ★ 좀비 카드 방지: 비IDLE인데 처방 정보가 완전히 비어 있으면 IDLE로 정리
+  // - clear 중간 실패/경합으로 status만 남고 preset이 사라진 레코드가 재부활하는 현상 방지
+  const hasPresetSource = !!row.current_preset_id || !!row.custom_preset_json;
+  const hasQueuedSteps = Array.isArray(row.queue) && row.queue.length > 0;
+  if (status && status !== BedStatus.IDLE && !hasPresetSource && !hasQueuedSteps) {
+    status = BedStatus.IDLE;
+    startTime = null;
+  }
+
   // ★ IDLE 상태인데 preset 등 stale 데이터가 남아있으면 강제 정리
   // → DB에서 clearBedInDb의 upsert가 아직 반영되지 않은 중간 상태 방지
   if (status === BedStatus.IDLE) {
