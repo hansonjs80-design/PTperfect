@@ -85,13 +85,6 @@ export const usePatientBedSync = (
         }
       }
 
-      // Case B: Updating Treatment on Same Bed
-      if (updates.treatment_name !== undefined && updates.treatment_name !== oldVisit.treatment_name) {
-        const targetBed = bedsRef.current.find(b => b.id === targetBedId);
-        if (targetBed && targetBed.status === BedStatus.ACTIVE) {
-          shouldForceRestart = true;
-        }
-      }
     }
 
     await updateLogVisit(id, updates);
@@ -108,8 +101,8 @@ export const usePatientBedSync = (
       updateBedMemoFromLog(mergedVisit.bed_id, updates.memo || undefined);
     }
 
-    const shouldApplyBedRuntimeSync = updates.bed_id !== undefined || updates.treatment_name !== undefined;
-    // 이름/부위/메모/상태/작성 등 로그 메타 편집은 배드 활성화/타이머 로직에 영향 주지 않음.
+    const shouldApplyBedRuntimeSync = updates.bed_id !== undefined;
+    // 이름/부위/처방/메모/상태/작성 등 로그 편집은 배드 활성화/타이머 로직에 영향 주지 않음.
     if (!shouldApplyBedRuntimeSync) {
       return;
     }
