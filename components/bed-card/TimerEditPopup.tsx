@@ -60,7 +60,7 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
 
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>(() => {
     if (!position) return {};
-    const p = computePopupPosition(position, 280, 280, { preferAbove: true, centerOnClick: true, gap: 16 });
+    const p = computePopupPosition(position, 296, 332, { preferAbove: true, centerOnClick: true, gap: 12 });
     return { top: p.top, left: p.left, position: 'absolute' as const };
   });
 
@@ -114,7 +114,7 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
   useLayoutEffect(() => {
     if (position && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const refined = computePopupPosition(position, rect.width, rect.height, { preferAbove: true, centerOnClick: true, gap: 16 });
+      const refined = computePopupPosition(position, rect.width, rect.height, { preferAbove: true, centerOnClick: true, gap: 12 });
       setPopupStyle({ top: refined.top, left: refined.left, position: 'absolute' });
     } else if (!position) {
       setPopupStyle({});
@@ -211,8 +211,8 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
     : 'fixed inset-0 z-[100] bg-black/40 backdrop-blur-[2px] flex items-center justify-center animate-in fade-in duration-200';
 
   const popupClass = position
-    ? 'absolute w-[280px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150 origin-bottom'
-    : 'w-[280px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150';
+    ? 'absolute w-[min(92vw,296px)] max-h-[min(78vh,360px)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150 origin-bottom'
+    : 'w-[min(92vw,296px)] max-h-[min(82vh,380px)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150';
 
   return createPortal(
     <div className={overlayClass} onClick={onCancel}>
@@ -232,11 +232,11 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
           </button>
         </div>
 
-        <div className="p-3 flex flex-col gap-2.5">
-          <div className="flex items-center justify-between gap-2">
+        <div className="p-2.5 sm:p-3 flex flex-col gap-2 overflow-y-auto">
+          <div className="flex items-center justify-between gap-1.5">
             <button
               onClick={() => handleAdjustByMode(-1)}
-              className="w-9 h-9 flex items-center justify-center bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl text-gray-600 dark:text-gray-300 shadow-sm active:scale-90 transition-all border border-gray-200 dark:border-slate-600"
+              className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl text-gray-600 dark:text-gray-300 shadow-sm active:scale-90 transition-all border border-gray-200 dark:border-slate-600"
               aria-label="시간 감소"
             >
               <Minus className="w-4.5 h-4.5" strokeWidth={3} />
@@ -251,48 +251,48 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
               onKeyDown={handleInputKeyDown}
               onClick={handleInputClick}
               onBlur={handleInputBlur}
-              className="flex-1 bg-white dark:bg-slate-900 border-2 border-brand-500 rounded-xl py-1 text-2xl font-black text-center text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-500/20 transition-all tabular-nums"
+              className="flex-1 min-w-0 bg-white dark:bg-slate-900 border-2 border-brand-500 rounded-xl py-1 text-[28px] leading-none font-black text-center text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-500/20 transition-all tabular-nums"
               aria-label="타이머 시간"
               placeholder="0:30"
             />
 
             <button
               onClick={() => handleAdjustByMode(1)}
-              className="w-9 h-9 flex items-center justify-center bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl text-brand-600 dark:text-brand-400 shadow-sm active:scale-90 transition-all border border-gray-200 dark:border-slate-600"
+              className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl text-brand-600 dark:text-brand-400 shadow-sm active:scale-90 transition-all border border-gray-200 dark:border-slate-600"
               aria-label="시간 증가"
             >
               <Plus className="w-4.5 h-4.5" strokeWidth={3} />
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-3 gap-1">
             <button
               onClick={() => setAdjustMode('minute')}
-              className={`py-1 text-[10px] font-bold rounded-md transition-colors ${adjustMode === 'minute' ? 'bg-brand-600 text-white' : 'bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
+              className={`py-1 text-[10px] sm:text-[11px] font-bold rounded-md transition-colors ${adjustMode === 'minute' ? 'bg-brand-600 text-white' : 'bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
             >
               1분
             </button>
             <button
               onClick={() => setAdjustMode('second30')}
-              className={`py-1 text-[10px] font-bold rounded-md transition-colors ${adjustMode === 'second30' ? 'bg-brand-600 text-white' : 'bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
+              className={`py-1 text-[10px] sm:text-[11px] font-bold rounded-md transition-colors ${adjustMode === 'second30' ? 'bg-brand-600 text-white' : 'bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
             >
               30초
             </button>
             <button
               onClick={() => setAdjustMode('minute5')}
-              className={`py-1 text-[10px] font-bold rounded-md transition-colors ${adjustMode === 'minute5' ? 'bg-brand-600 text-white' : 'bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
+              className={`py-1 text-[10px] sm:text-[11px] font-bold rounded-md transition-colors ${adjustMode === 'minute5' ? 'bg-brand-600 text-white' : 'bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
             >
               5분
             </button>
           </div>
 
-          <div className="text-center text-[11px] font-bold text-gray-500 dark:text-gray-400">
+          <div className="text-center text-[10px] sm:text-[11px] font-bold text-gray-500 dark:text-gray-400 leading-tight">
             총 시간: {minutes}:{secondsRemainder.toString().padStart(2, '0')} · 현재 조정 단위: {adjustMode === 'minute' ? '1분' : adjustMode === 'second30' ? '30초' : '5분'}
           </div>
 
           <button
             onClick={handleConfirm}
-            className="w-full py-2 bg-brand-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-brand-700 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+            className="w-full py-2 bg-brand-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-brand-700 active:scale-95 transition-all flex items-center justify-center gap-1.5 mt-0.5"
           >
             <Save className="w-4 h-4" />
             적용
