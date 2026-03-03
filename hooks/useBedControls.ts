@@ -3,6 +3,7 @@ import React, { useCallback } from 'react';
 import { BedState, BedStatus, Preset, PatientVisit } from '../types';
 import { calculateRemainingTime } from '../utils/bedLogic';
 import { createSwappedPreset } from '../utils/treatmentFactories';
+import { generateTreatmentString } from '../utils/bedUtils';
 
 export const useBedControls = (
   bedsRef: React.MutableRefObject<BedState[]>,
@@ -18,11 +19,30 @@ export const useBedControls = (
     const preset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
     if (!preset) return;
 
+    const totalSteps = preset.steps.length;
+    if (totalSteps === 0) return;
+
+    // stale sync 등으로 currentStepIndex가 비정상 범위가 되면 즉시 완료로 보내지 말고 0단계로 복구
+    if (bed.currentStepIndex < 0 || bed.currentStepIndex >= totalSteps) {
+      const firstStep = preset.steps[0];
+      updateBedState(bedId, {
+        status: BedStatus.ACTIVE,
+        currentStepIndex: 0,
+        queue: [],
+        startTime: Date.now(),
+        remainingTime: firstStep.duration,
+        originalDuration: firstStep.duration,
+        isPaused: false
+      });
+      return;
+    }
+
     const nextIndex = bed.currentStepIndex + 1;
 
-    if (nextIndex < preset.steps.length) {
+    if (nextIndex < totalSteps) {
       const nextStepItem = preset.steps[nextIndex];
       updateBedState(bedId, {
+        status: BedStatus.ACTIVE,
         currentStepIndex: nextIndex,
         queue: [],
         startTime: Date.now(),
@@ -79,16 +99,13 @@ export const useBedControls = (
       customPreset: swapResult.preset
     };
 
-    if (bed.status === BedStatus.ACTIVE && (bed.currentStepIndex === idx1 || bed.currentStepIndex === idx2)) {
-      const currentStepItem = swapResult.steps[bed.currentStepIndex];
-      updates.remainingTime = currentStepItem.duration;
-      updates.originalDuration = currentStepItem.duration;
-      updates.startTime = Date.now();
-      updates.isPaused = false;
-    }
-
+    // 순서 변경/자리 교환은 타이머 상태를 건드리지 않고 목록 위치만 변경한다.
     updateBedState(bedId, updates);
-  }, [presets, updateBedState]);
+
+    if (onUpdateVisit) {
+      onUpdateVisit(bedId, { treatment_name: generateTreatmentString(swapResult.steps) });
+    }
+  }, [presets, updateBedState, onUpdateVisit]);
 
   const togglePause = useCallback((bedId: number) => {
     const bed = bedsRef.current.find(b => b.id === bedId);
