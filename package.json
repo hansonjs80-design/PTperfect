@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup:auto-push": "bash ./scripts/setup-auto-push.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
