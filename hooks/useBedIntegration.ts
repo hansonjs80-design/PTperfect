@@ -3,6 +3,24 @@ import React, { useCallback } from 'react';
 import { BedState, BedStatus, Preset, TreatmentStep, QuickTreatment, PatientVisit } from '../types';
 import { findMatchingPreset, parseTreatmentString, generateTreatmentString } from '../utils/bedUtils';
 
+const STEP_STATUS_KEYWORDS: Record<'isInjection' | 'isFluid' | 'isTraction' | 'isESWT' | 'isManual', string[]> = {
+    isInjection: ['주사', 'inj', 'injection'],
+    isFluid: ['수액', 'fluid', 'iv'],
+    isTraction: ['견인', 'traction'],
+    isESWT: ['충격파', 'eswt', 'shockwave'],
+    isManual: ['도수', 'manual']
+};
+
+const normalizeStepText = (step: TreatmentStep) => `${step.name ?? ''} ${step.label ?? ''}`.toLowerCase();
+
+const hasStatusKeyword = (steps: TreatmentStep[], statusKey: keyof typeof STEP_STATUS_KEYWORDS) => {
+    const keywords = STEP_STATUS_KEYWORDS[statusKey];
+    return steps.some((step) => {
+        const text = normalizeStepText(step);
+        return keywords.some((keyword) => text.includes(keyword));
+    });
+};
+
 export const useBedIntegration = (
     bedsRef: React.MutableRefObject<BedState[]>,
     updateBedState: (id: number, updates: Partial<BedState>) => void,
@@ -11,6 +29,13 @@ export const useBedIntegration = (
     clearBed: (id: number) => void,
     onUpdateVisit?: (bedId: number, updates: Partial<PatientVisit>) => void
 ) => {
+
+    const updateBedMemoFromLog = useCallback((bedId: number, memo?: string) => {
+        const bed = bedsRef.current.find(b => b.id === bedId);
+        if (!bed || bed.status === BedStatus.IDLE) return;
+
+        updateBedState(bedId, { patientMemo: memo || undefined });
+    }, [bedsRef, updateBedState]);
 
     const overrideBedFromLog = useCallback((bedId: number, visit: PatientVisit, forceRestart: boolean) => {
         const treatmentName = visit.treatment_name || "";
@@ -68,8 +93,8 @@ export const useBedIntegration = (
         updateBedState(bedId, updates);
     }, [presets, quickTreatments, updateBedState]);
 
-    const moveBedState = useCallback(async (fromBedId: number, toBedId: number) => {
-        const fromBed = bedsRef.current.find(b => b.id === fromBedId);
+    const moveBedState = useCallback(async (fromBedId: number, toBedId: number, sourceSnapshot?: BedState) => {
+        const fromBed = sourceSnapshot || bedsRef.current.find(b => b.id === fromBedId);
         if (!fromBed) return;
 
         const stateToMove: Partial<BedState> = {
@@ -91,9 +116,14 @@ export const useBedIntegration = (
             patientMemo: fromBed.patientMemo,
         };
 
+        // 1) 먼저 대상 배드에 상태를 복원
         await updateBedState(toBedId, stateToMove);
+        // 2) 원본 배드를 비우고
         clearBed(fromBedId);
-    }, [updateBedState, clearBed]);
+        // 3) clear/realtime 레이스로 대상이 잠깐 비워지는 경우를 방지하기 위해
+        //    동일 스냅샷을 한 번 더 덮어써 최종 상태를 고정한다.
+        await updateBedState(toBedId, stateToMove);
+    }, [updateBedState, clearBed, bedsRef]);
 
     const updateBedSteps = useCallback((bedId: number, newSteps: TreatmentStep[], newStepIndex?: number) => {
         const bed = bedsRef.current.find(b => b.id === bedId);
@@ -130,16 +160,44 @@ export const useBedIntegration = (
             }
         }
 
+        const statusAutoUpdates: Partial<BedState> = {};
+        const visitStatusAutoUpdates: Partial<Pick<PatientVisit, 'is_injection' | 'is_fluid' | 'is_traction' | 'is_eswt' | 'is_manual'>> = {};
+
+        (Object.keys(STEP_STATUS_KEYWORDS) as Array<keyof typeof STEP_STATUS_KEYWORDS>).forEach((statusKey) => {
+            const hadKeywordBefore = hasStatusKeyword(oldSteps, statusKey);
+            const hasKeywordNow = hasStatusKeyword(newSteps, statusKey);
+
+            // 자동 상태표시 아이콘: 목록에 해당 항목이 새롭게 생긴 순간에만 ON
+            // (삭제해도 유지, 수동 OFF는 존중)
+            if (!hadKeywordBefore && hasKeywordNow && !bed[statusKey]) {
+                statusAutoUpdates[statusKey] = true;
+                const visitMap: Record<keyof typeof STEP_STATUS_KEYWORDS, 'is_injection' | 'is_fluid' | 'is_traction' | 'is_eswt' | 'is_manual'> = {
+                    isInjection: 'is_injection',
+                    isFluid: 'is_fluid',
+                    isTraction: 'is_traction',
+                    isESWT: 'is_eswt',
+                    isManual: 'is_manual'
+                };
+                visitStatusAutoUpdates[visitMap[statusKey]] = true;
+            }
+        });
+
+        Object.assign(updates, statusAutoUpdates);
+
         updateBedState(bedId, updates);
 
         if (onUpdateVisit) {
-            onUpdateVisit(bedId, { treatment_name: generateTreatmentString(newSteps) });
+            onUpdateVisit(bedId, {
+                treatment_name: generateTreatmentString(newSteps),
+                ...visitStatusAutoUpdates
+            });
         }
     }, [presets, updateBedState, onUpdateVisit]);
 
     return {
         overrideBedFromLog,
         moveBedState,
-        updateBedSteps
+        updateBedSteps,
+        updateBedMemoFromLog
     };
 };
