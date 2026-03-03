@@ -195,7 +195,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   };
 
   const handleTreatmentSelectorOpen = async () => {
-    if (rowStatus === 'active' && visit && visit.bed_id && onEditActive) {
+    if (visit && visit.bed_id && !!visit.treatment_name?.trim() && onEditActive) {
+      // 이미 처방이 입력된 행은 배드 카드와 동일한 편집 오버레이로 진입
       onEditActive(visit.bed_id);
       return;
     }
