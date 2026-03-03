@@ -9,11 +9,11 @@ interface GuideMessageParams {
 export const createGuideMessage = ({ bedId, treatmentName, nextTreatmentName }: GuideMessageParams): string => {
   const hasBedId = typeof bedId === 'number' && !Number.isNaN(bedId);
   const bedLabel = hasBedId ? `${bedId}번 배드` : '해당 배드';
-  const currentLabel = treatmentName && treatmentName.trim() !== '' ? treatmentName.trim() : '현재 치료';
+  const currentLabel = treatmentName && treatmentName.trim() !== '' ? treatmentName.trim() : '현재';
 
-  let message = `${currentLabel}가(이) ${bedLabel}에서 종료되었습니다.`;
+  let message = `${currentLabel}치료가 ${bedLabel}에서 종료되었습니다.`;
   if (nextTreatmentName && nextTreatmentName.trim() !== '') {
-    message += ` 다음치료는 ${nextTreatmentName.trim()} 입니다.`;
+    message += ` 다음치료는 ${nextTreatmentName.trim()} 치료입니다.`;
   } else {
     message += ' 모든 치료가 종료 되었습니다.';
   }
