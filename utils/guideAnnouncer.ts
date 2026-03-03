@@ -8,10 +8,11 @@ interface GuideMessageParams {
 
 export const createGuideMessage = ({ bedId, treatmentName, nextTreatmentName }: GuideMessageParams): string => {
   const hasBedId = typeof bedId === 'number' && !Number.isNaN(bedId);
+  const bedNo = hasBedId ? `${bedId}번` : '해당';
   const bedLabel = hasBedId ? `${bedId}번 배드` : '해당 배드';
   const currentLabel = treatmentName && treatmentName.trim() !== '' ? treatmentName.trim() : '현재';
 
-  let message = `${currentLabel}치료가 ${bedLabel}에서 종료되었습니다.`;
+  let message = `${bedNo}, ${bedLabel}에서 ${currentLabel}치료가 종료 되었습니다.`;
   if (nextTreatmentName && nextTreatmentName.trim() !== '') {
     message += ` 다음치료는 ${nextTreatmentName.trim()} 치료입니다.`;
   } else {
