@@ -60,7 +60,7 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
 
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>(() => {
     if (!position) return {};
-    const p = computePopupPosition(position, 296, 332, { preferAbove: true, centerOnClick: true, gap: 12 });
+    const p = computePopupPosition(position, 252, 332, { preferAbove: true, centerOnClick: true, gap: 12 });
     return { top: p.top, left: p.left, position: 'absolute' as const };
   });
 
@@ -211,8 +211,8 @@ export const TimerEditPopup: React.FC<TimerEditPopupProps> = ({
     : 'fixed inset-0 z-[100] bg-black/40 backdrop-blur-[2px] flex items-center justify-center animate-in fade-in duration-200';
 
   const popupClass = position
-    ? 'absolute w-[min(92vw,296px)] max-h-[min(78vh,360px)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150 origin-bottom'
-    : 'w-[min(92vw,296px)] max-h-[min(82vh,380px)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150';
+    ? 'absolute w-[min(92vw,252px)] max-h-[min(78vh,360px)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150 origin-bottom'
+    : 'w-[min(92vw,252px)] max-h-[min(82vh,380px)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150';
 
   return createPortal(
     <div className={overlayClass} onClick={onCancel}>
