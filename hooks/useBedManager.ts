@@ -39,6 +39,7 @@ export const useBedManager = (
     selectPreset: actions.selectPreset,
     startCustomPreset: actions.startCustomPreset,
     startQuickTreatment: actions.startQuickTreatment,
+    startTimerOnly: actions.startTimerOnly,
     startTraction: actions.startTraction,
     // From Controls
     nextStep: controls.nextStep,
@@ -71,6 +72,7 @@ export const useBedManager = (
     updateBedSteps: integration.updateBedSteps,
     overrideBedFromLog: integration.overrideBedFromLog,
     moveBedState: integration.moveBedState,
+    updateBedMemoFromLog: integration.updateBedMemoFromLog,
 
     // Core & Utils
     updateBedState,

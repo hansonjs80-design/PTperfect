@@ -1,22 +1,23 @@
 
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
-import ReactDOM from 'react-dom';
 import { Trash2, Check, X } from 'lucide-react';
 import { EditableCell } from './EditableCell';
 import { BedSelectorCell } from './BedSelectorCell';
 import { TreatmentSelectorCell } from './TreatmentSelectorCell';
 import { PatientStatusCell } from './PatientStatusCell';
 import { AuthorSelectorCell } from './AuthorSelectorCell';
-import { PatientVisit } from '../../types';
+import { BedState, PatientVisit, Preset } from '../../types';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
-import { PatientMemoModal } from '../modals/PatientMemoModal';
+import { formatBodyPartText } from '../../utils/patientLogUtils';
+import { useTreatmentContext } from '../../contexts/TreatmentContext';
+import { formatTime } from '../../utils/bedUtils';
 
 interface PatientLogRowProps {
   rowIndex: number;
   visit?: PatientVisit;
   isDraft?: boolean;
   rowStatus?: 'active' | 'completed' | 'none';
-  onUpdate?: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => void;
+  onUpdate?: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => void | Promise<void>;
   onDelete?: (id: string) => void;
   onCreate?: (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => Promise<string>;
   onSelectLog?: (id: string, bedId?: number | null) => void;
@@ -29,52 +30,14 @@ interface PatientLogRowProps {
   isLastStep?: boolean;
   timerStatus?: 'normal' | 'warning' | 'overtime';
   remainingTime?: number;
+  bed?: BedState;
+  presets?: Preset[];
   isPaused?: boolean;
   onNextStep?: () => void;
   onPrevStep?: () => void;
   onClearBed?: () => void;
   onBulkAuthorUpdate?: (val: string) => void;
 }
-
-// ── 메모 호버 툴팁 (화면 경계 자동 조정) ──
-const MemoTooltip: React.FC<{ memo: string; anchorX: number; anchorY: number }> = ({ memo, anchorX, anchorY }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const el = ref.current;
-    const rect = el.getBoundingClientRect();
-    const pad = 8;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    // 기본: 셀 위쪽 중앙 배치
-    let left = anchorX - rect.width / 2;
-    let top = anchorY - rect.height - 6;
-
-    // 화면 좌측 넘침 방지
-    if (left < pad) left = pad;
-    // 화면 우측 넘침 방지
-    if (left + rect.width > vw - pad) left = vw - pad - rect.width;
-    // 화면 상단 넘침 → 셀 아래쪽에 표시
-    if (top < pad) top = anchorY + 40;
-    // 화면 하단 넘침 방지
-    if (top + rect.height > vh - pad) top = vh - pad - rect.height;
-
-    setPos({ left, top });
-  }, [anchorX, anchorY]);
-
-  return (
-    <div
-      ref={ref}
-      style={{ left: pos?.left ?? anchorX, top: pos?.top ?? anchorY, visibility: pos ? 'visible' : 'hidden' }}
-      className="fixed z-[9999] max-w-[280px] px-3 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs text-gray-700 dark:text-gray-200 font-medium leading-relaxed whitespace-pre-wrap break-words pointer-events-none"
-    >
-      {memo}
-    </div>
-  );
-};
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   rowIndex,
@@ -94,42 +57,24 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   isLastStep = false,
   timerStatus = 'normal',
   remainingTime,
+  bed,
+  presets = [],
   isPaused,
   onNextStep,
   onPrevStep,
   onClearBed,
   onBulkAuthorUpdate
 }) => {
-  const { handleGridKeyDown } = useGridNavigation(8);
+  const { handleGridKeyDown } = useGridNavigation(10);
+  const { activateVisitFromLog } = useTreatmentContext();
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
-  const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [memoTooltip, setMemoTooltip] = useState<{ x: number; y: number } | null>(null);
-  const memoHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const memoTooltipRef = useRef<HTMLDivElement>(null);
 
   // Clean up timeout on unmount
   useEffect(() => {
     return () => {
       if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
-      if (memoHoverTimer.current) clearTimeout(memoHoverTimer.current);
     };
-  }, []);
-
-  const handleMemoMouseEnter = useCallback((e: React.MouseEvent) => {
-    if (!visit?.memo) return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    memoHoverTimer.current = setTimeout(() => {
-      setMemoTooltip({ x: rect.left + rect.width / 2, y: rect.top });
-    }, 300); // 300ms 딜레이로 불필요한 깜빡임 방지
-  }, [visit?.memo]);
-
-  const handleMemoMouseLeave = useCallback(() => {
-    if (memoHoverTimer.current) {
-      clearTimeout(memoHoverTimer.current);
-      memoHoverTimer.current = null;
-    }
-    setMemoTooltip(null);
   }, []);
 
   const handleAssign = async (newBedId: number) => {
@@ -174,7 +119,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     if (isDraft && onCreate) {
       await onCreate({ [field]: value }, colIndex, navDirection);
     } else if (!isDraft && visit && onUpdate) {
-      onUpdate(visit.id, { [field]: value }, skipSync);
+      const shouldKeepLogOnly = field === 'memo' && rowStatus !== 'active';
+      onUpdate(visit.id, { [field]: value }, shouldKeepLogOnly || skipSync);
     }
   };
 
@@ -191,8 +137,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   };
 
   const handleTreatmentSelectorOpen = async () => {
-    if (rowStatus === 'active' && visit && visit.bed_id && onEditActive) {
-      onEditActive(visit.bed_id);
+    const bedId = visit?.bed_id ?? null;
+    const hasBed = typeof bedId === 'number';
+    const hasTreatment = Boolean(visit?.treatment_name?.trim());
+
+    if (hasBed && onEditActive && visit && (hasTreatment || rowStatus === 'active')) {
+      // 이미 처방이 입력된 행은 배드 카드와 동일한 편집 오버레이로 진입
+      onEditActive(bedId);
       return;
     }
 
@@ -203,13 +154,27 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (!isDraft && visit && onSelectLog) {
-      if (visit.bed_id && (!visit.treatment_name || visit.treatment_name.trim() === '')) {
-        onSelectLog(visit.id, visit.bed_id);
+      if (hasBed && !hasTreatment) {
+        onSelectLog(visit.id, bedId);
       }
       else {
         onSelectLog(visit.id, null);
       }
     }
+  };
+
+
+
+  const handleQuickActivate = async (forceRestart: boolean = false) => {
+    if (isDraft || !visit) return;
+
+    if (onUpdate) {
+      const reorderTimestamp = new Date().toISOString();
+      await Promise.resolve(onUpdate(visit.id, { created_at: reorderTimestamp }, true));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    activateVisitFromLog(visit.id, forceRestart);
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -250,7 +215,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
       }
     } else {
-      handleGridKeyDown(e, rowIndex, 7);
+      handleGridKeyDown(e, rowIndex, 9);
     }
   };
 
@@ -282,6 +247,18 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   if (timerStatus === 'overtime') dotColorClass = 'bg-red-600 animate-pulse';
 
   const cellBorderClass = "border-r border-gray-300 dark:border-slate-600";
+  const currentPreset = bed?.customPreset || presets.find(p => p.id === bed?.currentPresetId);
+  const currentStep = currentPreset?.steps[bed?.currentStepIndex || 0];
+  const isTimerCellActive = rowStatus === 'active' && !!currentStep?.enableTimer && typeof remainingTime === 'number';
+  const timerOnlyDisplayText = [visit?.patient_name || '', visit?.body_part || '']
+    .filter((txt) => !!txt)
+    .join(' / ');
+  const treatmentDisplayValue = (visit?.treatment_name && visit.treatment_name.trim() !== '')
+    ? visit.treatment_name
+    : (isTimerCellActive && timerOnlyDisplayText ? timerOnlyDisplayText : '');
+  const timerText = isTimerCellActive
+    ? `${timerStatus === 'overtime' ? '+' : ''}${formatTime(remainingTime || 0)}`
+    : '';
 
   return (
     <tr className={rowClasses}>
@@ -299,6 +276,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           className={isDraft ? "opacity-50 hover:opacity-100" : ""}
           activeBedIds={activeBedIds}
           isLogEditMode={isLogEditMode}
+          onQuickActivate={handleQuickActivate}
         />
         {rowStatus !== 'none' && (
           <div className="absolute top-1.5 right-1 pointer-events-none">
@@ -339,10 +317,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           menuTitle="치료 부위 수정 (로그만 변경)"
           className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[12.6px] sm:text-[13.5px] xl:text-[14.4px]"
           onCommit={(val, skipSync, navDir) => {
-            let formattedVal = (val || '').replace(/\b\w/g, (c) => c.toUpperCase());
-            const upperCaseWords = ['ITB', 'TFL', 'SIJ', 'LS', 'CT', 'TL', 'TMJ', 'ACL', 'MCL', 'ATFL', 'PV', 'AC', 'SC'];
-            const pattern = new RegExp(`\\b(${upperCaseWords.join('|')})\\b`, 'gi');
-            formattedVal = formattedVal.replace(pattern, (match) => match.toUpperCase());
+            const formattedVal = formatBodyPartText(val || '');
             handleChange('body_part', formattedVal, skipSync, 2, navDir);
           }}
           directEdit={true}
@@ -357,7 +332,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           rowIndex={rowIndex}
           colIndex={3}
           visit={visit}
-          value={visit?.treatment_name || ''}
+          value={treatmentDisplayValue}
           placeholder="처방 입력..."
           rowStatus={rowStatus}
           onCommitText={handleTreatmentTextCommit}
@@ -377,10 +352,27 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       <td className={`${cellBorderClass} p-0`}>
+        <div
+          className="w-full h-full min-h-[36px] flex items-center justify-center px-1 text-[11px] sm:text-[12px] font-black tracking-tight"
+          data-grid-id={`${rowIndex}-4`}
+          tabIndex={0}
+          onKeyDown={(e) => handleGridKeyDown(e, rowIndex, 4)}
+        >
+          {isTimerCellActive ? (
+            <span className={`${timerStatus === 'overtime' ? 'text-red-600 dark:text-red-400 animate-pulse' : timerStatus === 'warning' ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-700 dark:text-emerald-300'}`}>
+              {isPaused ? `일시정지 ${timerText}` : timerText}
+            </span>
+          ) : (
+            <span className="text-gray-300 dark:text-gray-600">-</span>
+          )}
+        </div>
+      </td>
+
+      <td className={`${cellBorderClass} p-0`}>
         <PatientStatusCell
-          gridId={`${rowIndex}-4`}
+          gridId={`${rowIndex}-5`}
           rowIndex={rowIndex}
-          colIndex={4}
+          colIndex={5}
           visit={visit}
           rowStatus={rowStatus}
           onUpdate={onUpdate || (() => { })}
@@ -391,13 +383,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td className={`${cellBorderClass} p-0`}>
         <AuthorSelectorCell
-          gridId={`${rowIndex}-5`}
+          gridId={`${rowIndex}-6`}
           rowIndex={rowIndex}
-          colIndex={5}
+          colIndex={6}
           value={visit?.author || ''}
           onSelect={async (val) => {
             if (isDraft && onCreate) {
-              await onCreate({ author: val }, 5);
+              await onCreate({ author: val }, 6);
             } else if (visit && onUpdate) {
               // 선택한 셀만 변경 (빈 셀이든 이미 입력된 셀이든 동일하게 처리)
               onUpdate(visit.id, { author: val }, true);
@@ -408,34 +400,35 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       <td className={`${cellBorderClass} p-0`}>
-        <div
-          className="w-full h-full min-h-[36px] flex items-center justify-center cursor-pointer transition-colors text-gray-600 dark:text-gray-400 font-bold bg-transparent text-center text-[11.3px] xl:text-[13px] hover:bg-gray-50 dark:hover:bg-slate-700/50 outline-none focus:ring-2 focus:ring-sky-400 focus:z-10"
-          onClick={() => {
-            if (!isDraft) setIsMemoModalOpen(true);
-          }}
-          onMouseEnter={handleMemoMouseEnter}
-          onMouseLeave={handleMemoMouseLeave}
-          tabIndex={0}
-          data-grid-id={`${rowIndex}-6`}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              if (!isDraft) setIsMemoModalOpen(true);
-            } else {
-              handleGridKeyDown(e, rowIndex, 6);
-            }
-          }}
-          title={undefined}
-        >
-          {visit?.memo ? (
-            <span className="truncate max-w-[80px] px-2">{visit.memo}</span>
-          ) : (
-            <span className="text-gray-300 dark:text-gray-600"></span>
-          )}
-        </div>
-        {memoTooltip && visit?.memo && ReactDOM.createPortal(
-          <MemoTooltip memo={visit.memo} anchorX={memoTooltip.x} anchorY={memoTooltip.y} />,
-          document.body
-        )}
+        <EditableCell
+          gridId={`${rowIndex}-7`}
+          rowIndex={rowIndex}
+          colIndex={7}
+          value={visit?.memo || ''}
+          placeholder=""
+          menuTitle="메모 수정 (로그만 변경)"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.3px] xl:text-[13px]"
+          onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 7, navDir)}
+          directEdit={true}
+          syncOnDirectEdit={false}
+          suppressEnterNav={isDraft}
+        />
+      </td>
+
+      <td className={`${cellBorderClass} p-0`}>
+        <EditableCell
+          gridId={`${rowIndex}-8`}
+          rowIndex={rowIndex}
+          colIndex={8}
+          value={visit?.special_note || ''}
+          placeholder=""
+          menuTitle="특이 사항 수정 (로그만 변경)"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.2px] sm:text-[12.5px]"
+          onCommit={(val, skipSync, navDir) => handleChange('special_note', val || '', skipSync, 8, navDir)}
+          directEdit={true}
+          syncOnDirectEdit={false}
+          suppressEnterNav={isDraft}
+        />
       </td>
 
       <td className="p-0 text-center">
@@ -443,7 +436,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           <div
             className="flex justify-center items-center h-full outline-none focus:ring-inset focus:ring-2 focus:ring-sky-400"
             tabIndex={0}
-            data-grid-id={`${rowIndex}-7`}
+            data-grid-id={`${rowIndex}-9`}
             onKeyDown={handleDeleteKeyDown}
           >
             <button
@@ -466,16 +459,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           </div>
         )}
       </td>
-
-      {!isDraft && visit && (
-        <PatientMemoModal
-          isOpen={isMemoModalOpen}
-          onClose={() => setIsMemoModalOpen(false)}
-          initialMemo={visit.memo || ''}
-          onSave={(newMemo) => handleChange('memo', newMemo, false, 6)}
-          patientName={visit.patient_name}
-        />
-      )}
     </tr>
   );
 });

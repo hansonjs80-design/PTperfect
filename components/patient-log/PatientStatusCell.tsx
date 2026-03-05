@@ -30,7 +30,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   const lastClickTimeRef = useRef<number>(0);
-  const { handleGridKeyDown } = useGridNavigation(8);
+  const { handleGridKeyDown } = useGridNavigation(10);
 
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent, isKeyboard: boolean = false) => {
     e.preventDefault();
