@@ -311,14 +311,20 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       }
     }
 
-    const allGridCells = Array.from(document.querySelectorAll('[data-grid-id]')) as HTMLElement[];
-    allGridCells.forEach((el) => {
-      const id = el.getAttribute('data-grid-id') || '';
-      if (selected.has(id)) {
-        el.classList.add('ring-2', 'ring-brand-500', 'ring-inset', 'bg-brand-50/60', 'dark:bg-brand-900/25');
-      } else {
-        el.classList.remove('ring-2', 'ring-brand-500', 'ring-inset', 'bg-brand-50/60', 'dark:bg-brand-900/25');
-      }
+    const previouslyHighlighted = Array.from(document.querySelectorAll('td[data-grid-selection="true"]')) as HTMLTableCellElement[];
+    previouslyHighlighted.forEach((td) => {
+      td.removeAttribute('data-grid-selection');
+      td.style.boxShadow = '';
+      td.style.backgroundColor = '';
+    });
+
+    selected.forEach((id) => {
+      const host = document.querySelector(`[data-grid-id="${id}"]`) as HTMLElement | null;
+      const td = host?.closest('td') as HTMLTableCellElement | null;
+      if (!td) return;
+      td.setAttribute('data-grid-selection', 'true');
+      td.style.boxShadow = 'inset 0 0 0 2px rgb(14 165 233)';
+      td.style.backgroundColor = 'rgba(14, 165, 233, 0.08)';
     });
   }, [selection, visits.length, totalRows]);
 
