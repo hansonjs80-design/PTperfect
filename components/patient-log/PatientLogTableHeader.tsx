@@ -79,24 +79,24 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
             </div>
           )}
         </th>
+        <th className={`${thBase} w-[45px] md:w-[160px] xl:w-[100px] relative`}>
+          메모
+          {handle(4)}
+        </th>
+        <th className={`${thBase} w-[70px] md:w-[170px] xl:w-[130px] relative`}>
+          특이사항
+          {handle(5)}
+        </th>
         <th className={`${thBase} w-[82px] md:w-[110px] xl:w-[100px] relative`}>
           타이머
-          {handle(4)}
+          {handle(6)}
         </th>
         <th className={`${thBase} w-[38px] md:w-[70px] xl:w-[60px] relative`}>
           상태
-          {handle(5)}
+          {handle(7)}
         </th>
         <th className={`${thBase} w-[30px] md:w-[70px] xl:w-[50px] relative`}>
           작성
-          {handle(6)}
-        </th>
-        <th className={`${thBase} w-[45px] md:w-[160px] xl:w-[100px] relative`}>
-          메모
-          {handle(7)}
-        </th>
-        <th className={`${thBase} w-[70px] md:w-[170px] xl:w-[130px] relative`}>
-          특이사항 목록
           {handle(8)}
         </th>
         <th className="py-3 px-1 w-[20px] md:w-[24px]"></th>

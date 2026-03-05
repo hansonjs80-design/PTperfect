@@ -51,8 +51,8 @@ export const createGuideMessage = ({ bedId, treatmentName, nextTreatmentName }: 
 
 export const announceGuide = (params: GuideMessageParams) => {
   const message = createGuideMessage(params);
-  queueGuideSpeech(message);
-  queueGuideSpeech(message);
+  // 모바일/태블릿/데스크탑 공통으로 종료 안내 음성을 2회 반복한다.
+  queueGuideSpeech(message, 2);
 };
 
 

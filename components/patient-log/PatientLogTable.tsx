@@ -10,7 +10,7 @@ import { useColumnResize, FLEX_COL_INDEX } from '../../hooks/useColumnResize';
 type GridCellPos = { row: number; col: number };
 type GridSelection = { start: GridCellPos; end: GridCellPos } | null;
 
-const SELECTABLE_COLS = new Set([1, 2, 3, 6, 7, 8]);
+const SELECTABLE_COLS = new Set([1, 2, 3, 4, 5, 8]);
 
 const normalizeSelectionBounds = (selection: GridSelection) => {
   if (!selection) return null;
@@ -160,9 +160,9 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       case 1: return visit.patient_name || '';
       case 2: return visit.body_part || '';
       case 3: return visit.treatment_name || '';
-      case 6: return visit.author || '';
-      case 7: return visit.memo || '';
-      case 8: return visit.special_note || '';
+      case 4: return visit.memo || '';
+      case 5: return visit.special_note || '';
+      case 8: return visit.author || '';
       default: return '';
     }
   }, []);
@@ -178,14 +178,14 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       case 3:
         onUpdate(visit.id, { treatment_name: text }, true);
         return;
-      case 6:
-        onUpdate(visit.id, { author: text }, true);
-        return;
-      case 7:
+      case 4:
         onUpdate(visit.id, { memo: text }, true);
         return;
-      case 8:
+      case 5:
         onUpdate(visit.id, { special_note: text }, true);
+        return;
+      case 8:
+        onUpdate(visit.id, { author: text }, true);
         return;
       default:
         return;

@@ -51,11 +51,14 @@ const speakSequentially = (message: string): Promise<void> => {
   });
 };
 
-export const queueGuideSpeech = (message: string) => {
-  ttsQueue = ttsQueue
-    .catch(() => {
-      // Keep queue alive even if a previous unexpected error occurred.
-    })
-    .then(() => speakSequentially(message));
-};
+export const queueGuideSpeech = (message: string, repeatCount: number = 1) => {
+  const repeats = Math.max(1, Math.floor(repeatCount));
 
+  for (let i = 0; i < repeats; i += 1) {
+    ttsQueue = ttsQueue
+      .catch(() => {
+        // Keep queue alive even if a previous unexpected error occurred.
+      })
+      .then(() => speakSequentially(message));
+  }
+};

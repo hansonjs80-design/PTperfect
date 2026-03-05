@@ -352,9 +352,41 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       <td className={`${cellBorderClass} p-0`}>
+        <EditableCell
+          gridId={`${rowIndex}-4`}
+          rowIndex={rowIndex}
+          colIndex={4}
+          value={visit?.memo || ''}
+          placeholder=""
+          menuTitle="메모 수정 (로그만 변경)"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.3px] xl:text-[13px]"
+          onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 4, navDir)}
+          directEdit={true}
+          syncOnDirectEdit={false}
+          suppressEnterNav={isDraft}
+        />
+      </td>
+
+      <td className={`${cellBorderClass} p-0`}>
+        <EditableCell
+          gridId={`${rowIndex}-5`}
+          rowIndex={rowIndex}
+          colIndex={5}
+          value={visit?.special_note || ''}
+          placeholder=""
+          menuTitle="특이사항 수정 (로그만 변경)"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.2px] sm:text-[12.5px]"
+          onCommit={(val, skipSync, navDir) => handleChange('special_note', val || '', skipSync, 5, navDir)}
+          directEdit={true}
+          syncOnDirectEdit={false}
+          suppressEnterNav={isDraft}
+        />
+      </td>
+
+      <td className={`${cellBorderClass} p-0`}>
         <div
           className="w-full h-full min-h-[36px] flex items-center justify-center px-1 text-[11px] sm:text-[12px] font-black tracking-tight"
-          data-grid-id={`${rowIndex}-4`}
+          data-grid-id={`${rowIndex}-6`}
           tabIndex={0}
           onKeyDown={(e) => {
             if ((e.key === 'Enter' || e.key === ' ') && canStartFromTimerCell) {
@@ -362,7 +394,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
               handleQuickActivate(true);
               return;
             }
-            handleGridKeyDown(e, rowIndex, 4);
+            handleGridKeyDown(e, rowIndex, 6);
           }}
         >
           <div className="flex items-center justify-center gap-1.5 w-full">
@@ -406,9 +438,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td className={`${cellBorderClass} p-0`}>
         <PatientStatusCell
-          gridId={`${rowIndex}-5`}
+          gridId={`${rowIndex}-7`}
           rowIndex={rowIndex}
-          colIndex={5}
+          colIndex={7}
           visit={visit}
           rowStatus={rowStatus}
           onUpdate={onUpdate || (() => { })}
@@ -419,51 +451,19 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td className={`${cellBorderClass} p-0`}>
         <AuthorSelectorCell
-          gridId={`${rowIndex}-6`}
+          gridId={`${rowIndex}-8`}
           rowIndex={rowIndex}
-          colIndex={6}
+          colIndex={8}
           value={visit?.author || ''}
           onSelect={async (val) => {
             if (isDraft && onCreate) {
-              await onCreate({ author: val }, 6);
+              await onCreate({ author: val }, 8);
             } else if (visit && onUpdate) {
               // 선택한 셀만 변경 (빈 셀이든 이미 입력된 셀이든 동일하게 처리)
               onUpdate(visit.id, { author: val }, true);
             }
           }}
           isDraft={isDraft}
-        />
-      </td>
-
-      <td className={`${cellBorderClass} p-0`}>
-        <EditableCell
-          gridId={`${rowIndex}-7`}
-          rowIndex={rowIndex}
-          colIndex={7}
-          value={visit?.memo || ''}
-          placeholder=""
-          menuTitle="메모 수정 (로그만 변경)"
-          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.3px] xl:text-[13px]"
-          onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 7, navDir)}
-          directEdit={true}
-          syncOnDirectEdit={false}
-          suppressEnterNav={isDraft}
-        />
-      </td>
-
-      <td className={`${cellBorderClass} p-0`}>
-        <EditableCell
-          gridId={`${rowIndex}-8`}
-          rowIndex={rowIndex}
-          colIndex={8}
-          value={visit?.special_note || ''}
-          placeholder=""
-          menuTitle="특이 사항 수정 (로그만 변경)"
-          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.2px] sm:text-[12.5px]"
-          onCommit={(val, skipSync, navDir) => handleChange('special_note', val || '', skipSync, 8, navDir)}
-          directEdit={true}
-          syncOnDirectEdit={false}
-          suppressEnterNav={isDraft}
         />
       </td>
 
