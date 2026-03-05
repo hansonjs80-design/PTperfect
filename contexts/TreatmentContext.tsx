@@ -54,6 +54,7 @@ interface TreatmentContextType {
   selectPreset: (bedId: number, presetId: string, options: any) => void;
   startCustomPreset: (bedId: number, name: string, steps: TreatmentStep[], options: any) => void;
   startQuickTreatment: (bedId: number, template: QuickTreatment, options: any) => void;
+  startTimerOnly: (bedId: number, minutes?: number) => void;
   startTraction: (bedId: number, duration: number, options: any) => void;
   nextStep: (bedId: number) => void;
   prevStep: (bedId: number) => void;
@@ -124,6 +125,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     selectPreset: _selectPreset,
     startCustomPreset: _startCustomPreset,
     startQuickTreatment: _startQuickTreatment,
+    startTimerOnly: _startTimerOnly,
     startTraction: _startTraction,
     nextStep: _nextStep,
     prevStep: _prevStep,
@@ -204,6 +206,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const selectPreset = withSnapshot(_selectPreset);
   const startCustomPreset = withSnapshot(_startCustomPreset);
   const startQuickTreatment = withSnapshot(_startQuickTreatment);
+  const startTimerOnly = withSnapshot(_startTimerOnly);
   const startTraction = withSnapshot(_startTraction);
   const nextStep = withSnapshot(_nextStep);
   const prevStep = withSnapshot(_prevStep);
@@ -279,6 +282,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     selectPreset,
     startCustomPreset,
     startQuickTreatment,
+    startTimerOnly,
     startTraction,
     nextStep,
     prevStep,

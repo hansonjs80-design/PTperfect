@@ -35,6 +35,10 @@ export const createGuideMessage = ({ bedId, treatmentName, nextTreatmentName }: 
   const bedLabel = hasBedId ? `${toKoreanNumber(bedId)}번 배드` : '해당 배드';
   const currentLabel = treatmentName && treatmentName.trim() !== '' ? treatmentName.trim() : '현재';
 
+  if (currentLabel === '타이머' && (!nextTreatmentName || nextTreatmentName.trim() === '')) {
+    return `${bedNo}, ${bedLabel} 타이머가 종료 되었습니다.`;
+  }
+
   let message = `${bedNo}, ${bedLabel}에서 ${currentLabel}치료가 종료 되었습니다.`;
   if (nextTreatmentName && nextTreatmentName.trim() !== '') {
     message += ` 다음치료는 ${nextTreatmentName.trim()} 치료입니다.`;
