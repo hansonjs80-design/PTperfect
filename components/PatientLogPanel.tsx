@@ -196,6 +196,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       body_part: draftImport.body_part || '',
       treatment_name: draftImport.treatment_name || '',
       memo: draftImport.memo || '',
+      special_note: draftImport.special_note || '',
       is_injection: draftImport.is_injection || false,
       is_fluid: draftImport.is_fluid || false,
       is_traction: draftImport.is_traction || false,
@@ -315,6 +316,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                   <input value={draftImport?.treatment_name || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), treatment_name: e.target.value }))} placeholder="치료" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
                   <input value={draftImport?.author || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), author: e.target.value }))} placeholder="담당자" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
                   <textarea value={draftImport?.memo || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), memo: e.target.value }))} placeholder="메모" rows={4} className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+                  <input value={draftImport?.special_note || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), special_note: e.target.value }))} placeholder="특이 사항" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
                   <div className="mt-auto flex justify-end gap-2">
                     <button onClick={resetSearchModal} className="px-3 py-2 text-xs font-bold rounded bg-gray-100 dark:bg-slate-800">취소</button>
                     <button onClick={handleImportToToday} disabled={!draftImport} className="px-3 py-2 text-xs font-bold rounded bg-brand-600 text-white disabled:opacity-50">선택 행에 입력/추가</button>

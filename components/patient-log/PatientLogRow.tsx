@@ -107,7 +107,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   onClearBed,
   onBulkAuthorUpdate
 }) => {
-  const { handleGridKeyDown } = useGridNavigation(9);
+  const { handleGridKeyDown } = useGridNavigation(10);
   const { activateVisitFromLog } = useTreatmentContext();
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
   const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
@@ -278,7 +278,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
       }
     } else {
-      handleGridKeyDown(e, rowIndex, 8);
+      handleGridKeyDown(e, rowIndex, 9);
     }
   };
 
@@ -493,12 +493,28 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         )}
       </td>
 
+      <td className={`${cellBorderClass} p-0`}>
+        <EditableCell
+          gridId={`${rowIndex}-8`}
+          rowIndex={rowIndex}
+          colIndex={8}
+          value={visit?.special_note || ''}
+          placeholder=""
+          menuTitle="특이 사항 수정 (로그만 변경)"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.2px] sm:text-[12.5px]"
+          onCommit={(val, skipSync, navDir) => handleChange('special_note', val || '', skipSync, 8, navDir)}
+          directEdit={true}
+          syncOnDirectEdit={false}
+          suppressEnterNav={isDraft}
+        />
+      </td>
+
       <td className="p-0 text-center">
         {!isDraft && visit && onDelete && (
           <div
             className="flex justify-center items-center h-full outline-none focus:ring-inset focus:ring-2 focus:ring-sky-400"
             tabIndex={0}
-            data-grid-id={`${rowIndex}-8`}
+            data-grid-id={`${rowIndex}-9`}
             onKeyDown={handleDeleteKeyDown}
           >
             <button

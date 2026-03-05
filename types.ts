@@ -60,6 +60,7 @@ export interface PatientVisit {
   body_part: string;
   treatment_name: string;
   memo?: string; // Added memo field
+  special_note?: string;
   author: string;
   created_at?: string;
   updated_at?: string;

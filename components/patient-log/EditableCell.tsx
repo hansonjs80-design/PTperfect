@@ -43,7 +43,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const navIntentRef = useRef<'down' | 'right' | 'left' | null>(null);
   const isDirectEditing = directEdit && mode === 'edit';
 
-  const { handleGridKeyDown } = useGridNavigation(9);
+  const { handleGridKeyDown } = useGridNavigation(10);
 
   useEffect(() => {
     setLocalValue(value === null ? '' : String(value));
@@ -176,6 +176,35 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (directEdit && !isDirectEditing && !e.ctrlKey && !e.metaKey && !e.altKey && !e.nativeEvent.isComposing) {
+      if (e.key.length === 1) {
+        e.preventDefault();
+        const firstChar = forceUpperCase ? e.key.toUpperCase() : e.key;
+        skipSyncRef.current = !syncOnDirectEdit;
+        navIntentRef.current = null;
+        setMode('edit');
+        setLocalValue(firstChar);
+        setTimeout(() => {
+          inputRef.current?.focus();
+          inputRef.current?.setSelectionRange(1, 1);
+        }, 0);
+        return;
+      }
+
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        skipSyncRef.current = !syncOnDirectEdit;
+        navIntentRef.current = null;
+        setMode('edit');
+        setLocalValue('');
+        setTimeout(() => {
+          inputRef.current?.focus();
+          inputRef.current?.setSelectionRange(0, 0);
+        }, 0);
+        return;
+      }
+    }
+
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a' && isDirectEditing) {
       e.preventDefault();
       inputRef.current?.select();

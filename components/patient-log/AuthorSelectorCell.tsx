@@ -37,7 +37,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
   const lastClickTimeRef = useRef<number>(0);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
 
-  const { handleGridKeyDown } = useGridNavigation(9);
+  const { handleGridKeyDown } = useGridNavigation(10);
 
   // Refine dropdown position with actual measured dimensions
   useLayoutEffect(() => {

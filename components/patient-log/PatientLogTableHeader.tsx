@@ -6,7 +6,7 @@ interface PatientLogTableHeaderProps {
   isResizing?: boolean;
 }
 
-const RESIZABLE_COLUMNS = new Set([0, 1, 2, 4, 5, 6, 7]);
+const RESIZABLE_COLUMNS = new Set([0, 1, 2, 4, 5, 6, 7, 8]);
 
 const thBase =
   'py-3 px-1 text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider text-center border-r border-slate-300 dark:border-slate-600 last:border-r-0';
@@ -94,6 +94,10 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
         <th className={`${thBase} w-[45px] md:w-[160px] xl:w-[100px] relative`}>
           메모
           {handle(7)}
+        </th>
+        <th className={`${thBase} w-[70px] md:w-[170px] xl:w-[130px] relative`}>
+          특이 사항
+          {handle(8)}
         </th>
         <th className="py-3 px-1 w-[20px] md:w-[24px]"></th>
       </tr>
