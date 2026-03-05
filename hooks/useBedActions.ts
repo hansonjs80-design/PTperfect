@@ -90,7 +90,7 @@ export const useBedActions = (
     startCustomPreset(bedId, template.name, [step], options);
   }, [startCustomPreset]);
 
-  const startTimerOnly = useCallback((bedId: number, minutes: number = 10) => {
+  const startTimerOnly = useCallback((bedId: number, minutes: number = 11) => {
     const durationSeconds = Math.max(30, Math.round(minutes * 60));
     const timerStep = {
       id: crypto.randomUUID(),

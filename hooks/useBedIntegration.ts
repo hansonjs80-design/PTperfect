@@ -48,7 +48,7 @@ export const useBedIntegration = (
         let customPreset: any = null;
 
         if (prefersTimerOnly) {
-            const timerMinutes = getBulkTimerMinutes(10);
+            const timerMinutes = getBulkTimerMinutes(11);
             steps = [{
                 id: `timer-only-${bedId}`,
                 name: '타이머',

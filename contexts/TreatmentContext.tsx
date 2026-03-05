@@ -208,7 +208,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const startCustomPreset = withSnapshot(_startCustomPreset);
   const startQuickTreatment = withSnapshot(_startQuickTreatment);
   const startTimerOnly = withSnapshot(_startTimerOnly);
-  const startTimerOnlyAll = useCallback((minutes: number = 10) => {
+  const startTimerOnlyAll = useCallback((minutes: number = 11) => {
     saveSnapshot(bedsRef.current, visitsRef.current);
     bedsRef.current.forEach((bed) => {
       if (bed.status === BedStatus.IDLE) _startTimerOnly(bed.id, minutes);

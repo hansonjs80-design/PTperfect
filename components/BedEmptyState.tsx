@@ -16,12 +16,12 @@ interface BedEmptyStateProps {
 
 export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelector, onStartTimerOnly }) => {
   const [timerOnlyChecked, setTimerOnlyChecked] = useState(false);
-  const [bulkTimerMinutes, setBulkTimerMinutes] = useState(10);
+  const [bulkTimerMinutes, setBulkTimerMinutes] = useState(11);
 
   useEffect(() => {
     const syncPrefs = () => {
       setTimerOnlyChecked(getBedTimerOnlyPreference(bedId));
-      setBulkTimerMinutes(getBulkTimerMinutes(10));
+      setBulkTimerMinutes(getBulkTimerMinutes(11));
     };
 
     syncPrefs();

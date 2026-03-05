@@ -186,6 +186,26 @@ export const usePatientLog = () => {
       return updated;
     });
 
+    const retryInsertWithoutOptionalFields = async (row: PatientVisit) => {
+      const fallbackRow = { ...row } as any;
+      delete fallbackRow.special_note;
+      delete fallbackRow.is_injection_completed;
+
+      const { data: retryData, error: retryError } = await supabase!
+        .from('patient_visits')
+        .insert([fallbackRow])
+        .select()
+        .single();
+
+      if (retryError) {
+        console.error('Retry insert without optional fields failed:', retryError);
+        fetchVisits(currentDate);
+        return null;
+      }
+
+      return retryData;
+    };
+
     // DB Sync
     if (isOnlineMode() && supabase) {
       const { data, error } = await supabase
@@ -195,8 +215,23 @@ export const usePatientLog = () => {
         .single();
 
       if (error) {
-        console.error('Error adding visit to DB:', error);
-        fetchVisits(currentDate);
+        const message = `${error.message || ''} ${error.details || ''}`;
+        const shouldRetryWithoutOptional = message.includes('special_note') || message.includes('is_injection_completed');
+
+        if (shouldRetryWithoutOptional) {
+          const retryData = await retryInsertWithoutOptionalFields(newVisit);
+          if (retryData) {
+            setVisits(prev => {
+              const updated = prev.map(v => v.id === tempId ? retryData : v);
+              saveToLocalCache(currentDate, updated);
+              return updated;
+            });
+            return retryData.id;
+          }
+        } else {
+          console.error('Error adding visit to DB:', error);
+          fetchVisits(currentDate);
+        }
       } else if (data) {
         setVisits(prev => {
           const updated = prev.map(v => v.id === tempId ? data : v);
