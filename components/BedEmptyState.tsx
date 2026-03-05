@@ -1,5 +1,5 @@
 
-import React, { useRef, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Plus } from 'lucide-react';
 
 interface BedEmptyStateProps {
@@ -7,40 +7,9 @@ interface BedEmptyStateProps {
 }
 
 export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector }) => {
-  const lastClickTimeRef = useRef<number>(0);
-  
   const handleClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation(); // Stop event from bubbling to parent container which might trigger other logic
-
-    // Device Capability Check
-    const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
-    // Check for Tablet/Desktop width (md breakpoint = 768px)
-    const isTabletOrDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
-
-    // Single Click Action if:
-    // 1. Not a touch device (Desktop Mouse)
-    // 2. Touch device but large screen (Tablet) -> User requested single tap for tablet
-    if (!isTouchDevice || isTabletOrDesktop) {
-      onOpenSelector();
-      return;
-    }
-
-    // Mobile (Touch & Small Screen): Implement Manual Double Tap Detection
-    // Native onDoubleClick is unreliable on some mobile browsers due to zoom delays or event handling
-    const now = Date.now();
-    const timeDiff = now - lastClickTimeRef.current;
-
-    // 350ms window for double tap
-    if (timeDiff < 350 && timeDiff > 0) {
-      // Double Tap Detected
-      // Prevent Default is critical here to avoid ghost clicks or zooming
-      if (e.cancelable) e.preventDefault(); 
-      onOpenSelector();
-      lastClickTimeRef.current = 0; // Reset
-    } else {
-      // First Tap: Record time
-      lastClickTimeRef.current = now;
-    }
+    e.stopPropagation();
+    onOpenSelector();
   }, [onOpenSelector]);
 
   return (
@@ -53,7 +22,7 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector }) 
       </div>
       <span className="mt-2 text-xs font-bold text-slate-300 dark:text-slate-600 group-hover:text-brand-500/70 transition-colors">
         <span className="hidden md:inline">클릭하여 시작</span>
-        <span className="md:hidden">더블탭하여 시작</span>
+        <span className="md:hidden">탭하여 시작</span>
       </span>
     </div>
   );
