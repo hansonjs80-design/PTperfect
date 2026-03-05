@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { BedState, BedStatus, Preset, TreatmentStep, QuickTreatment, PatientVisit, SelectPresetOptions } from '../types';
 import { STANDARD_TREATMENTS } from '../constants';
@@ -87,11 +86,9 @@ export const useBedActions = (
   }, [updateBedState, onAddVisit]);
 
   const startQuickTreatment = useCallback((bedId: number, template: typeof STANDARD_TREATMENTS[0], options?: SelectPresetOptions) => {
-    // Pass the label from the template to the step
     const step = createQuickStep(template.name, template.duration, template.enableTimer, template.color, template.label);
     startCustomPreset(bedId, template.name, [step], options);
   }, [startCustomPreset]);
-
 
   const startTimerOnly = useCallback((bedId: number, minutes: number = 10) => {
     const durationSeconds = Math.max(30, Math.round(minutes * 60));
@@ -105,6 +102,17 @@ export const useBedActions = (
     };
 
     const timerPreset = createCustomPreset('타이머', [timerStep]);
+
+    if (onAddVisit) {
+      onAddVisit({
+        bed_id: bedId,
+        treatment_name: '',
+        patient_name: '',
+        body_part: '',
+        memo: '',
+        author: '',
+      });
+    }
 
     updateBedState(bedId, {
       status: BedStatus.ACTIVE,
@@ -123,7 +131,7 @@ export const useBedActions = (
       isManual: false,
       isInjectionCompleted: false,
     });
-  }, [updateBedState]);
+  }, [updateBedState, onAddVisit]);
 
   const startTraction = useCallback((bedId: number, durationMinutes: number, options: any) => {
     const tractionPreset = createTractionPreset(durationMinutes);

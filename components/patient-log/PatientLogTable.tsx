@@ -45,6 +45,7 @@ interface PatientLogTableProps {
   onNextStep?: (bedId: number) => void;
   onPrevStep?: (bedId: number) => void;
   onClearBed?: (bedId: number) => void;
+  onSelectionAnchorChange?: (rowIndex: number | null, colIndex: number | null) => void;
 }
 
 export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
@@ -60,7 +61,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   onEditActive,
   onNextStep,
   onPrevStep,
-  onClearBed
+  onClearBed,
+  onSelectionAnchorChange
 }) => {
   const [totalRows, setTotalRows] = useState(120);
   const [selection, setSelection] = useState<GridSelection>(null);
@@ -279,6 +281,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       if (!selection) return;
       e.preventDefault();
       setSelection(null);
+      onSelectionAnchorChange?.(null, null);
       return;
     }
 
@@ -298,7 +301,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         setVisitCellText(visit, col, '');
       }
     }
-  }, [selection, visits, setVisitCellText]);
+  }, [selection, visits, setVisitCellText, onSelectionAnchorChange]);
 
   useEffect(() => {
     const bounds = normalizeSelectionBounds(selection);
@@ -341,6 +344,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         const pos = parseGridCellId(e.target as HTMLElement);
         if (!pos) return;
         setSelection({ start: pos, end: pos });
+        onSelectionAnchorChange?.(pos.row, pos.col);
         isDraggingRef.current = true;
       }}
       onMouseMoveCapture={(e) => {

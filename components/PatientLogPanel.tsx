@@ -39,6 +39,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [searchResults, setSearchResults] = useState<PatientVisit[]>([]);
   const [selectedResult, setSelectedResult] = useState<PatientVisit | null>(null);
   const [draftImport, setDraftImport] = useState<Partial<PatientVisit> | null>(null);
+  const [selectedGridRow, setSelectedGridRow] = useState<number | null>(null);
   
   // Performance Optimization: 
   // Extract status logic to prevent re-rendering on every timer tick.
@@ -106,6 +107,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setSearchResults([]);
     setSelectedResult(null);
     setDraftImport(null);
+    setSelectedGridRow(null);
   }, []);
 
   useEffect(() => {
@@ -182,22 +184,32 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
   const handleImportToToday = useCallback(async () => {
     if (!draftImport) return;
-    await addVisit({
-      bed_id: null,
+
+    const payload: Partial<PatientVisit> = {
       patient_name: draftImport.patient_name || '',
       body_part: draftImport.body_part || '',
       treatment_name: draftImport.treatment_name || '',
       memo: draftImport.memo || '',
-      author: draftImport.author || '',
       is_injection: draftImport.is_injection || false,
       is_fluid: draftImport.is_fluid || false,
       is_traction: draftImport.is_traction || false,
       is_eswt: draftImport.is_eswt || false,
       is_manual: draftImport.is_manual || false,
       is_injection_completed: draftImport.is_injection_completed || false,
-    });
+    };
+
+    if (selectedGridRow !== null && selectedGridRow < visits.length) {
+      const target = visits[selectedGridRow];
+      if (target) {
+        await updateVisitWithBedSync(target.id, payload, true);
+        resetSearchModal();
+        return;
+      }
+    }
+
+    await addVisit({ bed_id: null, ...payload });
     resetSearchModal();
-  }, [addVisit, draftImport, resetSearchModal]);
+  }, [addVisit, draftImport, resetSearchModal, selectedGridRow, visits, updateVisitWithBedSync]);
 
   return (
     <>
@@ -229,6 +241,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           onNextStep={nextStep}
           onPrevStep={prevStep}
           onClearBed={clearBed}
+          onSelectionAnchorChange={(row) => setSelectedGridRow(row)}
         />
 
         <div className="p-2 border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 shrink-0 text-center">
@@ -308,7 +321,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                   <textarea value={draftImport?.memo || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), memo: e.target.value }))} placeholder="메모" rows={4} className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
                   <div className="mt-auto flex justify-end gap-2">
                     <button onClick={resetSearchModal} className="px-3 py-2 text-xs font-bold rounded bg-gray-100 dark:bg-slate-800">취소</button>
-                    <button onClick={handleImportToToday} disabled={!draftImport} className="px-3 py-2 text-xs font-bold rounded bg-brand-600 text-white disabled:opacity-50">오늘 마지막 행으로 추가</button>
+                    <button onClick={handleImportToToday} disabled={!draftImport} className="px-3 py-2 text-xs font-bold rounded bg-brand-600 text-white disabled:opacity-50">선택 행에 입력/추가</button>
                   </div>
                 </div>
               </div>
