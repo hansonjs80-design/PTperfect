@@ -281,6 +281,28 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     const active = document.activeElement as HTMLInputElement | null;
     if (active?.tagName === 'INPUT' && !active.readOnly) return;
 
+    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+    const isEditTriggerKey = isPlainTypingKey || e.key === 'Backspace' || e.key === 'Delete';
+    if (isEditTriggerKey) {
+      const bounds = normalizeSelectionBounds(selection);
+      const anchor = bounds ? { row: bounds.rowMin, col: bounds.colMin } : null;
+      if (anchor) {
+        const host = document.querySelector(`[data-grid-id="${anchor.row}-${anchor.col}"]`) as HTMLElement | null;
+        const inputTarget = host?.tagName === 'INPUT'
+          ? host as HTMLInputElement
+          : (host?.querySelector('input') as HTMLInputElement | null);
+
+        if (inputTarget) {
+          inputTarget.focus();
+          const replay = new KeyboardEvent('keydown', { key: e.key, bubbles: true, cancelable: true });
+          inputTarget.dispatchEvent(replay);
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+      }
+    }
+
     if (e.key === 'Escape') {
       if (!selection) return;
       e.preventDefault();
@@ -322,6 +344,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     previouslyHighlighted.forEach((td) => {
       td.removeAttribute('data-grid-selection');
       td.style.boxShadow = '';
+      td.style.outline = '';
+      td.style.outlineOffset = '';
       td.style.backgroundColor = '';
     });
 
@@ -330,7 +354,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       const td = host?.closest('td') as HTMLTableCellElement | null;
       if (!td) return;
       td.setAttribute('data-grid-selection', 'true');
-      td.style.boxShadow = 'inset 0 0 0 2px rgb(14 165 233)';
+      td.style.outline = '2px solid rgb(14 165 233)';
+      td.style.outlineOffset = '-1px';
       td.style.backgroundColor = 'rgba(14, 165, 233, 0.08)';
     });
   }, [selection, visits.length, totalRows]);
