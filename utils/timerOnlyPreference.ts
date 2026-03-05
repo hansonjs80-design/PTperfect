@@ -19,6 +19,13 @@ export const setBedTimerOnlyPreference = (bedId: number, enabled: boolean): void
   window.localStorage.setItem(bedTimerOnlyKey(bedId), enabled ? '1' : '0');
 };
 
+export const setAllBedsTimerOnlyPreference = (enabled: boolean, maxBedId: number = 11): void => {
+  if (typeof window === 'undefined') return;
+  for (let bedId = 1; bedId <= maxBedId; bedId += 1) {
+    window.localStorage.setItem(bedTimerOnlyKey(bedId), enabled ? '1' : '0');
+  }
+};
+
 export const setBulkTimerMinutes = (minutes: number): void => {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(BULK_TIMER_MINUTES_KEY, String(Math.max(1, Math.round(minutes))));

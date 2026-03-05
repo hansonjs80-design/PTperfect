@@ -5,6 +5,7 @@ import {
   setBedTimerOnlyPreference,
   getBulkTimerMinutes,
   setBulkTimerMinutes as persistBulkTimerMinutes,
+  setAllBedsTimerOnlyPreference,
 } from '../utils/timerOnlyPreference';
 
 interface BedEmptyStateProps {
@@ -14,9 +15,8 @@ interface BedEmptyStateProps {
   onStartTimerOnlyAll: (minutes?: number) => void;
 }
 
-export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelector, onStartTimerOnly, onStartTimerOnlyAll }) => {
+export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelector, onStartTimerOnly }) => {
   const [timerOnlyChecked, setTimerOnlyChecked] = useState(false);
-  const [isBulkStartArmed, setIsBulkStartArmed] = useState(false);
   const [bulkTimerMinutes, setBulkTimerMinutes] = useState(10);
 
   useEffect(() => {
@@ -48,6 +48,12 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelec
   const handleTimerOnlyToggle = useCallback((checked: boolean) => {
     setTimerOnlyChecked(checked);
     setBedTimerOnlyPreference(bedId, checked);
+  }, [bedId]);
+
+  const handleApplyAllTimerOnly = useCallback(() => {
+    setAllBedsTimerOnlyPreference(true);
+    setBedTimerOnlyPreference(bedId, true);
+    setTimerOnlyChecked(true);
   }, [bedId]);
 
   return (
@@ -90,21 +96,11 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelec
           />
           <button
             type="button"
-            onClick={() => setIsBulkStartArmed((prev) => !prev)}
-            className={`text-[11px] font-bold px-2 py-1 rounded-lg border ${isBulkStartArmed ? 'border-orange-400 text-orange-700 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-300' : 'border-brand-300 text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-300'}`}
+            onClick={handleApplyAllTimerOnly}
+            className="text-[11px] font-bold px-2 py-1 rounded-lg border border-indigo-400 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300"
+            title="타이머를 즉시 시작하지 않고 전체 배드를 타이머만 사용 대기 상태로 설정"
           >
-            전체 타이머 준비
-          </button>
-          <button
-            type="button"
-            disabled={!isBulkStartArmed}
-            onClick={() => {
-              onStartTimerOnlyAll(bulkTimerMinutes);
-              setIsBulkStartArmed(false);
-            }}
-            className="text-[11px] font-bold px-2 py-1 rounded-lg border border-emerald-400 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            전체 타이머 시작
+            타이머만 사용 (전체적용)
           </button>
         </div>
       </div>

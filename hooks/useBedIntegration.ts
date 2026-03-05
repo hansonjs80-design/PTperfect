@@ -104,7 +104,13 @@ export const useBedIntegration = (
         }
 
         updateBedState(bedId, updates);
-    }, [presets, quickTreatments, updateBedState]);
+
+        // timer-only가 켜진 배드는 처방 목록 실행을 비활성화하고
+        // 일반 타이머만 동작하도록 로그 처방 텍스트를 정리한다.
+        if (prefersTimerOnly && onUpdateVisit && treatmentName.trim() !== '') {
+            onUpdateVisit(bedId, { treatment_name: '' });
+        }
+    }, [presets, quickTreatments, updateBedState, onUpdateVisit]);
 
     const moveBedState = useCallback(async (fromBedId: number, toBedId: number, sourceSnapshot?: BedState) => {
         const fromBed = sourceSnapshot || bedsRef.current.find(b => b.id === fromBedId);
