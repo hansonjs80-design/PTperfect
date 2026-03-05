@@ -190,7 +190,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
                   {value && (
                     <button
                       onClick={() => handleOptionSelect(value)}
-                      className="mt-1 text-[10px] text-gray-400 hover:text-red-500 transition-colors text-center py-1"
+                      className="mt-1 w-full py-1.5 rounded-lg border border-red-200 bg-red-50 text-[11px] font-bold text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-800/60 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/35 transition-colors"
                     >
                       선택 해제
                     </button>
