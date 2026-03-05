@@ -1,38 +1,31 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Plus, Timer } from 'lucide-react';
+import {
+  getBedTimerOnlyPreference,
+  setBedTimerOnlyPreference,
+  getBulkTimerMinutes,
+  setBulkTimerMinutes as persistBulkTimerMinutes,
+} from '../utils/timerOnlyPreference';
 
 interface BedEmptyStateProps {
+  bedId: number;
   onOpenSelector: () => void;
   onStartTimerOnly: (minutes?: number) => void;
   onStartTimerOnlyAll: (minutes?: number) => void;
 }
 
-const BULK_TIMER_MINUTES_KEY = 'physio-bulk-timer-minutes';
-
-export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector, onStartTimerOnly, onStartTimerOnlyAll }) => {
+export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelector, onStartTimerOnly, onStartTimerOnlyAll }) => {
   const [timerOnlyChecked, setTimerOnlyChecked] = useState(false);
   const [isBulkStartArmed, setIsBulkStartArmed] = useState(false);
   const [bulkTimerMinutes, setBulkTimerMinutes] = useState(10);
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(BULK_TIMER_MINUTES_KEY);
-      if (!raw) return;
-      const parsed = Number(raw);
-      if (Number.isFinite(parsed) && parsed >= 1) {
-        setBulkTimerMinutes(Math.round(parsed));
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
+    setTimerOnlyChecked(getBedTimerOnlyPreference(bedId));
+    setBulkTimerMinutes(getBulkTimerMinutes(10));
+  }, [bedId]);
 
   const persistBulkMinutes = useCallback((nextMinutes: number) => {
-    try {
-      window.localStorage.setItem(BULK_TIMER_MINUTES_KEY, String(nextMinutes));
-    } catch {
-      // ignore
-    }
+    persistBulkTimerMinutes(nextMinutes);
   }, []);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
@@ -52,6 +45,11 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector, on
     persistBulkMinutes(normalized);
   }, [persistBulkMinutes]);
 
+  const handleTimerOnlyToggle = useCallback((checked: boolean) => {
+    setTimerOnlyChecked(checked);
+    setBedTimerOnlyPreference(bedId, checked);
+  }, [bedId]);
+
   return (
     <div
       onClick={handleClick}
@@ -65,7 +63,7 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector, on
         )}
       </div>
       <span className="mt-2 text-xs font-bold text-slate-300 dark:text-slate-600 group-hover:text-brand-500/70 transition-colors">
-        {timerOnlyChecked ? `탭하면 ${bulkTimerMinutes}분 타이머 시작` : (<><span className="hidden md:inline">클릭하여 시작</span><span className="md:hidden">탭하여 시작</span></>)}
+        {timerOnlyChecked ? `탭하면 ${bulkTimerMinutes}분 일반 타이머 시작` : (<><span className="hidden md:inline">클릭하여 시작</span><span className="md:hidden">탭하여 시작</span></>)}
       </span>
 
       <div className="mt-3 flex flex-col items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -75,7 +73,7 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector, on
           <input
             type="checkbox"
             checked={timerOnlyChecked}
-            onChange={(e) => setTimerOnlyChecked(e.target.checked)}
+            onChange={(e) => handleTimerOnlyToggle(e.target.checked)}
             className="accent-brand-500"
           />
           타이머만 사용

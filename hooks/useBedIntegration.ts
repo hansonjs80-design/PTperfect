@@ -2,6 +2,7 @@
 import React, { useCallback } from 'react';
 import { BedState, BedStatus, Preset, TreatmentStep, QuickTreatment, PatientVisit } from '../types';
 import { findMatchingPreset, parseTreatmentString, generateTreatmentString } from '../utils/bedUtils';
+import { getBedTimerOnlyPreference, getBulkTimerMinutes } from '../utils/timerOnlyPreference';
 
 const STEP_STATUS_KEYWORDS: Record<'isInjection' | 'isFluid' | 'isTraction' | 'isESWT' | 'isManual', string[]> = {
     isInjection: ['주사', 'inj', 'injection'],
@@ -39,13 +40,25 @@ export const useBedIntegration = (
 
     const overrideBedFromLog = useCallback((bedId: number, visit: PatientVisit, forceRestart: boolean) => {
         const treatmentName = visit.treatment_name || "";
+        const prefersTimerOnly = getBedTimerOnlyPreference(bedId);
         const matchingPreset = findMatchingPreset(presets, treatmentName, quickTreatments);
 
         let steps: TreatmentStep[] = [];
         let currentPresetId: string | null = null;
         let customPreset: any = null;
 
-        if (matchingPreset) {
+        if (prefersTimerOnly) {
+            const timerMinutes = getBulkTimerMinutes(10);
+            steps = [{
+                id: `timer-only-${bedId}`,
+                name: '타이머',
+                label: '타이머',
+                duration: timerMinutes * 60,
+                enableTimer: true,
+                color: '#3B82F6'
+            }];
+            customPreset = { id: `timer-only-log-${Date.now()}`, name: '타이머', steps };
+        } else if (matchingPreset) {
             steps = matchingPreset.steps;
             if (!matchingPreset.id.startsWith('restored-')) {
                 currentPresetId = matchingPreset.id;

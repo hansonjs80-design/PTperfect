@@ -265,6 +265,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
         <div className={`${bed.status === BedStatus.IDLE ? 'flex-1' : 'flex-none h-auto sm:flex-1 sm:h-full sm:landscape:flex-none sm:landscape:h-auto lg:landscape:flex-1 lg:landscape:h-full'} flex flex-row w-full min-h-0`}>
           {bed.status === BedStatus.IDLE ? (
             <BedEmptyState
+              bedId={bed.id}
               onOpenSelector={() => openTreatmentSelectorForBed(bed.id)}
               onStartTimerOnly={(minutes) => startTimerOnly(bed.id, minutes)}
               onStartTimerOnlyAll={(minutes) => startTimerOnlyAll(minutes)}
