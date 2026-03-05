@@ -55,6 +55,7 @@ interface TreatmentContextType {
   startCustomPreset: (bedId: number, name: string, steps: TreatmentStep[], options: any) => void;
   startQuickTreatment: (bedId: number, template: QuickTreatment, options: any) => void;
   startTimerOnly: (bedId: number, minutes?: number) => void;
+  startTimerOnlyAll: (minutes?: number) => void;
   startTraction: (bedId: number, duration: number, options: any) => void;
   nextStep: (bedId: number) => void;
   prevStep: (bedId: number) => void;
@@ -207,6 +208,12 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const startCustomPreset = withSnapshot(_startCustomPreset);
   const startQuickTreatment = withSnapshot(_startQuickTreatment);
   const startTimerOnly = withSnapshot(_startTimerOnly);
+  const startTimerOnlyAll = useCallback((minutes: number = 10) => {
+    saveSnapshot(bedsRef.current, visitsRef.current);
+    bedsRef.current.forEach((bed) => {
+      if (bed.status === BedStatus.IDLE) _startTimerOnly(bed.id, minutes);
+    });
+  }, [_startTimerOnly, saveSnapshot]);
   const startTraction = withSnapshot(_startTraction);
   const nextStep = withSnapshot(_nextStep);
   const prevStep = withSnapshot(_prevStep);
@@ -283,6 +290,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     startCustomPreset,
     startQuickTreatment,
     startTimerOnly,
+    startTimerOnlyAll,
     startTraction,
     nextStep,
     prevStep,

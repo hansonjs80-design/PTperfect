@@ -199,7 +199,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     const hasBed = typeof bedId === 'number';
     const hasTreatment = Boolean(visit?.treatment_name?.trim());
 
-    if (hasBed && hasTreatment && onEditActive && visit) {
+    if (hasBed && onEditActive && visit && (hasTreatment || rowStatus === 'active')) {
       // 이미 처방이 입력된 행은 배드 카드와 동일한 편집 오버레이로 진입
       onEditActive(bedId);
       return;
