@@ -92,6 +92,39 @@ export const useBedActions = (
     startCustomPreset(bedId, template.name, [step], options);
   }, [startCustomPreset]);
 
+
+  const startTimerOnly = useCallback((bedId: number, minutes: number = 10) => {
+    const durationSeconds = Math.max(30, Math.round(minutes * 60));
+    const timerStep = {
+      id: crypto.randomUUID(),
+      name: '타이머',
+      label: '타이머',
+      duration: durationSeconds,
+      enableTimer: true,
+      color: '#22c55e',
+    };
+
+    const timerPreset = createCustomPreset('타이머', [timerStep]);
+
+    updateBedState(bedId, {
+      status: BedStatus.ACTIVE,
+      currentPresetId: timerPreset.id,
+      customPreset: timerPreset,
+      currentStepIndex: 0,
+      queue: [],
+      startTime: Date.now(),
+      remainingTime: durationSeconds,
+      originalDuration: durationSeconds,
+      isPaused: false,
+      isInjection: false,
+      isFluid: false,
+      isTraction: false,
+      isESWT: false,
+      isManual: false,
+      isInjectionCompleted: false,
+    });
+  }, [updateBedState]);
+
   const startTraction = useCallback((bedId: number, durationMinutes: number, options: any) => {
     const tractionPreset = createTractionPreset(durationMinutes);
     const firstStep = tractionPreset.steps[0];
@@ -126,6 +159,7 @@ export const useBedActions = (
     selectPreset,
     startCustomPreset,
     startQuickTreatment,
+    startTimerOnly,
     startTraction
   };
 };
