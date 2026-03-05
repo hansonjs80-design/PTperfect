@@ -347,6 +347,18 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         onSelectionAnchorChange?.(pos.row, pos.col);
         isDraggingRef.current = true;
       }}
+      onClickCapture={(e) => {
+        const pos = parseGridCellId(e.target as HTMLElement);
+        if (!pos) return;
+        setSelection({ start: pos, end: pos });
+        onSelectionAnchorChange?.(pos.row, pos.col);
+      }}
+      onFocusCapture={(e) => {
+        const pos = parseGridCellId(e.target as HTMLElement);
+        if (!pos) return;
+        setSelection({ start: pos, end: pos });
+        onSelectionAnchorChange?.(pos.row, pos.col);
+      }}
       onMouseMoveCapture={(e) => {
         if (!isDraggingRef.current) return;
         const pos = parseGridCellId(e.target as HTMLElement);

@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Edit3, PlayCircle, Hash, Check, X } from 'lucide-react';
 import { ContextMenu } from '../common/ContextMenu';
@@ -49,6 +49,8 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
   const gridRef = useRef<HTMLDivElement>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   const lastClickTimeRef = useRef<number>(0);
+  const numberBufferRef = useRef('');
+  const numberBufferTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { handleGridKeyDown } = useGridNavigation(9);
 
@@ -58,6 +60,12 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
       inputRef.current.select();
     }
   }, [mode]);
+
+  useEffect(() => {
+    return () => {
+      if (numberBufferTimerRef.current) clearTimeout(numberBufferTimerRef.current);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     if (mode === 'select_target' && gridRef.current) {
@@ -143,6 +151,32 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
   };
 
   const handleContainerKeyDown = (e: React.KeyboardEvent) => {
+    if (/^[0-9]$/.test(e.key) && mode === 'view') {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (numberBufferTimerRef.current) clearTimeout(numberBufferTimerRef.current);
+
+      const appended = `${numberBufferRef.current}${e.key}`.replace(/^0+/, '');
+      let next = appended.slice(-2);
+      if (next.length === 2 && Number(next) > 11) {
+        next = e.key;
+      }
+      numberBufferRef.current = next;
+
+      if (next.length >= 2) {
+        applyBufferedBedNumber(next);
+        numberBufferRef.current = '';
+        return;
+      }
+
+      numberBufferTimerRef.current = setTimeout(() => {
+        applyBufferedBedNumber(numberBufferRef.current);
+        numberBufferRef.current = '';
+      }, 550);
+      return;
+    }
+
     if (e.key === 'Enter') {
         executeInteraction(e, true);
     } else {
@@ -198,6 +232,17 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
     // Return focus to cell after selection
     setTimeout(() => cellRef.current?.focus(), 0);
   };
+
+  const applyBufferedBedNumber = useCallback((raw: string) => {
+    const parsed = Number(raw);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 11) return;
+
+    if (cellRef.current) {
+      const rect = cellRef.current.getBoundingClientRect();
+      setMenuPos({ x: rect.left + rect.width / 2, y: rect.bottom });
+    }
+    handleGridSelect(parsed);
+  }, [handleGridSelect]);
 
 
 

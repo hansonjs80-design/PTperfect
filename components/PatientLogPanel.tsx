@@ -39,7 +39,6 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [searchResults, setSearchResults] = useState<PatientVisit[]>([]);
   const [selectedResult, setSelectedResult] = useState<PatientVisit | null>(null);
   const [draftImport, setDraftImport] = useState<Partial<PatientVisit> | null>(null);
-  const [selectedGridRow, setSelectedGridRow] = useState<number | null>(null);
   
   // Performance Optimization: 
   // Extract status logic to prevent re-rendering on every timer tick.
@@ -107,7 +106,6 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setSearchResults([]);
     setSelectedResult(null);
     setDraftImport(null);
-    setSelectedGridRow(null);
   }, []);
 
   useEffect(() => {
@@ -206,18 +204,9 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       is_injection_completed: draftImport.is_injection_completed || false,
     };
 
-    if (selectedGridRow !== null && selectedGridRow < visits.length) {
-      const target = visits[selectedGridRow];
-      if (target) {
-        await updateVisitWithBedSync(target.id, payload, true);
-        resetSearchModal();
-        return;
-      }
-    }
-
     await addVisit({ bed_id: null, ...payload });
     resetSearchModal();
-  }, [addVisit, draftImport, resetSearchModal, selectedGridRow, visits, updateVisitWithBedSync]);
+  }, [addVisit, draftImport, resetSearchModal]);
 
   return (
     <>
@@ -249,7 +238,6 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           onNextStep={nextStep}
           onPrevStep={prevStep}
           onClearBed={clearBed}
-          onSelectionAnchorChange={(row) => setSelectedGridRow(row)}
         />
 
         <div className="p-2 border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 shrink-0 text-center">
