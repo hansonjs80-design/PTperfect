@@ -269,6 +269,37 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     handleGridPaste(text);
   }, [handleGridPaste]);
 
+
+
+  const handleSelectionKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const active = document.activeElement as HTMLInputElement | null;
+    if (active?.tagName === 'INPUT' && !active.readOnly) return;
+
+    if (e.key === 'Escape') {
+      if (!selection) return;
+      e.preventDefault();
+      setSelection(null);
+      return;
+    }
+
+    if (e.key !== 'Backspace' && e.key !== 'Delete') return;
+
+    const bounds = normalizeSelectionBounds(selection);
+    if (!bounds) return;
+
+    e.preventDefault();
+
+    for (let row = bounds.rowMin; row <= bounds.rowMax; row++) {
+      const visit = visits[row];
+      if (!visit) continue;
+
+      for (let col = bounds.colMin; col <= bounds.colMax; col++) {
+        if (!SELECTABLE_COLS.has(col)) continue;
+        setVisitCellText(visit, col, '');
+      }
+    }
+  }, [selection, visits, setVisitCellText]);
+
   useEffect(() => {
     const bounds = normalizeSelectionBounds(selection);
     const selected = new Set<string>();
@@ -298,6 +329,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       onCopy={handleCopy}
       onCut={handleCut}
       onPaste={handlePaste}
+      onKeyDown={handleSelectionKeyDown}
       onMouseDownCapture={(e) => {
         lastPointerDownAtRef.current = Date.now();
         const pos = parseGridCellId(e.target as HTMLElement);
