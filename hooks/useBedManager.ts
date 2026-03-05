@@ -71,6 +71,7 @@ export const useBedManager = (
     updateBedSteps: integration.updateBedSteps,
     overrideBedFromLog: integration.overrideBedFromLog,
     moveBedState: integration.moveBedState,
+    updateBedMemoFromLog: integration.updateBedMemoFromLog,
 
     // Core & Utils
     updateBedState,

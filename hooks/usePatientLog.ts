@@ -27,6 +27,7 @@ export const usePatientLog = () => {
 
   // 디바운스 타이머 Ref (visit ID → timeout)
   const dbWriteTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const pendingUpdates = useRef<Map<string, Partial<PatientVisit>>>(new Map());
 
   const getStorageKey = (date: string) => `physio-visits-${date}`;
 
@@ -217,16 +218,23 @@ export const usePatientLog = () => {
       return updated;
     });
 
-    // DB Sync (디바운스 — 같은 visit에 300ms 내 연속 업데이트 시 마지막만 전송)
+    // DB Sync (디바운스 — 같은 visit에 300ms 내 연속 업데이트 시 병합 후 전송)
     if (isOnlineMode() && supabase) {
+      const prevPending = pendingUpdates.current.get(id) || {};
+      pendingUpdates.current.set(id, { ...prevPending, ...updates });
+
       const existing = dbWriteTimers.current.get(id);
       if (existing) clearTimeout(existing);
 
       dbWriteTimers.current.set(id, setTimeout(async () => {
         dbWriteTimers.current.delete(id);
+        const merged = pendingUpdates.current.get(id);
+        pendingUpdates.current.delete(id);
+        if (!merged) return;
+
         const { error } = await supabase!
           .from('patient_visits')
-          .update({ ...updates, updated_at: new Date().toISOString() })
+          .update({ ...merged, updated_at: new Date().toISOString() })
           .eq('id', id);
 
         if (error) {
@@ -243,6 +251,7 @@ export const usePatientLog = () => {
     if (existing) {
       clearTimeout(existing);
       dbWriteTimers.current.delete(id);
+      pendingUpdates.current.delete(id);
     }
 
     setVisits(prev => {
