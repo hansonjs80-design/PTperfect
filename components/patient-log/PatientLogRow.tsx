@@ -1,6 +1,5 @@
 
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
-import ReactDOM from 'react-dom';
 import { Trash2, Check, X } from 'lucide-react';
 import { EditableCell } from './EditableCell';
 import { BedSelectorCell } from './BedSelectorCell';
@@ -9,7 +8,6 @@ import { PatientStatusCell } from './PatientStatusCell';
 import { AuthorSelectorCell } from './AuthorSelectorCell';
 import { BedState, PatientVisit, Preset } from '../../types';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
-import { PatientMemoModal } from '../modals/PatientMemoModal';
 import { formatBodyPartText } from '../../utils/patientLogUtils';
 import { useTreatmentContext } from '../../contexts/TreatmentContext';
 import { formatTime } from '../../utils/bedUtils';
@@ -41,46 +39,6 @@ interface PatientLogRowProps {
   onBulkAuthorUpdate?: (val: string) => void;
 }
 
-// ── 메모 호버 툴팁 (화면 경계 자동 조정) ──
-const MemoTooltip: React.FC<{ memo: string; anchorX: number; anchorY: number }> = ({ memo, anchorX, anchorY }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const el = ref.current;
-    const rect = el.getBoundingClientRect();
-    const pad = 8;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    // 기본: 셀 위쪽 중앙 배치
-    let left = anchorX - rect.width / 2;
-    let top = anchorY - rect.height - 6;
-
-    // 화면 좌측 넘침 방지
-    if (left < pad) left = pad;
-    // 화면 우측 넘침 방지
-    if (left + rect.width > vw - pad) left = vw - pad - rect.width;
-    // 화면 상단 넘침 → 셀 아래쪽에 표시
-    if (top < pad) top = anchorY + 40;
-    // 화면 하단 넘침 방지
-    if (top + rect.height > vh - pad) top = vh - pad - rect.height;
-
-    setPos({ left, top });
-  }, [anchorX, anchorY]);
-
-  return (
-    <div
-      ref={ref}
-      style={{ left: pos?.left ?? anchorX, top: pos?.top ?? anchorY, visibility: pos ? 'visible' : 'hidden' }}
-      className="fixed z-[9999] max-w-[280px] px-3 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs text-gray-700 dark:text-gray-200 font-medium leading-relaxed whitespace-pre-wrap break-words pointer-events-none"
-    >
-      {memo}
-    </div>
-  );
-};
-
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   rowIndex,
   visit,
@@ -110,34 +68,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const { handleGridKeyDown } = useGridNavigation(10);
   const { activateVisitFromLog } = useTreatmentContext();
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
-  const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [memoTooltip, setMemoTooltip] = useState<{ x: number; y: number } | null>(null);
-  const memoHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const memoTooltipRef = useRef<HTMLDivElement>(null);
 
   // Clean up timeout on unmount
   useEffect(() => {
     return () => {
       if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
-      if (memoHoverTimer.current) clearTimeout(memoHoverTimer.current);
     };
-  }, []);
-
-  const handleMemoMouseEnter = useCallback((e: React.MouseEvent) => {
-    if (!visit?.memo) return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    memoHoverTimer.current = setTimeout(() => {
-      setMemoTooltip({ x: rect.left + rect.width / 2, y: rect.top });
-    }, 300); // 300ms 딜레이로 불필요한 깜빡임 방지
-  }, [visit?.memo]);
-
-  const handleMemoMouseLeave = useCallback(() => {
-    if (memoHoverTimer.current) {
-      clearTimeout(memoHoverTimer.current);
-      memoHoverTimer.current = null;
-    }
-    setMemoTooltip(null);
   }, []);
 
   const handleAssign = async (newBedId: number) => {
@@ -463,34 +400,19 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       <td className={`${cellBorderClass} p-0`}>
-        <div
-          className="w-full h-full min-h-[36px] flex items-center justify-center cursor-pointer transition-colors text-gray-600 dark:text-gray-400 font-bold bg-transparent text-center text-[11.3px] xl:text-[13px] hover:bg-gray-50 dark:hover:bg-slate-700/50 outline-none focus:ring-2 focus:ring-sky-400 focus:z-10"
-          onClick={() => {
-            if (!isDraft) setIsMemoModalOpen(true);
-          }}
-          onMouseEnter={handleMemoMouseEnter}
-          onMouseLeave={handleMemoMouseLeave}
-          tabIndex={0}
-          data-grid-id={`${rowIndex}-7`}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              if (!isDraft) setIsMemoModalOpen(true);
-            } else {
-              handleGridKeyDown(e, rowIndex, 7);
-            }
-          }}
-          title={undefined}
-        >
-          {visit?.memo ? (
-            <span className="truncate max-w-[80px] px-2">{visit.memo}</span>
-          ) : (
-            <span className="text-gray-300 dark:text-gray-600"></span>
-          )}
-        </div>
-        {memoTooltip && visit?.memo && ReactDOM.createPortal(
-          <MemoTooltip memo={visit.memo} anchorX={memoTooltip.x} anchorY={memoTooltip.y} />,
-          document.body
-        )}
+        <EditableCell
+          gridId={`${rowIndex}-7`}
+          rowIndex={rowIndex}
+          colIndex={7}
+          value={visit?.memo || ''}
+          placeholder=""
+          menuTitle="메모 수정 (로그만 변경)"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.3px] xl:text-[13px]"
+          onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 7, navDir)}
+          directEdit={true}
+          syncOnDirectEdit={false}
+          suppressEnterNav={isDraft}
+        />
       </td>
 
       <td className={`${cellBorderClass} p-0`}>
@@ -537,16 +459,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           </div>
         )}
       </td>
-
-      {!isDraft && visit && (
-        <PatientMemoModal
-          isOpen={isMemoModalOpen}
-          onClose={() => setIsMemoModalOpen(false)}
-          initialMemo={visit.memo || ''}
-          onSave={(newMemo) => handleChange('memo', newMemo, false, 7)}
-          patientName={visit.patient_name}
-        />
-      )}
     </tr>
   );
 });

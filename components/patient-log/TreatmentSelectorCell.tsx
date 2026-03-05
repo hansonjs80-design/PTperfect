@@ -1,7 +1,6 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit3, List, Check, X } from 'lucide-react';
+import { Edit3, List, Check, X, ArrowUp, ArrowDown, Plus, Trash2 } from 'lucide-react';
 import { PatientVisit } from '../../types';
 import { ContextMenu } from '../common/ContextMenu';
 import { TreatmentTextRenderer } from './TreatmentTextRenderer';
@@ -31,8 +30,9 @@ interface TreatmentSelectorCellProps {
     colIndex: number;
 }
 
+const parseSteps = (raw: string): string[] => raw.split('/').map((v) => v.trim()).filter(Boolean);
+
 export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
-    visit,
     value,
     placeholder,
     rowStatus = 'none',
@@ -56,14 +56,18 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const [mode, setMode] = useState<'view' | 'menu' | 'edit_text'>('view');
     const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
     const [popupState, setPopupState] = useState<{ type: 'prev' | 'next' | 'clear', x: number, y: number } | null>(null);
-    const [hoverInfo, setHoverInfo] = useState<{ x: number, y: number, width: number } | null>(null);
+    const [hoverInfo, setHoverInfo] = useState<{ x: number, y: number } | null>(null);
+    const [quickEditPos, setQuickEditPos] = useState<{ x: number, y: number } | null>(null);
+    const [quickSteps, setQuickSteps] = useState<string[]>([]);
+    const [newStepText, setNewStepText] = useState('');
+
     const cellRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
-
-    // Manual Double Tap Logic
     const lastClickTimeRef = useRef<number>(0);
 
     const { handleGridKeyDown } = useGridNavigation(10);
+
+    const hasTreatment = useMemo(() => value.trim() !== '', [value]);
 
     useEffect(() => {
         if (mode === 'edit_text' && inputRef.current) {
@@ -75,7 +79,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const handleMouseEnter = () => {
         if (value && window.matchMedia('(min-width: 1024px) and (hover: hover)').matches && cellRef.current) {
             const rect = cellRef.current.getBoundingClientRect();
-            setHoverInfo({ x: rect.left + (rect.width / 2), y: rect.top - 8, width: rect.width });
+            setHoverInfo({ x: rect.left + (rect.width / 2), y: rect.top - 8 });
         }
     };
 
@@ -100,27 +104,56 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         setMode('menu');
     };
 
-    // Unified click handler for Desktop (Single) and Mobile (Double Tap)
+    const openQuickEditPopup = (e: React.MouseEvent) => {
+        if (!hasTreatment) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setQuickSteps(parseSteps(value));
+        setNewStepText('');
+        setQuickEditPos({ x: e.clientX, y: e.clientY });
+    };
+
+    const moveStep = (idx: number, direction: 'up' | 'down') => {
+        setQuickSteps((prev) => {
+            const next = [...prev];
+            const target = direction === 'up' ? idx - 1 : idx + 1;
+            if (target < 0 || target >= next.length) return prev;
+            [next[idx], next[target]] = [next[target], next[idx]];
+            return next;
+        });
+    };
+
+    const removeStep = (idx: number) => {
+        setQuickSteps((prev) => prev.filter((_, i) => i !== idx));
+    };
+
+    const addStep = () => {
+        const trimmed = newStepText.trim();
+        if (!trimmed) return;
+        setQuickSteps((prev) => [...prev, trimmed]);
+        setNewStepText('');
+    };
+
+    const applyQuickEdit = () => {
+        const joined = quickSteps.join(' / ');
+        onCommitText(joined);
+        setQuickEditPos(null);
+    };
+
     const handleInteraction = (e: React.MouseEvent) => {
-        // 1. Desktop & Tablet (Width >= 768px) -> Single Click triggers interaction
         if (window.innerWidth >= 768) {
             executeInteraction(e);
             return;
         }
 
-        // 2. Mobile (Width < 768px) -> Manual Double Tap Detection
-        // Native onDoubleClick is unreliable on mobile due to zoom/delay
         const now = Date.now();
         const timeDiff = now - lastClickTimeRef.current;
 
         if (timeDiff < 350 && timeDiff > 0) {
-            // Double tap detected
             executeInteraction(e);
-            lastClickTimeRef.current = 0; // Reset
+            lastClickTimeRef.current = 0;
         } else {
-            // First tap
             lastClickTimeRef.current = now;
-            // Optional: Could set a timeout here to clear ref if single tap isn't followed by another
         }
     };
 
@@ -163,38 +196,35 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         setTimeout(() => cellRef.current?.focus(), 0);
     };
 
-    const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') inputRef.current?.blur();
-        else if (e.key === 'Escape') setMode('view');
+    const getPopupMessage = () => {
+        switch (popupState?.type) {
+            case 'prev': return '이전 단계로?';
+            case 'next': return isLastStep ? '치료 완료/비우기?' : '다음 단계로?';
+            case 'clear': return '배드 비우기?';
+            default: return '';
+        }
     };
 
     const getTitle = () => {
-        if (typeof window !== 'undefined' && window.innerWidth < 768) return "더블탭하여 수정";
-        if (directSelector || (rowStatus as string) === 'active') return "클릭하여 처방 수정";
-        if (value && (rowStatus as string) !== 'active') return "클릭하여 로그 수정 (배드 미작동)";
-        return "클릭하여 수정 옵션 열기";
-    };
-
-    const getPopupMessage = () => {
-        switch (popupState?.type) {
-            case 'next': return isLastStep ? '치료를 완료할까요?' : '다음 단계로?';
-            case 'prev': return '이전 단계로?';
-            case 'clear': return '침상 비우시겠습니까?';
-            default: return '';
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+            return "더블탭하여 수정";
         }
+        return value ? "클릭: 선택기 / 우클릭: 빠른 편집" : "클릭하여 처방 선택";
     };
 
     return (
         <>
             <div
                 ref={cellRef}
-                className="relative w-full h-full focus:ring-2 focus:ring-sky-400 focus:outline-none focus:z-10"
-                onClick={handleInteraction}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                onKeyDown={handleKeyDown}
                 tabIndex={0}
                 data-grid-id={gridId}
+                onClick={handleInteraction}
+                onDoubleClick={(e) => e.preventDefault()}
+                onContextMenu={openQuickEditPopup}
+                onKeyDown={handleKeyDown}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                className="w-full h-full min-h-[36px] relative outline-none focus:ring-2 focus:ring-sky-400 focus:z-10"
             >
                 {mode === 'edit_text' ? (
                     <input
@@ -202,15 +232,17 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                         type="text"
                         defaultValue={value}
                         onBlur={handleTextCommit}
-                        onKeyDown={handleInputKeyDown}
-                        className="w-full h-full bg-white dark:bg-slate-700 px-2 py-1 outline-none border-2 border-brand-500 rounded-sm text-sm sm:text-base text-left pl-3 !text-gray-900 dark:!text-gray-100"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleTextCommit(e);
+                            if (e.key === 'Escape') { setMode('view'); setTimeout(() => cellRef.current?.focus(), 0); }
+                        }}
+                        className="w-full h-full bg-white dark:bg-slate-800 border-2 border-brand-500 rounded-sm text-sm sm:text-base text-left pl-3 !text-gray-900 dark:!text-gray-100"
                         placeholder={placeholder}
                     />
                 ) : (
                     <div className="flex items-center w-full h-full cursor-pointer px-1 hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors relative" title={getTitle()}>
-                        {/* Updated Font Size: xl:text-sm */}
                         <div className="flex-1 min-w-0 flex justify-start pl-2 pr-14">
-                            <span className="text-[15.4px] sm:text-[17.6px] xl:text-[15.4px] font-bold truncate pointer-events-none text-left w-full leading-tight">
+                            <span className="text-[15.4px] sm:text-[17.6px] xl:text-[15.4px] font-bold truncate pointer-events-none text-left w-full leading-tight text-slate-900 dark:text-slate-100">
                                 <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor} activeStepBgColor={activeStepBgColor} timerStatus={timerStatus} remainingTime={remainingTime} isPaused={isPaused} />
                             </span>
                         </div>
@@ -230,10 +262,49 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
 
             {hoverInfo && createPortal(
                 <div className="fixed z-[9999] bg-[#f2f2f2] dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 rounded-lg shadow-xl pointer-events-none animate-in fade-in zoom-in-95 duration-150 max-w-sm border border-gray-200 dark:border-slate-700" style={{ top: hoverInfo.y, left: hoverInfo.x, transform: 'translate(-50%, -100%)' }}>
-                    <div className="text-xs font-bold text-center leading-relaxed">
-                        <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor ? 'text-green-600 dark:text-green-300' : undefined} activeStepBgColor={activeStepBgColor} timerStatus={timerStatus} remainingTime={remainingTime} isPaused={isPaused} />
+                    <div className="text-sm font-semibold text-left leading-relaxed max-w-[420px] whitespace-pre-wrap">
+                        {value || placeholder}
                     </div>
                     <div className="absolute bottom-[-5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-[#f2f2f2] dark:bg-slate-800 rotate-45 transform border-b border-r border-gray-200 dark:border-slate-700"></div>
+                </div>, document.body
+            )}
+
+            {quickEditPos && createPortal(
+                <div className="fixed inset-0 z-[9999]" onClick={() => setQuickEditPos(null)}>
+                    <div
+                        className="absolute w-[360px] max-w-[92vw] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl shadow-2xl p-3"
+                        style={{ top: Math.max(8, quickEditPos.y - 20), left: Math.max(8, quickEditPos.x - 140) }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <p className="text-sm font-black text-slate-800 dark:text-slate-100 mb-2">처방 목록 빠른 수정</p>
+                        <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
+                            {quickSteps.length === 0 && <p className="text-xs text-gray-400">처방 목록이 없습니다.</p>}
+                            {quickSteps.map((step, idx) => (
+                                <div key={`${step}-${idx}`} className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1.5 bg-slate-50/70 dark:bg-slate-900/30">
+                                    <span className="flex-1 text-[13px] font-bold text-slate-900 dark:text-slate-100 truncate">{idx + 1}. {step}</span>
+                                    <button type="button" onClick={() => moveStep(idx, 'up')} className="p-1 rounded hover:bg-white dark:hover:bg-slate-700" title="위로"><ArrowUp className="w-3.5 h-3.5" /></button>
+                                    <button type="button" onClick={() => moveStep(idx, 'down')} className="p-1 rounded hover:bg-white dark:hover:bg-slate-700" title="아래로"><ArrowDown className="w-3.5 h-3.5" /></button>
+                                    <button type="button" onClick={() => removeStep(idx)} className="p-1 rounded hover:bg-red-50 text-red-500" title="삭제"><Trash2 className="w-3.5 h-3.5" /></button>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-2 flex gap-1.5">
+                            <input
+                                value={newStepText}
+                                onChange={(e) => setNewStepText(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') addStep(); }}
+                                placeholder="추가할 처방명"
+                                className="flex-1 px-2 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+                            />
+                            <button type="button" onClick={addStep} className="px-2 py-1.5 rounded bg-brand-600 text-white text-xs font-bold flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> 추가</button>
+                        </div>
+
+                        <div className="mt-3 flex gap-2">
+                            <button type="button" onClick={applyQuickEdit} className="flex-1 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black">적용</button>
+                            <button type="button" onClick={() => { onOpenSelector(); setQuickEditPos(null); }} className="flex-1 py-2 rounded bg-brand-600 hover:bg-brand-700 text-white text-xs font-black">상세 편집기</button>
+                        </div>
+                    </div>
                 </div>, document.body
             )}
 

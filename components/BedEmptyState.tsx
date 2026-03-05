@@ -5,7 +5,6 @@ import {
   setBedTimerOnlyPreference,
   getBulkTimerMinutes,
   setBulkTimerMinutes as persistBulkTimerMinutes,
-  setAllBedsTimerOnlyPreference,
 } from '../utils/timerOnlyPreference';
 
 interface BedEmptyStateProps {
@@ -15,7 +14,7 @@ interface BedEmptyStateProps {
   onStartTimerOnlyAll: (minutes?: number) => void;
 }
 
-export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelector, onStartTimerOnly }) => {
+export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelector, onStartTimerOnly, onStartTimerOnlyAll }) => {
   const [timerOnlyChecked, setTimerOnlyChecked] = useState(false);
   const [bulkTimerMinutes, setBulkTimerMinutes] = useState(10);
 
@@ -50,11 +49,9 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelec
     setBedTimerOnlyPreference(bedId, checked);
   }, [bedId]);
 
-  const handleApplyAllTimerOnly = useCallback(() => {
-    setAllBedsTimerOnlyPreference(true);
-    setBedTimerOnlyPreference(bedId, true);
-    setTimerOnlyChecked(true);
-  }, [bedId]);
+  const handleStartAllTimer = useCallback(() => {
+    onStartTimerOnlyAll(10);
+  }, [onStartTimerOnlyAll]);
 
   return (
     <div
@@ -96,11 +93,11 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelec
           />
           <button
             type="button"
-            onClick={handleApplyAllTimerOnly}
+            onClick={handleStartAllTimer}
             className="text-[11px] font-bold px-2 py-1 rounded-lg border border-indigo-400 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300"
-            title="타이머를 즉시 시작하지 않고 전체 배드를 타이머만 사용 대기 상태로 설정"
+            title="모든 배드에 10분 타이머를 즉시 적용"
           >
-            타이머만 사용 (전체적용)
+            전체 타이머 적용 (10분)
           </button>
         </div>
       </div>
