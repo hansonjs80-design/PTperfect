@@ -80,7 +80,7 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
           )}
         </th>
         <th className={`${thBase} w-[82px] md:w-[110px] xl:w-[100px] relative`}>
-          타이머 목록
+          타이머
           {handle(4)}
         </th>
         <th className={`${thBase} w-[38px] md:w-[70px] xl:w-[60px] relative`}>

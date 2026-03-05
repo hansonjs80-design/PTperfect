@@ -257,7 +257,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     ? visit.treatment_name
     : (isTimerCellActive && timerOnlyDisplayText ? timerOnlyDisplayText : '');
   const timerText = isTimerCellActive
-    ? `타이머 ${timerStatus === 'overtime' ? '+' : ''}${formatTime(remainingTime || 0)}`
+    ? `${timerStatus === 'overtime' ? '+' : ''}${formatTime(remainingTime || 0)}`
     : '';
 
   return (
@@ -360,7 +360,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         >
           {isTimerCellActive ? (
             <span className={`${timerStatus === 'overtime' ? 'text-red-600 dark:text-red-400 animate-pulse' : timerStatus === 'warning' ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-700 dark:text-emerald-300'}`}>
-              {isPaused ? `일시정지 ${timerText.replace('타이머 ', '')}` : timerText}
+              {isPaused ? `일시정지 ${timerText}` : timerText}
             </span>
           ) : (
             <span className="text-gray-300 dark:text-gray-600">-</span>
