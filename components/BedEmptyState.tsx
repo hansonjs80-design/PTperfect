@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Plus, Timer } from 'lucide-react';
 
 interface BedEmptyStateProps {
@@ -7,17 +7,50 @@ interface BedEmptyStateProps {
   onStartTimerOnlyAll: (minutes?: number) => void;
 }
 
+const BULK_TIMER_MINUTES_KEY = 'physio-bulk-timer-minutes';
+
 export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector, onStartTimerOnly, onStartTimerOnlyAll }) => {
   const [timerOnlyChecked, setTimerOnlyChecked] = useState(false);
+  const [isBulkStartArmed, setIsBulkStartArmed] = useState(false);
+  const [bulkTimerMinutes, setBulkTimerMinutes] = useState(10);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(BULK_TIMER_MINUTES_KEY);
+      if (!raw) return;
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed) && parsed >= 1) {
+        setBulkTimerMinutes(Math.round(parsed));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const persistBulkMinutes = useCallback((nextMinutes: number) => {
+    try {
+      window.localStorage.setItem(BULK_TIMER_MINUTES_KEY, String(nextMinutes));
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (timerOnlyChecked) {
-      onStartTimerOnly(10);
+      onStartTimerOnly(bulkTimerMinutes);
       return;
     }
     onOpenSelector();
-  }, [onOpenSelector, onStartTimerOnly, timerOnlyChecked]);
+  }, [onOpenSelector, onStartTimerOnly, timerOnlyChecked, bulkTimerMinutes]);
+
+  const handleBulkMinutesChange = useCallback((raw: string) => {
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return;
+    const normalized = Math.max(1, Math.round(parsed));
+    setBulkTimerMinutes(normalized);
+    persistBulkMinutes(normalized);
+  }, [persistBulkMinutes]);
 
   return (
     <div
@@ -32,28 +65,50 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector, on
         )}
       </div>
       <span className="mt-2 text-xs font-bold text-slate-300 dark:text-slate-600 group-hover:text-brand-500/70 transition-colors">
-        {timerOnlyChecked ? '탭하면 10분 타이머 시작' : (<><span className="hidden md:inline">클릭하여 시작</span><span className="md:hidden">탭하여 시작</span></>)}
+        {timerOnlyChecked ? `탭하면 ${bulkTimerMinutes}분 타이머 시작` : (<><span className="hidden md:inline">클릭하여 시작</span><span className="md:hidden">탭하여 시작</span></>)}
       </span>
 
       <div className="mt-3 flex flex-col items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-      <label
-        className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700"
-      >
-        <input
-          type="checkbox"
-          checked={timerOnlyChecked}
-          onChange={(e) => setTimerOnlyChecked(e.target.checked)}
-          className="accent-brand-500"
-        />
-        타이머만 사용
-      </label>
-      <button
-        type="button"
-        onClick={() => onStartTimerOnlyAll(10)}
-        className="text-[11px] font-bold px-2 py-1 rounded-lg border border-brand-300 text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-300"
-      >
-        전체 배드 타이머(10분)
-      </button>
+        <label
+          className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700"
+        >
+          <input
+            type="checkbox"
+            checked={timerOnlyChecked}
+            onChange={(e) => setTimerOnlyChecked(e.target.checked)}
+            className="accent-brand-500"
+          />
+          타이머만 사용
+        </label>
+
+        <div className="flex items-center gap-1.5">
+          <input
+            type="number"
+            min={1}
+            value={bulkTimerMinutes}
+            onChange={(e) => handleBulkMinutesChange(e.target.value)}
+            className="w-[62px] px-1.5 py-1 text-[11px] text-center font-bold rounded border border-brand-300 bg-white dark:bg-slate-800 dark:border-slate-600"
+            aria-label="전체 타이머 분 설정"
+          />
+          <button
+            type="button"
+            onClick={() => setIsBulkStartArmed((prev) => !prev)}
+            className={`text-[11px] font-bold px-2 py-1 rounded-lg border ${isBulkStartArmed ? 'border-orange-400 text-orange-700 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-300' : 'border-brand-300 text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-300'}`}
+          >
+            전체 타이머 준비
+          </button>
+          <button
+            type="button"
+            disabled={!isBulkStartArmed}
+            onClick={() => {
+              onStartTimerOnlyAll(bulkTimerMinutes);
+              setIsBulkStartArmed(false);
+            }}
+            className="text-[11px] font-bold px-2 py-1 rounded-lg border border-emerald-400 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            전체 타이머 시작
+          </button>
+        </div>
       </div>
     </div>
   );
