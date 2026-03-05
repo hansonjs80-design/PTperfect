@@ -5,6 +5,7 @@ import {
   setBedTimerOnlyPreference,
   getBulkTimerMinutes,
   setBulkTimerMinutes as persistBulkTimerMinutes,
+  getTimerOnlyPrefChangedEventName,
 } from '../utils/timerOnlyPreference';
 
 interface BedEmptyStateProps {
@@ -18,8 +19,21 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelec
   const [bulkTimerMinutes, setBulkTimerMinutes] = useState(10);
 
   useEffect(() => {
-    setTimerOnlyChecked(getBedTimerOnlyPreference(bedId));
-    setBulkTimerMinutes(getBulkTimerMinutes(10));
+    const syncPrefs = () => {
+      setTimerOnlyChecked(getBedTimerOnlyPreference(bedId));
+      setBulkTimerMinutes(getBulkTimerMinutes(10));
+    };
+
+    syncPrefs();
+
+    const eventName = getTimerOnlyPrefChangedEventName();
+    window.addEventListener(eventName, syncPrefs);
+    window.addEventListener('storage', syncPrefs);
+
+    return () => {
+      window.removeEventListener(eventName, syncPrefs);
+      window.removeEventListener('storage', syncPrefs);
+    };
   }, [bedId]);
 
   const persistBulkMinutes = useCallback((nextMinutes: number) => {
