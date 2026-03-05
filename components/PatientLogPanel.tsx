@@ -122,6 +122,14 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   }, []);
 
   const mappedResults = useMemo(() => searchResults.slice(0, 5), [searchResults]);
+  const sanitizeImportedVisit = useCallback((visit: PatientVisit): Partial<PatientVisit> => {
+    const isTimerOnlyVisit = (visit.treatment_name || '').trim() === '타이머';
+    return {
+      ...visit,
+      bed_id: null,
+      treatment_name: isTimerOnlyVisit ? '' : (visit.treatment_name || ''),
+    };
+  }, []);
 
   const handleSearchByName = useCallback(async () => {
     const keyword = searchName.trim();
@@ -142,7 +150,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         if (data && data.length > 0) {
           setSearchResults(data as PatientVisit[]);
           setSelectedResult(data[0] as PatientVisit);
-          setDraftImport({ ...(data[0] as PatientVisit), bed_id: null });
+          setDraftImport(sanitizeImportedVisit(data[0] as PatientVisit));
         } else {
           setSearchResults([]);
           setSelectedResult(null);
@@ -171,7 +179,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       merged.sort((a, b) => `${b.visit_date} ${b.created_at}`.localeCompare(`${a.visit_date} ${a.created_at}`));
       setSearchResults(merged);
       setSelectedResult(merged[0] || null);
-      setDraftImport(merged[0] ? { ...merged[0], bed_id: null } : null);
+      setDraftImport(merged[0] ? sanitizeImportedVisit(merged[0]) : null);
     } finally {
       setIsSearching(false);
     }
@@ -179,8 +187,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
   const selectResult = useCallback((visit: PatientVisit) => {
     setSelectedResult(visit);
-    setDraftImport({ ...visit, bed_id: null });
-  }, []);
+    setDraftImport(sanitizeImportedVisit(visit));
+  }, [sanitizeImportedVisit]);
 
   const handleImportToToday = useCallback(async () => {
     if (!draftImport) return;

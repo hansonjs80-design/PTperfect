@@ -43,7 +43,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const navIntentRef = useRef<'down' | 'right' | 'left' | null>(null);
   const isDirectEditing = directEdit && mode === 'edit';
 
-  const { handleGridKeyDown } = useGridNavigation(8);
+  const { handleGridKeyDown } = useGridNavigation(9);
 
   useEffect(() => {
     setLocalValue(value === null ? '' : String(value));

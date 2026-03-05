@@ -1,6 +1,5 @@
 
 import React, { memo, Fragment } from 'react';
-import { formatTime } from '../../utils/bedUtils';
 
 interface TreatmentTextRendererProps {
   value: string;
@@ -25,32 +24,13 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
   remainingTime,
   isPaused
 }) => {
-  // 타이머 표시 여부: 활성 행이고 타이머가 동작 중일 때
-  const showTimer = isActiveRow && remainingTime !== undefined && (remainingTime !== 0 || timerStatus === 'overtime');
-
   if (!value) {
-    if (showTimer) {
-      return (
-        <span className={`inline-flex items-center gap-1 px-2 py-[2px] rounded-md bg-brand-100 dark:bg-brand-900/40 text-[12px] sm:text-[13px] font-black tabular-nums ${timerStatus === 'overtime' ? 'text-red-600' : timerStatus === 'warning' ? 'text-orange-600' : 'text-brand-700 dark:text-brand-300'}`}>
-          타이머 {timerStatus === 'overtime' && '+'}{formatTime(remainingTime!)}
-        </span>
-      );
-    }
-
     return (
       <span className="text-gray-400 italic font-bold">
         {placeholder}
       </span>
     );
   }
-
-  // 타이머 색상
-  const timerColorClass =
-    timerStatus === 'overtime' ? 'text-red-500' :
-    timerStatus === 'warning' ? 'text-orange-500' :
-    'text-slate-600 dark:text-slate-300';
-
-  const timerAnimClass = (timerStatus === 'overtime' || timerStatus === 'warning') ? 'animate-pulse' : '';
 
   // 활성화 상태이고 단계 인덱스가 유효할 때: 텍스트를 분리하여 하이라이팅
   if (isActiveRow && activeStepIndex >= 0) {
@@ -71,11 +51,6 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
                 `}>
                   {part.trim()}
                 </span>
-                {showTimer && (
-                  <span className={`ml-1 text-[12px] sm:text-[13px] font-black tabular-nums ${timerColorClass} ${timerAnimClass} ${isPaused ? 'opacity-50' : ''}`}>
-                    {timerStatus === 'overtime' && '+'}{formatTime(remainingTime!)}
-                  </span>
-                )}
               </>
             ) : (
               <span className="text-gray-700 dark:text-gray-300 px-0.5">

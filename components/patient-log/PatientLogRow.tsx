@@ -7,11 +7,12 @@ import { BedSelectorCell } from './BedSelectorCell';
 import { TreatmentSelectorCell } from './TreatmentSelectorCell';
 import { PatientStatusCell } from './PatientStatusCell';
 import { AuthorSelectorCell } from './AuthorSelectorCell';
-import { PatientVisit } from '../../types';
+import { BedState, PatientVisit, Preset } from '../../types';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { PatientMemoModal } from '../modals/PatientMemoModal';
 import { formatBodyPartText } from '../../utils/patientLogUtils';
 import { useTreatmentContext } from '../../contexts/TreatmentContext';
+import { formatTime } from '../../utils/bedUtils';
 
 interface PatientLogRowProps {
   rowIndex: number;
@@ -31,6 +32,8 @@ interface PatientLogRowProps {
   isLastStep?: boolean;
   timerStatus?: 'normal' | 'warning' | 'overtime';
   remainingTime?: number;
+  bed?: BedState;
+  presets?: Preset[];
   isPaused?: boolean;
   onNextStep?: () => void;
   onPrevStep?: () => void;
@@ -96,13 +99,15 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   isLastStep = false,
   timerStatus = 'normal',
   remainingTime,
+  bed,
+  presets = [],
   isPaused,
   onNextStep,
   onPrevStep,
   onClearBed,
   onBulkAuthorUpdate
 }) => {
-  const { handleGridKeyDown } = useGridNavigation(8);
+  const { handleGridKeyDown } = useGridNavigation(9);
   const { activateVisitFromLog } = useTreatmentContext();
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
   const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
@@ -273,7 +278,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
       }
     } else {
-      handleGridKeyDown(e, rowIndex, 7);
+      handleGridKeyDown(e, rowIndex, 8);
     }
   };
 
@@ -305,6 +310,18 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   if (timerStatus === 'overtime') dotColorClass = 'bg-red-600 animate-pulse';
 
   const cellBorderClass = "border-r border-gray-300 dark:border-slate-600";
+  const currentPreset = bed?.customPreset || presets.find(p => p.id === bed?.currentPresetId);
+  const currentStep = currentPreset?.steps[bed?.currentStepIndex || 0];
+  const isTimerCellActive = rowStatus === 'active' && !!currentStep?.enableTimer && typeof remainingTime === 'number';
+  const timerOnlyDisplayText = [visit?.patient_name || '', visit?.body_part || '']
+    .filter((txt) => !!txt)
+    .join(' / ');
+  const treatmentDisplayValue = (visit?.treatment_name && visit.treatment_name.trim() !== '')
+    ? visit.treatment_name
+    : (isTimerCellActive && timerOnlyDisplayText ? timerOnlyDisplayText : '');
+  const timerText = isTimerCellActive
+    ? `타이머 ${timerStatus === 'overtime' ? '+' : ''}${formatTime(remainingTime || 0)}`
+    : '';
 
   return (
     <tr className={rowClasses}>
@@ -378,7 +395,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           rowIndex={rowIndex}
           colIndex={3}
           visit={visit}
-          value={visit?.treatment_name || ''}
+          value={treatmentDisplayValue}
           placeholder="처방 입력..."
           rowStatus={rowStatus}
           onCommitText={handleTreatmentTextCommit}
@@ -398,10 +415,27 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       <td className={`${cellBorderClass} p-0`}>
+        <div
+          className="w-full h-full min-h-[36px] flex items-center justify-center px-1 text-[11px] sm:text-[12px] font-black tracking-tight"
+          data-grid-id={`${rowIndex}-4`}
+          tabIndex={0}
+          onKeyDown={(e) => handleGridKeyDown(e, rowIndex, 4)}
+        >
+          {isTimerCellActive ? (
+            <span className={`${timerStatus === 'overtime' ? 'text-red-600 dark:text-red-400 animate-pulse' : timerStatus === 'warning' ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-700 dark:text-emerald-300'}`}>
+              {isPaused ? `일시정지 ${timerText.replace('타이머 ', '')}` : timerText}
+            </span>
+          ) : (
+            <span className="text-gray-300 dark:text-gray-600">-</span>
+          )}
+        </div>
+      </td>
+
+      <td className={`${cellBorderClass} p-0`}>
         <PatientStatusCell
-          gridId={`${rowIndex}-4`}
+          gridId={`${rowIndex}-5`}
           rowIndex={rowIndex}
-          colIndex={4}
+          colIndex={5}
           visit={visit}
           rowStatus={rowStatus}
           onUpdate={onUpdate || (() => { })}
@@ -412,13 +446,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td className={`${cellBorderClass} p-0`}>
         <AuthorSelectorCell
-          gridId={`${rowIndex}-5`}
+          gridId={`${rowIndex}-6`}
           rowIndex={rowIndex}
-          colIndex={5}
+          colIndex={6}
           value={visit?.author || ''}
           onSelect={async (val) => {
             if (isDraft && onCreate) {
-              await onCreate({ author: val }, 5);
+              await onCreate({ author: val }, 6);
             } else if (visit && onUpdate) {
               // 선택한 셀만 변경 (빈 셀이든 이미 입력된 셀이든 동일하게 처리)
               onUpdate(visit.id, { author: val }, true);
@@ -437,12 +471,12 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           onMouseEnter={handleMemoMouseEnter}
           onMouseLeave={handleMemoMouseLeave}
           tabIndex={0}
-          data-grid-id={`${rowIndex}-6`}
+          data-grid-id={`${rowIndex}-7`}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               if (!isDraft) setIsMemoModalOpen(true);
             } else {
-              handleGridKeyDown(e, rowIndex, 6);
+              handleGridKeyDown(e, rowIndex, 7);
             }
           }}
           title={undefined}
@@ -464,7 +498,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           <div
             className="flex justify-center items-center h-full outline-none focus:ring-inset focus:ring-2 focus:ring-sky-400"
             tabIndex={0}
-            data-grid-id={`${rowIndex}-7`}
+            data-grid-id={`${rowIndex}-8`}
             onKeyDown={handleDeleteKeyDown}
           >
             <button
@@ -493,7 +527,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           isOpen={isMemoModalOpen}
           onClose={() => setIsMemoModalOpen(false)}
           initialMemo={visit.memo || ''}
-          onSave={(newMemo) => handleChange('memo', newMemo, false, 6)}
+          onSave={(newMemo) => handleChange('memo', newMemo, false, 7)}
           patientName={visit.patient_name}
         />
       )}

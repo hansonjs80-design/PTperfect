@@ -63,7 +63,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     // Manual Double Tap Logic
     const lastClickTimeRef = useRef<number>(0);
 
-    const { handleGridKeyDown } = useGridNavigation(8);
+    const { handleGridKeyDown } = useGridNavigation(9);
 
     useEffect(() => {
         if (mode === 'edit_text' && inputRef.current) {
