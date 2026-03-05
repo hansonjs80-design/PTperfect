@@ -10,13 +10,15 @@ import { AuthorSelectorCell } from './AuthorSelectorCell';
 import { PatientVisit } from '../../types';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { PatientMemoModal } from '../modals/PatientMemoModal';
+import { formatBodyPartText } from '../../utils/patientLogUtils';
+import { useTreatmentContext } from '../../contexts/TreatmentContext';
 
 interface PatientLogRowProps {
   rowIndex: number;
   visit?: PatientVisit;
   isDraft?: boolean;
   rowStatus?: 'active' | 'completed' | 'none';
-  onUpdate?: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => void;
+  onUpdate?: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => void | Promise<void>;
   onDelete?: (id: string) => void;
   onCreate?: (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => Promise<string>;
   onSelectLog?: (id: string, bedId?: number | null) => void;
@@ -101,6 +103,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   onBulkAuthorUpdate
 }) => {
   const { handleGridKeyDown } = useGridNavigation(8);
+  const { activateVisitFromLog } = useTreatmentContext();
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
   const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -174,7 +177,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     if (isDraft && onCreate) {
       await onCreate({ [field]: value }, colIndex, navDirection);
     } else if (!isDraft && visit && onUpdate) {
-      onUpdate(visit.id, { [field]: value }, skipSync);
+      const shouldKeepLogOnly = field === 'memo' && rowStatus !== 'active';
+      onUpdate(visit.id, { [field]: value }, shouldKeepLogOnly || skipSync);
     }
   };
 
@@ -191,8 +195,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   };
 
   const handleTreatmentSelectorOpen = async () => {
-    if (rowStatus === 'active' && visit && visit.bed_id && onEditActive) {
-      onEditActive(visit.bed_id);
+    const bedId = visit?.bed_id ?? null;
+    const hasBed = typeof bedId === 'number';
+    const hasTreatment = Boolean(visit?.treatment_name?.trim());
+
+    if (hasBed && hasTreatment && onEditActive && visit) {
+      // 이미 처방이 입력된 행은 배드 카드와 동일한 편집 오버레이로 진입
+      onEditActive(bedId);
       return;
     }
 
@@ -203,13 +212,27 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (!isDraft && visit && onSelectLog) {
-      if (visit.bed_id && (!visit.treatment_name || visit.treatment_name.trim() === '')) {
-        onSelectLog(visit.id, visit.bed_id);
+      if (hasBed && !hasTreatment) {
+        onSelectLog(visit.id, bedId);
       }
       else {
         onSelectLog(visit.id, null);
       }
     }
+  };
+
+
+
+  const handleQuickActivate = async (forceRestart: boolean = false) => {
+    if (isDraft || !visit) return;
+
+    if (onUpdate) {
+      const reorderTimestamp = new Date().toISOString();
+      await Promise.resolve(onUpdate(visit.id, { created_at: reorderTimestamp }, true));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    activateVisitFromLog(visit.id, forceRestart);
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -299,6 +322,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           className={isDraft ? "opacity-50 hover:opacity-100" : ""}
           activeBedIds={activeBedIds}
           isLogEditMode={isLogEditMode}
+          onQuickActivate={handleQuickActivate}
         />
         {rowStatus !== 'none' && (
           <div className="absolute top-1.5 right-1 pointer-events-none">
@@ -339,10 +363,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           menuTitle="치료 부위 수정 (로그만 변경)"
           className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[12.6px] sm:text-[13.5px] xl:text-[14.4px]"
           onCommit={(val, skipSync, navDir) => {
-            let formattedVal = (val || '').replace(/\b\w/g, (c) => c.toUpperCase());
-            const upperCaseWords = ['ITB', 'TFL', 'SIJ', 'LS', 'CT', 'TL', 'TMJ', 'ACL', 'MCL', 'ATFL', 'PV', 'AC', 'SC'];
-            const pattern = new RegExp(`\\b(${upperCaseWords.join('|')})\\b`, 'gi');
-            formattedVal = formattedVal.replace(pattern, (match) => match.toUpperCase());
+            const formattedVal = formatBodyPartText(val || '');
             handleChange('body_part', formattedVal, skipSync, 2, navDir);
           }}
           directEdit={true}

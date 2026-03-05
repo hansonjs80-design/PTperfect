@@ -7,6 +7,30 @@ import { PatientLogTableHeader } from './PatientLogTableHeader';
 import { getRowActiveStatus } from '../../utils/patientLogUtils';
 import { useColumnResize, FLEX_COL_INDEX } from '../../hooks/useColumnResize';
 
+type GridCellPos = { row: number; col: number };
+type GridSelection = { start: GridCellPos; end: GridCellPos } | null;
+
+const SELECTABLE_COLS = new Set([1, 2, 3, 5, 6]);
+
+const normalizeSelectionBounds = (selection: GridSelection) => {
+  if (!selection) return null;
+  const rowMin = Math.min(selection.start.row, selection.end.row);
+  const rowMax = Math.max(selection.start.row, selection.end.row);
+  const colMin = Math.min(selection.start.col, selection.end.col);
+  const colMax = Math.max(selection.start.col, selection.end.col);
+  return { rowMin, rowMax, colMin, colMax };
+};
+
+const parseGridCellId = (el: HTMLElement | null): GridCellPos | null => {
+  const gridHost = el?.closest?.('[data-grid-id]') as HTMLElement | null;
+  if (!gridHost) return null;
+  const id = gridHost.getAttribute('data-grid-id');
+  if (!id) return null;
+  const [r, c] = id.split('-').map(Number);
+  if (Number.isNaN(r) || Number.isNaN(c)) return null;
+  return { row: r, col: c };
+};
+
 interface PatientLogTableProps {
   visits: PatientVisit[];
   beds: BedState[];
@@ -39,7 +63,9 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   onClearBed
 }) => {
   const [totalRows, setTotalRows] = useState(120);
+  const [selection, setSelection] = useState<GridSelection>(null);
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
+  const isDraggingRef = useRef(false);
 
   // Column resize (desktop & tablet portrait)
   const tableRef = useRef<HTMLTableElement>(null);
@@ -50,6 +76,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   // rowOffset = 1 (vertical: jump to new draft), rowOffset = 0 (horizontal: stay on created row)
   const focusTargetRef = useRef<{ rowOffset: number, colIndex: number } | null>(null);
   const prevVisitsLengthRef = useRef(visits.length);
+  const pendingAutoFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPointerDownAtRef = useRef(0);
 
   useEffect(() => {
     // If visits length increased, it means a row was added.
@@ -59,13 +87,30 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       const targetColIndex = focusTargetRef.current.colIndex;
 
       // Small delay to allow DOM to update
-      setTimeout(() => {
+      if (pendingAutoFocusTimerRef.current) {
+        clearTimeout(pendingAutoFocusTimerRef.current);
+      }
+
+      pendingAutoFocusTimerRef.current = setTimeout(() => {
+        // If the user manually clicked very recently, never steal focus to another cell.
+        if (Date.now() - lastPointerDownAtRef.current < 250) {
+          focusTargetRef.current = null;
+          return;
+        }
+
         const targetEl = document.querySelector(`[data-grid-id="${targetRowIndex}-${targetColIndex}"]`) as HTMLElement;
         if (targetEl) {
-          targetEl.focus();
-          // If it's an input, select text
-          if (targetEl.tagName === 'INPUT') {
-            (targetEl as HTMLInputElement).select();
+          const activeEl = document.activeElement as HTMLElement | null;
+          const activeGridId = activeEl?.getAttribute?.('data-grid-id');
+          const targetGridId = `${targetRowIndex}-${targetColIndex}`;
+
+          // If user focus is already on another grid cell, keep current user intent.
+          if (!activeGridId || activeGridId === targetGridId) {
+            targetEl.focus();
+            // If it's an input, select text
+            if (targetEl.tagName === 'INPUT') {
+              (targetEl as HTMLInputElement).select();
+            }
           }
         }
         focusTargetRef.current = null; // Reset
@@ -73,6 +118,16 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     }
     prevVisitsLengthRef.current = visits.length;
   }, [visits.length]);
+
+
+
+  useEffect(() => {
+    return () => {
+      if (pendingAutoFocusTimerRef.current) {
+        clearTimeout(pendingAutoFocusTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleDraftCreate = async (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => {
     if (colIndex !== undefined) {
@@ -98,8 +153,171 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     });
   }, [visits, onUpdate]);
 
+  const getVisitCellText = useCallback((visit: PatientVisit, col: number) => {
+    switch (col) {
+      case 1: return visit.patient_name || '';
+      case 2: return visit.body_part || '';
+      case 3: return visit.treatment_name || '';
+      case 5: return visit.author || '';
+      case 6: return visit.memo || '';
+      default: return '';
+    }
+  }, []);
+
+  const setVisitCellText = useCallback((visit: PatientVisit, col: number, text: string) => {
+    switch (col) {
+      case 1:
+        onUpdate(visit.id, { patient_name: text }, true);
+        return;
+      case 2:
+        onUpdate(visit.id, { body_part: text }, true);
+        return;
+      case 3:
+        onUpdate(visit.id, { treatment_name: text }, true);
+        return;
+      case 5:
+        onUpdate(visit.id, { author: text }, true);
+        return;
+      case 6:
+        onUpdate(visit.id, { memo: text }, true);
+        return;
+      default:
+        return;
+    }
+  }, [onUpdate]);
+
+  const handleGridClipboardCopy = useCallback((shouldCut: boolean) => {
+    const bounds = normalizeSelectionBounds(selection);
+    if (!bounds) return '';
+
+    const rows: string[] = [];
+    for (let row = bounds.rowMin; row <= bounds.rowMax; row++) {
+      const visit = visits[row];
+      const cols: string[] = [];
+      for (let col = bounds.colMin; col <= bounds.colMax; col++) {
+        if (!SELECTABLE_COLS.has(col) || !visit) {
+          cols.push('');
+          continue;
+        }
+
+        const val = getVisitCellText(visit, col);
+        cols.push(val);
+
+        if (shouldCut) {
+          setVisitCellText(visit, col, '');
+        }
+      }
+      rows.push(cols.join('\t'));
+    }
+
+    return rows.join('\n');
+  }, [selection, visits, getVisitCellText, setVisitCellText]);
+
+  const handleGridPaste = useCallback((raw: string) => {
+    if (!raw) return;
+    const bounds = normalizeSelectionBounds(selection);
+    const anchor = bounds ? { row: bounds.rowMin, col: bounds.colMin } : null;
+    if (!anchor) return;
+
+    const parsedRows = raw.replace(/\r/g, '').split('\n').filter((line) => line.length > 0).map((line) => line.split('\t'));
+    if (parsedRows.length === 0) return;
+
+    parsedRows.forEach((line, rIdx) => {
+      const row = anchor.row + rIdx;
+      const visit = visits[row];
+      if (!visit) return;
+
+      line.forEach((cellText, cIdx) => {
+        const col = anchor.col + cIdx;
+        if (!SELECTABLE_COLS.has(col)) return;
+        setVisitCellText(visit, col, cellText);
+      });
+    });
+  }, [selection, visits, setVisitCellText]);
+
+  const handleCopy = useCallback(async (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const active = document.activeElement as HTMLInputElement | null;
+    if (active?.tagName === 'INPUT' && !active.readOnly) return;
+
+    const text = handleGridClipboardCopy(false);
+    if (!text) return;
+
+    e.preventDefault();
+    e.clipboardData.setData('text/plain', text);
+    try { await navigator.clipboard?.writeText(text); } catch { /* noop */ }
+  }, [handleGridClipboardCopy]);
+
+  const handleCut = useCallback(async (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const active = document.activeElement as HTMLInputElement | null;
+    if (active?.tagName === 'INPUT' && !active.readOnly) return;
+
+    const text = handleGridClipboardCopy(true);
+    if (!text) return;
+
+    e.preventDefault();
+    e.clipboardData.setData('text/plain', text);
+    try { await navigator.clipboard?.writeText(text); } catch { /* noop */ }
+  }, [handleGridClipboardCopy]);
+
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
+    const active = document.activeElement as HTMLInputElement | null;
+    if (active?.tagName === 'INPUT' && !active.readOnly) return;
+
+    const text = e.clipboardData.getData('text/plain');
+    if (!text) return;
+    e.preventDefault();
+    handleGridPaste(text);
+  }, [handleGridPaste]);
+
+  useEffect(() => {
+    const bounds = normalizeSelectionBounds(selection);
+    const selected = new Set<string>();
+    if (bounds) {
+      for (let row = bounds.rowMin; row <= bounds.rowMax; row++) {
+        for (let col = bounds.colMin; col <= bounds.colMax; col++) {
+          selected.add(`${row}-${col}`);
+        }
+      }
+    }
+
+    const allGridCells = Array.from(document.querySelectorAll('[data-grid-id]')) as HTMLElement[];
+    allGridCells.forEach((el) => {
+      const id = el.getAttribute('data-grid-id') || '';
+      if (selected.has(id)) {
+        el.classList.add('ring-2', 'ring-brand-500', 'ring-inset', 'bg-brand-50/60', 'dark:bg-brand-900/25');
+      } else {
+        el.classList.remove('ring-2', 'ring-brand-500', 'ring-inset', 'bg-brand-50/60', 'dark:bg-brand-900/25');
+      }
+    });
+  }, [selection, visits.length, totalRows]);
+
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-auto xl:overflow-x-hidden log-scrollbar bg-white dark:bg-slate-900">
+    <div
+      className="flex-1 overflow-y-auto overflow-x-auto xl:overflow-x-hidden log-scrollbar bg-white dark:bg-slate-900"
+      tabIndex={0}
+      onCopy={handleCopy}
+      onCut={handleCut}
+      onPaste={handlePaste}
+      onMouseDownCapture={(e) => {
+        lastPointerDownAtRef.current = Date.now();
+        const pos = parseGridCellId(e.target as HTMLElement);
+        if (!pos) return;
+        setSelection({ start: pos, end: pos });
+        isDraggingRef.current = true;
+      }}
+      onMouseMoveCapture={(e) => {
+        if (!isDraggingRef.current) return;
+        const pos = parseGridCellId(e.target as HTMLElement);
+        if (!pos) return;
+        setSelection((prev) => prev ? { ...prev, end: pos } : prev);
+      }}
+      onMouseUpCapture={() => {
+        isDraggingRef.current = false;
+      }}
+      onMouseLeave={() => {
+        isDraggingRef.current = false;
+      }}
+    >
       <table ref={tableRef} className="w-full min-w-[500px] md:min-w-full border-collapse table-fixed">
         {columnWidths && (
           <colgroup>
