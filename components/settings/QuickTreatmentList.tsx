@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Edit3, ArrowUpDown, X, Check } from 'lucide-react';
 import { QuickTreatment } from '../../types';
+import { formatMinutesToKoreanLabel } from '../../utils/timeFormat';
 
 interface QuickTreatmentListProps {
   items: QuickTreatment[];
@@ -9,6 +10,7 @@ interface QuickTreatmentListProps {
   onCreate: () => void;
   onUpdateItems: (items: QuickTreatment[]) => void;
 }
+
 
 export const QuickTreatmentList: React.FC<QuickTreatmentListProps> = ({ 
   items, 
@@ -64,7 +66,7 @@ export const QuickTreatmentList: React.FC<QuickTreatmentListProps> = ({
                  <h4 className="font-bold text-slate-800 dark:text-white truncate">{item.name}</h4>
                  <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[10px] bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded font-bold">
-                       {item.duration}분
+                       {formatMinutesToKoreanLabel(item.duration)}
                     </span>
                     <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${item.enableTimer ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-gray-100 text-gray-400 dark:bg-slate-700'}`}>
                        {item.enableTimer ? '타이머 ON' : '타이머 OFF'}

@@ -196,6 +196,8 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         <BedEditOverlay
           bed={editingBed}
           steps={editingBedSteps}
+          presets={presets}
+          quickTreatments={quickTreatments}
           onClose={() => closeAndPop(setEditingBedId)}
           onToggleInjection={toggleInjection}
           onToggleFluid={toggleFluid}
