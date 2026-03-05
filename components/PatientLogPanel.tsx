@@ -39,6 +39,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [searchResults, setSearchResults] = useState<PatientVisit[]>([]);
   const [selectedResult, setSelectedResult] = useState<PatientVisit | null>(null);
   const [draftImport, setDraftImport] = useState<Partial<PatientVisit> | null>(null);
+  const [selectionAnchor, setSelectionAnchor] = useState<{ row: number | null; col: number | null }>({ row: null, col: null });
   
   // Performance Optimization: 
   // Extract status logic to prevent re-rendering on every timer tick.
@@ -205,9 +206,17 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       is_injection_completed: draftImport.is_injection_completed || false,
     };
 
-    await addVisit({ bed_id: null, ...payload });
+    const selectedRow = selectionAnchor.row;
+    const targetVisit = selectedRow !== null ? visits[selectedRow] : undefined;
+
+    if (targetVisit) {
+      await updateVisitWithBedSync(targetVisit.id, payload, true);
+    } else {
+      await addVisit({ bed_id: null, ...payload });
+    }
+
     resetSearchModal();
-  }, [addVisit, draftImport, resetSearchModal]);
+  }, [addVisit, draftImport, resetSearchModal, selectionAnchor.row, visits, updateVisitWithBedSync]);
 
   return (
     <>
@@ -239,6 +248,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           onNextStep={nextStep}
           onPrevStep={prevStep}
           onClearBed={clearBed}
+          onSelectionAnchorChange={(row, col) => setSelectionAnchor({ row, col })}
         />
 
         <div className="p-2 border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 shrink-0 text-center">
