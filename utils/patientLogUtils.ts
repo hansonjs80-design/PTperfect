@@ -1,4 +1,3 @@
-
 import { BedState, Preset, BedStatus } from '../types';
 import { mapBgToTextClass } from './styleUtils';
 
@@ -52,4 +51,12 @@ export const getRowActiveStatus = (
   }
 
   return result;
+};
+
+export const formatBodyPartText = (val: string): string => {
+  let formattedVal = (val || '').replace(/\b\w/g, (c) => c.toUpperCase());
+  const upperCaseWords = ['ITB', 'TFL', 'SIJ', 'LS', 'CT', 'TL', 'TMJ', 'ACL', 'MCL', 'ATFL', 'PV', 'AC', 'SC'];
+  const pattern = new RegExp(`\\b(${upperCaseWords.join('|')})\\b`, 'gi');
+  formattedVal = formattedVal.replace(pattern, (match) => match.toUpperCase());
+  return formattedVal;
 };
