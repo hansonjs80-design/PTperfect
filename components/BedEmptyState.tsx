@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Plus, Timer } from 'lucide-react';
 import {
+  DEFAULT_TIMER_ONLY_MINUTES,
   getBedTimerOnlyPreference,
   setBedTimerOnlyPreference,
   getBulkTimerMinutes,
@@ -16,12 +17,12 @@ interface BedEmptyStateProps {
 
 export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelector, onStartTimerOnly }) => {
   const [timerOnlyChecked, setTimerOnlyChecked] = useState(false);
-  const [bulkTimerMinutes, setBulkTimerMinutes] = useState(11);
+  const [bulkTimerMinutes, setBulkTimerMinutes] = useState(DEFAULT_TIMER_ONLY_MINUTES);
 
   useEffect(() => {
     const syncPrefs = () => {
       setTimerOnlyChecked(getBedTimerOnlyPreference(bedId));
-      setBulkTimerMinutes(getBulkTimerMinutes(11));
+      setBulkTimerMinutes(getBulkTimerMinutes(DEFAULT_TIMER_ONLY_MINUTES));
     };
 
     syncPrefs();

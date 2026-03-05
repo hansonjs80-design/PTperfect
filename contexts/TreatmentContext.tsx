@@ -13,6 +13,7 @@ import { useHistory } from '../hooks/useHistory';
 import { useBedPatientFields } from '../hooks/useBedPatientFields';
 import { useActiveBedStability } from '../hooks/useActiveBedStability';
 import { supabase, isOnlineMode } from '../lib/supabase';
+import { DEFAULT_TIMER_ONLY_MINUTES } from '../utils/timerOnlyPreference';
 
 interface MovingPatientState {
   bedId: number;
@@ -208,7 +209,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const startCustomPreset = withSnapshot(_startCustomPreset);
   const startQuickTreatment = withSnapshot(_startQuickTreatment);
   const startTimerOnly = withSnapshot(_startTimerOnly);
-  const startTimerOnlyAll = useCallback((minutes: number = 11) => {
+  const startTimerOnlyAll = useCallback((minutes: number = DEFAULT_TIMER_ONLY_MINUTES) => {
     saveSnapshot(bedsRef.current, visitsRef.current);
     bedsRef.current.forEach((bed) => {
       if (bed.status === BedStatus.IDLE) _startTimerOnly(bed.id, minutes);

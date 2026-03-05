@@ -2,7 +2,7 @@
 import React, { useCallback } from 'react';
 import { BedState, BedStatus, Preset, TreatmentStep, QuickTreatment, PatientVisit } from '../types';
 import { findMatchingPreset, parseTreatmentString, generateTreatmentString } from '../utils/bedUtils';
-import { getBedTimerOnlyPreference, getBulkTimerMinutes } from '../utils/timerOnlyPreference';
+import { DEFAULT_TIMER_ONLY_MINUTES, getBedTimerOnlyPreference, getBulkTimerMinutes } from '../utils/timerOnlyPreference';
 
 const STEP_STATUS_KEYWORDS: Record<'isInjection' | 'isFluid' | 'isTraction' | 'isESWT' | 'isManual', string[]> = {
     isInjection: ['주사', 'inj', 'injection'],
@@ -48,7 +48,7 @@ export const useBedIntegration = (
         let customPreset: any = null;
 
         if (prefersTimerOnly) {
-            const timerMinutes = getBulkTimerMinutes(11);
+            const timerMinutes = getBulkTimerMinutes(DEFAULT_TIMER_ONLY_MINUTES);
             steps = [{
                 id: `timer-only-${bedId}`,
                 name: '타이머',

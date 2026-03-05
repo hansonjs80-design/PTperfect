@@ -4,7 +4,7 @@ import { Menu, Sun, Moon, Download, ClipboardList, Maximize, Activity, ArrowUpDo
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { usePatientLogContext } from '../contexts/PatientLogContext';
-import { getBedTimerOnlyPreference, getTimerOnlyPrefChangedEventName, setAllBedsTimerOnlyPreference } from '../utils/timerOnlyPreference';
+import { DEFAULT_BED_COUNT, getBedTimerOnlyPreference, getTimerOnlyPrefChangedEventName, setAllBedsTimerOnlyPreference } from '../utils/timerOnlyPreference';
 
 interface AppHeaderProps {
   onOpenMenu: () => void;
@@ -31,7 +31,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
   useEffect(() => {
     const syncGlobalTimerOnlyState = () => {
-      const allEnabled = Array.from({ length: 11 }, (_, idx) => getBedTimerOnlyPreference(idx + 1)).every(Boolean);
+      const allEnabled = Array.from({ length: DEFAULT_BED_COUNT }, (_, idx) => getBedTimerOnlyPreference(idx + 1)).every(Boolean);
       setIsAllTimerOnlyEnabled(allEnabled);
     };
 
@@ -61,7 +61,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   };
 
   const handleToggleAllTimerOnly = () => {
-    setAllBedsTimerOnlyPreference(!isAllTimerOnlyEnabled, 11);
+    setAllBedsTimerOnlyPreference(!isAllTimerOnlyEnabled, DEFAULT_BED_COUNT);
   };
 
   // 공통 버튼 스타일

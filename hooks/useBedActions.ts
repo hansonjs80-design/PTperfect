@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { BedState, BedStatus, Preset, TreatmentStep, QuickTreatment, PatientVisit, SelectPresetOptions } from '../types';
 import { STANDARD_TREATMENTS } from '../constants';
 import { generateTreatmentString } from '../utils/bedUtils';
+import { DEFAULT_TIMER_ONLY_MINUTES } from '../utils/timerOnlyPreference';
 import {
   createCustomPreset,
   createQuickStep,
@@ -90,7 +91,7 @@ export const useBedActions = (
     startCustomPreset(bedId, template.name, [step], options);
   }, [startCustomPreset]);
 
-  const startTimerOnly = useCallback((bedId: number, minutes: number = 11) => {
+  const startTimerOnly = useCallback((bedId: number, minutes: number = DEFAULT_TIMER_ONLY_MINUTES) => {
     const durationSeconds = Math.max(30, Math.round(minutes * 60));
     const timerStep = {
       id: crypto.randomUUID(),

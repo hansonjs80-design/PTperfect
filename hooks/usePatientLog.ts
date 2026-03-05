@@ -9,6 +9,7 @@ const POLL_INTERVAL = 5000;
 
 /** DB 쓰기 디바운스 (ms) */
 const DB_WRITE_DEBOUNCE = 300;
+const RETRYABLE_OPTIONAL_COLUMNS = ['special_note', 'is_injection_completed'] as const;
 
 // Helper to get Local Date String (YYYY-MM-DD)
 const getLocalDateString = () => {
@@ -159,6 +160,11 @@ export const usePatientLog = () => {
 
   // 5. Actions
 
+  const shouldRetryInsertWithoutOptionalFields = (error: { message?: string | null; details?: string | null }) => {
+    const raw = `${error.message || ''} ${error.details || ''}`.toLowerCase();
+    return RETRYABLE_OPTIONAL_COLUMNS.some((column) => raw.includes(column));
+  };
+
   const addVisit = useCallback(async (initialData: Partial<PatientVisit> = {}): Promise<string> => {
     const tempId = crypto.randomUUID();
     const newVisit: PatientVisit = {
@@ -188,8 +194,9 @@ export const usePatientLog = () => {
 
     const retryInsertWithoutOptionalFields = async (row: PatientVisit) => {
       const fallbackRow = { ...row } as any;
-      delete fallbackRow.special_note;
-      delete fallbackRow.is_injection_completed;
+      RETRYABLE_OPTIONAL_COLUMNS.forEach((column) => {
+        delete fallbackRow[column];
+      });
 
       const { data: retryData, error: retryError } = await supabase!
         .from('patient_visits')
@@ -215,8 +222,7 @@ export const usePatientLog = () => {
         .single();
 
       if (error) {
-        const message = `${error.message || ''} ${error.details || ''}`;
-        const shouldRetryWithoutOptional = message.includes('special_note') || message.includes('is_injection_completed');
+        const shouldRetryWithoutOptional = shouldRetryInsertWithoutOptionalFields(error);
 
         if (shouldRetryWithoutOptional) {
           const retryData = await retryInsertWithoutOptionalFields(newVisit);

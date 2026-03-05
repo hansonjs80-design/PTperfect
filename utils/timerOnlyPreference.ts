@@ -2,6 +2,9 @@ const BULK_TIMER_MINUTES_KEY = 'physio-bulk-timer-minutes';
 const bedTimerOnlyKey = (bedId: number) => `physio-bed-${bedId}-timer-only`;
 const TIMER_ONLY_PREF_CHANGED_EVENT = 'physio:timer-only-pref-changed';
 
+export const DEFAULT_TIMER_ONLY_MINUTES = 11;
+export const DEFAULT_BED_COUNT = 11;
+
 const emitTimerOnlyPrefChanged = () => {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new Event(TIMER_ONLY_PREF_CHANGED_EVENT));
@@ -9,7 +12,7 @@ const emitTimerOnlyPrefChanged = () => {
 
 export const getTimerOnlyPrefChangedEventName = () => TIMER_ONLY_PREF_CHANGED_EVENT;
 
-export const getBulkTimerMinutes = (fallback: number = 10): number => {
+export const getBulkTimerMinutes = (fallback: number = DEFAULT_TIMER_ONLY_MINUTES): number => {
   if (typeof window === 'undefined') return fallback;
   const raw = window.localStorage.getItem(BULK_TIMER_MINUTES_KEY);
   const parsed = Number(raw);
@@ -28,7 +31,7 @@ export const setBedTimerOnlyPreference = (bedId: number, enabled: boolean): void
   emitTimerOnlyPrefChanged();
 };
 
-export const setAllBedsTimerOnlyPreference = (enabled: boolean, maxBedId: number = 11): void => {
+export const setAllBedsTimerOnlyPreference = (enabled: boolean, maxBedId: number = DEFAULT_BED_COUNT): void => {
   if (typeof window === 'undefined') return;
   for (let bedId = 1; bedId <= maxBedId; bedId += 1) {
     window.localStorage.setItem(bedTimerOnlyKey(bedId), enabled ? '1' : '0');
