@@ -100,6 +100,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
             setMenuPos({ x: mouseEvent.clientX, y: mouseEvent.clientY });
         }
 
+        if (isReadOnly) {
+            // 타이머 사용 중에는 배드 활성화/동기화 경로는 막고 텍스트 수정 메뉴만 허용
+            setMode('menu');
+            return;
+        }
+
         if (directSelector) { onOpenSelector(); return; }
         if ((rowStatus as string) === 'active') { onOpenSelector(); return; }
         if (value && (rowStatus as string) !== 'active') { onOpenSelector(); return; }
@@ -137,11 +143,6 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     };
 
     const handleInteraction = (e: React.MouseEvent) => {
-        if (isReadOnly) {
-            e.preventDefault();
-            return;
-        }
-
         if (window.innerWidth >= 768) {
             executeInteraction(e);
             return;
@@ -159,11 +160,6 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (isReadOnly) {
-            handleGridKeyDown(e, rowIndex, colIndex);
-            return;
-        }
-
         if (e.key === 'Enter') {
             executeInteraction(e, true);
         } else {
@@ -216,7 +212,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
             return "더블탭하여 수정";
         }
         if (isReadOnly) {
-            return "타이머 사용 중에는 처방 목록이 잠금됩니다";
+            return "타이머 사용 중: 텍스트 수정만 가능 (활성화/동기화는 잠금)";
         }
         return value ? "클릭: 선택기 / 우클릭: 빠른 편집" : "클릭하여 처방 선택";
     };
@@ -352,9 +348,21 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                         <div className="p-2 bg-gray-100 dark:bg-slate-600 rounded-full group-hover:bg-white dark:group-hover:bg-slate-500 shadow-sm"><Edit3 className="w-4 h-4 text-gray-500 dark:text-gray-300" /></div>
                         <div><span className="block text-sm font-bold text-gray-800 dark:text-gray-200">단순 텍스트 수정</span><span className="block text-[10px] text-gray-500 dark:text-gray-400">로그만 변경 (배드 미작동)</span></div>
                     </button>
-                    <button onClick={() => { onOpenSelector(); setMode('view'); setTimeout(() => cellRef.current?.focus(), 0); }} className="flex items-center gap-3 p-3 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors text-left group">
-                        <div className="p-2 bg-brand-100 dark:bg-brand-900 rounded-full group-hover:bg-white dark:group-hover:bg-brand-800 shadow-sm"><List className="w-4 h-4 text-brand-600 dark:text-brand-400" /></div>
-                        <div><span className="block text-sm font-bold text-gray-800 dark:text-gray-200">처방 변경 및 동기화</span><span className="block text-[10px] text-gray-500 dark:text-gray-400">프리셋 선택 & 배드 상태 반영</span></div>
+                    <button
+                        onClick={() => {
+                            if (isReadOnly) return;
+                            onOpenSelector();
+                            setMode('view');
+                            setTimeout(() => cellRef.current?.focus(), 0);
+                        }}
+                        disabled={isReadOnly}
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-colors text-left group ${isReadOnly ? 'opacity-40 cursor-not-allowed bg-gray-50 dark:bg-slate-800/40' : 'hover:bg-brand-50 dark:hover:bg-brand-900/20'}`}
+                    >
+                        <div className={`p-2 rounded-full shadow-sm ${isReadOnly ? 'bg-gray-100 dark:bg-slate-700' : 'bg-brand-100 dark:bg-brand-900 group-hover:bg-white dark:group-hover:bg-brand-800'}`}><List className={`w-4 h-4 ${isReadOnly ? 'text-gray-400 dark:text-slate-400' : 'text-brand-600 dark:text-brand-400'}`} /></div>
+                        <div>
+                            <span className="block text-sm font-bold text-gray-800 dark:text-gray-200">처방 변경 및 동기화</span>
+                            <span className="block text-[10px] text-gray-500 dark:text-gray-400">{isReadOnly ? '타이머 사용 중에는 비활성화됨' : '프리셋 선택 & 배드 상태 반영'}</span>
+                        </div>
                     </button>
                 </ContextMenu>
             )}
