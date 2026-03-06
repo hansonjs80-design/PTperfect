@@ -34,6 +34,8 @@ create table if not exists public.beds (
   is_traction boolean default false,
   is_eswt boolean default false,
   is_manual boolean default false,
+  is_injection_completed boolean default false,
+  patient_memo text,
   memos jsonb default '{}'::jsonb,
   updated_at timestamptz default now()
 );
@@ -56,6 +58,9 @@ begin
   if not exists (select 1 from information_schema.columns where table_name = 'beds' and column_name = 'is_injection') then
     alter table public.beds add column is_injection boolean default false;
   end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'beds' and column_name = 'is_injection_completed') then
+    alter table public.beds add column is_injection_completed boolean default false;
+  end if;
   if not exists (select 1 from information_schema.columns where table_name = 'beds' and column_name = 'original_duration') then
     alter table public.beds add column original_duration integer default 0;
   end if;
@@ -64,6 +69,9 @@ begin
   end if;
   if not exists (select 1 from information_schema.columns where table_name = 'beds' and column_name = 'queue') then
     alter table public.beds add column queue jsonb default '[]'::jsonb;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'beds' and column_name = 'patient_memo') then
+    alter table public.beds add column patient_memo text;
   end if;
 end $$;
 
@@ -128,7 +136,7 @@ create table if not exists public.quick_treatments (
   id text primary key,
   name text not null,
   label text not null,
-  duration integer not null, -- minutes
+  duration numeric(6,1) not null, -- minutes (supports 0.5 = 30s)
   color text not null,
   enable_timer boolean not null,
   rank integer default 0,
@@ -140,6 +148,19 @@ do $$
 begin 
   if not exists (select 1 from information_schema.columns where table_name = 'quick_treatments' and column_name = 'rank') then
     alter table public.quick_treatments add column rank integer default 0;
+  end if;
+
+  -- 30초(0.5분) 단위를 저장할 수 있도록 duration 타입을 numeric으로 승격
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_name = 'quick_treatments'
+      and column_name = 'duration'
+      and data_type = 'integer'
+  ) then
+    alter table public.quick_treatments
+      alter column duration type numeric(6,1)
+      using duration::numeric(6,1);
   end if;
 end $$;
 
@@ -185,6 +206,7 @@ create table if not exists public.patient_visits (
   is_traction boolean default false,
   is_eswt boolean default false,
   is_manual boolean default false,
+  is_ion boolean default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -212,6 +234,9 @@ begin
   end if;
   if not exists (select 1 from information_schema.columns where table_name = 'patient_visits' and column_name = 'is_manual') then
     alter table public.patient_visits add column is_manual boolean default false;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'patient_visits' and column_name = 'is_ion') then
+    alter table public.patient_visits add column is_ion boolean default false;
   end if;
 end $$;
 
