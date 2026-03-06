@@ -32,7 +32,7 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
   if (isCompleted) {
     return (
       <div className="p-1 shrink-0 bg-white dark:bg-slate-800" data-keep-swap-selection="true">
-        <div className="flex gap-1.5 h-[32px] sm:h-9 md:h-10">
+        <div className="flex gap-1.5 h-[32px] sm:h-[34px] md:h-[34px]">
           {/* 이전 단계로 복구 버튼 */}
           <FooterButton
             onClick={() => onPrev && onPrev(bed.id)}
@@ -59,7 +59,7 @@ export const BedFooter = memo(({ bed, steps, onNext, onPrev, onClear, trashState
   return (
     <>
       <div className="p-1 shrink-0 bg-white dark:bg-slate-800" data-keep-swap-selection="true">
-        <div className="flex gap-1.5 h-[32px] sm:h-9">
+        <div className="flex gap-1.5 h-[32px] sm:h-[34px] md:h-[34px]">
            {onTrashClick && (
              isSwapControlMode ? (
                <FooterButton
