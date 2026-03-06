@@ -12,6 +12,15 @@ export const mapRowToBed = (row: any): Partial<BedState> => {
     startTime = null;
   }
 
+  // ★ 좀비 카드 방지: 비IDLE인데 처방 정보가 완전히 비어 있으면 IDLE로 정리
+  // - clear 중간 실패/경합으로 status만 남고 preset이 사라진 레코드가 재부활하는 현상 방지
+  const hasPresetSource = !!row.current_preset_id || !!row.custom_preset_json;
+  const hasQueuedSteps = Array.isArray(row.queue) && row.queue.length > 0;
+  if (status && status !== BedStatus.IDLE && !hasPresetSource && !hasQueuedSteps) {
+    status = BedStatus.IDLE;
+    startTime = null;
+  }
+
   // ★ IDLE 상태인데 preset 등 stale 데이터가 남아있으면 강제 정리
   // → DB에서 clearBedInDb의 upsert가 아직 반영되지 않은 중간 상태 방지
   if (status === BedStatus.IDLE) {
@@ -82,7 +91,45 @@ export const mapBedToDbPayload = (updates: Partial<BedState>): any => {
   return payload;
 };
 
+
+const toEpochMsForSync = (iso?: string): number => {
+  if (!iso) return 0;
+  const parsed = Date.parse(iso);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
 export const shouldIgnoreServerUpdate = (localBed: BedState, serverBed: Partial<BedState>): boolean => {
+  // 메모 변경은 디바이스 간 즉시 동기화가 중요하므로 로컬 보호 예외 처리
+  if ('patientMemo' in serverBed && serverBed.patientMemo !== localBed.patientMemo) return false;
+
+  // 상태 변경(특히 처방 시작/종료)은 즉시 반영
+  if (serverBed.status !== undefined && serverBed.status !== localBed.status) return false;
+
+  // 처방/진행 정보 변경은 서버가 더 최신일 때만 즉시 반영.
+  // 로컬 직후 stale 서버 이벤트가 되돌리는 "왔다 갔다" 현상 방지.
+  const hasPrescriptionChange =
+    (serverBed.currentPresetId !== undefined && serverBed.currentPresetId !== localBed.currentPresetId) ||
+    (serverBed.customPreset !== undefined && JSON.stringify(serverBed.customPreset) !== JSON.stringify(localBed.customPreset)) ||
+    (serverBed.currentStepIndex !== undefined && serverBed.currentStepIndex !== localBed.currentStepIndex) ||
+    (serverBed.startTime !== undefined && serverBed.startTime !== localBed.startTime) ||
+    (serverBed.queue !== undefined && JSON.stringify(serverBed.queue) !== JSON.stringify(localBed.queue));
+
+  if (hasPrescriptionChange) {
+    // 로컬에서 방금(특히 스텝 좌/우 이동 직후) 발생한 변경은 잠시 강하게 보호해서
+    // stale 서버 이벤트로 인한 처방 텍스트 "튀는" 현상을 막는다.
+    const LOCAL_PRESCRIPTION_STABILIZE_MS = 1500;
+    if (localBed.lastUpdateTimestamp) {
+      const localAge = Date.now() - localBed.lastUpdateTimestamp;
+      if (localAge < LOCAL_PRESCRIPTION_STABILIZE_MS) return true;
+    }
+
+    const serverUpdatedAtMs = toEpochMsForSync(serverBed.updatedAt);
+    if (localBed.lastUpdateTimestamp && serverUpdatedAtMs > 0 && serverUpdatedAtMs <= localBed.lastUpdateTimestamp) {
+      return true;
+    }
+    return false;
+  }
+
   // IDLE 전환(다른 기기에서 비우기)은 절대 무시하지 않음
   if (serverBed.status === BedStatus.IDLE && localBed.status !== BedStatus.IDLE) return false;
   if (!localBed.lastUpdateTimestamp) return false;
