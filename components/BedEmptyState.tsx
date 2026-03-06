@@ -79,29 +79,29 @@ export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelec
         {timerOnlyChecked ? `탭하면 ${bulkTimerMinutes}분 일반 타이머 시작` : (<><span className="hidden md:inline">클릭하여 시작</span><span className="md:hidden">탭하여 시작</span></>)}
       </span>
 
-      <div className="mt-3 flex flex-col items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-        <label
-          className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700"
-        >
-          <input
-            type="checkbox"
-            checked={timerOnlyChecked}
-            onChange={(e) => handleTimerOnlyToggle(e.target.checked)}
-            className="accent-brand-500"
-          />
-          타이머만 사용
-        </label>
+      <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
+          <label className="flex items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={timerOnlyChecked}
+              onChange={(e) => handleTimerOnlyToggle(e.target.checked)}
+              className="accent-brand-500"
+            />
+            타이머만 사용
+          </label>
 
-        <div className="flex items-center gap-1.5">
-          <input
-            type="number"
-            min={1}
-            value={bulkTimerMinutes}
-            onChange={(e) => handleBulkMinutesChange(e.target.value)}
-            className="w-[62px] px-1.5 py-1 text-[11px] text-center font-bold rounded border border-brand-300 bg-white dark:bg-slate-800 dark:border-slate-600"
-            aria-label="타이머 분 설정"
-          />
-          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-300">분</span>
+          <div className="flex items-center gap-1">
+            <input
+              type="number"
+              min={1}
+              value={bulkTimerMinutes}
+              onChange={(e) => handleBulkMinutesChange(e.target.value)}
+              className="w-[62px] px-1.5 py-1 text-[11px] text-center font-bold rounded border border-brand-300 bg-white dark:bg-slate-800 dark:border-slate-600"
+              aria-label="타이머 분 설정"
+            />
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-300">분</span>
+          </div>
         </div>
       </div>
     </div>
