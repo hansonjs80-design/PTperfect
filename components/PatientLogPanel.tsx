@@ -40,6 +40,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [selectedResult, setSelectedResult] = useState<PatientVisit | null>(null);
   const [draftImport, setDraftImport] = useState<Partial<PatientVisit> | null>(null);
   const [selectionAnchor, setSelectionAnchor] = useState<{ row: number | null; col: number | null }>({ row: null, col: null });
+  const [selectedVisitIdForImport, setSelectedVisitIdForImport] = useState<string | null>(null);
   
   // Performance Optimization: 
   // Extract status logic to prevent re-rendering on every timer tick.
@@ -208,7 +209,9 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     };
 
     const selectedRow = selectionAnchor.row;
-    const targetVisit = selectedRow !== null ? visits[selectedRow] : undefined;
+    const targetVisitByRow = selectedRow !== null ? visits[selectedRow] : undefined;
+    const targetVisitById = selectedVisitIdForImport ? visits.find((v) => v.id === selectedVisitIdForImport) : undefined;
+    const targetVisit = targetVisitById || targetVisitByRow;
 
     if (targetVisit) {
       await updateVisitWithBedSync(targetVisit.id, payload, true);
@@ -217,7 +220,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     }
 
     resetSearchModal();
-  }, [addVisit, draftImport, resetSearchModal, selectionAnchor.row, visits, updateVisitWithBedSync]);
+  }, [addVisit, draftImport, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, updateVisitWithBedSync]);
 
   return (
     <>
@@ -249,7 +252,12 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           onNextStep={nextStep}
           onPrevStep={prevStep}
           onClearBed={clearBed}
-          onSelectionAnchorChange={(row, col) => setSelectionAnchor({ row, col })}
+          onSelectionAnchorChange={(row, col) => {
+            setSelectionAnchor({ row, col });
+            if (row !== null && visits[row]) {
+              setSelectedVisitIdForImport(visits[row].id);
+            }
+          }}
         />
 
         <div className="p-2 border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 shrink-0 text-center">
