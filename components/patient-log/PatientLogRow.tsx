@@ -9,6 +9,7 @@ import { AuthorSelectorCell } from './AuthorSelectorCell';
 import { BedState, PatientVisit, Preset } from '../../types';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { formatBodyPartText } from '../../utils/patientLogUtils';
+import { getBedTimerOnlyPreference, getTimerOnlyPrefChangedEventName } from '../../utils/timerOnlyPreference';
 import { useTreatmentContext } from '../../contexts/TreatmentContext';
 import { formatTime } from '../../utils/bedUtils';
 
@@ -249,15 +250,39 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const cellBorderClass = "border-r border-gray-300 dark:border-slate-600";
   const currentPreset = bed?.customPreset || presets.find(p => p.id === bed?.currentPresetId);
   const currentStep = currentPreset?.steps[bed?.currentStepIndex || 0];
-  const isTreatmentLockedByTimer = rowStatus === 'active' && !!currentStep?.enableTimer;
-  const isTimerCellActive = rowStatus === 'active' && !!currentStep?.enableTimer && typeof remainingTime === 'number';
+  const [isBedTimerOnlyMode, setIsBedTimerOnlyMode] = useState<boolean>(() => {
+    if (!visit?.bed_id) return false;
+    return getBedTimerOnlyPreference(visit.bed_id);
+  });
+
+  useEffect(() => {
+    const syncTimerOnlyMode = () => {
+      if (!visit?.bed_id) {
+        setIsBedTimerOnlyMode(false);
+        return;
+      }
+      setIsBedTimerOnlyMode(getBedTimerOnlyPreference(visit.bed_id));
+    };
+
+    syncTimerOnlyMode();
+    const eventName = getTimerOnlyPrefChangedEventName();
+    window.addEventListener(eventName, syncTimerOnlyMode);
+    window.addEventListener('storage', syncTimerOnlyMode);
+
+    return () => {
+      window.removeEventListener(eventName, syncTimerOnlyMode);
+      window.removeEventListener('storage', syncTimerOnlyMode);
+    };
+  }, [visit?.bed_id]);
+  const isTreatmentLockedByTimer = isBedTimerOnlyMode && rowStatus === 'active' && !!currentStep?.enableTimer;
+  const isTimerCellActive = isBedTimerOnlyMode && rowStatus === 'active' && !!currentStep?.enableTimer && typeof remainingTime === 'number';
   const treatmentDisplayValue = (visit?.treatment_name && visit.treatment_name.trim() !== '')
     ? visit.treatment_name
     : '';
   const timerText = isTimerCellActive
     ? `${timerStatus === 'overtime' ? '+' : ''}${formatTime(remainingTime || 0)}`
     : '';
-  const canStartFromTimerCell = !isDraft && !!visit?.bed_id && hasTreatment && rowStatus !== 'active';
+  const canStartFromTimerCell = isBedTimerOnlyMode && !isDraft && !!visit?.bed_id && hasTreatment && rowStatus !== 'active';
 
   return (
     <tr className={rowClasses}>
