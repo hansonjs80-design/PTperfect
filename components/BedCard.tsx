@@ -297,7 +297,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
         {/* Single Memo Area */}
         {bed.status !== BedStatus.IDLE && (
           <div
-            className="w-full h-[30px] sm:h-[34px] md:h-[30px] bg-white/80 dark:bg-slate-800/80 border-t border-black/5 dark:border-white/5 flex items-center justify-center px-2 cursor-pointer transition-colors hover:bg-white dark:hover:bg-slate-700"
+            className="w-full h-[30px] sm:h-[36px] md:h-[34px] bg-white/80 dark:bg-slate-800/80 border-t border-black/5 dark:border-white/5 flex items-center justify-center px-2 cursor-pointer transition-colors hover:bg-white dark:hover:bg-slate-700"
             onClick={handleMemoInteraction}
             onDoubleClick={handleMemoDoubleClick}
           >
