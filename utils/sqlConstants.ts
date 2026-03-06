@@ -206,6 +206,7 @@ create table if not exists public.patient_visits (
   is_traction boolean default false,
   is_eswt boolean default false,
   is_manual boolean default false,
+  is_ion boolean default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -233,6 +234,9 @@ begin
   end if;
   if not exists (select 1 from information_schema.columns where table_name = 'patient_visits' and column_name = 'is_manual') then
     alter table public.patient_visits add column is_manual boolean default false;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'patient_visits' and column_name = 'is_ion') then
+    alter table public.patient_visits add column is_ion boolean default false;
   end if;
 end $$;
 

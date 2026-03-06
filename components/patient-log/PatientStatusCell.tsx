@@ -96,6 +96,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     visit.is_manual ||
     visit.is_eswt ||
     visit.is_traction ||
+    visit.is_ion ||
     !!visit.memo
   );
 

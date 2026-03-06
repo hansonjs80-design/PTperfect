@@ -71,6 +71,7 @@ export interface PatientVisit {
   is_traction?: boolean;
   is_eswt?: boolean;
   is_manual?: boolean;
+  is_ion?: boolean;
 }
 
 export interface AppState {

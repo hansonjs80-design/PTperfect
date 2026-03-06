@@ -203,6 +203,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       is_traction: draftImport.is_traction || false,
       is_eswt: draftImport.is_eswt || false,
       is_manual: draftImport.is_manual || false,
+      is_ion: draftImport.is_ion || false,
       is_injection_completed: draftImport.is_injection_completed || false,
     };
 
