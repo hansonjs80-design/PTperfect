@@ -294,6 +294,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
         if (inputTarget) {
           inputTarget.focus();
+
+          // IME(한글) 조합 중에는 키 이벤트를 재주입하면 자모 분리(ㅈㅜ)가 발생할 수 있어 차단.
+          if (e.nativeEvent.isComposing || e.key === 'Process') {
+            return;
+          }
+
           const replay = new KeyboardEvent('keydown', { key: e.key, bubbles: true, cancelable: true });
           inputTarget.dispatchEvent(replay);
           e.preventDefault();
