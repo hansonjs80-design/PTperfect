@@ -34,27 +34,34 @@ export const MainLayout: React.FC = () => {
     else document.documentElement.classList.remove('dark');
   }, [isDarkMode]);
 
-  // Global Keyboard Shortcut (Ctrl + Z)
+  // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-        const activeEl = document.activeElement;
-        const isTyping = activeEl && (
-          activeEl.tagName === 'INPUT' || 
-          activeEl.tagName === 'TEXTAREA' || 
-          (activeEl as HTMLElement).isContentEditable
-        );
+      const activeEl = document.activeElement;
+      const isTyping = !!activeEl && (
+        activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        (activeEl as HTMLElement).isContentEditable
+      );
 
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         if (!isTyping && canUndo) {
           e.preventDefault();
           undo();
         }
+        return;
+      }
+
+      const isDesktopPanelToggle = e.key === 'Tab' && (e.altKey || e.metaKey);
+      if (isDesktopPanelToggle && !isTyping) {
+        e.preventDefault();
+        toggleLog();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, canUndo]);
+  }, [undo, canUndo, toggleLog]);
 
   const handleCloseMenu = useCallback(() => setMenuOpen(false), []);
 
