@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { BedStatus } from '../types';
+import { useStepSwapSelection } from './useStepSwapSelection';
 
 export const useBedCardActions = (
   bedStatus: BedStatus,
@@ -9,17 +9,23 @@ export const useBedCardActions = (
   swapSteps: (id: number, idx1: number, idx2: number) => void
 ) => {
   const [trashState, setTrashState] = useState<'idle' | 'confirm' | 'deleting'>('idle');
-  const [swapSourceIndex, setSwapSourceIndex] = useState<number | null>(null);
+  const {
+    swapSourceStepId,
+    getSelectedSwapIndex,
+    handleSwapRequest,
+    handleMoveSelectedStep,
+    clearSwapSelection,
+  } = useStepSwapSelection(bedId, swapSteps);
 
   useEffect(() => {
     if (bedStatus === BedStatus.IDLE) {
       setTrashState('idle');
-      setSwapSourceIndex(null);
+      clearSwapSelection();
     }
-  }, [bedStatus]);
+  }, [bedStatus, clearSwapSelection]);
 
-  const handleTrashClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleTrashClick = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (trashState === 'idle') {
       setTrashState('confirm');
       setTimeout(() => setTrashState(prev => prev === 'confirm' ? 'idle' : prev), 3000);
@@ -31,28 +37,13 @@ export const useBedCardActions = (
     }
   }, [trashState, bedId, clearBed]);
 
-  const handleSwapRequest = useCallback((targetBedId: number, idx: number) => {
-    if (swapSourceIndex === null) {
-      // First click: Select source
-      setSwapSourceIndex(idx);
-    } else {
-      // Second click: Execute swap or cancel if same
-      if (swapSourceIndex !== idx) {
-        swapSteps(targetBedId, swapSourceIndex, idx);
-      }
-      setSwapSourceIndex(null);
-    }
-  }, [swapSourceIndex, swapSteps]);
-
-  const cancelSwap = useCallback(() => {
-    setSwapSourceIndex(null);
-  }, []);
-
   return {
     trashState,
     handleTrashClick,
-    swapSourceIndex,
+    swapSourceStepId,
+    getSelectedSwapIndex,
     handleSwapRequest,
-    cancelSwap
+    handleMoveSelectedStep,
+    cancelSwap: clearSwapSelection,
   };
 };
