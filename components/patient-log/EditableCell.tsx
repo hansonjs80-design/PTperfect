@@ -49,7 +49,6 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     setLocalValue(value === null ? '' : String(value));
   }, [value, rowIndex]);
 
-
   const commitValue = (nextValue: string, navDirection?: 'down' | 'right' | 'left') => {
     if (nextValue !== String(value || '') || navDirection) {
       onCommit(nextValue, skipSyncRef.current, navDirection);
@@ -298,7 +297,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
           autoFocus={mode === 'edit'}
           onClick={handleSingleClick}
           onDoubleClick={handleDoubleClick}
-          readOnly={!directEdit ? !directEdit : false}
+          readOnly={directEdit ? !isDirectEditing : !directEdit}
           className={`
             w-full h-full px-2 py-1 flex items-center border-none outline-none
             ${mode === 'edit'
