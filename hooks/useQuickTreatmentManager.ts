@@ -25,7 +25,7 @@ export const useQuickTreatmentManager = () => {
             id: row.id,
             name: row.name,
             label: row.label,
-            duration: row.duration,
+            duration: Number(row.duration),
             color: row.color,
             enableTimer: row.enable_timer,
             rank: row.rank
@@ -81,7 +81,7 @@ export const useQuickTreatmentManager = () => {
             id: p.id,
             name: p.name,
             label: p.label,
-            duration: p.duration,
+            duration: Number(p.duration),
             color: p.color,
             enable_timer: p.enableTimer,
             rank: idx,
