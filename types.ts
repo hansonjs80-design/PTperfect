@@ -60,6 +60,7 @@ export interface PatientVisit {
   body_part: string;
   treatment_name: string;
   memo?: string; // Added memo field
+  special_note?: string;
   author: string;
   created_at?: string;
   updated_at?: string;
@@ -70,6 +71,7 @@ export interface PatientVisit {
   is_traction?: boolean;
   is_eswt?: boolean;
   is_manual?: boolean;
+  is_ion?: boolean;
 }
 
 export interface AppState {
