@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, memo } from 'react';
 import { Edit3, RefreshCw } from 'lucide-react';
 import { ContextMenu } from '../common/ContextMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
-import { flushSync } from 'react-dom';
 
 interface EditableCellProps {
   value: string | number | null;
@@ -42,7 +41,6 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
 
   const skipSyncRef = useRef(false);
   const navIntentRef = useRef<'down' | 'right' | 'left' | null>(null);
-  const pendingInputRef = useRef<string | null>(null);
   const isDirectEditing = directEdit && mode === 'edit';
 
   const { handleGridKeyDown } = useGridNavigation(10);
@@ -51,27 +49,6 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     setLocalValue(value === null ? '' : String(value));
   }, [value, rowIndex]);
 
-  useEffect(() => {
-    if (mode !== 'edit') return;
-
-    const input = inputRef.current;
-    const pendingInput = pendingInputRef.current;
-
-    if (!input || pendingInput === null) return;
-
-    const start = input.selectionStart ?? input.value.length;
-    const end = input.selectionEnd ?? input.value.length;
-    const next = `${input.value.slice(0, start)}${pendingInput}${input.value.slice(end)}`;
-
-    setLocalValue(next);
-
-    const nextCaretPosition = start + pendingInput.length;
-    requestAnimationFrame(() => {
-      inputRef.current?.setSelectionRange(nextCaretPosition, nextCaretPosition);
-    });
-
-    pendingInputRef.current = null;
-  }, [mode]);
 
   const commitValue = (nextValue: string, navDirection?: 'down' | 'right' | 'left') => {
     if (nextValue !== String(value || '') || navDirection) {
@@ -212,27 +189,12 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
 
     if (directEdit && !isDirectEditing && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      if (isIMEKey) {
+      const isPrintableKey = e.key.length === 1 || isIMEKey;
+
+      if (isPrintableKey) {
         skipSyncRef.current = !syncOnDirectEdit;
         navIntentRef.current = null;
-        flushSync(() => {
-          setMode('edit');
-        });
-        setTimeout(() => {
-          inputRef.current?.focus();
-        }, 0);
-        return;
-      }
-
-      if (e.key.length === 1) {
-        e.preventDefault();
-        skipSyncRef.current = !syncOnDirectEdit;
-        navIntentRef.current = null;
-        pendingInputRef.current = forceUpperCase ? e.key.toUpperCase() : e.key;
-
-        flushSync(() => {
-          setMode('edit');
-        });
+        setMode('edit');
 
         setTimeout(() => {
           inputRef.current?.focus();
@@ -336,7 +298,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
           autoFocus={mode === 'edit'}
           onClick={handleSingleClick}
           onDoubleClick={handleDoubleClick}
-          readOnly={directEdit ? !isDirectEditing : !directEdit}
+          readOnly={!directEdit ? !directEdit : false}
           className={`
             w-full h-full px-2 py-1 flex items-center border-none outline-none
             ${mode === 'edit'
