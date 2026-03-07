@@ -260,8 +260,8 @@ export const BedCard: React.FC<BedCardProps> = memo(({
       />
 
       {/* Main Content Area */}
-      <div className={`${bed.status === BedStatus.IDLE ? 'flex-1' : 'flex-none sm:flex-1'} flex flex-col w-full min-h-0 relative bg-white/40 dark:bg-slate-800/20 backdrop-blur-xs`}>
-        <div className={`${bed.status === BedStatus.IDLE ? 'flex-1' : 'flex-none h-auto sm:flex-1 sm:h-full sm:landscape:flex-none sm:landscape:h-auto lg:landscape:flex-1 lg:landscape:h-full'} flex flex-row w-full min-h-0`}>
+      <div className="flex-none sm:flex-1 flex flex-col w-full min-h-0 relative bg-white/40 dark:bg-slate-800/20 backdrop-blur-xs">
+        <div className="flex-none h-auto sm:flex-1 sm:h-full sm:landscape:flex-none sm:landscape:h-auto lg:landscape:flex-1 lg:landscape:h-full flex flex-row w-full min-h-0">
           {bed.status === BedStatus.IDLE ? (
             <BedEmptyState
               bedId={bed.id}
