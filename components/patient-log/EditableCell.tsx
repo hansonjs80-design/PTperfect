@@ -42,6 +42,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
 
   const skipSyncRef = useRef(false);
   const navIntentRef = useRef<'down' | 'right' | 'left' | null>(null);
+  const pendingInputRef = useRef<string | null>(null);
   const isDirectEditing = directEdit && mode === 'edit';
 
   const { handleGridKeyDown } = useGridNavigation(10);
@@ -49,6 +50,28 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   useEffect(() => {
     setLocalValue(value === null ? '' : String(value));
   }, [value, rowIndex]);
+
+  useEffect(() => {
+    if (mode !== 'edit') return;
+
+    const input = inputRef.current;
+    const pendingInput = pendingInputRef.current;
+
+    if (!input || pendingInput === null) return;
+
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+    const next = `${input.value.slice(0, start)}${pendingInput}${input.value.slice(end)}`;
+
+    setLocalValue(next);
+
+    const nextCaretPosition = start + pendingInput.length;
+    requestAnimationFrame(() => {
+      inputRef.current?.setSelectionRange(nextCaretPosition, nextCaretPosition);
+    });
+
+    pendingInputRef.current = null;
+  }, [mode]);
 
   const commitValue = (nextValue: string, navDirection?: 'down' | 'right' | 'left') => {
     if (nextValue !== String(value || '') || navDirection) {
@@ -81,6 +104,14 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
       e.stopPropagation();
       e.preventDefault();
       setMode('edit');
+      setTimeout(() => {
+        const input = inputRef.current;
+        if (!input) return;
+
+        input.focus();
+        const end = input.value.length;
+        input.setSelectionRange(end, end);
+      }, 0);
       return;
     }
 
@@ -180,23 +211,28 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
 
-    if (directEdit && !isDirectEditing && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey) {
-      if (e.key.length === 1) {
+    if (directEdit && !isDirectEditing && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (isIMEKey) {
         skipSyncRef.current = !syncOnDirectEdit;
         navIntentRef.current = null;
         flushSync(() => {
           setMode('edit');
         });
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
+        return;
+      }
 
-        if (forceUpperCase && inputRef.current) {
-          const input = inputRef.current;
-          const start = input.selectionStart ?? input.value.length;
-          const end = input.selectionEnd ?? input.value.length;
-          const firstChar = e.key.toUpperCase();
-          e.preventDefault();
-          const next = `${input.value.slice(0, start)}${firstChar}${input.value.slice(end)}`;
-          setLocalValue(next);
-        }
+      if (e.key.length === 1) {
+        e.preventDefault();
+        skipSyncRef.current = !syncOnDirectEdit;
+        navIntentRef.current = null;
+        pendingInputRef.current = forceUpperCase ? e.key.toUpperCase() : e.key;
+
+        flushSync(() => {
+          setMode('edit');
+        });
 
         setTimeout(() => {
           inputRef.current?.focus();
