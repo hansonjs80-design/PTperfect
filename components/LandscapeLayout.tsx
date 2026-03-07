@@ -7,7 +7,7 @@ import { useTreatmentContext } from '../contexts/TreatmentContext';
 
 export const LandscapeLayout: React.FC<BedLayoutProps> = memo(({ beds, presets }) => {
   const { layoutMode } = useTreatmentContext();
-  const getBed = (id: number) => beds.find(b => b.id === id) || beds[0];
+  const getBed = (id: number) => beds.find(b => b.id === id);
 
   const gridIds = useMemo(() => {
     if (layoutMode === 'alt') return LANDSCAPE_GRID_IDS_ALT;
@@ -24,6 +24,10 @@ export const LandscapeLayout: React.FC<BedLayoutProps> = memo(({ beds, presets }
           items.push(<LandscapeEmptyCell key={`${keyPrefix}-empty`} />);
         } else {
           const bed = getBed(id);
+          if (!bed) {
+            items.push(<LandscapeEmptyCell key={`${keyPrefix}-missing`} />);
+            return;
+          }
           items.push(<LandscapeBedCell key={id} bed={bed} presets={presets} />);
         }
       };
@@ -46,21 +50,16 @@ export const LandscapeLayout: React.FC<BedLayoutProps> = memo(({ beds, presets }
     // Changed: Removed overflow-y-auto to prevent double scrollbars with MainLayout.
     // Kept overflow-x-auto for horizontal scrolling if needed.
     // Added pb-[120px] to ensure bottom content isn't hidden.
-    <div className="block w-full h-full overflow-x-auto custom-scrollbar pb-0 px-0 lg:flex lg:items-center lg:min-h-full">
+    <div className="block w-full h-full overflow-x-auto overflow-y-hidden custom-scrollbar pb-0 px-0 lg:flex lg:items-start lg:min-h-full lg:pt-1">
       <div className="
-        grid content-start lg:content-center
-        gap-y-[5px] gap-x-[5px] sm:gap-y-[5px] sm:gap-x-[5px] md:gap-y-[20px]
-        lg:gap-y-[29px] lg:gap-x-[7px]
+        grid h-full content-start lg:content-stretch
+        auto-rows-fr
+        gap-y-[5px] gap-x-[5px] sm:gap-y-[5px] sm:gap-x-[5px] md:gap-y-[12px]
+        lg:gap-y-[14px] lg:gap-x-[7px]
         grid-cols-4 lg:grid-cols-[1fr_1fr_0px_1fr_1fr]
-        min-w-[170vw] px-2 pl-[28px] pt-[4px]
+        min-w-[170vw] px-2 pl-[18px] pt-[4px]
         sm:min-w-[120vw] sm:px-0
-        lg:min-w-0 lg:w-full lg:px-1
-        
-        /* Reset translations for landscape to avoid shifting */
-        translate-x-[25px] translate-y-[10px] md:landscape:translate-y-0 lg:translate-x-0 lg:translate-y-0
-        
-        /* Reset margins. Use pt-2 instead of pt-0 to prevent clipping of top shadows/borders */
-        md:-mt-[15px] md:landscape:mt-0 md:landscape:pt-2 lg:mt-0 lg:pt-2
+        lg:min-w-0 lg:w-full lg:px-1 lg:pt-1
       ">
         {gridItems}
       </div>
