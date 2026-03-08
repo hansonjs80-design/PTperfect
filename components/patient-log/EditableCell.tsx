@@ -79,6 +79,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     if (directEdit) {
       e.stopPropagation();
       e.preventDefault();
+      skipSyncRef.current = !syncOnDirectEdit;
       setMode('edit');
       setTimeout(() => {
         const input = inputRef.current;
@@ -223,6 +224,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
 
     if (e.key === 'Enter' && directEdit && !isDirectEditing) {
       e.preventDefault();
+      skipSyncRef.current = !syncOnDirectEdit;
       setMode('edit');
       return;
     }

@@ -83,8 +83,8 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     if (isDraft && onCreate) {
       await onCreate({ [key]: newVal });
     } else if (visit) {
-      const skipSync = rowStatus !== 'active';
-      onUpdate(visit.id, { [key]: newVal }, skipSync);
+      // 상태 아이콘 셀도 로그 전용으로 동작 (배드 활성/타이머 비영향)
+      onUpdate(visit.id, { [key]: newVal }, true);
     }
   };
 

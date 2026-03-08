@@ -115,12 +115,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
   };
 
-  const handleChange = async (field: keyof PatientVisit, value: string, skipSync: boolean, colIndex: number, navDirection?: 'down' | 'right' | 'left') => {
+  const handleChange = async (field: keyof PatientVisit, value: string, _skipSync: boolean, colIndex: number, navDirection?: 'down' | 'right' | 'left') => {
     if (isDraft && onCreate) {
       await onCreate({ [field]: value }, colIndex, navDirection);
     } else if (!isDraft && visit && onUpdate) {
-      const shouldKeepLogOnly = field === 'memo' && rowStatus !== 'active';
-      onUpdate(visit.id, { [field]: value }, shouldKeepLogOnly || skipSync);
+      // 배드번호/처방목록 외 환자로그 텍스트 셀은 항상 로그만 수정한다.
+      // (활성 배드/타이머 상태에는 절대 영향 주지 않음)
+      onUpdate(visit.id, { [field]: value }, true);
     }
   };
 
