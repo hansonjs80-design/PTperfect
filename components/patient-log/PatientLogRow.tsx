@@ -50,7 +50,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   onCreate,
   onSelectLog,
   onMovePatient,
-  onEditActive,
   activeBedIds = [],
   activeStepColor,
   activeStepBgColor,
@@ -142,12 +141,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     const hasBed = typeof bedId === 'number';
     const hasTreatment = Boolean(visit?.treatment_name?.trim());
 
-    if (hasBed && onEditActive && visit && (hasTreatment || rowStatus === 'active')) {
-      // 이미 처방이 입력된 행은 배드 카드와 동일한 편집 오버레이로 진입
-      onEditActive(bedId);
-      return;
-    }
-
     if (isDraft && onCreate) {
       const newId = await onCreate({}, 3);
       if (onSelectLog) onSelectLog(newId);
@@ -159,6 +152,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         onSelectLog(visit.id, bedId);
       }
       else {
+        // 처방이 이미 있는 행(활성/비활성 포함)은 로그 텍스트만 교체한다.
+        // 활성 배드 타이머에는 영향이 없도록 bedId를 넘기지 않는다.
         onSelectLog(visit.id, null);
       }
     }
