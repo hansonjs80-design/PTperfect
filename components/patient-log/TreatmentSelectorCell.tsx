@@ -350,18 +350,16 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     </button>
                     <button
                         onClick={() => {
-                            if (isReadOnly) return;
                             onOpenSelector();
                             setMode('view');
                             setTimeout(() => cellRef.current?.focus(), 0);
                         }}
-                        disabled={isReadOnly}
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-colors text-left group ${isReadOnly ? 'opacity-40 cursor-not-allowed bg-gray-50 dark:bg-slate-800/40' : 'hover:bg-brand-50 dark:hover:bg-brand-900/20'}`}
+                        className="flex items-center gap-3 p-3 rounded-lg transition-colors text-left group hover:bg-brand-50 dark:hover:bg-brand-900/20"
                     >
-                        <div className={`p-2 rounded-full shadow-sm ${isReadOnly ? 'bg-gray-100 dark:bg-slate-700' : 'bg-brand-100 dark:bg-brand-900 group-hover:bg-white dark:group-hover:bg-brand-800'}`}><List className={`w-4 h-4 ${isReadOnly ? 'text-gray-400 dark:text-slate-400' : 'text-brand-600 dark:text-brand-400'}`} /></div>
+                        <div className="p-2 rounded-full shadow-sm bg-brand-100 dark:bg-brand-900 group-hover:bg-white dark:group-hover:bg-brand-800"><List className="w-4 h-4 text-brand-600 dark:text-brand-400" /></div>
                         <div>
-                            <span className="block text-sm font-bold text-gray-800 dark:text-gray-200">처방 변경 및 동기화</span>
-                            <span className="block text-[10px] text-gray-500 dark:text-gray-400">{isReadOnly ? '타이머 사용 중에는 비활성화됨' : '프리셋 선택 & 배드 상태 반영'}</span>
+                            <span className="block text-sm font-bold text-gray-800 dark:text-gray-200">세트 처방으로 변경</span>
+                            <span className="block text-[10px] text-gray-500 dark:text-gray-400">활성 타이머 영향 없이 처방 목록 텍스트만 교체</span>
                         </div>
                     </button>
                 </ContextMenu>
