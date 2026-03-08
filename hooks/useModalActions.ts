@@ -27,6 +27,13 @@ export const useModalActions = (
     is_manual: options?.isManual,
   });
 
+  const withRuntimeBedId = useCallback((updates: Record<string, any>) => {
+    if (selectingBedId) {
+      return { ...updates, bed_id: selectingBedId };
+    }
+    return updates;
+  }, [selectingBedId]);
+
   const closeModal = useCallback(() => {
     // 1. Reset UI State immediately
     setSelectingLogId(null);
@@ -44,10 +51,10 @@ export const useModalActions = (
     if (selectingLogId) {
       const preset = presets.find(p => p.id === presetId);
       if (preset) {
-        const updates = {
+        const updates = withRuntimeBedId({
             treatment_name: generateTreatmentString(preset.steps),
             ...mapOptionsToFlags(options)
-        };
+        });
         // If selectingBedId is present, we are assigning to a bed -> skipBedSync = false
         // If not, we are just editing the log -> skipBedSync = true
         updateVisitWithBedSync(selectingLogId, updates, !selectingBedId);
@@ -57,51 +64,51 @@ export const useModalActions = (
       selectPreset(bedId, presetId, options);
       closeModal();
     }
-  }, [selectingLogId, selectingBedId, presets, updateVisitWithBedSync, selectPreset, closeModal]);
+  }, [selectingLogId, selectingBedId, presets, updateVisitWithBedSync, selectPreset, closeModal, withRuntimeBedId]);
 
   const handleCustomStart = useCallback((bedId: number, name: string, steps: TreatmentStep[], options: any) => {
     if (selectingLogId) {
-       const updates = {
+       const updates = withRuntimeBedId({
          treatment_name: generateTreatmentString(steps),
          ...mapOptionsToFlags(options)
-       };
+       });
        updateVisitWithBedSync(selectingLogId, updates, !selectingBedId);
        closeModal();
     } else {
        startCustomPreset(bedId, name, steps, options);
        closeModal();
     }
-  }, [selectingLogId, selectingBedId, updateVisitWithBedSync, startCustomPreset, closeModal]);
+  }, [selectingLogId, selectingBedId, updateVisitWithBedSync, startCustomPreset, closeModal, withRuntimeBedId]);
 
   const handleQuickStart = useCallback((bedId: number, template: QuickTreatment, options: any) => {
     if (selectingLogId) {
-      const updates = {
+      const updates = withRuntimeBedId({
         treatment_name: template.label || template.name,
         ...mapOptionsToFlags(options)
-      };
+      });
       updateVisitWithBedSync(selectingLogId, updates, !selectingBedId);
       closeModal();
     } else {
       startQuickTreatment(bedId, template, options);
       closeModal();
     }
-  }, [selectingLogId, selectingBedId, updateVisitWithBedSync, startQuickTreatment, closeModal]);
+  }, [selectingLogId, selectingBedId, updateVisitWithBedSync, startQuickTreatment, closeModal, withRuntimeBedId]);
   
   const handleStartTraction = useCallback((bedId: number, duration: number, options: any) => {
     if (selectingLogId) {
        const { is_traction: _ignored, ...otherFlags } = mapOptionsToFlags(options);
-       const updates = {
+       const updates = withRuntimeBedId({
          treatment_name: '견인',
          ...otherFlags,
          is_traction: true
-       };
+       });
        updateVisitWithBedSync(selectingLogId, updates, !selectingBedId);
        closeModal();
     } else {
        startTraction(bedId, duration, options);
        closeModal();
     }
-  }, [selectingLogId, selectingBedId, updateVisitWithBedSync, startTraction, closeModal]);
+  }, [selectingLogId, selectingBedId, updateVisitWithBedSync, startTraction, closeModal, withRuntimeBedId]);
   
   const handleClearLog = useCallback(() => {
     if (selectingLogId) {

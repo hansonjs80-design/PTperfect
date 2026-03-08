@@ -12,7 +12,7 @@ export const BedLayoutContainer: React.FC<BedLayoutProps> = (props) => {
   const isLandscape = useMediaQuery('(orientation: landscape)');
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto min-h-full px-0 sm:px-4 md:min-h-0 md:flex-1 md:flex md:flex-col">
+    <div className="w-full max-w-[1280px] mx-auto min-h-full px-0 sm:px-4 md:min-h-0 md:flex-1 md:flex md:flex-col">
       <Suspense fallback={
         <div className="w-full h-full flex items-center justify-center min-h-[50vh]">
           <Loader2 className="w-10 h-10 text-brand-500/50 animate-spin" />
