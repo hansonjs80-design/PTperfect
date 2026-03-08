@@ -64,7 +64,7 @@ export const LandscapeEmptyCell: React.FC = memo(() => {
   };
 
   return (
-    <div className="w-full h-full flex gap-1.5 lg:gap-2 p-1 lg:p-0 min-h-[120px] sm:min-h-full">
+    <div className="w-full h-full lg:h-[70%] lg:self-start flex gap-1.5 lg:gap-2 p-1 lg:p-0 min-h-[120px] sm:min-h-full lg:min-h-0">
       {/* Undo / Redo Group */}
       <div className="flex-1 flex flex-col gap-1.5 h-full">
         {/* Undo Button */}
