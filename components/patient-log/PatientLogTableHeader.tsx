@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface PatientLogTableHeaderProps {
@@ -6,7 +5,7 @@ interface PatientLogTableHeaderProps {
   isResizing?: boolean;
 }
 
-const RESIZABLE_COLUMNS = new Set([0, 1, 2, 4, 5, 6, 7, 8]);
+const RESIZABLE_COLUMNS = new Set([0, 1, 2, 4, 5, 6, 7]);
 
 const thBase =
   'py-3 px-1 text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider text-center border-r border-slate-300 dark:border-slate-600 last:border-r-0';
@@ -83,21 +82,17 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
           메모
           {handle(4)}
         </th>
-        <th className={`${thBase} w-[70px] md:w-[170px] xl:w-[130px] relative`}>
-          특이사항
-          {handle(5)}
-        </th>
         <th className={`${thBase} w-[82px] md:w-[110px] xl:w-[100px] relative`}>
           타이머
-          {handle(6)}
+          {handle(5)}
         </th>
         <th className={`${thBase} w-[38px] md:w-[70px] xl:w-[60px] relative`}>
           상태
-          {handle(7)}
+          {handle(6)}
         </th>
         <th className={`${thBase} w-[30px] md:w-[70px] xl:w-[50px] relative`}>
           작성
-          {handle(8)}
+          {handle(7)}
         </th>
         <th className="py-3 px-1 w-[20px] md:w-[24px]"></th>
       </tr>

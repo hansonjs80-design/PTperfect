@@ -10,7 +10,7 @@ import { useColumnResize, FLEX_COL_INDEX } from '../../hooks/useColumnResize';
 type GridCellPos = { row: number; col: number };
 type GridSelection = { start: GridCellPos; end: GridCellPos } | null;
 
-const SELECTABLE_COLS = new Set([1, 2, 3, 4, 5, 8]);
+const SELECTABLE_COLS = new Set([1, 2, 3, 4, 7]);
 
 const normalizeSelectionBounds = (selection: GridSelection) => {
   if (!selection) return null;
@@ -161,8 +161,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       case 2: return visit.body_part || '';
       case 3: return visit.treatment_name || '';
       case 4: return visit.memo || '';
-      case 5: return visit.special_note || '';
-      case 8: return visit.author || '';
+      case 7: return visit.author || '';
       default: return '';
     }
   }, []);
@@ -181,10 +180,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       case 4:
         onUpdate(visit.id, { memo: text }, true);
         return;
-      case 5:
-        onUpdate(visit.id, { special_note: text }, true);
-        return;
-      case 8:
+      case 7:
         onUpdate(visit.id, { author: text }, true);
         return;
       default:
@@ -492,7 +488,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
           {/* +10행 추가 버튼 */}
           <tr>
-            <td colSpan={10} className="p-0 border-b border-gray-300 dark:border-slate-600">
+            <td colSpan={9} className="p-0 border-b border-gray-300 dark:border-slate-600">
               <button
                 onClick={() => setTotalRows(prev => prev + 10)}
                 className="w-full py-2.5 flex items-center justify-center gap-1.5 text-xs font-bold text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:text-brand-400 dark:hover:bg-brand-900/20 transition-colors"

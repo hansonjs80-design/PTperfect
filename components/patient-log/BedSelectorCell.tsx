@@ -52,7 +52,7 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
   const numberBufferRef = useRef('');
   const numberBufferTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { handleGridKeyDown } = useGridNavigation(10);
+  const { handleGridKeyDown } = useGridNavigation(9);
 
   useEffect(() => {
     if ((mode === 'edit_log' || mode === 'edit_assign') && inputRef.current) {
