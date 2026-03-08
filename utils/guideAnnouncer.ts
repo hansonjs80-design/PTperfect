@@ -1,5 +1,24 @@
 import { queueGuideSpeech } from './alarmSpeech';
 
+const GUIDE_SPEECH_REPEAT_KEY = 'guide_speech_repeat_count';
+const DEFAULT_GUIDE_SPEECH_REPEAT = 2;
+
+export const getGuideSpeechRepeatCount = (): number => {
+  if (typeof window === 'undefined') return DEFAULT_GUIDE_SPEECH_REPEAT;
+
+  const raw = window.localStorage.getItem(GUIDE_SPEECH_REPEAT_KEY);
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return DEFAULT_GUIDE_SPEECH_REPEAT;
+
+  return Math.min(5, Math.max(1, Math.floor(parsed)));
+};
+
+export const setGuideSpeechRepeatCount = (count: number) => {
+  if (typeof window === 'undefined') return;
+  const normalized = Math.min(5, Math.max(1, Math.floor(count)));
+  window.localStorage.setItem(GUIDE_SPEECH_REPEAT_KEY, String(normalized));
+};
+
 
 const KOREAN_DIGITS = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
 const KOREAN_UNITS = ['', '십', '백', '천'];
@@ -51,8 +70,7 @@ export const createGuideMessage = ({ bedId, treatmentName, nextTreatmentName }: 
 
 export const announceGuide = (params: GuideMessageParams) => {
   const message = createGuideMessage(params);
-  // 모바일/태블릿/데스크탑 공통으로 종료 안내 음성을 2회 반복한다.
-  queueGuideSpeech(message, 2);
+  queueGuideSpeech(message, getGuideSpeechRepeatCount());
 };
 
 
