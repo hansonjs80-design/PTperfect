@@ -21,7 +21,9 @@ export const usePatientBedSync = (
   const isTodayMode = useCallback(() => currentDate === getLocalISODate(), [currentDate, getLocalISODate]);
 
   const getVisitTimestamp = useCallback((visit: PatientVisit) => {
-    return new Date(visit.updated_at || visit.created_at || 0).getTime();
+    // Use created_at-first ordering so name/body/memo edits do not change
+    // which row is considered the active/latest source for a bed.
+    return new Date(visit.created_at || visit.updated_at || 0).getTime();
   }, []);
 
   const getLatestVisitForBed = useCallback((bedId: number) => {

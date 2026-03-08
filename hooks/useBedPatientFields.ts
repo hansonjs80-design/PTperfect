@@ -8,7 +8,9 @@ const getLocalISODate = (): string => {
 };
 
 const getVisitTimestamp = (visit: PatientVisit) => {
-  return new Date(visit.updated_at || visit.created_at || 0).getTime();
+  // Row activation/latest selection must follow log order (created_at),
+  // not arbitrary text edits that only bump updated_at.
+  return new Date(visit.created_at || visit.updated_at || 0).getTime();
 };
 
 export const useBedPatientFields = (beds: BedState[], visits: PatientVisit[]) => {
