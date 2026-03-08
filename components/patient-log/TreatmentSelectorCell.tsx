@@ -147,7 +147,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     };
 
     const handleInteraction = (e: React.MouseEvent) => {
-        if (window.innerWidth >= 768) {
+        if (window.innerWidth >= 1024) {
             executeInteraction(e);
             return;
         }
@@ -158,7 +158,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         if (timeDiff < 350 && timeDiff > 0) {
             const isTouchLike = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 1024;
 
-            if (isTouchLike && hasTreatment) {
+            if (isTouchLike && hasTreatment && !isReadOnly) {
                 e.preventDefault();
                 e.stopPropagation();
                 openQuickEditAt(e.clientX, e.clientY);
@@ -221,7 +221,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     };
 
     const getTitle = () => {
-        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
             return "더블탭하여 수정";
         }
         if (isReadOnly) {
