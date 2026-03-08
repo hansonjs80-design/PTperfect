@@ -3,16 +3,24 @@ import React, { useState, useEffect } from 'react';
 import { Volume2, Play, Bell, AlertTriangle, Zap, CheckCircle2, Mic } from 'lucide-react';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { playAlarmPattern } from '../utils/alarm';
+import { getGuideSpeechRepeatCount, setGuideSpeechRepeatCount } from '../utils/guideAnnouncer';
 
 export const SettingsPreferencesTab: React.FC = () => {
   const { isSoundEnabled, toggleSound, isBackgroundKeepAlive, toggleBackgroundKeepAlive } = useTreatmentContext();
   const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [guideSpeechRepeatCount, setGuideSpeechRepeatCountState] = useState(2);
 
   useEffect(() => {
     if ('Notification' in window) {
       setPermission(Notification.permission);
     }
+    setGuideSpeechRepeatCountState(getGuideSpeechRepeatCount());
   }, []);
+
+  const handleGuideRepeatChange = (nextValue: number) => {
+    setGuideSpeechRepeatCountState(nextValue);
+    setGuideSpeechRepeatCount(nextValue);
+  };
 
   const handleRequestPermission = async () => {
     if (!('Notification' in window)) {
@@ -59,6 +67,29 @@ export const SettingsPreferencesTab: React.FC = () => {
               isSoundEnabled ? 'translate-x-6' : 'translate-x-1'
             }`} />
           </button>
+        </div>
+
+        <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+          <div className="flex flex-col pr-4">
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+              <Mic className="w-3.5 h-3.5" /> 안내 음성 재생 횟수
+            </span>
+            <span className="text-[10px] text-slate-400 mt-0.5">
+              치료 종료 시 안내 음성을 몇 번 반복할지 설정합니다.
+            </span>
+          </div>
+
+          <select
+            value={guideSpeechRepeatCount}
+            onChange={(e) => handleGuideRepeatChange(Number(e.target.value))}
+            className="shrink-0 h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-bold text-slate-700 dark:text-slate-100"
+          >
+            {[1, 2, 3, 4, 5].map((count) => (
+              <option key={count} value={count}>
+                {count}회
+              </option>
+            ))}
+          </select>
         </div>
 
         <button 
