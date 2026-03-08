@@ -112,13 +112,17 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         setMode('menu');
     };
 
-    const openQuickEditPopup = (e: React.MouseEvent) => {
-        e.preventDefault();
+    const openQuickEditAt = (x: number, y: number) => {
         if (!hasTreatment || isReadOnly) return;
-        e.stopPropagation();
         setQuickSteps(parseSteps(value));
         setNewStepText('');
-        setQuickEditPos({ x: e.clientX, y: e.clientY });
+        setQuickEditPos({ x, y });
+    };
+
+    const openQuickEditPopup = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openQuickEditAt(e.clientX, e.clientY);
     };
 
     const removeStep = (idx: number) => {
@@ -152,7 +156,16 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         const timeDiff = now - lastClickTimeRef.current;
 
         if (timeDiff < 350 && timeDiff > 0) {
-            executeInteraction(e);
+            const isTouchLike = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 1024;
+
+            if (isTouchLike && hasTreatment) {
+                e.preventDefault();
+                e.stopPropagation();
+                openQuickEditAt(e.clientX, e.clientY);
+            } else {
+                executeInteraction(e);
+            }
+
             lastClickTimeRef.current = 0;
         } else {
             lastClickTimeRef.current = now;
