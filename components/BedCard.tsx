@@ -241,7 +241,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [swapSourceIndex, isDesktop, steps, handleMoveSelectedStep, cancelSwap, handleDeleteSelectedStep]);
 
-  const desktopCardHeightClass = 'lg:h-[70%] lg:min-h-0 lg:self-start';
+  const desktopCardHeightClass = 'xl:h-[70%] xl:min-h-0 xl:self-start';
 
   return (
     <div className={`${containerClass} ${desktopCardHeightClass} transform transition-transform duration-200 active:scale-[0.99]`}>
