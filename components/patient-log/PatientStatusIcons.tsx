@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet, Star } from 'lucide-react';
+import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet, Star, Atom } from 'lucide-react';
 import { PatientVisit } from '../../types';
 
 interface PatientStatusIconsProps {
@@ -9,7 +9,7 @@ interface PatientStatusIconsProps {
 
 export const PatientStatusIcons: React.FC<PatientStatusIconsProps> = ({ visit }) => {
   // Check if any flag is active to conditionally render
-  const hasStatus = visit.is_injection || visit.is_fluid || visit.is_manual || visit.is_eswt || visit.is_traction || !!visit.memo;
+  const hasStatus = visit.is_injection || visit.is_fluid || visit.is_manual || visit.is_eswt || visit.is_traction || visit.is_ion || !!visit.memo;
 
   if (!hasStatus) return null;
 
@@ -40,6 +40,11 @@ export const PatientStatusIcons: React.FC<PatientStatusIconsProps> = ({ visit })
       {visit.is_traction && (
         <div title="견인" className="flex">
           <ArrowUpFromLine className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500" strokeWidth={2.5} />
+        </div>
+      )}
+      {visit.is_ion && (
+        <div title="이온" className="flex">
+          <Atom className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" strokeWidth={2.5} />
         </div>
       )}
       {visit.memo && (

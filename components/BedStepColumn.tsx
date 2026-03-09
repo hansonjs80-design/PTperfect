@@ -1,11 +1,9 @@
 
-import React, { memo, useState, useRef } from 'react';
+import React, { memo, useState, useCallback, useRef } from 'react';
 import { TreatmentStep, QuickTreatment } from '../types';
 import { getStepLabel } from '../utils/bedUtils';
 import { getStepColor } from '../utils/styleUtils';
-import { PopupEditor } from './common/PopupEditor';
 import { StepReplacePopup } from './bed-card/StepReplacePopup';
-import { ArrowRightLeft } from 'lucide-react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
 interface BedStepColumnProps {
@@ -17,8 +15,14 @@ interface BedStepColumnProps {
   isSelectedForSwap: boolean;
   bedId: number;
   onSwapRequest?: (id: number, idx: number) => void;
+  onMoveSelectedStep?: (direction: 'left' | 'right') => void;
+  totalSteps?: number;
   onReplaceStep?: (idx: number, qt: QuickTreatment) => void;
   quickTreatments?: QuickTreatment[];
+  onOpenTreatmentSelector?: (bedId: number) => void;
+  onOpenBedEdit?: (bedId: number) => void;
+  onDeleteSelectedStep?: () => void;
+  onCancelSelection?: () => void;
 }
 
 export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
@@ -30,15 +34,23 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
   isSelectedForSwap,
   bedId,
   onSwapRequest,
+  onMoveSelectedStep,
+  totalSteps = 0,
   onReplaceStep,
-  quickTreatments
+  quickTreatments,
+  onOpenTreatmentSelector,
+  onOpenBedEdit,
+  onDeleteSelectedStep,
+  onCancelSelection
 }) => {
   const [replacePopup, setReplacePopup] = useState<{ x: number; y: number } | null>(null);
   const colorClass = getStepColor(step, isActive, isPast, false, isCompleted);
-  const lastSwapClickRef = useRef<number>(0);
-
-  // Desktop/Tablet check (>= 768px)
+  const lastTouchTapRef = useRef<number>(0);
   const isDesktopOrTablet = useMediaQuery('(min-width: 768px)');
+  const isTouchLayout = useMediaQuery('(max-width: 1024px)');
+  const isCoarsePointer = useMediaQuery('(pointer: coarse)');
+
+  const canOpenQuickReplace = !!onReplaceStep && !!quickTreatments?.length;
 
   const handleContextMenu = (e: React.MouseEvent) => {
     if (!isDesktopOrTablet || !onReplaceStep || !quickTreatments?.length) return;
@@ -47,43 +59,94 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
     setReplacePopup({ x: e.clientX, y: e.clientY });
   };
 
-  const handleSwapInteraction = (e: React.MouseEvent) => {
-    // 1. Desktop & Tablet (Width >= 768px) -> Single Click
-    if (isDesktopOrTablet) {
-      e.preventDefault();
-      e.stopPropagation();
-      onSwapRequest && onSwapRequest(bedId, index);
+
+  const handleStepDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // 태블릿/모바일 더블탭(또는 빠른 더블클릭)은 우클릭과 동일하게 단일 처방 교체 팝업을 연다.
+    if (isTouchLayout && canOpenQuickReplace) {
+      setReplacePopup({ x: e.clientX, y: e.clientY });
       return;
     }
 
-    // 2. Mobile (Width < 768px) -> Double Tap
-    const now = Date.now();
-    if (now - lastSwapClickRef.current < 350) {
+    if (onOpenBedEdit) {
+      onOpenBedEdit(bedId);
+      return;
+    }
+    onOpenTreatmentSelector?.(bedId);
+  };
+
+
+  const handleStepKeyActions = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!isSelectedForSwap) return;
+
+    if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault();
       e.stopPropagation();
-      onSwapRequest && onSwapRequest(bedId, index);
-      lastSwapClickRef.current = 0;
-    } else {
-      lastSwapClickRef.current = now;
+      onDeleteSelectedStep?.();
+      return;
     }
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onCancelSelection?.();
+    }
+  }, [isSelectedForSwap, onDeleteSelectedStep, onCancelSelection]);
+
+  const handleSwapInteraction = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onSwapRequest && onSwapRequest(bedId, index);
+  };
+
+  const handleSwapPointerDown = (e: React.PointerEvent) => {
+    // 모바일/태블릿(터치 계열)은 pointerdown에서 즉시 선택 반영해 체감 지연을 줄인다.
+    if (e.pointerType === 'mouse') return;
+
+    // 터치 환경에서는 빠른 더블탭 시 단일 처방 교체 팝업을 즉시 연다.
+    if (isCoarsePointer && isTouchLayout && canOpenQuickReplace) {
+      const now = Date.now();
+      const diff = now - lastTouchTapRef.current;
+
+      if (diff > 0 && diff < 320) {
+        e.preventDefault();
+        e.stopPropagation();
+        setReplacePopup({ x: e.clientX, y: e.clientY });
+        lastTouchTapRef.current = 0;
+        return;
+      }
+
+      lastTouchTapRef.current = now;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+    onSwapRequest && onSwapRequest(bedId, index);
   };
 
   return (
     <>
       <div
+        data-swap-cell="true"
         className={`
           flex-1 flex flex-col h-full min-w-0 group/col relative transition-all duration-300
           ${isActive ? 'z-10 shadow-md transform scale-[1.02] rounded-lg my-[-1px]' : ''}
-          ${isSelectedForSwap ? 'z-20 scale-[0.98]' : ''}
+          ${isSelectedForSwap ? 'z-20 sm:scale-100 scale-[0.98]' : ''}
         `}
+        onPointerDown={handleSwapPointerDown}
         onClick={handleSwapInteraction}
         onContextMenu={handleContextMenu}
+        onDoubleClick={handleStepDoubleClick}
+        onKeyDown={handleStepKeyActions}
+        tabIndex={isSelectedForSwap ? 0 : -1}
       >
         {/* Step Visual Block */}
         <div className={`
             flex-1 flex flex-col items-center justify-center p-0.5 sm:p-0.5 relative overflow-hidden transition-all duration-200
             ${colorClass}
-            ${isSelectedForSwap ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900 rounded-md' : ''}
+            ${isSelectedForSwap ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900 rounded-md border-2 border-indigo-500/80' : ''}
         `}>
           <span className={`font-black text-base xs:text-lg sm:text-2xl md:text-[28px] lg:text-3xl leading-none text-center whitespace-nowrap px-0.5 ${isActive ? 'scale-110 drop-shadow-sm' : 'opacity-90'}`}>
             {getStepLabel(step)}
@@ -91,13 +154,6 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
 
           {isActive && <div className="absolute inset-0 bg-white/10 animate-pulse pointer-events-none" />}
 
-          {isSelectedForSwap && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/50 dark:bg-slate-900/60 backdrop-blur-[1px] animate-in fade-in duration-200">
-              <div className="bg-indigo-600 text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full shadow-xl shadow-indigo-500/30 flex items-center justify-center animate-in zoom-in duration-200">
-                <ArrowRightLeft className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
