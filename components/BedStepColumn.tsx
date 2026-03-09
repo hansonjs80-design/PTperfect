@@ -1,5 +1,5 @@
 
-import React, { memo, useState, useCallback } from 'react';
+import React, { memo, useState, useCallback, useRef } from 'react';
 import { TreatmentStep, QuickTreatment } from '../types';
 import { getStepLabel } from '../utils/bedUtils';
 import { getStepColor } from '../utils/styleUtils';
@@ -45,8 +45,12 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
 }) => {
   const [replacePopup, setReplacePopup] = useState<{ x: number; y: number } | null>(null);
   const colorClass = getStepColor(step, isActive, isPast, false, isCompleted);
-  // Desktop/Tablet check (>= 768px)
+  const lastTouchTapRef = useRef<number>(0);
   const isDesktopOrTablet = useMediaQuery('(min-width: 768px)');
+  const isTouchLayout = useMediaQuery('(max-width: 1024px)');
+  const isCoarsePointer = useMediaQuery('(pointer: coarse)');
+
+  const canOpenQuickReplace = !!onReplaceStep && !!quickTreatments?.length;
 
   const handleContextMenu = (e: React.MouseEvent) => {
     if (!isDesktopOrTablet || !onReplaceStep || !quickTreatments?.length) return;
@@ -59,6 +63,13 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
   const handleStepDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // 태블릿/모바일 더블탭(또는 빠른 더블클릭)은 우클릭과 동일하게 단일 처방 교체 팝업을 연다.
+    if (isTouchLayout && canOpenQuickReplace) {
+      setReplacePopup({ x: e.clientX, y: e.clientY });
+      return;
+    }
+
     if (onOpenBedEdit) {
       onOpenBedEdit(bedId);
       return;
@@ -93,6 +104,23 @@ export const BedStepColumn: React.FC<BedStepColumnProps> = memo(({
   const handleSwapPointerDown = (e: React.PointerEvent) => {
     // 모바일/태블릿(터치 계열)은 pointerdown에서 즉시 선택 반영해 체감 지연을 줄인다.
     if (e.pointerType === 'mouse') return;
+
+    // 터치 환경에서는 빠른 더블탭 시 단일 처방 교체 팝업을 즉시 연다.
+    if (isCoarsePointer && isTouchLayout && canOpenQuickReplace) {
+      const now = Date.now();
+      const diff = now - lastTouchTapRef.current;
+
+      if (diff > 0 && diff < 320) {
+        e.preventDefault();
+        e.stopPropagation();
+        setReplacePopup({ x: e.clientX, y: e.clientY });
+        lastTouchTapRef.current = 0;
+        return;
+      }
+
+      lastTouchTapRef.current = now;
+    }
+
     e.preventDefault();
     e.stopPropagation();
     onSwapRequest && onSwapRequest(bedId, index);
