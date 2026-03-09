@@ -2,7 +2,7 @@ import { useMemo, useCallback } from 'react';
 import { BedState, BedStatus, PatientVisit } from '../types';
 
 const getVisitTimestamp = (visit: PatientVisit) => {
-  return new Date(visit.updated_at || visit.created_at || 0).getTime();
+  return new Date(visit.created_at || 0).getTime();
 };
 
 export const useLogStatusLogic = (beds: BedState[], visits: PatientVisit[]) => {

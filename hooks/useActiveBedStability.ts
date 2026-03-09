@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { BedState, BedStatus, PatientVisit } from '../types';
 
-const getVisitTimestamp = (visit: PatientVisit) => new Date(visit.updated_at || visit.created_at || 0).getTime();
+const getVisitTimestamp = (visit: PatientVisit) => new Date(visit.created_at || 0).getTime();
 
 const buildLatestVisitMap = (visits: PatientVisit[], currentDate: string) => {
   const map = new Map<number, PatientVisit>();

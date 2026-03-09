@@ -8,7 +8,7 @@ const getLocalISODate = (): string => {
 };
 
 const getVisitTimestamp = (visit: PatientVisit) => {
-  return new Date(visit.updated_at || visit.created_at || 0).getTime();
+  return new Date(visit.created_at || 0).getTime();
 };
 
 export const useBedPatientFields = (beds: BedState[], visits: PatientVisit[]) => {

@@ -21,7 +21,10 @@ export const usePatientBedSync = (
   const isTodayMode = useCallback(() => currentDate === getLocalISODate(), [currentDate, getLocalISODate]);
 
   const getVisitTimestamp = useCallback((visit: PatientVisit) => {
-    return new Date(visit.updated_at || visit.created_at || 0).getTime();
+    // 최신 행 판단은 생성 시점(created_at) 기준으로 고정한다.
+    // 이름/부위/메모 등 단순 로그 편집(updated_at)으로 최신 행이 바뀌면
+    // 비활성 행 편집이 활성 배드 동기화 대상으로 오인될 수 있다.
+    return new Date(visit.created_at || 0).getTime();
   }, []);
 
   const getLatestVisitForBed = useCallback((bedId: number) => {
