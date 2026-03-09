@@ -1,6 +1,5 @@
 
 import React, { memo, Fragment } from 'react';
-import { formatTime } from '../../utils/bedUtils';
 
 interface TreatmentTextRendererProps {
   value: string;
@@ -25,6 +24,13 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
   remainingTime,
   isPaused
 }) => {
+  const formatTimer = (seconds: number) => {
+    const safe = Math.max(0, Math.floor(seconds));
+    const mm = Math.floor(safe / 60).toString().padStart(2, '0');
+    const ss = (safe % 60).toString().padStart(2, '0');
+    return `${mm}:${ss}`;
+  };
+
   if (!value) {
     return (
       <span className="text-gray-400 italic font-bold">
@@ -32,17 +38,6 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
       </span>
     );
   }
-
-  // 타이머 표시 여부: 활성 행이고 타이머가 동작 중일 때
-  const showTimer = isActiveRow && remainingTime !== undefined && (remainingTime !== 0 || timerStatus === 'overtime');
-
-  // 타이머 색상
-  const timerColorClass =
-    timerStatus === 'overtime' ? 'text-red-500' :
-    timerStatus === 'warning' ? 'text-orange-500' :
-    'text-slate-600 dark:text-slate-300';
-
-  const timerAnimClass = (timerStatus === 'overtime' || timerStatus === 'warning') ? 'animate-pulse' : '';
 
   // 활성화 상태이고 단계 인덱스가 유효할 때: 텍스트를 분리하여 하이라이팅
   if (isActiveRow && activeStepIndex >= 0) {
@@ -54,20 +49,26 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
             {i === activeStepIndex ? (
               <>
                 <span className={`
-                  inline-flex items-center justify-center
+                  inline-flex items-center justify-center gap-1
                   ${activeStepBgColor || 'bg-brand-500'}
                   text-white px-1.5 py-[1px] rounded-md
                   text-[13px] sm:text-sm xl:text-[13px]
                   font-black shadow-sm ring-1 ring-white/20
                   transition-all duration-300 z-10
                 `}>
-                  {part.trim()}
+                  <span>{part.trim()}</span>
+                  {typeof remainingTime === 'number' && (
+                    <span className={`text-[11px] sm:text-xs font-black ${
+                      timerStatus === 'overtime'
+                        ? 'text-red-200'
+                        : timerStatus === 'warning'
+                          ? 'text-yellow-100'
+                          : 'text-emerald-100'
+                    }`}>
+                      {isPaused ? `일시정지 ${formatTimer(remainingTime)}` : formatTimer(remainingTime)}
+                    </span>
+                  )}
                 </span>
-                {showTimer && (
-                  <span className={`ml-1 text-[12px] sm:text-[13px] font-black tabular-nums ${timerColorClass} ${timerAnimClass} ${isPaused ? 'opacity-50' : ''}`}>
-                    {timerStatus === 'overtime' && '+'}{formatTime(remainingTime!)}
-                  </span>
-                )}
               </>
             ) : (
               <span className="text-gray-700 dark:text-gray-300 px-0.5">

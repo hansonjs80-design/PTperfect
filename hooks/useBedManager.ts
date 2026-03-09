@@ -39,6 +39,7 @@ export const useBedManager = (
     selectPreset: actions.selectPreset,
     startCustomPreset: actions.startCustomPreset,
     startQuickTreatment: actions.startQuickTreatment,
+    startTimerOnly: actions.startTimerOnly,
     startTraction: actions.startTraction,
     // From Controls
     nextStep: controls.nextStep,
@@ -50,6 +51,7 @@ export const useBedManager = (
     toggleTraction: (id: number) => controls.toggleFlag(id, 'isTraction'),
     toggleESWT: (id: number) => controls.toggleFlag(id, 'isESWT'),
     toggleManual: (id: number) => controls.toggleFlag(id, 'isManual'),
+    toggleIon: (id: number) => controls.toggleFlag(id, 'isIon'),
     toggleInjectionCompleted: (id: number) => controls.toggleFlag(id, 'isInjectionCompleted'),
     updatePatientMemo: controls.updatePatientMemo,
     updateBedDuration: controls.updateBedDuration,
@@ -71,6 +73,7 @@ export const useBedManager = (
     updateBedSteps: integration.updateBedSteps,
     overrideBedFromLog: integration.overrideBedFromLog,
     moveBedState: integration.moveBedState,
+    updateBedMemoFromLog: integration.updateBedMemoFromLog,
 
     // Core & Utils
     updateBedState,

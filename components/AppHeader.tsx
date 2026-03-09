@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
-import { Menu, Sun, Moon, Download, ClipboardList, Maximize, Activity, ArrowUpDown, ChevronLeft, ChevronRight, CalendarCheck, Printer, X, Undo2, Redo2, RotateCw } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Menu, Sun, Moon, Download, ClipboardList, Maximize, Activity, ArrowUpDown, ChevronLeft, ChevronRight, CalendarCheck, Printer, X, Undo2, Redo2, RotateCw, Timer } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { usePatientLogContext } from '../contexts/PatientLogContext';
+import { DEFAULT_BED_COUNT, getBedTimerOnlyPreference, getTimerOnlyPrefChangedEventName, setAllBedsTimerOnlyPreference } from '../utils/timerOnlyPreference';
 
 interface AppHeaderProps {
   onOpenMenu: () => void;
@@ -26,6 +27,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const { layoutMode, toggleLayoutMode, undo, redo, canUndo, canRedo, setPrintModalOpen, refreshBeds } = useTreatmentContext();
   const { visits, currentDate, changeDate, setCurrentDate } = usePatientLogContext();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAllTimerOnlyEnabled, setIsAllTimerOnlyEnabled] = useState(false);
+
+  useEffect(() => {
+    const syncGlobalTimerOnlyState = () => {
+      const allEnabled = Array.from({ length: DEFAULT_BED_COUNT }, (_, idx) => getBedTimerOnlyPreference(idx + 1)).every(Boolean);
+      setIsAllTimerOnlyEnabled(allEnabled);
+    };
+
+    syncGlobalTimerOnlyState();
+    const eventName = getTimerOnlyPrefChangedEventName();
+    window.addEventListener(eventName, syncGlobalTimerOnlyState);
+    window.addEventListener('storage', syncGlobalTimerOnlyState);
+
+    return () => {
+      window.removeEventListener(eventName, syncGlobalTimerOnlyState);
+      window.removeEventListener('storage', syncGlobalTimerOnlyState);
+    };
+  }, []);
 
   const handleTodayClick = () => {
     const now = new Date();
@@ -39,6 +58,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     await refreshBeds(); // Call the refresh function
     // Ensure animation plays for at least 800ms for visual feedback
     setTimeout(() => setIsRefreshing(false), 800);
+  };
+
+  const handleToggleAllTimerOnly = () => {
+    setAllBedsTimerOnlyPreference(!isAllTimerOnlyEnabled, DEFAULT_BED_COUNT);
   };
 
   // 공통 버튼 스타일
@@ -126,6 +149,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               <span className="hidden sm:inline">설치</span>
             </button>
           )}
+
+          <button 
+            onClick={handleToggleAllTimerOnly}
+            className={`${buttonClass} ${isAllTimerOnlyEnabled ? activeButtonClass : ''}`}
+            aria-label="전체 배드 타이머만 사용 토글"
+            title={isAllTimerOnlyEnabled ? '전체 배드 타이머만 사용 해제' : '전체 배드 타이머만 사용 활성화'}
+          >
+            <Timer className="w-5 h-5 md:w-4 md:h-4 xl:w-5 xl:h-5 landscape:w-4 landscape:h-4 lg:landscape:w-5 lg:landscape:h-5" strokeWidth={2.5} />
+          </button>
 
           <button 
             onClick={onToggleFullScreen}
