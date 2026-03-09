@@ -47,13 +47,12 @@ export const LandscapeLayout: React.FC<BedLayoutProps> = memo(({ beds, presets }
   }, [beds, presets, gridIds]);
 
   return (
-    // Changed: Removed overflow-y-auto to prevent double scrollbars with MainLayout.
-    // Kept overflow-x-auto for horizontal scrolling if needed.
-    // Added pb-[120px] to ensure bottom content isn't hidden.
-    <div className="block w-full h-full overflow-x-auto overflow-y-hidden custom-scrollbar pb-0 px-0 lg:flex lg:items-start lg:min-h-full lg:pt-1">
+    // 하단 카드 잘림 방지: 내부 그리드가 고정 높이에 맞춰 찌그러지지 않도록 세로는 자연 높이로 두고,
+    // 부모(main) 스크롤에서 끝까지 내려 볼 수 있게 한다.
+    <div className="block w-full h-auto overflow-x-auto overflow-y-visible custom-scrollbar pb-[env(safe-area-inset-bottom)] px-0 lg:flex lg:items-start lg:min-h-full lg:pt-1">
       <div className="
-        grid h-full content-start lg:content-stretch
-        auto-rows-fr
+        grid h-auto content-start
+        auto-rows-max
         gap-y-[5px] gap-x-[5px] sm:gap-y-[5px] sm:gap-x-[5px] md:gap-y-[12px]
         lg:gap-y-[11px] lg:gap-x-[7px]
         grid-cols-4 lg:grid-cols-[1fr_1fr_0px_1fr_1fr]
