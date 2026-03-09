@@ -133,7 +133,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
     if (!isDraft && visit && onUpdate) {
       const isAssignmentMode = !!visit.bed_id && (!visit.treatment_name || visit.treatment_name.trim() === '');
-      onUpdate(visit.id, { treatment_name: val }, !isAssignmentMode);
+      const shouldSyncActiveBed = rowStatus === 'active';
+      const skipBedSync = shouldSyncActiveBed ? false : !isAssignmentMode;
+      onUpdate(visit.id, { treatment_name: val }, skipBedSync);
     }
   };
 
@@ -149,12 +151,11 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (!isDraft && visit && onSelectLog) {
-      if (hasBed && !hasTreatment) {
+      if (hasBed && (!hasTreatment || rowStatus === 'active')) {
+        // 활성 행은 세트 처방 변경 시 배드 카드에도 즉시 반영되어야 한다.
         onSelectLog(visit.id, bedId);
-      }
-      else {
-        // 처방이 이미 있는 행(활성/비활성 포함)은 로그 텍스트만 교체한다.
-        // 활성 배드 타이머에는 영향이 없도록 bedId를 넘기지 않는다.
+      } else {
+        // 비활성/완료 행의 기존 처방 수정은 로그 텍스트만 변경
         onSelectLog(visit.id, null);
       }
     }
