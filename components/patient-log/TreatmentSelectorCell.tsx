@@ -66,7 +66,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const cellRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const { handleGridKeyDown } = useGridNavigation(10);
+    const { handleGridKeyDown } = useGridNavigation(9);
 
     const hasTreatment = useMemo(() => value.trim() !== '', [value]);
 
