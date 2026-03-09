@@ -1,60 +1,109 @@
-
-import React, { useRef, useCallback } from 'react';
-import { Plus } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Plus, Timer } from 'lucide-react';
+import {
+  DEFAULT_TIMER_ONLY_MINUTES,
+  getBedTimerOnlyPreference,
+  setBedTimerOnlyPreference,
+  getBulkTimerMinutes,
+  setBulkTimerMinutes as persistBulkTimerMinutes,
+  getTimerOnlyPrefChangedEventName,
+} from '../utils/timerOnlyPreference';
 
 interface BedEmptyStateProps {
+  bedId: number;
   onOpenSelector: () => void;
+  onStartTimerOnly: (minutes?: number) => void;
 }
 
-export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ onOpenSelector }) => {
-  const lastClickTimeRef = useRef<number>(0);
-  
+export const BedEmptyState: React.FC<BedEmptyStateProps> = ({ bedId, onOpenSelector, onStartTimerOnly }) => {
+  const [timerOnlyChecked, setTimerOnlyChecked] = useState(false);
+  const [bulkTimerMinutes, setBulkTimerMinutes] = useState(DEFAULT_TIMER_ONLY_MINUTES);
+
+  useEffect(() => {
+    const syncPrefs = () => {
+      setTimerOnlyChecked(getBedTimerOnlyPreference(bedId));
+      setBulkTimerMinutes(getBulkTimerMinutes(DEFAULT_TIMER_ONLY_MINUTES));
+    };
+
+    syncPrefs();
+
+    const eventName = getTimerOnlyPrefChangedEventName();
+    window.addEventListener(eventName, syncPrefs);
+    window.addEventListener('storage', syncPrefs);
+
+    return () => {
+      window.removeEventListener(eventName, syncPrefs);
+      window.removeEventListener('storage', syncPrefs);
+    };
+  }, [bedId]);
+
+  const persistBulkMinutes = useCallback((nextMinutes: number) => {
+    persistBulkTimerMinutes(nextMinutes);
+  }, []);
+
   const handleClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation(); // Stop event from bubbling to parent container which might trigger other logic
-
-    // Device Capability Check
-    const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
-    // Check for Tablet/Desktop width (md breakpoint = 768px)
-    const isTabletOrDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
-
-    // Single Click Action if:
-    // 1. Not a touch device (Desktop Mouse)
-    // 2. Touch device but large screen (Tablet) -> User requested single tap for tablet
-    if (!isTouchDevice || isTabletOrDesktop) {
-      onOpenSelector();
+    e.stopPropagation();
+    if (timerOnlyChecked) {
+      onStartTimerOnly(bulkTimerMinutes);
       return;
     }
+    onOpenSelector();
+  }, [onOpenSelector, onStartTimerOnly, timerOnlyChecked, bulkTimerMinutes]);
 
-    // Mobile (Touch & Small Screen): Implement Manual Double Tap Detection
-    // Native onDoubleClick is unreliable on some mobile browsers due to zoom delays or event handling
-    const now = Date.now();
-    const timeDiff = now - lastClickTimeRef.current;
+  const handleBulkMinutesChange = useCallback((raw: string) => {
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return;
+    const normalized = Math.max(1, Math.round(parsed));
+    setBulkTimerMinutes(normalized);
+    persistBulkMinutes(normalized);
+  }, [persistBulkMinutes]);
 
-    // 350ms window for double tap
-    if (timeDiff < 350 && timeDiff > 0) {
-      // Double Tap Detected
-      // Prevent Default is critical here to avoid ghost clicks or zooming
-      if (e.cancelable) e.preventDefault(); 
-      onOpenSelector();
-      lastClickTimeRef.current = 0; // Reset
-    } else {
-      // First Tap: Record time
-      lastClickTimeRef.current = now;
-    }
-  }, [onOpenSelector]);
+  const handleTimerOnlyToggle = useCallback((checked: boolean) => {
+    setTimerOnlyChecked(checked);
+    setBedTimerOnlyPreference(bedId, checked);
+  }, [bedId]);
 
   return (
-    <div 
+    <div
       onClick={handleClick}
-      className="w-full h-full flex flex-col items-center justify-center cursor-pointer group select-none touch-manipulation"
+      className="w-full h-full flex flex-col items-center justify-center gap-1 sm:gap-0 cursor-pointer group select-none touch-manipulation py-1 sm:py-0"
     >
-      <div className="p-3 rounded-full bg-slate-50 dark:bg-slate-800 group-hover:bg-brand-50 dark:group-hover:bg-brand-900/20 group-hover:scale-110 transition-all duration-300">
-        <Plus className="w-6 h-6 text-slate-300 dark:text-slate-600 group-hover:text-brand-500 transition-colors" />
+      <div className="p-2 sm:p-3 rounded-full bg-slate-50 dark:bg-slate-800 group-hover:bg-brand-50 dark:group-hover:bg-brand-900/20 group-hover:scale-110 transition-all duration-300">
+        {timerOnlyChecked ? (
+          <Timer className="w-5 h-5 sm:w-6 sm:h-6 text-brand-500 transition-colors" />
+        ) : (
+          <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-slate-300 dark:text-slate-600 group-hover:text-brand-500 transition-colors" />
+        )}
       </div>
-      <span className="mt-2 text-xs font-bold text-slate-300 dark:text-slate-600 group-hover:text-brand-500/70 transition-colors">
-        <span className="hidden md:inline">클릭하여 시작</span>
-        <span className="md:hidden">더블탭하여 시작</span>
+      <span className="mt-1 sm:mt-2 text-[10px] sm:text-xs font-bold text-slate-300 dark:text-slate-600 group-hover:text-brand-500/70 transition-colors">
+        {timerOnlyChecked ? (<><span className="sm:hidden">{bulkTimerMinutes}분 타이머</span><span className="hidden sm:inline">탭하면 {bulkTimerMinutes}분 일반 타이머 시작</span></>) : (<><span className="hidden md:inline">클릭하여 시작</span><span className="md:hidden">탭하여 시작</span></>)}
       </span>
+
+      <div className="mt-1 sm:mt-3 scale-[0.9] sm:scale-100 origin-top" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg border border-slate-200 dark:border-slate-700">
+          <label className="flex items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={timerOnlyChecked}
+              onChange={(e) => handleTimerOnlyToggle(e.target.checked)}
+              className="accent-brand-500"
+            />
+            타이머만 사용
+          </label>
+
+          <div className="flex items-center gap-1">
+            <input
+              type="number"
+              min={1}
+              value={bulkTimerMinutes}
+              onChange={(e) => handleBulkMinutesChange(e.target.value)}
+              className="w-[50px] sm:w-[62px] px-1 py-0.5 sm:px-1.5 sm:py-1 text-[10px] sm:text-[11px] text-center font-bold rounded border border-brand-300 bg-white dark:bg-slate-800 dark:border-slate-600"
+              aria-label="타이머 분 설정"
+            />
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-300">분</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
