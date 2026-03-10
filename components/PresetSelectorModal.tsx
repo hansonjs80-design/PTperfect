@@ -156,16 +156,16 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
 
   return (
     <div 
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/45 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div 
-        className="w-full sm:w-[500px] max-h-[90vh] sm:max-h-[95vh] bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all"
+        className="w-full sm:w-[560px] lg:w-[620px] max-h-[92vh] bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200/70 dark:border-slate-700 shadow-[0_20px_70px_rgba(15,23,42,0.28)] overflow-hidden flex flex-col transition-all"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className={`px-4 py-3 sm:px-5 sm:py-4 flex justify-between items-center shrink-0 transition-colors ${getHeaderStyle()}`}>
-          <div className="flex items-center gap-3">
+        <div className={`px-5 py-4 sm:px-6 sm:py-4 flex justify-between items-center shrink-0 transition-colors border-b border-white/50 dark:border-slate-700/70 ${getHeaderStyle()}`}>
+          <div className="flex items-center gap-2.5">
             {previewPreset && (
               <button 
                 onClick={() => setPreviewPreset(null)}
@@ -176,16 +176,16 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
             )}
             
             {/* New Single Row Layout */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
                 {/* Circle Badge - Solid White Background */}
-                <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm shrink-0 ring-2 ring-white/30 dark:ring-slate-700/30">
+                <div className="w-10 h-10 rounded-full bg-white/95 dark:bg-slate-800 flex items-center justify-center shadow-sm shrink-0 ring-1 ring-slate-200 dark:ring-slate-600">
                     <span className="text-xl font-black leading-none text-current opacity-90 pb-0.5">
                         {isLogMode ? <Edit3 className="w-5 h-5" /> : (isTractionBed ? 'T' : targetBedId)}
                     </span>
                 </div>
                 
                 {/* Title Text */}
-                <h3 className="text-xl sm:text-2xl font-black leading-none tracking-tight opacity-90">
+                <h3 className="text-[22px] sm:text-[26px] font-extrabold leading-none tracking-tight">
                     {previewPreset ? '설정 확인' : (isLogMode ? '처방 수정' : '치료 시작')}
                 </h3>
             </div>
@@ -193,7 +193,7 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
           
           <button 
             onClick={onClose}
-            className="p-2 bg-white/50 dark:bg-black/20 hover:bg-white/80 dark:hover:bg-black/40 rounded-full transition-colors backdrop-blur-sm"
+            className="p-2 bg-white/70 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-colors border border-white/70 dark:border-slate-600"
           >
             <X className="w-5 h-5" />
           </button>
@@ -205,7 +205,7 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-slate-950 p-2 sm:p-3 relative">
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/60 dark:bg-slate-950 p-3 sm:p-4 relative">
           
           {/* Options Area (Visible ONLY on Mobile Landscape inside scroll) */}
           <div className="hidden landscape:block lg:landscape:hidden mb-2">

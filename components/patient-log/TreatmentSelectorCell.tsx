@@ -259,9 +259,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                         placeholder={placeholder}
                     />
                 ) : (
-                    <div className={`flex items-center w-full h-full px-1 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/30'}`} title={getTitle()}>
+                    <div className={`flex items-center w-full h-full px-2 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30'} rounded-sm`} title={getTitle()}>
                         <div className="flex-1 min-w-0 flex items-center justify-start pl-2 pr-14">
-                            <span className="text-[15.4px] sm:text-[17.6px] xl:text-[15.4px] font-bold truncate pointer-events-none text-left w-full leading-tight text-slate-900 dark:text-slate-100">
+                            <span className="text-[15px] sm:text-[16px] xl:text-[15px] font-semibold truncate pointer-events-none text-left w-full leading-snug text-slate-900 dark:text-slate-100">
                                 <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor} activeStepBgColor={activeStepBgColor} timerStatus={timerStatus} remainingTime={remainingTime} isPaused={isPaused} />
                             </span>
                         </div>
