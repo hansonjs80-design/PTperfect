@@ -64,7 +64,7 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
           className={`flex flex-col items-center justify-center p-0.5 sm:p-0 rounded ${badge.colorClass}`}
           title={badge.key === 'patientMemo' ? bed.patientMemo : badge.label}
         >
-          <badge.icon className={iconSizeClass} strokeWidth={badge.key === 'patientMemo' ? 2 : 2.5} fill={badge.key === 'patientMemo' || badge.key === 'isIon' ? 'currentColor' : 'none'} />
+          <badge.icon className={iconSizeClass} strokeWidth={badge.key === 'patientMemo' ? 2 : 2.5} fill={badge.key === 'patientMemo' ? 'currentColor' : 'none'} />
           {badge.renderText && (
             <span className="text-[8px] sm:text-[10px] font-bold leading-none mt-0.5">{badge.label}</span>
           )}

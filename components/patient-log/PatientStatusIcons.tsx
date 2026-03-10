@@ -44,7 +44,7 @@ export const PatientStatusIcons: React.FC<PatientStatusIconsProps> = ({ visit })
       )}
       {visit.is_ion && (
         <div title="이온" className="flex">
-          <Atom className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" strokeWidth={2.3} fill="currentColor" />
+          <Atom className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" strokeWidth={2} />
         </div>
       )}
       {visit.memo && (
