@@ -111,8 +111,16 @@ export const usePatientBedSync = (
         updates.is_ion !== undefined
       );
 
-      if (hasStatusFlagUpdates && isLatestVisitForBed(id, mergedVisit.bed_id)) {
+      if (hasStatusFlagUpdates) {
+        // 1) 배드 카드 상태는 즉시 반영 (활성 배드일 때)
         updateBedFlagsFromLog(mergedVisit.bed_id, updates);
+
+        // 2) 편집한 행이 최신 행이 아니어도, 해당 배드의 최신 로그 행에도 동일 상태를 반영
+        //    (상태 셀에서 잠깐 보였다가 사라지는 현상 방지)
+        const latestVisitForBed = getLatestVisitForBed(mergedVisit.bed_id);
+        if (latestVisitForBed && latestVisitForBed.id !== id) {
+          await updateLogVisit(latestVisitForBed.id, updates);
+        }
       }
     }
 
@@ -155,7 +163,7 @@ export const usePatientBedSync = (
 
       overrideBedFromLog(mergedVisit.bed_id, mergedVisit, shouldForceRestart);
     }
-  }, [updateLogVisit, clearBed, overrideBedFromLog, updateBedMemoFromLog, updateBedFlagsFromLog, bedsRef, visitsRef, isLatestVisitForBed, hasMeaningfulUpdates, isTodayMode, currentDate]);
+  }, [updateLogVisit, clearBed, overrideBedFromLog, updateBedMemoFromLog, updateBedFlagsFromLog, bedsRef, visitsRef, getLatestVisitForBed, isLatestVisitForBed, hasMeaningfulUpdates, isTodayMode, currentDate]);
 
 
   const activateVisitFromLog = useCallback((visitId: string, forceRestart: boolean = false) => {
