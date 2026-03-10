@@ -194,9 +194,13 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       case 2:
         onUpdate(visit.id, { body_part: text }, true);
         return;
-      case 3:
-        onUpdate(visit.id, { treatment_name: text }, true);
+      case 3: {
+        // 활성 행의 처방 변경(붙여넣기 포함)은 배드카드에도 즉시 반영
+        const isActiveRow = getRowStatus(visit.id, visit.bed_id) === 'active';
+        const shouldSkipBedSync = !isActiveRow || !visit.bed_id;
+        onUpdate(visit.id, { treatment_name: text }, shouldSkipBedSync);
         return;
+      }
       case 4:
         onUpdate(visit.id, { memo: text }, true);
         return;
@@ -206,7 +210,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       default:
         return;
     }
-  }, [onUpdate]);
+  }, [onUpdate, getRowStatus]);
 
   const handleGridClipboardCopy = useCallback((shouldCut: boolean) => {
     const bounds = normalizeSelectionBounds(selection);

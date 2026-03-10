@@ -57,11 +57,26 @@ export const parseTreatmentString = (treatmentString: string | null, customTreat
   for (const part of parts) {
     if (!part) continue;
 
-    const match = referenceList.find(t =>
-      t.label.toUpperCase() === part.toUpperCase() ||
-      getAbbreviation(t.name).toUpperCase() === part.toUpperCase() ||
-      t.name.toUpperCase().includes(part.toUpperCase())
-    );
+    const upperPart = part.toUpperCase();
+    const findBy = (predicate: (t: QuickTreatment) => boolean) => referenceList.find(predicate);
+
+    // 1) 정확 매칭 우선 (라벨/약어/이름)
+    let match = findBy((t) => (t.label || '').toUpperCase() === upperPart);
+    if (!match) match = findBy((t) => getAbbreviation(t.name).toUpperCase() === upperPart);
+    if (!match) match = findBy((t) => t.name.toUpperCase() === upperPart);
+
+    // 2) 접두 매칭 (오입력 보정)
+    if (!match) {
+      match = findBy((t) =>
+        t.name.toUpperCase().startsWith(upperPart) ||
+        (t.label || '').toUpperCase().startsWith(upperPart)
+      );
+    }
+
+    // 3) 포함 매칭은 마지막 fallback으로만 사용 (한 글자/짧은 토큰 오인식 방지)
+    if (!match && part.length >= 2) {
+      match = findBy((t) => t.name.toUpperCase().includes(upperPart));
+    }
 
     if (match) {
       reconstructedSteps.push({
