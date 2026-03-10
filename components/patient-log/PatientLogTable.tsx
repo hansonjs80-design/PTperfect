@@ -391,7 +391,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
   return (
     <div
-      className="flex-1 overflow-y-auto overflow-x-auto xl:overflow-x-hidden log-scrollbar bg-white dark:bg-slate-900"
+      className="flex-1 overflow-y-auto overflow-x-auto xl:overflow-x-hidden log-scrollbar bg-slate-50/60 dark:bg-slate-900"
       tabIndex={0}
       onCopy={handleCopy}
       onCut={handleCut}
@@ -430,7 +430,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         isDraggingRef.current = false;
       }}
     >
-      <table ref={tableRef} className="w-full min-w-[500px] md:min-w-full border-collapse table-fixed">
+      <table ref={tableRef} className="w-full min-w-[500px] md:min-w-full border-collapse table-fixed bg-white/90 dark:bg-slate-900">
         {columnWidths && (
           <colgroup>
             {columnWidths.map((w, i) => (

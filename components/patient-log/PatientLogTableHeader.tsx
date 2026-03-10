@@ -10,7 +10,7 @@ interface PatientLogTableHeaderProps {
 const RESIZABLE_COLUMNS = new Set([0, 1, 2, 3, 4, 6, 7, 8]);
 
 const thBase =
-  'py-3 px-1 text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider text-center border-r border-slate-300 dark:border-slate-600 last:border-r-0';
+  'py-3.5 px-1.5 text-[11px] md:text-xs font-extrabold text-slate-600 dark:text-slate-300 tracking-[0.02em] text-center border-r border-slate-200 dark:border-slate-700 last:border-r-0';
 
 export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
   onResizeStart,
@@ -43,10 +43,10 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
   };
 
   return (
-    <thead className="sticky top-0 bg-slate-200 dark:bg-slate-800 z-10 shadow-sm border-b-2 border-slate-300 dark:border-slate-600 backdrop-blur-sm">
+    <thead className="sticky top-0 bg-slate-100/95 dark:bg-slate-800/95 z-10 shadow-sm border-b border-slate-200 dark:border-slate-700 backdrop-blur-md">
       <tr>
         <th className={`${thBase} w-[30px] md:w-[40px] relative`}>
-          No.
+          NO
           {handle(0)}
         </th>
         <th className={`${thBase} w-[55px] md:w-[95px] xl:w-[75px] relative`}>
