@@ -51,7 +51,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   onCreate,
   onSelectLog,
   onMovePatient,
-  onEditActive,
   activeBedIds = [],
   activeStepColor,
   activeStepBgColor,
@@ -136,7 +135,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
     if (!isDraft && visit && onUpdate) {
       const isAssignmentMode = !!visit.bed_id && (!visit.treatment_name || visit.treatment_name.trim() === '');
-      onUpdate(visit.id, { treatment_name: val }, !isAssignmentMode);
+      const shouldSyncActiveBed = rowStatus === 'active' && !!visit.bed_id;
+      onUpdate(visit.id, { treatment_name: val }, !(isAssignmentMode || shouldSyncActiveBed));
     }
   };
 
@@ -152,19 +152,12 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (!isDraft && visit && onSelectLog) {
-      // 처방이 입력된 행을 클릭하면 해당 배드카드 설정/수정창을 우선 연다.
-      if (hasBed && hasTreatment && onEditActive) {
-        onEditActive(bedId);
-        return;
-      }
-
       if (hasBed && !hasTreatment) {
         onSelectLog(visit.id, bedId);
-      }
-      else {
-        // 처방이 이미 있는 행(활성/비활성 포함)은 로그 텍스트만 교체한다.
-        // 활성 배드 타이머에는 영향이 없도록 bedId를 넘기지 않는다.
-        onSelectLog(visit.id, null);
+      } else {
+        // 활성 행에서 세트 처방을 변경할 때는 배드카드에도 즉시 반영되도록 bedId를 전달한다.
+        const syncBedId = rowStatus === 'active' && hasBed ? bedId : null;
+        onSelectLog(visit.id, syncBedId);
       }
     }
   };

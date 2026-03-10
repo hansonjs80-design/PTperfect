@@ -67,7 +67,8 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
         setOptions({ isInjection: false, isManual: false, isESWT: false, isTraction: false, isFluid: false, isIon: false });
       }
       
-      if (initialPreset) {
+      const isLogMode = targetBedId === 0;
+      if (initialPreset && !isLogMode) {
         // Deep copy to prevent mutating the original preset in context
         try {
             setPreviewPreset(JSON.parse(JSON.stringify(initialPreset)));
@@ -82,7 +83,7 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
       setSelectedQuickItems([]);
       setIsMultiSelectMode(true);
     }
-  }, [isOpen, initialOptions, initialPreset]);
+  }, [isOpen, initialOptions, initialPreset, targetBedId]);
 
   // Handle Quick Item Click (Single vs Multi logic)
   const handleQuickItemClick = useCallback((template: QuickTreatment) => {
