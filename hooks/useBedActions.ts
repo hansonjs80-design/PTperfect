@@ -1,8 +1,8 @@
-
 import { useCallback } from 'react';
 import { BedState, BedStatus, Preset, TreatmentStep, QuickTreatment, PatientVisit, SelectPresetOptions } from '../types';
 import { STANDARD_TREATMENTS } from '../constants';
 import { generateTreatmentString } from '../utils/bedUtils';
+import { DEFAULT_TIMER_ONLY_MINUTES } from '../utils/timerOnlyPreference';
 import {
   createCustomPreset,
   createQuickStep,
@@ -29,6 +29,7 @@ export const useBedActions = (
         is_traction: options?.isTraction || false,
         is_eswt: options?.isESWT || false,
         is_manual: options?.isManual || false,
+        is_ion: options?.isIon || false,
       });
     }
 
@@ -47,6 +48,7 @@ export const useBedActions = (
       isTraction: options?.isTraction || false,
       isESWT: options?.isESWT || false,
       isManual: options?.isManual || false,
+      isIon: options?.isIon || false,
     });
   }, [presets, updateBedState, onAddVisit]);
 
@@ -65,6 +67,7 @@ export const useBedActions = (
         is_traction: options?.isTraction || false,
         is_eswt: options?.isESWT || false,
         is_manual: options?.isManual || false,
+        is_ion: options?.isIon || false,
       });
     }
 
@@ -83,14 +86,58 @@ export const useBedActions = (
       isTraction: options?.isTraction || false,
       isESWT: options?.isESWT || false,
       isManual: options?.isManual || false,
+      isIon: options?.isIon || false,
     });
   }, [updateBedState, onAddVisit]);
 
   const startQuickTreatment = useCallback((bedId: number, template: typeof STANDARD_TREATMENTS[0], options?: SelectPresetOptions) => {
-    // Pass the label from the template to the step
     const step = createQuickStep(template.name, template.duration, template.enableTimer, template.color, template.label);
     startCustomPreset(bedId, template.name, [step], options);
   }, [startCustomPreset]);
+
+  const startTimerOnly = useCallback((bedId: number, minutes: number = DEFAULT_TIMER_ONLY_MINUTES) => {
+    const durationSeconds = Math.max(30, Math.round(minutes * 60));
+    const timerStep = {
+      id: crypto.randomUUID(),
+      name: '타이머',
+      label: '타이머',
+      duration: durationSeconds,
+      enableTimer: true,
+      color: '#22c55e',
+    };
+
+    const timerPreset = createCustomPreset('타이머', [timerStep]);
+
+    if (onAddVisit) {
+      onAddVisit({
+        bed_id: bedId,
+        treatment_name: '',
+        patient_name: '',
+        body_part: '',
+        memo: '',
+        author: '',
+      });
+    }
+
+    updateBedState(bedId, {
+      status: BedStatus.ACTIVE,
+      currentPresetId: timerPreset.id,
+      customPreset: timerPreset,
+      currentStepIndex: 0,
+      queue: [],
+      startTime: Date.now(),
+      remainingTime: durationSeconds,
+      originalDuration: durationSeconds,
+      isPaused: false,
+      isInjection: false,
+      isFluid: false,
+      isTraction: false,
+      isESWT: false,
+      isManual: false,
+      isIon: false,
+      isInjectionCompleted: false,
+    });
+  }, [updateBedState, onAddVisit]);
 
   const startTraction = useCallback((bedId: number, durationMinutes: number, options: any) => {
     const tractionPreset = createTractionPreset(durationMinutes);
@@ -105,6 +152,7 @@ export const useBedActions = (
         is_fluid: options?.isFluid || false,
         is_eswt: options?.isESWT || false,
         is_manual: options?.isManual || false,
+        is_ion: options?.isIon || false,
       });
     }
 
@@ -126,6 +174,7 @@ export const useBedActions = (
     selectPreset,
     startCustomPreset,
     startQuickTreatment,
+    startTimerOnly,
     startTraction
   };
 };
