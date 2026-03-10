@@ -39,6 +39,22 @@ export const useBedIntegration = (
         updateBedState(bedId, { patientMemo: memo || undefined });
     }, [bedsRef, updateBedState]);
 
+    const updateBedFlagsFromLog = useCallback((bedId: number, visit: Partial<PatientVisit>) => {
+        const bed = bedsRef.current.find(b => b.id === bedId);
+        if (!bed || bed.status === BedStatus.IDLE) return;
+
+        const flagUpdates: Partial<BedState> = {};
+        if (visit.is_injection !== undefined) flagUpdates.isInjection = !!visit.is_injection;
+        if (visit.is_fluid !== undefined) flagUpdates.isFluid = !!visit.is_fluid;
+        if (visit.is_traction !== undefined) flagUpdates.isTraction = !!visit.is_traction;
+        if (visit.is_eswt !== undefined) flagUpdates.isESWT = !!visit.is_eswt;
+        if (visit.is_manual !== undefined) flagUpdates.isManual = !!visit.is_manual;
+        if (visit.is_ion !== undefined) flagUpdates.isIon = !!visit.is_ion;
+
+        if (Object.keys(flagUpdates).length === 0) return;
+        updateBedState(bedId, flagUpdates);
+    }, [bedsRef, updateBedState]);
+
     const overrideBedFromLog = useCallback((bedId: number, visit: PatientVisit, forceRestart: boolean) => {
         const treatmentName = visit.treatment_name || "";
         const prefersTimerOnly = getBedTimerOnlyPreference(bedId);
@@ -222,6 +238,7 @@ export const useBedIntegration = (
         overrideBedFromLog,
         moveBedState,
         updateBedSteps,
-        updateBedMemoFromLog
+        updateBedMemoFromLog,
+        updateBedFlagsFromLog
     };
 };

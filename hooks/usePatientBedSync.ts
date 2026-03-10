@@ -10,7 +10,7 @@ export const usePatientBedSync = (
   clearBed: (id: number) => void,
   bedIntegration: ReturnType<typeof useBedIntegration>
 ) => {
-  const { overrideBedFromLog, moveBedState, updateBedMemoFromLog } = bedIntegration;
+  const { overrideBedFromLog, moveBedState, updateBedMemoFromLog, updateBedFlagsFromLog } = bedIntegration;
 
   const getLocalISODate = useCallback(() => {
     const now = new Date();
@@ -101,6 +101,21 @@ export const usePatientBedSync = (
       updateBedMemoFromLog(mergedVisit.bed_id, updates.memo || undefined);
     }
 
+    if (mergedVisit.bed_id) {
+      const hasStatusFlagUpdates = (
+        updates.is_injection !== undefined ||
+        updates.is_fluid !== undefined ||
+        updates.is_traction !== undefined ||
+        updates.is_eswt !== undefined ||
+        updates.is_manual !== undefined ||
+        updates.is_ion !== undefined
+      );
+
+      if (hasStatusFlagUpdates && isLatestVisitForBed(id, mergedVisit.bed_id)) {
+        updateBedFlagsFromLog(mergedVisit.bed_id, updates);
+      }
+    }
+
     const shouldApplyBedRuntimeSync = updates.bed_id !== undefined;
     // 이름/부위/처방/메모/상태/작성 등 로그 편집은 배드 활성화/타이머 로직에 영향 주지 않음.
     if (!shouldApplyBedRuntimeSync) {
@@ -140,7 +155,7 @@ export const usePatientBedSync = (
 
       overrideBedFromLog(mergedVisit.bed_id, mergedVisit, shouldForceRestart);
     }
-  }, [updateLogVisit, clearBed, overrideBedFromLog, updateBedMemoFromLog, bedsRef, visitsRef, isLatestVisitForBed, hasMeaningfulUpdates, isTodayMode, currentDate]);
+  }, [updateLogVisit, clearBed, overrideBedFromLog, updateBedMemoFromLog, updateBedFlagsFromLog, bedsRef, visitsRef, isLatestVisitForBed, hasMeaningfulUpdates, isTodayMode, currentDate]);
 
 
   const activateVisitFromLog = useCallback((visitId: string, forceRestart: boolean = false) => {
