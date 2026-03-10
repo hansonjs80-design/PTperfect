@@ -31,3 +31,9 @@ View your app in AI Studio: https://ai.studio/apps/drive/1R6GGAmI39JrqHJJa66By00
 해당 스크립트는 아래 설정을 적용합니다.
 - `push.autoSetupRemote=true`
 - `push.default=current`
+
+
+## 디자인 안전 순차 적용 가이드
+
+디자인 반영은 `docs/design-rollout-playbook.md` 기준으로 단계별(모바일 → 태블릿 → 데스크탑) 적용하세요.
+
