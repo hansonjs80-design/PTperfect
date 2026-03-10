@@ -51,6 +51,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   onCreate,
   onSelectLog,
   onMovePatient,
+  onEditActive,
   activeBedIds = [],
   activeStepColor,
   activeStepBgColor,
@@ -151,6 +152,12 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (!isDraft && visit && onSelectLog) {
+      // 처방이 입력된 행을 클릭하면 해당 배드카드 설정/수정창을 우선 연다.
+      if (hasBed && hasTreatment && onEditActive) {
+        onEditActive(bedId);
+        return;
+      }
+
       if (hasBed && !hasTreatment) {
         onSelectLog(visit.id, bedId);
       }
