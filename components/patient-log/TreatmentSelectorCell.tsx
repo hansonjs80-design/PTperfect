@@ -147,7 +147,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     };
 
     const handleInteraction = (e: React.MouseEvent) => {
-        if (window.innerWidth >= 1024) {
+        const isTabletOrMobileMode = window.matchMedia('(max-width: 1279px)').matches;
+
+        if (!isTabletOrMobileMode) {
             executeInteraction(e);
             return;
         }
@@ -156,11 +158,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         const timeDiff = now - lastClickTimeRef.current;
 
         if (timeDiff < 350 && timeDiff > 0) {
-            const isTouchLike = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 1024;
-
-            if (isTouchLike && hasTreatment && !isReadOnly) {
+            if (hasTreatment && !isReadOnly) {
                 e.preventDefault();
                 e.stopPropagation();
+                // 태블릿/모바일: 처방이 있으면 더블탭(더블클릭) 시 우클릭과 동일한 단일 처방 편집 팝업 노출
                 openQuickEditAt(e.clientX, e.clientY);
             } else {
                 executeInteraction(e);
@@ -221,8 +222,8 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     };
 
     const getTitle = () => {
-        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-            return "더블탭하여 수정";
+        if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1279px)').matches) {
+            return value ? "더블탭: 단일 처방 목록 편집" : "클릭하여 처방 선택";
         }
         if (isReadOnly) {
             return "타이머 사용 중: 텍스트 수정만 가능 (활성화/동기화는 잠금)";
