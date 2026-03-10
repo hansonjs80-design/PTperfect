@@ -25,10 +25,12 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
   isPaused
 }) => {
   const formatTimer = (seconds: number) => {
-    const safe = Math.max(0, Math.floor(seconds));
-    const mm = Math.floor(safe / 60).toString().padStart(2, '0');
-    const ss = (safe % 60).toString().padStart(2, '0');
-    return `${mm}:${ss}`;
+    const safe = Math.floor(seconds);
+    const abs = Math.abs(safe);
+    const mm = Math.floor(abs / 60).toString().padStart(2, '0');
+    const ss = (abs % 60).toString().padStart(2, '0');
+    const prefix = safe < 0 ? '+' : '';
+    return `${prefix}${mm}:${ss}`;
   };
 
   if (!value) {
