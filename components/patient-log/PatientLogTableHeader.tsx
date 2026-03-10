@@ -4,6 +4,7 @@ import React from 'react';
 interface PatientLogTableHeaderProps {
   onResizeStart?: (colIndex: number, clientX: number, invert?: boolean) => void;
   isResizing?: boolean;
+  showTimerColumn?: boolean;
 }
 
 const RESIZABLE_COLUMNS = new Set([0, 1, 2, 4, 5, 6, 7, 8]);
@@ -14,6 +15,7 @@ const thBase =
 export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
   onResizeStart,
   isResizing,
+  showTimerColumn = false,
 }) => {
   const handle = (colIndex: number) => {
     if (!onResizeStart || !RESIZABLE_COLUMNS.has(colIndex)) return null;
@@ -83,11 +85,11 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
           메모
           {handle(4)}
         </th>
-        <th className={`${thBase} w-[70px] md:w-[170px] xl:w-[130px] relative`}>
+        <th className={`${thBase} w-[70px] md:w-[170px] xl:w-[130px] relative hidden`}>
           특이사항
           {handle(5)}
         </th>
-        <th className={`${thBase} w-[82px] md:w-[110px] xl:w-[100px] relative`}>
+        <th className={`${thBase} w-[82px] md:w-[110px] xl:w-[100px] relative ${showTimerColumn ? "" : "hidden"}`}>
           타이머
           {handle(6)}
         </th>

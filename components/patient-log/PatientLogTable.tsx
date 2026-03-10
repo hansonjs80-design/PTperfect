@@ -6,11 +6,12 @@ import { PatientLogRow } from './PatientLogRow';
 import { PatientLogTableHeader } from './PatientLogTableHeader';
 import { getRowActiveStatus } from '../../utils/patientLogUtils';
 import { useColumnResize, FLEX_COL_INDEX } from '../../hooks/useColumnResize';
+import { getBedTimerOnlyPreference, getTimerOnlyPrefChangedEventName } from '../../utils/timerOnlyPreference';
 
 type GridCellPos = { row: number; col: number };
 type GridSelection = { start: GridCellPos; end: GridCellPos } | null;
 
-const SELECTABLE_COLS = new Set([1, 2, 3, 4, 5, 8]);
+const SELECTABLE_COLS = new Set([1, 2, 3, 4, 8]);
 
 const normalizeSelectionBounds = (selection: GridSelection) => {
   if (!selection) return null;
@@ -66,6 +67,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 }) => {
   const [totalRows, setTotalRows] = useState(120);
   const [selection, setSelection] = useState<GridSelection>(null);
+  const [showTimerColumn, setShowTimerColumn] = useState(false);
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
   const isDraggingRef = useRef(false);
 
@@ -80,6 +82,24 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const prevVisitsLengthRef = useRef(visits.length);
   const pendingAutoFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPointerDownAtRef = useRef(0);
+
+
+  useEffect(() => {
+    const syncTimerColumnVisibility = () => {
+      const hasTimerOnlyBed = beds.some((bed) => getBedTimerOnlyPreference(bed.id));
+      setShowTimerColumn(hasTimerOnlyBed);
+    };
+
+    syncTimerColumnVisibility();
+    const eventName = getTimerOnlyPrefChangedEventName();
+    window.addEventListener(eventName, syncTimerColumnVisibility);
+    window.addEventListener('storage', syncTimerColumnVisibility);
+
+    return () => {
+      window.removeEventListener(eventName, syncTimerColumnVisibility);
+      window.removeEventListener('storage', syncTimerColumnVisibility);
+    };
+  }, [beds]);
 
   useEffect(() => {
     // If visits length increased, it means a row was added.
@@ -161,7 +181,6 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       case 2: return visit.body_part || '';
       case 3: return visit.treatment_name || '';
       case 4: return visit.memo || '';
-      case 5: return visit.special_note || '';
       case 8: return visit.author || '';
       default: return '';
     }
@@ -180,9 +199,6 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         return;
       case 4:
         onUpdate(visit.id, { memo: text }, true);
-        return;
-      case 5:
-        onUpdate(visit.id, { special_note: text }, true);
         return;
       case 8:
         onUpdate(visit.id, { author: text }, true);
@@ -422,7 +438,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
             ))}
           </colgroup>
         )}
-        <PatientLogTableHeader onResizeStart={onResizeStart} isResizing={isResizing} />
+        <PatientLogTableHeader onResizeStart={onResizeStart} isResizing={isResizing} showTimerColumn={showTimerColumn} />
         <tbody>
           {visits.map((visit, index) => {
             const rowStatus = getRowStatus(visit.id, visit.bed_id);
@@ -475,6 +491,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
                 onPrevStep={handlePrevStep}
                 onClearBed={handleClearBed}
                 onBulkAuthorUpdate={handleBulkAuthorUpdate}
+                showTimerColumn={showTimerColumn}
               />
             );
           })}
@@ -487,6 +504,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
               onCreate={handleDraftCreate}
               onSelectLog={(id) => onSelectLog(id, null)}
               activeBedIds={activeBedIds}
+              showTimerColumn={showTimerColumn}
             />
           ))}
 

@@ -38,6 +38,7 @@ interface PatientLogRowProps {
   onPrevStep?: () => void;
   onClearBed?: () => void;
   onBulkAuthorUpdate?: (val: string) => void;
+  showTimerColumn?: boolean;
 }
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
@@ -63,7 +64,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   onNextStep,
   onPrevStep,
   onClearBed,
-  onBulkAuthorUpdate
+  onBulkAuthorUpdate,
+  showTimerColumn = false
 }) => {
   const { handleGridKeyDown } = useGridNavigation(10);
   const { activateVisitFromLog } = useTreatmentContext();
@@ -388,7 +390,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0`}>
+      <td className={`${cellBorderClass} p-0 hidden`}>
         <EditableCell
           gridId={`${rowIndex}-5`}
           rowIndex={rowIndex}
@@ -404,7 +406,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0`}>
+      <td className={`${cellBorderClass} p-0 ${showTimerColumn ? "" : "hidden"}`}>
         <div
           className="w-full h-full min-h-[36px] flex items-center justify-center px-1 text-[11px] sm:text-[12px] font-black tracking-tight"
           data-grid-id={`${rowIndex}-6`}
