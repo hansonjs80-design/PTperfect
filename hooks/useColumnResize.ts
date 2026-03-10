@@ -2,8 +2,15 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
 const MIN_COL_WIDTH = 24;
+const MIN_COL_WIDTH_BY_INDEX: Record<number, number> = {
+  6: 82, // 타이머
+  7: 70, // 상태
+  8: 70, // 작성
+};
 export const FLEX_COL_INDEX = 3; // 처방 목록 — always auto (absorbs remaining space)
 const STORAGE_KEY = 'physio-column-widths';
+
+const clampWidthByIndex = (width: number, index: number) => Math.max(MIN_COL_WIDTH_BY_INDEX[index] ?? MIN_COL_WIDTH, width);
 
 export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | null>) {
   const [columnWidths, setColumnWidths] = useState<number[] | null>(() => {
@@ -11,7 +18,9 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((w, i) => clampWidthByIndex(Number(w) || 0, i));
+        }
       }
     } catch { /* ignore */ }
     return null;
@@ -32,7 +41,7 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
     if (!tableRef.current) return null;
     const ths = tableRef.current.querySelectorAll('thead th');
     if (ths.length === 0) return null;
-    return Array.from(ths).map(th => th.getBoundingClientRect().width);
+    return Array.from(ths).map((th, index) => clampWidthByIndex(th.getBoundingClientRect().width, index));
   }, [tableRef]);
 
   const onResizeStart = useCallback((colIndex: number, clientX: number, invert = false) => {
@@ -51,7 +60,7 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
       const s = stateRef.current;
       if (!s) return;
       const delta = clientX - s.startX;
-      const newWidth = Math.max(MIN_COL_WIDTH, s.startWidths[s.colIndex] + (s.invert ? -delta : delta));
+      const newWidth = clampWidthByIndex(s.startWidths[s.colIndex] + (s.invert ? -delta : delta), s.colIndex);
 
       setColumnWidths(prev => {
         if (!prev) return prev;

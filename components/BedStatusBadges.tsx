@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet, Star, LucideIcon } from 'lucide-react';
+import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet, Star, Atom, LucideIcon } from 'lucide-react';
 import { BedState, BedStatus } from '../types';
 
 interface BedStatusBadgesProps {
@@ -22,6 +22,7 @@ const BADGES: BadgeConfig[] = [
   { key: 'isManual', label: '도수', icon: Hand, colorClass: 'text-violet-500' },
   { key: 'isESWT', label: '충격파', icon: Zap, colorClass: 'text-blue-500' },
   { key: 'isTraction', label: '견인', icon: ArrowUpFromLine, colorClass: 'text-orange-500' },
+  { key: 'isIon', label: '이온', icon: Atom, colorClass: 'text-emerald-500' },
   { key: 'patientMemo', label: '메모', icon: Star, colorClass: 'text-yellow-400' }
 ];
 
@@ -63,7 +64,7 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
           className={`flex flex-col items-center justify-center p-0.5 sm:p-0 rounded ${badge.colorClass}`}
           title={badge.key === 'patientMemo' ? bed.patientMemo : badge.label}
         >
-          <badge.icon className={iconSizeClass} strokeWidth={badge.key === 'patientMemo' ? 2 : 2.5} fill={badge.key === 'patientMemo' ? 'currentColor' : 'none'} />
+          <badge.icon className={iconSizeClass} strokeWidth={badge.key === 'patientMemo' ? 2 : 2.5} fill={badge.key === 'patientMemo' || badge.key === 'isIon' ? 'currentColor' : 'none'} />
           {badge.renderText && (
             <span className="text-[8px] sm:text-[10px] font-bold leading-none mt-0.5">{badge.label}</span>
           )}
@@ -82,6 +83,7 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
     pBed.isFluid === nBed.isFluid &&
     pBed.isManual === nBed.isManual &&
     pBed.isESWT === nBed.isESWT &&
-    pBed.isTraction === nBed.isTraction
+    pBed.isTraction === nBed.isTraction &&
+    pBed.isIon === nBed.isIon
   );
 });
