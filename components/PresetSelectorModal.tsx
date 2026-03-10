@@ -24,6 +24,7 @@ interface PresetSelectorModalProps {
     isESWT: boolean;
     isTraction: boolean;
     isFluid: boolean;
+    isIon?: boolean;
   };
   initialPreset?: Preset;
 }
@@ -54,15 +55,16 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
     isManual: false,
     isESWT: false,
     isTraction: false,
-    isFluid: false
+    isFluid: false,
+    isIon: false
   });
 
   useEffect(() => {
     if (isOpen) {
       if (initialOptions) {
-        setOptions(initialOptions);
+        setOptions({ ...initialOptions, isIon: !!initialOptions.isIon });
       } else {
-        setOptions({ isInjection: false, isManual: false, isESWT: false, isTraction: false, isFluid: false });
+        setOptions({ isInjection: false, isManual: false, isESWT: false, isTraction: false, isFluid: false, isIon: false });
       }
       
       if (initialPreset) {
