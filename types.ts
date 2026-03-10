@@ -95,4 +95,5 @@ export interface SelectPresetOptions {
   isTraction?: boolean;
   isESWT?: boolean;
   isManual?: boolean;
+  isIon?: boolean;
 }

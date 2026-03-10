@@ -25,6 +25,7 @@ export const useModalActions = (
     is_traction: options?.isTraction,
     is_eswt: options?.isESWT,
     is_manual: options?.isManual,
+    is_ion: options?.isIon,
   });
 
   const withRuntimeBedId = useCallback((updates: Record<string, any>) => {
@@ -119,6 +120,7 @@ export const useModalActions = (
         is_traction: false,
         is_eswt: false,
         is_manual: false,
+        is_ion: false,
       }, true);
       closeModal();
     }

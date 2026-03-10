@@ -4,12 +4,13 @@ import { BedState, BedStatus, Preset, TreatmentStep, QuickTreatment, PatientVisi
 import { findMatchingPreset, parseTreatmentString, generateTreatmentString } from '../utils/bedUtils';
 import { DEFAULT_TIMER_ONLY_MINUTES, getBedTimerOnlyPreference, getBulkTimerMinutes } from '../utils/timerOnlyPreference';
 
-const STEP_STATUS_KEYWORDS: Record<'isInjection' | 'isFluid' | 'isTraction' | 'isESWT' | 'isManual', string[]> = {
+const STEP_STATUS_KEYWORDS: Record<'isInjection' | 'isFluid' | 'isTraction' | 'isESWT' | 'isManual' | 'isIon', string[]> = {
     isInjection: ['주사', 'inj', 'injection'],
     isFluid: ['수액', 'fluid', 'iv'],
     isTraction: ['견인', 'traction'],
     isESWT: ['충격파', 'eswt', 'shockwave'],
-    isManual: ['도수', 'manual']
+    isManual: ['도수', 'manual'],
+    isIon: ['이온', 'ion']
 };
 
 const normalizeStepText = (step: TreatmentStep) => `${step.name ?? ''} ${step.label ?? ''}`.toLowerCase();
@@ -86,6 +87,7 @@ export const useBedIntegration = (
             isTraction: visit.is_traction || false,
             isESWT: visit.is_eswt || false,
             isManual: visit.is_manual || false,
+            isIon: visit.is_ion || false,
             isInjectionCompleted: visit.is_injection_completed || false,
             patientMemo: visit.memo || undefined,
         };
@@ -132,6 +134,7 @@ export const useBedIntegration = (
             isTraction: fromBed.isTraction,
             isESWT: fromBed.isESWT,
             isManual: fromBed.isManual,
+            isIon: fromBed.isIon,
             isInjectionCompleted: fromBed.isInjectionCompleted,
             patientMemo: fromBed.patientMemo,
         };
@@ -181,7 +184,7 @@ export const useBedIntegration = (
         }
 
         const statusAutoUpdates: Partial<BedState> = {};
-        const visitStatusAutoUpdates: Partial<Pick<PatientVisit, 'is_injection' | 'is_fluid' | 'is_traction' | 'is_eswt' | 'is_manual'>> = {};
+        const visitStatusAutoUpdates: Partial<Pick<PatientVisit, 'is_injection' | 'is_fluid' | 'is_traction' | 'is_eswt' | 'is_manual' | 'is_ion'>> = {};
 
         (Object.keys(STEP_STATUS_KEYWORDS) as Array<keyof typeof STEP_STATUS_KEYWORDS>).forEach((statusKey) => {
             const hadKeywordBefore = hasStatusKeyword(oldSteps, statusKey);
@@ -191,12 +194,13 @@ export const useBedIntegration = (
             // (삭제해도 유지, 수동 OFF는 존중)
             if (!hadKeywordBefore && hasKeywordNow && !bed[statusKey]) {
                 statusAutoUpdates[statusKey] = true;
-                const visitMap: Record<keyof typeof STEP_STATUS_KEYWORDS, 'is_injection' | 'is_fluid' | 'is_traction' | 'is_eswt' | 'is_manual'> = {
+                const visitMap: Record<keyof typeof STEP_STATUS_KEYWORDS, 'is_injection' | 'is_fluid' | 'is_traction' | 'is_eswt' | 'is_manual' | 'is_ion'> = {
                     isInjection: 'is_injection',
                     isFluid: 'is_fluid',
                     isTraction: 'is_traction',
                     isESWT: 'is_eswt',
-                    isManual: 'is_manual'
+                    isManual: 'is_manual',
+                    isIon: 'is_ion'
                 };
                 visitStatusAutoUpdates[visitMap[statusKey]] = true;
             }

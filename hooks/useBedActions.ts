@@ -29,6 +29,7 @@ export const useBedActions = (
         is_traction: options?.isTraction || false,
         is_eswt: options?.isESWT || false,
         is_manual: options?.isManual || false,
+        is_ion: options?.isIon || false,
       });
     }
 
@@ -47,6 +48,7 @@ export const useBedActions = (
       isTraction: options?.isTraction || false,
       isESWT: options?.isESWT || false,
       isManual: options?.isManual || false,
+      isIon: options?.isIon || false,
     });
   }, [presets, updateBedState, onAddVisit]);
 
@@ -65,6 +67,7 @@ export const useBedActions = (
         is_traction: options?.isTraction || false,
         is_eswt: options?.isESWT || false,
         is_manual: options?.isManual || false,
+        is_ion: options?.isIon || false,
       });
     }
 
@@ -83,6 +86,7 @@ export const useBedActions = (
       isTraction: options?.isTraction || false,
       isESWT: options?.isESWT || false,
       isManual: options?.isManual || false,
+      isIon: options?.isIon || false,
     });
   }, [updateBedState, onAddVisit]);
 
@@ -130,6 +134,7 @@ export const useBedActions = (
       isTraction: false,
       isESWT: false,
       isManual: false,
+      isIon: false,
       isInjectionCompleted: false,
     });
   }, [updateBedState, onAddVisit]);
@@ -147,6 +152,7 @@ export const useBedActions = (
         is_fluid: options?.isFluid || false,
         is_eswt: options?.isESWT || false,
         is_manual: options?.isManual || false,
+        is_ion: options?.isIon || false,
       });
     }
 
