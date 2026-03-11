@@ -71,7 +71,7 @@ export const parseTreatmentString = (treatmentString: string | null, customTreat
 
   const referenceList = customTreatments.length > 0 ? customTreatments : STANDARD_TREATMENTS;
 
-  const parts = treatmentString.split('/').map(s => s.trim());
+  const parts = treatmentString.split(/[\/,]+/).map(s => s.trim());
   const reconstructedSteps: TreatmentStep[] = [];
 
   for (const part of parts) {

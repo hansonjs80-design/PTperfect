@@ -14,6 +14,7 @@ import { useBedPatientFields } from '../hooks/useBedPatientFields';
 import { useActiveBedStability } from '../hooks/useActiveBedStability';
 import { supabase, isOnlineMode } from '../lib/supabase';
 import { DEFAULT_TIMER_ONLY_MINUTES } from '../utils/timerOnlyPreference';
+import { generateTreatmentString } from '../utils/bedUtils';
 
 interface MovingPatientState {
   bedId: number;
@@ -197,6 +198,30 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     clearBed: _clearBed,
     updateBedMemoFromLog,
   });
+
+
+  useEffect(() => {
+    const today = (() => {
+      const now = new Date();
+      const offsetMs = now.getTimezoneOffset() * 60000;
+      return new Date(now.getTime() - offsetMs).toISOString().split('T')[0];
+    })();
+    if (currentDate !== today) return;
+
+    for (const bed of beds) {
+      if (bed.status === BedStatus.IDLE) continue;
+      const preset = bed.customPreset || presets.find((p) => p.id === bed.currentPresetId);
+      if (!preset || preset.steps.length === 0) continue;
+
+      const latestVisit = getLatestVisitForBed(bed.id, visits);
+      if (!latestVisit) continue;
+
+      const desiredTreatment = generateTreatmentString(preset.steps);
+      if ((latestVisit.treatment_name || '') === desiredTreatment) continue;
+
+      void updateLogVisit(latestVisit.id, { treatment_name: desiredTreatment });
+    }
+  }, [beds, visits, presets, currentDate, getLatestVisitForBed, updateLogVisit]);
 
   // --- Snapshot Wrappers for Actions ---
 
