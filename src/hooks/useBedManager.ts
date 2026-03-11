@@ -79,12 +79,16 @@ export const useBedManager = (presets: Preset[], isSoundEnabled: boolean) => {
   const selectPreset = useCallback((bedId: number, presetId: string, options?: SelectPresetOptions) => {
     const preset = presets.find(p => p.id === presetId);
     if (!preset) return;
-    const firstStep = preset.steps[0];
+    const stablePreset = {
+      ...preset,
+      steps: preset.steps.map(step => ({ ...step }))
+    };
+    const firstStep = stablePreset.steps[0];
     
     updateBedState(bedId, {
       status: BedStatus.ACTIVE,
       currentPresetId: presetId,
-      customPreset: null as any,
+      customPreset: stablePreset,
       currentStepIndex: 0,
       queue: [],
       startTime: Date.now(),
