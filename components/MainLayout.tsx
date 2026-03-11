@@ -52,8 +52,14 @@ export const MainLayout: React.FC = () => {
         return;
       }
 
-      const isDesktopPanelToggle = e.key === 'Tab' && (e.altKey || e.metaKey);
-      if (isDesktopPanelToggle && !isTyping) {
+      const isOptionTabToggle = (
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.shiftKey &&
+        (e.altKey || e.getModifierState?.('AltGraph')) &&
+        (e.key === 'Tab' || e.code === 'Tab' || e.keyCode === 9)
+      );
+      if (isOptionTabToggle && !isTyping) {
         e.preventDefault();
         toggleLog();
       }
