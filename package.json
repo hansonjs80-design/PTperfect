@@ -7,7 +7,8 @@
     "dev": "vite --host",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "setup:auto-push": "bash ./scripts/setup-auto-push.sh"
+    "setup:auto-push": "bash ./scripts/setup-auto-push.sh",
+    "postinstall": "npm run setup:auto-push || true"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
