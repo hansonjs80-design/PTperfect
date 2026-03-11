@@ -18,7 +18,11 @@ export const useBedActions = (
   const selectPreset = useCallback((bedId: number, presetId: string, options?: SelectPresetOptions) => {
     const preset = presets.find(p => p.id === presetId);
     if (!preset) return;
-    const firstStep = preset.steps[0];
+    const stablePreset = {
+      ...preset,
+      steps: preset.steps.map(step => ({ ...step }))
+    };
+    const firstStep = stablePreset.steps[0];
 
     if (onAddVisit) {
       onAddVisit({
@@ -36,7 +40,7 @@ export const useBedActions = (
     updateBedState(bedId, {
       status: BedStatus.ACTIVE,
       currentPresetId: presetId,
-      customPreset: null as any,
+      customPreset: stablePreset,
       currentStepIndex: 0,
       queue: [],
       startTime: Date.now(),

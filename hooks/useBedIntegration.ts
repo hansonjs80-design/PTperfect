@@ -76,11 +76,14 @@ export const useBedIntegration = (
             }];
             customPreset = { id: `timer-only-log-${Date.now()}`, name: '타이머', steps };
         } else if (matchingPreset) {
-            steps = matchingPreset.steps;
+            const stablePreset = {
+                ...matchingPreset,
+                steps: matchingPreset.steps.map((step) => ({ ...step }))
+            };
+            steps = stablePreset.steps;
+            customPreset = stablePreset;
             if (!matchingPreset.id.startsWith('restored-')) {
                 currentPresetId = matchingPreset.id;
-            } else {
-                customPreset = matchingPreset;
             }
         } else {
             steps = parseTreatmentString(treatmentName, quickTreatments);
