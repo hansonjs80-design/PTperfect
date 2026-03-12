@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit3, List, Check, X, Plus, Trash2 } from 'lucide-react';
+import { List, Check, X, Plus, Trash2 } from 'lucide-react';
 import { PatientVisit } from '../../types';
 import { ContextMenu } from '../common/ContextMenu';
 import { TreatmentTextRenderer } from './TreatmentTextRenderer';
@@ -57,7 +57,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     colIndex,
     isReadOnly = false
 }) => {
-    const [mode, setMode] = useState<'view' | 'menu' | 'edit_text'>('view');
+    const [mode, setMode] = useState<'view' | 'menu'>('view');
     const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
     const [popupState, setPopupState] = useState<{ type: 'prev' | 'next' | 'clear', x: number, y: number } | null>(null);
     const [hoverInfo, setHoverInfo] = useState<{ x: number, y: number } | null>(null);
@@ -66,19 +66,11 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const [newStepText, setNewStepText] = useState('');
 
     const cellRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
     const lastClickTimeRef = useRef<number>(0);
 
     const { handleGridKeyDown } = useGridNavigation(10);
 
     const hasTreatment = useMemo(() => value.trim() !== '', [value]);
-
-    useEffect(() => {
-        if (mode === 'edit_text' && inputRef.current) {
-            inputRef.current.focus();
-            inputRef.current.setSelectionRange(inputRef.current.value.length, inputRef.current.value.length);
-        }
-    }, [mode]);
 
     const handleMouseEnter = () => {
         if (value && window.matchMedia('(min-width: 1024px) and (hover: hover)').matches && cellRef.current) {
@@ -214,13 +206,6 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         setPopupState(null);
     };
 
-    const handleTextCommit = (e: React.KeyboardEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>) => {
-        const target = e.currentTarget;
-        if (target.value !== value) onCommitText(target.value);
-        setMode('view');
-        setTimeout(() => cellRef.current?.focus(), 0);
-    };
-
     const getPopupMessage = () => {
         switch (popupState?.type) {
             case 'prev': return '이전 단계로?';
@@ -254,46 +239,31 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                 onMouseLeave={handleMouseLeave}
                 className="w-full h-full min-h-[36px] relative outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
             >
-                {mode === 'edit_text' ? (
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        defaultValue={value}
-                        onBlur={handleTextCommit}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleTextCommit(e);
-                            if (e.key === 'Escape') { setMode('view'); setTimeout(() => cellRef.current?.focus(), 0); }
-                        }}
-                        className="w-full h-full bg-white dark:bg-slate-800 border-2 border-brand-500 rounded-sm text-sm sm:text-base text-left pl-3 !text-gray-900 dark:!text-gray-100"
-                        placeholder={placeholder}
-                    />
-                ) : (
-                    <div className={`flex items-center w-full h-full px-2 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30'} rounded-sm`} title={getTitle()}>
-                        <div className="flex-1 min-w-0 flex items-center justify-start pl-2 pr-14">
-                            <span className="text-[15px] sm:text-[16px] xl:text-[15px] font-semibold truncate pointer-events-none text-left w-full leading-snug text-slate-900 dark:text-slate-100">
-                                <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor} activeStepBgColor={activeStepBgColor} timerStatus={timerStatus} remainingTime={remainingTime} isPaused={isPaused} />
-                            </span>
+                <div className={`flex items-center w-full h-full px-2 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30'} rounded-sm`} title={getTitle()}>
+                    <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-14">
+                        <div className="text-[15px] sm:text-[16px] xl:text-[15px] font-semibold pointer-events-none text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[32px]">
+                            <TreatmentTextRenderer value={value} placeholder={placeholder} isActiveRow={rowStatus === 'active'} activeStepIndex={activeStepIndex} activeStepColor={activeStepColor} activeStepBgColor={activeStepBgColor} timerStatus={timerStatus} remainingTime={remainingTime} isPaused={isPaused} />
                         </div>
-
-                        {isReadOnly && (
-                            <span className="absolute top-1 right-2 rounded bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 text-[9px] font-bold text-slate-600 dark:text-slate-200">
-                                타이머 사용
-                            </span>
-                        )}
-
-                        {!isReadOnly && (
-                            <TreatmentControlButtons
-                                rowStatus={rowStatus}
-                                activeStepIndex={activeStepIndex}
-                                isLastStep={isLastStep}
-                                onNextStep={onNextStep}
-                                onPrevStep={onPrevStep}
-                                onClearBed={onClearBed}
-                                onActionClick={handleStepButtonClick}
-                            />
-                        )}
                     </div>
-                )}
+
+                    {isReadOnly && (
+                        <span className="absolute top-1 right-2 rounded bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 text-[9px] font-bold text-slate-600 dark:text-slate-200">
+                            타이머 사용
+                        </span>
+                    )}
+
+                    {!isReadOnly && (
+                        <TreatmentControlButtons
+                            rowStatus={rowStatus}
+                            activeStepIndex={activeStepIndex}
+                            isLastStep={isLastStep}
+                            onNextStep={onNextStep}
+                            onPrevStep={onPrevStep}
+                            onClearBed={onClearBed}
+                            onActionClick={handleStepButtonClick}
+                        />
+                    )}
+                </div>
             </div>
 
             {hoverInfo && createPortal(
@@ -367,10 +337,6 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
 
             {mode === 'menu' && (
                 <ContextMenu title="처방 목록 수정" position={menuPos} onClose={() => setMode('view')}>
-                    <button onClick={() => setMode('edit_text')} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-left group">
-                        <div className="p-2 bg-gray-100 dark:bg-slate-600 rounded-full group-hover:bg-white dark:group-hover:bg-slate-500 shadow-sm"><Edit3 className="w-4 h-4 text-gray-500 dark:text-gray-300" /></div>
-                        <div><span className="block text-sm font-bold text-gray-800 dark:text-gray-200">단순 텍스트 수정</span><span className="block text-[10px] text-gray-500 dark:text-gray-400">로그만 변경 (배드 미작동)</span></div>
-                    </button>
                     <button
                         onClick={() => {
                             if (onOpenSelectorLogOnly) {
