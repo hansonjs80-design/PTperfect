@@ -163,22 +163,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
 
 
-  const handleTreatmentSelectorOpenLogOnly = async () => {
-    const bedId = visit?.bed_id ?? null;
-    const hasBed = typeof bedId === 'number';
-
-    if (isDraft && onCreate) {
-      const newId = await onCreate({}, 3);
-      if (onSelectLog) onSelectLog(newId);
-      return;
-    }
-
-    if (!isDraft && visit && onSelectLog) {
-      // 세트 처방 변경은 배드카드에도 반영하되,
-      // 실제 타이머 런타임은 integration 레이어에서 유지한다.
-      onSelectLog(visit.id, hasBed ? bedId : null);
-    }
-  };
 
 
 
@@ -354,7 +338,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           rowStatus={rowStatus}
           onCommitText={handleTreatmentTextCommit}
           onOpenSelector={handleTreatmentSelectorOpen}
-          onOpenSelectorLogOnly={handleTreatmentSelectorOpenLogOnly}
           directSelector={isNoBedAssigned || !hasTreatment || isLogEditMode}
           activeStepColor={activeStepColor}
           activeStepBgColor={activeStepBgColor}
