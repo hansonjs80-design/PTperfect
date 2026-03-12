@@ -1,6 +1,5 @@
 
-import React, { memo, Fragment } from 'react';
-import { formatTime } from '../../utils/bedUtils';
+import React, { memo } from 'react';
 
 interface TreatmentTextRendererProps {
   value: string;
@@ -12,6 +11,7 @@ interface TreatmentTextRendererProps {
   timerStatus?: 'normal' | 'warning' | 'overtime';
   remainingTime?: number;
   isPaused?: boolean;
+  onTogglePause?: () => void;
 }
 
 export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(({
@@ -19,12 +19,21 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
   placeholder,
   isActiveRow,
   activeStepIndex,
-  activeStepColor,
   activeStepBgColor,
   timerStatus = 'normal',
   remainingTime,
-  isPaused
+  isPaused,
+  onTogglePause
 }) => {
+  const formatTimer = (seconds: number) => {
+    const safe = Math.floor(seconds);
+    const abs = Math.abs(safe);
+    const mm = Math.floor(abs / 60).toString().padStart(2, '0');
+    const ss = (abs % 60).toString().padStart(2, '0');
+    const prefix = safe < 0 ? '+' : '';
+    return `${prefix}${mm}:${ss}`;
+  };
+
   if (!value) {
     return (
       <span className="text-gray-400 italic font-bold">
@@ -33,58 +42,66 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
     );
   }
 
-  // 타이머 표시 여부: 활성 행이고 타이머가 동작 중일 때
-  const showTimer = isActiveRow && remainingTime !== undefined && (remainingTime !== 0 || timerStatus === 'overtime');
+  const parts = value
+    .split('/')
+    .map((part) => part.trim())
+    .filter(Boolean);
 
-  // 타이머 색상
-  const timerColorClass =
-    timerStatus === 'overtime' ? 'text-red-500' :
-    timerStatus === 'warning' ? 'text-orange-500' :
-    'text-slate-600 dark:text-slate-300';
-
-  const timerAnimClass = (timerStatus === 'overtime' || timerStatus === 'warning') ? 'animate-pulse' : '';
-
-  // 활성화 상태이고 단계 인덱스가 유효할 때: 텍스트를 분리하여 하이라이팅
-  if (isActiveRow && activeStepIndex >= 0) {
-    const parts = value.split('/');
+  if (parts.length === 0) {
     return (
-      <div className="flex items-center flex-wrap gap-y-1 leading-relaxed">
-        {parts.map((part, i) => (
-          <Fragment key={i}>
-            {i === activeStepIndex ? (
-              <>
-                <span className={`
-                  inline-flex items-center justify-center
-                  ${activeStepBgColor || 'bg-brand-500'}
-                  text-white px-1.5 py-[1px] rounded-md
-                  text-[13px] sm:text-sm xl:text-[13px]
-                  font-black shadow-sm ring-1 ring-white/20
-                  transition-all duration-300 z-10
-                `}>
-                  {part.trim()}
-                </span>
-                {showTimer && (
-                  <span className={`ml-1 text-[12px] sm:text-[13px] font-black tabular-nums ${timerColorClass} ${timerAnimClass} ${isPaused ? 'opacity-50' : ''}`}>
-                    {timerStatus === 'overtime' && '+'}{formatTime(remainingTime!)}
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="text-gray-700 dark:text-gray-300 px-0.5">
-                {part.trim()}
-              </span>
-            )}
-            {i < parts.length - 1 && <span className="text-gray-400 mx-0.5 self-center">/</span>}
-          </Fragment>
-        ))}
-      </div>
+      <span className="text-gray-400 italic font-bold">
+        {placeholder}
+      </span>
     );
   }
 
-  // 기본 상태: 전체 텍스트 표시 (활성 단계 색상이 있으면 적용)
   return (
-    <span className={activeStepColor || 'text-gray-700 dark:text-gray-300'}>
-      {value}
-    </span>
+    <div className="flex items-center flex-wrap gap-1 py-0.5">
+      {parts.map((part, i) => {
+        const isCurrent = isActiveRow && i === activeStepIndex;
+
+        return (
+          <span
+            key={`${part}-${i}`}
+            className={`
+              inline-flex items-center gap-1 rounded-md border px-1.5 py-[1px]
+              text-[12px] sm:text-[13px] xl:text-[12px] font-black leading-tight
+              transition-colors duration-200
+              ${isCurrent
+                ? `${activeStepBgColor || 'bg-brand-500'} text-white border-transparent shadow-sm ring-1 ring-white/20`
+                : 'bg-slate-100 dark:bg-slate-700/70 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600'}
+            `}
+          >
+            <span>{part}</span>
+            {isCurrent && typeof remainingTime === 'number' && (
+              <>
+                <span className={`text-[10px] sm:text-[11px] font-black ${
+                  timerStatus === 'overtime'
+                    ? 'text-red-200'
+                    : timerStatus === 'warning'
+                      ? 'text-yellow-100'
+                      : 'text-emerald-100'
+                }`}>
+                  {isPaused ? `일시정지 ${formatTimer(remainingTime)}` : formatTimer(remainingTime)}
+                </span>
+                {onTogglePause && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTogglePause();
+                    }}
+                    className="ml-0.5 rounded bg-white/20 hover:bg-white/30 px-1 py-[1px] text-[9px] sm:text-[10px] font-black leading-none"
+                    title={isPaused ? '타이머 시작' : '타이머 일시정지'}
+                  >
+                    {isPaused ? '시작' : '일시정지'}
+                  </button>
+                )}
+              </>
+            )}
+          </span>
+        );
+      })}
+    </div>
   );
 });
