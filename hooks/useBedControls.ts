@@ -5,6 +5,12 @@ import { calculateRemainingTime } from '../utils/bedLogic';
 import { createSwappedPreset } from '../utils/treatmentFactories';
 import { generateTreatmentString } from '../utils/bedUtils';
 
+
+const createStablePresetSnapshot = (preset: Preset) => ({
+  ...preset,
+  steps: preset.steps.map((step) => ({ ...step }))
+});
+
 export const useBedControls = (
   bedsRef: React.MutableRefObject<BedState[]>,
   updateBedState: (id: number, updates: Partial<BedState>, skipDbWrite?: boolean) => void,
@@ -16,17 +22,19 @@ export const useBedControls = (
     const bed = bedsRef.current.find(b => b.id === bedId);
     if (!bed || bed.status === BedStatus.IDLE) return;
 
-    const preset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
-    if (!preset) return;
+    const runtimePreset = bed.customPreset || (bed.currentPresetId ? presets.find(p => p.id === bed.currentPresetId) : null);
+    if (!runtimePreset) return;
 
-    const totalSteps = preset.steps.length;
+    const stablePreset = bed.customPreset || createStablePresetSnapshot(runtimePreset);
+    const totalSteps = stablePreset.steps.length;
     if (totalSteps === 0) return;
 
     // stale sync 등으로 currentStepIndex가 비정상 범위가 되면 즉시 완료로 보내지 말고 0단계로 복구
     if (bed.currentStepIndex < 0 || bed.currentStepIndex >= totalSteps) {
-      const firstStep = preset.steps[0];
+      const firstStep = stablePreset.steps[0];
       updateBedState(bedId, {
         status: BedStatus.ACTIVE,
+        customPreset: stablePreset,
         currentStepIndex: 0,
         queue: [],
         startTime: Date.now(),
@@ -40,9 +48,10 @@ export const useBedControls = (
     const nextIndex = bed.currentStepIndex + 1;
 
     if (nextIndex < totalSteps) {
-      const nextStepItem = preset.steps[nextIndex];
+      const nextStepItem = stablePreset.steps[nextIndex];
       updateBedState(bedId, {
         status: BedStatus.ACTIVE,
+        customPreset: stablePreset,
         currentStepIndex: nextIndex,
         queue: [],
         startTime: Date.now(),
@@ -60,18 +69,21 @@ export const useBedControls = (
     // ACTIVE 또는 COMPLETED 상태일 때만 이전 단계로 이동 가능
     if (!bed || (bed.status !== BedStatus.ACTIVE && bed.status !== BedStatus.COMPLETED)) return;
 
-    const preset = bed.customPreset || presets.find(p => p.id === bed.currentPresetId);
-    if (!preset) return;
+    const runtimePreset = bed.customPreset || (bed.currentPresetId ? presets.find(p => p.id === bed.currentPresetId) : null);
+    if (!runtimePreset) return;
+
+    const stablePreset = bed.customPreset || createStablePresetSnapshot(runtimePreset);
 
     // 만약 완료 상태라면 마지막 인덱스로 돌아가고, 아니면 현재 인덱스에서 -1
     let prevIndex = bed.status === BedStatus.COMPLETED
-      ? preset.steps.length - 1
+      ? stablePreset.steps.length - 1
       : bed.currentStepIndex - 1;
 
     if (prevIndex >= 0) {
-      const prevStepItem = preset.steps[prevIndex];
+      const prevStepItem = stablePreset.steps[prevIndex];
       updateBedState(bedId, {
         status: BedStatus.ACTIVE, // 상태를 다시 ACTIVE로 복구
+        customPreset: stablePreset,
         currentStepIndex: prevIndex,
         startTime: Date.now(),
         remainingTime: prevStepItem.duration,
