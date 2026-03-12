@@ -98,7 +98,7 @@ export const useBedIntegration = (
             patientMemo: visit.memo || undefined,
         };
 
-        if (forceRestart || bed.status !== BedStatus.ACTIVE || isStepsChanged) {
+        if (forceRestart || bed.status !== BedStatus.ACTIVE) {
             const firstStep = steps[0];
             updates.status = BedStatus.ACTIVE;
             updates.currentPresetId = currentPresetId;
@@ -109,6 +109,15 @@ export const useBedIntegration = (
             updates.remainingTime = firstStep ? firstStep.duration : 0;
             updates.originalDuration = firstStep ? firstStep.duration : 0;
             updates.isPaused = false;
+        } else if (isStepsChanged) {
+            // 활성 배드에서 로그의 처방 목록만 변경된 경우,
+            // 타이머 런타임은 유지하고 목록/프리셋 정보만 갱신한다.
+            const clampedStepIndex = Math.max(0, Math.min(bed.currentStepIndex, steps.length - 1));
+            updates.currentPresetId = currentPresetId;
+            updates.customPreset = customPreset;
+            if (clampedStepIndex !== bed.currentStepIndex) {
+                updates.currentStepIndex = clampedStepIndex;
+            }
         }
 
         updateBedState(bedId, updates);
