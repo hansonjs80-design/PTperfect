@@ -419,9 +419,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       <table ref={tableRef} className="w-full min-w-[500px] md:min-w-full border-collapse table-fixed bg-white/90 dark:bg-slate-900">
         {columnWidths && (
           <colgroup>
-            {columnWidths.map((w, i) => (
-              <col key={i} style={i !== FLEX_COL_INDEX ? { width: `${w}px` } : undefined} />
-            ))}
+            {columnWidths.map((w, i) => {
+              const normalizedWidth = (!showTimerColumn && i === 6) ? 0 : w;
+              return (
+                <col key={i} style={i !== FLEX_COL_INDEX ? { width: `${normalizedWidth}px` } : undefined} />
+              );
+            })}
           </colgroup>
         )}
         <PatientLogTableHeader onResizeStart={onResizeStart} isResizing={isResizing} showTimerColumn={showTimerColumn} />

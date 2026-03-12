@@ -41,7 +41,11 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
     if (!tableRef.current) return null;
     const ths = tableRef.current.querySelectorAll('thead th');
     if (ths.length === 0) return null;
-    return Array.from(ths).map((th, index) => clampWidthByIndex(th.getBoundingClientRect().width, index));
+    return Array.from(ths).map((th, index) => {
+      const hidden = window.getComputedStyle(th).display === 'none';
+      if (hidden) return 0;
+      return clampWidthByIndex(th.getBoundingClientRect().width, index);
+    });
   }, [tableRef]);
 
   const onResizeStart = useCallback((colIndex: number, clientX: number, invert = false) => {
@@ -60,6 +64,7 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
       const s = stateRef.current;
       if (!s) return;
       const delta = clientX - s.startX;
+      if (s.startWidths[s.colIndex] <= 0) return;
       const newWidth = clampWidthByIndex(s.startWidths[s.colIndex] + (s.invert ? -delta : delta), s.colIndex);
 
       setColumnWidths(prev => {

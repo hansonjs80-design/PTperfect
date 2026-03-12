@@ -21,7 +21,7 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
     if (!onResizeStart || !RESIZABLE_COLUMNS.has(colIndex)) return null;
     return (
       <div
-        className="absolute top-0 -right-[4px] w-[9px] h-full z-20 hidden md:portrait:flex lg:flex items-center justify-center cursor-col-resize touch-none"
+        className="absolute top-0 right-0 w-[6px] h-full z-20 hidden md:portrait:flex lg:flex items-center justify-center cursor-col-resize touch-none"
         onMouseDown={(e) => {
           e.preventDefault();
           onResizeStart(colIndex, e.clientX);
@@ -32,7 +32,7 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
         }}
       >
         <div
-          className={`w-[3px] h-[60%] rounded-full transition-colors duration-150 ${
+          className={`w-[2px] h-[60%] rounded-full transition-colors duration-150 ${
             isResizing
               ? 'bg-blue-400/50'
               : 'bg-transparent hover:bg-blue-400/60'
