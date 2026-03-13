@@ -37,7 +37,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
   const lastClickTimeRef = useRef<number>(0);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
 
-  const { handleGridKeyDown } = useGridNavigation(8);
+  const { handleGridKeyDown } = useGridNavigation(11);
 
   // Refine dropdown position with actual measured dimensions
   useLayoutEffect(() => {
@@ -119,7 +119,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
     <>
       <div
         ref={cellRef}
-        className={`w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:ring-2 focus:ring-sky-400 focus:z-10 ${isDraft ? 'opacity-50 hover:opacity-100' : ''}`}
+        className={`w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 ${isDraft ? 'opacity-50 hover:opacity-100' : ''}`}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         tabIndex={0}
@@ -190,7 +190,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
                   {value && (
                     <button
                       onClick={() => handleOptionSelect(value)}
-                      className="mt-1 text-[10px] text-gray-400 hover:text-red-500 transition-colors text-center py-1"
+                      className="mt-1 w-full py-1.5 rounded-lg border border-red-200 bg-red-50 text-[11px] font-bold text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-800/60 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/35 transition-colors"
                     >
                       선택 해제
                     </button>
