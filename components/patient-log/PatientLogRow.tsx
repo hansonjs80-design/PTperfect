@@ -83,7 +83,11 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
   useEffect(() => {
     if (optimisticTreatmentName === null) return;
-    if ((visit?.treatment_name || '') === optimisticTreatmentName) {
+
+    const optimisticTrimmed = optimisticTreatmentName.trim();
+    const visitTrimmed = (visit?.treatment_name || '').trim();
+
+    if (visitTrimmed === optimisticTrimmed) {
       setOptimisticTreatmentName(null);
     }
   }, [optimisticTreatmentName, visit?.treatment_name]);
@@ -95,8 +99,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       return;
     }
 
-    // 배드와 미연동된 비활성 행에서는 동기화 지연 중에도 마지막 처방명을 유지한다.
-    if (!visit?.bed_id && rowStatus === 'none') return;
+    // 비활성 행에서는 동기화 지연 중에도 마지막 처방명을 유지한다.
+    if (rowStatus !== 'active') return;
 
     setStickyTreatmentName('');
   }, [visit?.treatment_name, visit?.bed_id, rowStatus]);
@@ -362,9 +366,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     : '';
   const rawVisitTreatmentValue = optimisticTreatmentName ?? visit?.treatment_name ?? '';
   const visitTreatmentValue = rawVisitTreatmentValue.trim() !== '' ? rawVisitTreatmentValue : '';
-  const shouldUseStickyForUnlinkedRow = !visit?.bed_id && rowStatus === 'none';
-  const nonActiveDisplayValue = shouldUseStickyForUnlinkedRow
-    ? (visitTreatmentValue || stickyTreatmentName)
+  const shouldUseStickyForNonActiveRow = rowStatus !== 'active';
+  const nonActiveDisplayValue = shouldUseStickyForNonActiveRow
+    ? (visitTreatmentValue || stickyTreatmentName || activeBedTreatmentValue)
     : (visitTreatmentValue || activeBedTreatmentValue);
   const treatmentDisplayValue = rowStatus === 'active'
     ? (activeBedTreatmentValue || visitTreatmentValue)
