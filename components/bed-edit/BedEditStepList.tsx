@@ -42,13 +42,13 @@ export const BedEditStepList: React.FC<BedEditStepListProps> = ({
     onUpdateSteps(bed.id, newSteps);
   };
 
-  const handleDurationChange = (idx: number, changeMinutes: number) => {
+  const handleDurationChange = (idx: number, changeSeconds: number) => {
     if (!onUpdateSteps) return;
     const newSteps = [...safeSteps];
     const currentSeconds = newSteps[idx].duration || 0;
-    const newSeconds = currentSeconds + (changeMinutes * 60);
+    const newSeconds = currentSeconds + changeSeconds;
 
-    if (newSeconds >= 60) {
+    if (newSeconds >= 30) {
       newSteps[idx] = { ...newSteps[idx], duration: newSeconds };
       onUpdateSteps(bed.id, newSteps);
     }

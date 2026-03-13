@@ -2,7 +2,7 @@
 import React, { useCallback } from 'react';
 
 // Global variable to debounce navigation events across ALL grid cells.
-// Increased to 300ms to handle heavy operations like Row Creation/Re-render smoothly.
+// Keep a small debounce to prevent duplicate key events while preserving smooth movement.
 let lastGlobalNavTime = 0;
 
 export const useGridNavigation = (totalCols: number) => {
@@ -30,15 +30,13 @@ export const useGridNavigation = (totalCols: number) => {
     const nextElement = document.querySelector(`[data-grid-id="${nextRow}-${nextCol}"]`) as HTMLElement;
     
     if (nextElement) {
-      // Use a small delay to ensure the current event loop finishes
-      // and focus moves AFTER any pending re-renders.
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         nextElement.focus();
         // If it's an input, select text
         if (nextElement.tagName === 'INPUT') {
           (nextElement as HTMLInputElement).select();
         }
-      }, 10);
+      });
     }
   }, []);
 
@@ -48,8 +46,8 @@ export const useGridNavigation = (totalCols: number) => {
 
     // Global Debounce check
     const now = Date.now();
-    // 300ms prevents double-firing when a Row Creation triggers a heavy Re-render
-    if (now - lastGlobalNavTime < 300) { 
+    // 80ms prevents accidental double-firing while keeping arrow navigation snappy
+    if (now - lastGlobalNavTime < 80) {
         // Prevent default even if debounced, to stop native focus jumps during the cooldown
         if (e.key === 'Tab' || e.key === 'Enter') {
             e.preventDefault();
