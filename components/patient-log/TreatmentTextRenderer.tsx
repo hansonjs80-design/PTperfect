@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useMemo, useRef, useState } from 'react';
 import { Pause, Play } from 'lucide-react';
 import { QuickTreatment } from '../../types';
 import { StepReplacePopup } from '../bed-card/StepReplacePopup';
@@ -43,6 +43,7 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
 }) => {
   const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null);
   const [replacePopup, setReplacePopup] = useState<{ idx: number; x: number; y: number } | null>(null);
+  const lastTapRef = useRef<{ idx: number; at: number } | null>(null);
 
   const formatTimer = (seconds: number) => {
     const safe = Math.floor(seconds);
@@ -66,11 +67,32 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
     );
   }
 
-  const handleChipClick = (e: React.MouseEvent, idx: number) => {
+  const handleChipClick = (e: React.MouseEvent<HTMLSpanElement>, idx: number) => {
     if (!interactiveStepEdit) return;
 
     e.stopPropagation();
     e.preventDefault();
+
+    // 모바일/태블릿은 더블터치로 데스크탑 우클릭과 동일한 단일 처방 교체 팝업을 연다.
+    if (isMobileOrTabletMode() && onReplaceStep && quickTreatments.length > 0) {
+      const now = Date.now();
+      const last = lastTapRef.current;
+      const isDoubleTap = !!last && last.idx === idx && now - last.at <= 320;
+
+      if (isDoubleTap) {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        setSelectedStepIndex(idx);
+        setReplacePopup({
+          idx,
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        });
+        lastTapRef.current = null;
+        return;
+      }
+
+      lastTapRef.current = { idx, at: now };
+    }
 
     if (selectedStepIndex === null) {
       setSelectedStepIndex(idx);
