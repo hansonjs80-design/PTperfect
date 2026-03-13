@@ -289,35 +289,77 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     const active = document.activeElement as HTMLInputElement | null;
     if (isActiveInputEditing(active)) return;
 
+    const isShortcut = e.ctrlKey || e.metaKey;
+    const keyLower = e.key.toLowerCase();
+
+    if (isShortcut && (keyLower === 'c' || keyLower === 'x')) {
+      const text = handleGridClipboardCopy(keyLower === 'x');
+      if (!text) return;
+      e.preventDefault();
+      void navigator.clipboard?.writeText(text).catch(() => {});
+      return;
+    }
+
+    if (isShortcut && keyLower === 'v') {
+      e.preventDefault();
+      void (async () => {
+        try {
+          const text = await navigator.clipboard?.readText();
+          if (text) handleGridPaste(text);
+        } catch {
+          // noop
+        }
+      })();
+      return;
+    }
+
+    const bounds = normalizeSelectionBounds(selection);
+    const anchor = bounds ? { row: bounds.rowMin, col: bounds.colMin } : null;
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      const current = anchor ?? parseGridCellId(document.activeElement as HTMLElement | null);
+      if (!current) return;
+
+      const maxRow = Math.max(0, totalRows - 1);
+      const deltaRow = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
+      const deltaCol = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      const nextRow = Math.min(Math.max(current.row + deltaRow, 0), maxRow);
+      const nextCol = Math.min(Math.max(current.col + deltaCol, 0), 9);
+
+      e.preventDefault();
+      const nextPos = { row: nextRow, col: nextCol };
+      setSelection({ start: nextPos, end: nextPos });
+      onSelectionAnchorChange?.(nextPos.row, nextPos.col);
+      const host = document.querySelector(`[data-grid-id="${nextPos.row}-${nextPos.col}"]`) as HTMLElement | null;
+      host?.focus();
+      return;
+    }
+
     const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
     const isEditTriggerKey = isPlainTypingKey || e.key === 'Backspace' || e.key === 'Delete';
-    if (isEditTriggerKey) {
-      const bounds = normalizeSelectionBounds(selection);
-      const anchor = bounds ? { row: bounds.rowMin, col: bounds.colMin } : null;
-      if (anchor) {
-        const host = document.querySelector(`[data-grid-id="${anchor.row}-${anchor.col}"]`) as HTMLElement | null;
-        const inputTarget = host?.tagName === 'INPUT'
-          ? host as HTMLInputElement
-          : (host?.querySelector('input') as HTMLInputElement | null);
+    if (isEditTriggerKey && anchor) {
+      const host = document.querySelector(`[data-grid-id="${anchor.row}-${anchor.col}"]`) as HTMLElement | null;
+      const inputTarget = host?.tagName === 'INPUT'
+        ? host as HTMLInputElement
+        : (host?.querySelector('input') as HTMLInputElement | null);
 
-        if (inputTarget) {
-          inputTarget.focus();
+      if (inputTarget) {
+        inputTarget.focus();
 
-          // IME(한글) 조합 중에는 키 이벤트 재주입 시 자모 분리(ㅈㅜ)가 발생할 수 있어 차단.
-          const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
-          const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
-          if (isIMEKey) {
-            e.preventDefault();
-            e.stopPropagation();
-            return;
-          }
-
-          const replay = new KeyboardEvent('keydown', { key: e.key, bubbles: true, cancelable: true });
-          inputTarget.dispatchEvent(replay);
+        // IME(한글) 조합 중에는 키 이벤트 재주입 시 자모 분리(ㅈㅜ)가 발생할 수 있어 차단.
+        const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
+        const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
+        if (isIMEKey) {
           e.preventDefault();
           e.stopPropagation();
           return;
         }
+
+        const replay = new KeyboardEvent('keydown', { key: e.key, bubbles: true, cancelable: true });
+        inputTarget.dispatchEvent(replay);
+        e.preventDefault();
+        e.stopPropagation();
+        return;
       }
     }
 
@@ -330,8 +372,6 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     }
 
     if (e.key !== 'Backspace' && e.key !== 'Delete') return;
-
-    const bounds = normalizeSelectionBounds(selection);
     if (!bounds) return;
 
     e.preventDefault();
@@ -345,7 +385,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         setVisitCellText(visit, col, '');
       }
     }
-  }, [selection, visits, setVisitCellText, onSelectionAnchorChange]);
+  }, [selection, visits, totalRows, setVisitCellText, onSelectionAnchorChange, handleGridClipboardCopy, handleGridPaste]);
 
   useEffect(() => {
     const bounds = normalizeSelectionBounds(selection);
