@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { SkipBack, SkipForward, CheckCircle, X } from 'lucide-react';
+import { SkipBack, SkipForward, CheckCircle, X, Plus } from 'lucide-react';
 
 interface TreatmentControlButtonsProps {
   rowStatus: 'active' | 'completed' | 'none';
@@ -9,6 +9,7 @@ interface TreatmentControlButtonsProps {
   onPrevStep?: () => void;
   onNextStep?: () => void;
   onClearBed?: () => void;
+  onAddStep?: () => void;
   onActionClick: (e: React.MouseEvent, type: 'prev' | 'next' | 'clear') => void;
 }
 
@@ -19,6 +20,7 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
   onPrevStep,
   onNextStep,
   onClearBed,
+  onAddStep,
   onActionClick
 }) => {
   // Active 또는 Completed 상태가 아니면 렌더링하지 않음
@@ -52,6 +54,21 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
           >
             <X className={iconClass} />
           </button>
+      )}
+
+
+      {/* Add Step Button (Only Active) */}
+      {rowStatus === 'active' && onAddStep && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddStep();
+          }}
+          className={`${btnClass} text-gray-400 hover:text-emerald-600`}
+          title="처방 단계 추가"
+        >
+          <Plus className={iconClass} />
+        </button>
       )}
 
       {/* Next/Complete Button (Only Active) */}
