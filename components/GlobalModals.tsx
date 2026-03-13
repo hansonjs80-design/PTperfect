@@ -37,6 +37,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
     toggleTraction,
     toggleESWT,
     toggleManual,
+    toggleIon,
     updateBedSteps,
     updateBedDuration,
     updatePresets
@@ -143,6 +144,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         isTraction: !!activeLogEntry.is_traction,
         isESWT: !!activeLogEntry.is_eswt,
         isManual: !!activeLogEntry.is_manual,
+        isIon: !!activeLogEntry.is_ion,
       };
     }
     return undefined;
@@ -196,12 +198,15 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         <BedEditOverlay
           bed={editingBed}
           steps={editingBedSteps}
+          presets={presets}
+          quickTreatments={quickTreatments}
           onClose={() => closeAndPop(setEditingBedId)}
           onToggleInjection={toggleInjection}
           onToggleFluid={toggleFluid}
           onToggleTraction={toggleTraction}
           onToggleESWT={toggleESWT}
           onToggleManual={toggleManual}
+          onToggleIon={toggleIon}
           onUpdateSteps={updateBedSteps}
           onUpdateDuration={updateBedDuration}
         />
