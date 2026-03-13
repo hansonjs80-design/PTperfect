@@ -162,6 +162,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const getTitle = () => (value ? '더블클릭하여 세트 처방 선택' : '더블클릭하여 처방 선택');
+  const presetBadgeTextClass = presetLabel === '치료(수정됨)'
+    ? 'text-yellow-200'
+    : (presetTextColor || mapBgToTextClass(presetColor));
 
   return (
     <>
@@ -183,7 +186,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         >
           <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-[4px] py-0.5 gap-2">
             {presetLabel && (
-              <span className={`shrink-0 px-2 py-0.5 rounded-md text-[11px] font-black ${presetColor} ${presetTextColor || mapBgToTextClass(presetColor)} border border-black/10 dark:border-white/10`}>
+              <span className={`shrink-0 px-2 py-0.5 rounded-md text-[13px] font-black ${presetColor} ${presetBadgeTextClass} border border-black/10 dark:border-white/10`}>
                 {presetLabel}
               </span>
             )}
