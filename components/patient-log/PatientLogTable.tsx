@@ -230,7 +230,47 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     return rows.join('\n');
   }, [selection, visits, getVisitCellText, setVisitCellText]);
 
-  const handleGridPaste = useCallback((raw: string) => {
+  const buildDraftUpdatesForPasteRow = useCallback((line: string[], anchorCol: number) => {
+    const updates: Partial<PatientVisit> = {};
+
+    line.forEach((cellText, cIdx) => {
+      const col = anchorCol + cIdx;
+      if (!SELECTABLE_COLS.has(col)) return;
+
+      const normalized = cellText.trim();
+      if (!normalized) return;
+
+      switch (col) {
+        case 1:
+          updates.patient_name = normalized;
+          break;
+        case 2:
+          updates.gender = normalized.toUpperCase().slice(0, 1);
+          break;
+        case 3:
+          updates.body_part = normalized;
+          break;
+        case 4:
+          updates.treatment_name = normalized;
+          break;
+        case 6:
+          updates.memo = normalized;
+          break;
+        case 7:
+          updates.special_note = normalized;
+          break;
+        case 9:
+          updates.author = normalized;
+          break;
+        default:
+          break;
+      }
+    });
+
+    return updates;
+  }, []);
+
+  const handleGridPaste = useCallback(async (raw: string) => {
     if (!raw) return;
     const bounds = normalizeSelectionBounds(selection);
     const anchor = bounds ? { row: bounds.rowMin, col: bounds.colMin } : null;
@@ -239,18 +279,26 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     const parsedRows = raw.replace(/\r/g, '').split('\n').filter((line) => line.length > 0).map((line) => line.split('\t'));
     if (parsedRows.length === 0) return;
 
-    parsedRows.forEach((line, rIdx) => {
+    for (const [rIdx, line] of parsedRows.entries()) {
       const row = anchor.row + rIdx;
       const visit = visits[row];
-      if (!visit) return;
+
+      if (!visit) {
+        // Draft 행(휴지통 미표시)에도 붙여넣기 시 즉시 행을 생성해 값을 반영한다.
+        const draftUpdates = buildDraftUpdatesForPasteRow(line, anchor.col);
+        if (Object.keys(draftUpdates).length > 0) {
+          await onCreate(draftUpdates);
+        }
+        continue;
+      }
 
       line.forEach((cellText, cIdx) => {
         const col = anchor.col + cIdx;
         if (!SELECTABLE_COLS.has(col)) return;
         setVisitCellText(visit, col, cellText);
       });
-    });
-  }, [selection, visits, setVisitCellText]);
+    }
+  }, [selection, visits, setVisitCellText, buildDraftUpdatesForPasteRow, onCreate]);
 
 
   const isActiveInputEditing = (input: HTMLInputElement | null) => {
@@ -288,7 +336,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     const text = e.clipboardData.getData('text/plain');
     if (!text) return;
     e.preventDefault();
-    handleGridPaste(text);
+    void handleGridPaste(text);
   }, [handleGridPaste]);
 
 
@@ -313,7 +361,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       void (async () => {
         try {
           const text = await navigator.clipboard?.readText();
-          if (text) handleGridPaste(text);
+          if (text) void handleGridPaste(text);
         } catch {
           // noop
         }

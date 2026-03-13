@@ -133,7 +133,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
           <div className="w-full h-full px-1.5 py-0.5 flex items-center justify-start">
             <div className="flex flex-wrap items-center justify-start gap-1 max-w-full">
               {statusPills.map((item) => (
-                <span key={item.label} className={`px-1.5 py-0.5 rounded-md text-[10px] font-black text-white ${item.bg}`}>
+                <span key={item.label} className={`px-1.5 py-0.5 rounded-md text-[11.5px] font-black text-white ${item.bg}`}>
                   {item.label}
                 </span>
               ))}
