@@ -349,7 +349,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const visitTreatmentValue = rawVisitTreatmentValue.trim() !== '' ? rawVisitTreatmentValue : '';
   const treatmentDisplayValue = rowStatus === 'active'
     ? (activeBedTreatmentValue || visitTreatmentValue)
-    : visitTreatmentValue;
+    : (visitTreatmentValue || activeBedTreatmentValue);
   const handleTogglePauseFromTreatmentCell = (!isDraft && rowStatus === 'active' && bed)
     ? () => togglePause(bed.id)
     : undefined;
