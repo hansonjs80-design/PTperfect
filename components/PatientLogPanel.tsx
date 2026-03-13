@@ -121,6 +121,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setVisits(next);
     await syncSnapshotToDb(next);
   }, [cloneVisits, setVisits, syncSnapshotToDb, visits]);
+  const canUndoLog = undoStackRef.current.length > 0;
+  const canRedoLog = redoStackRef.current.length > 0;
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isMemoHistoryModalOpen, setIsMemoHistoryModalOpen] = useState(false);
   const [searchName, setSearchName] = useState('');
@@ -454,6 +456,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       if (isEditingText) return;
 
       e.preventDefault();
+      e.stopPropagation();
       if (isUndo) {
         void undoLogOnly();
       } else {
@@ -478,6 +481,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
             onDateSelect={setCurrentDate}
             onPrint={handlePrintClick}
             onClose={onClose}
+            onUndo={() => { void undoLogOnly(); }}
+            onRedo={() => { void redoLogOnly(); }}
+            canUndo={canUndoLog}
+            canRedo={canRedoLog}
           />
         </div>
 
