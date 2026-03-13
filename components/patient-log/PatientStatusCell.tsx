@@ -30,7 +30,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   const lastClickTimeRef = useRef<number>(0);
-  const { handleGridKeyDown } = useGridNavigation(8);
+  const { handleGridKeyDown } = useGridNavigation(11);
 
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent, isKeyboard: boolean = false) => {
     e.preventDefault();
@@ -83,6 +83,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     if (isDraft && onCreate) {
       await onCreate({ [key]: newVal });
     } else if (visit) {
+      // 활성 행은 배드 상태 아이콘과 연동, 그 외 행은 로그 전용
       const skipSync = rowStatus !== 'active';
       onUpdate(visit.id, { [key]: newVal }, skipSync);
     }
@@ -96,6 +97,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     visit.is_manual ||
     visit.is_eswt ||
     visit.is_traction ||
+    visit.is_ion ||
     !!visit.memo
   );
 
@@ -111,7 +113,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     <>
       <div
         ref={cellRef}
-        className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:ring-2 focus:ring-sky-400 focus:z-10"
+        className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
         onClick={handleInteraction}
         onKeyDown={handleKeyDown}
         tabIndex={0}
