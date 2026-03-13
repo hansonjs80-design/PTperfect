@@ -15,6 +15,7 @@ export const useBedTimer = (
   const presetsRef = useRef(presets);
   const isSoundEnabledRef = useRef(isSoundEnabled);
   const alertedBedsRef = useRef<Set<number>>(new Set());
+  const overtimeAnnouncedAtRef = useRef<Map<number, number>>(new Map());
 
   // Sync refs with latest props
   useEffect(() => {
@@ -42,23 +43,30 @@ export const useBedTimer = (
 
             if (step?.enableTimer) {
               if (newRemaining <= 0) {
-                // Trigger alarm only once per expiration
-                if (!alertedBedsRef.current.has(bed.id)) {
+                const now = Date.now();
+                const lastAnnouncedAt = overtimeAnnouncedAtRef.current.get(bed.id) || 0;
+                const shouldRepeatGuide = now - lastAnnouncedAt >= 60000;
+
+                // 첫 초과 시점 + 초과 유지 중 1분 간격 재안내
+                if (!alertedBedsRef.current.has(bed.id) || shouldRepeatGuide) {
                   const stepName = step ? step.name : '';
                   const nextStep = preset?.steps[bed.currentStepIndex + 1];
                   const nextStepName = nextStep ? nextStep.name : undefined;
 
                   playAlarmPattern(bed.id, stepName, nextStepName, !soundEnabled);
                   alertedBedsRef.current.add(bed.id);
+                  overtimeAnnouncedAtRef.current.set(bed.id, now);
                 }
               } else {
                 // Reset alert tracker if time is added/reset (e.g. paused then resumed with more time)
                 alertedBedsRef.current.delete(bed.id);
+                overtimeAnnouncedAtRef.current.delete(bed.id);
               }
             }
           } else {
             // Cleanup if bed becomes idle or paused
             alertedBedsRef.current.delete(bed.id);
+            overtimeAnnouncedAtRef.current.delete(bed.id);
           }
 
           // Only update state if the remaining time actually changed (prevents unnecessary re-renders)
