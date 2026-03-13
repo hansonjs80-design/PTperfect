@@ -15,6 +15,7 @@ interface BedStatusPopupProps {
   onToggleTraction: (id: number) => void;
   onToggleESWT: (id: number) => void;
   onToggleManual: (id: number) => void;
+  onToggleIon: (id: number) => void;
   onToggleInjectionCompleted: (id: number) => void;
   onEditMemo: (id: number) => void;
 }
@@ -28,6 +29,7 @@ export const BedStatusPopup: React.FC<BedStatusPopupProps> = ({
   onToggleTraction,
   onToggleESWT,
   onToggleManual,
+  onToggleIon,
   onToggleInjectionCompleted,
   onEditMemo
 }) => {
@@ -104,6 +106,7 @@ export const BedStatusPopup: React.FC<BedStatusPopupProps> = ({
             onToggleManual={onToggleManual}
             onToggleESWT={onToggleESWT}
             onToggleTraction={onToggleTraction}
+            onToggleIon={onToggleIon}
             onToggleInjectionCompleted={onToggleInjectionCompleted}
             onEditMemo={onEditMemo}
           />
