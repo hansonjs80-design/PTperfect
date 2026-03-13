@@ -12,6 +12,26 @@ const STORAGE_KEY = 'physio-column-widths';
 
 const clampWidthByIndex = (width: number, index: number) => Math.max(MIN_COL_WIDTH_BY_INDEX[index] ?? MIN_COL_WIDTH, width);
 
+
+const TREATMENT_COL_INDEX = 3;
+const MOBILE_PORTRAIT_TREATMENT_WIDTH_FACTOR = 1.4;
+
+const isMobilePortraitMode = () => {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(max-width: 1024px) and (orientation: portrait)').matches;
+};
+
+const applyDefaultWidthProfile = (widths: number[]) => {
+  const next = [...widths];
+  if (isMobilePortraitMode() && next[TREATMENT_COL_INDEX] > 0) {
+    next[TREATMENT_COL_INDEX] = clampWidthByIndex(
+      next[TREATMENT_COL_INDEX] * MOBILE_PORTRAIT_TREATMENT_WIDTH_FACTOR,
+      TREATMENT_COL_INDEX
+    );
+  }
+  return next;
+};
+
 export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | null>) {
   const [columnWidths, setColumnWidths] = useState<number[] | null>(() => {
     try {
@@ -48,9 +68,20 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
     });
   }, [tableRef]);
 
+
+  useEffect(() => {
+    if (columnWidths) return;
+    const id = requestAnimationFrame(() => {
+      const widths = captureWidths();
+      if (!widths) return;
+      setColumnWidths(applyDefaultWidthProfile(widths));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [columnWidths, captureWidths]);
+
   const onResizeStart = useCallback((colIndex: number, clientX: number, invert = false) => {
-    const widths = columnWidths ?? captureWidths();
-    if (!widths) return;
+    const widths = columnWidths ?? applyDefaultWidthProfile(captureWidths() ?? []);
+    if (widths.length === 0) return;
     if (!columnWidths) setColumnWidths(widths);
 
     stateRef.current = { colIndex, startX: clientX, startWidths: [...widths], invert };
