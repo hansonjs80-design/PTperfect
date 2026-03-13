@@ -45,13 +45,13 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
   let iconSizeClass = "";
 
   if (count >= 3) {
-    iconSizeClass = "w-[8.1px] h-[8.1px]";
+    iconSizeClass = "w-[9px] h-[9px]";
   } else {
-    iconSizeClass = "w-[9.7px] h-[9.7px]";
+    iconSizeClass = "w-[10.8px] h-[10.8px]";
   }
 
-  // desktop/tablet에서도 동일하게 약 10% 축소
-  iconSizeClass += " sm:w-[18px] sm:h-[18px] md:w-[20.7px] md:h-[20.7px]";
+  // 모바일/태블릿은 기존 유지, 데스크톱(lg+)만 약 10% 축소
+  iconSizeClass += " sm:w-[20px] sm:h-[20px] md:w-[23px] md:h-[23px] lg:w-[20.7px] lg:h-[20.7px]";
 
   return (
     <div className={layoutClass}>
