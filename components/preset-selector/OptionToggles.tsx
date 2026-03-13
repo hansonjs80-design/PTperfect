@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet } from 'lucide-react';
+import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet, Atom } from 'lucide-react';
 
 interface OptionTogglesProps {
-  options: { isInjection: boolean; isManual: boolean; isESWT: boolean; isTraction: boolean; isFluid?: boolean };
+  options: { isInjection: boolean; isManual: boolean; isESWT: boolean; isTraction: boolean; isFluid?: boolean; isIon?: boolean };
   setOptions: React.Dispatch<React.SetStateAction<any>>;
 }
 
@@ -18,11 +18,12 @@ export const OptionToggles: React.FC<OptionTogglesProps> = ({ options, setOption
     { key: 'isManual', label: '도수', icon: Hand, activeClass: 'bg-violet-500 text-white shadow-violet-200 border-transparent', textClass: 'group-hover:text-violet-600' },
     { key: 'isESWT', label: '충격파', icon: Zap, activeClass: 'bg-blue-500 text-white shadow-blue-200 border-transparent', textClass: 'group-hover:text-blue-600' },
     { key: 'isTraction', label: '견인', icon: ArrowUpFromLine, activeClass: 'bg-orange-500 text-white shadow-orange-200 border-transparent', textClass: 'group-hover:text-orange-600' },
+    { key: 'isIon', label: '이온', icon: Atom, activeClass: 'bg-emerald-500 text-white shadow-emerald-200 border-transparent', textClass: 'group-hover:text-emerald-600' },
   ];
 
   return (
     <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 p-3 shrink-0">
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-6 gap-2">
         {buttons.map(({ key, label, icon: Icon, activeClass }) => {
           const isActive = options[key as keyof typeof options];
           return (
