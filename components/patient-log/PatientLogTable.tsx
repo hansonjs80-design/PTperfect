@@ -336,8 +336,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     }
 
     const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
-    const isEditTriggerKey = isPlainTypingKey || e.key === 'Backspace' || e.key === 'Delete';
-    if (isEditTriggerKey && anchor) {
+    if (isPlainTypingKey && anchor) {
       const host = document.querySelector(`[data-grid-id="${anchor.row}-${anchor.col}"]`) as HTMLElement | null;
       const inputTarget = host?.tagName === 'INPUT'
         ? host as HTMLInputElement
