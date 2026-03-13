@@ -55,6 +55,9 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
 
   const parts = useMemo(() => value.split('/').map((part) => part.trim()).filter(Boolean), [value]);
 
+  const isMobileOrTabletMode = () => window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches;
+
+
   if (!value || parts.length === 0) {
     return (
       <span className="text-gray-400 italic font-bold">
@@ -140,6 +143,19 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
                 if (!interactiveStepEdit) return;
                 e.preventDefault();
                 e.stopPropagation();
+
+                // 모바일/태블릿 더블터치: 데스크탑 우클릭과 같은 단순 처방 목록(치환 팝업)
+                if (isMobileOrTabletMode() && onReplaceStep && quickTreatments.length > 0) {
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setSelectedStepIndex(i);
+                  setReplacePopup({
+                    idx: i,
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2,
+                  });
+                  return;
+                }
+
                 onOpenFullEditor?.();
               }}
               className={`

@@ -73,6 +73,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const [hoverInfo, setHoverInfo] = useState<{ x: number; y: number } | null>(null);
   const { handleGridKeyDown } = useGridNavigation(10);
 
+  const isMobileOrTabletMode = () => window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches;
+
+
   const handleMouseEnter = () => {
     if (value && window.matchMedia('(min-width: 1024px) and (hover: hover)').matches && cellRef.current) {
       const rect = cellRef.current.getBoundingClientRect();
@@ -86,7 +89,11 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     e.stopPropagation();
     e.preventDefault();
     setHoverInfo(null);
-    if (enableStepInteraction) return;
+    if (enableStepInteraction) {
+      // 모바일/태블릿에서는 처방 칩의 빈 공간 터치 시 처방 변경 창으로 진입
+      if (isMobileOrTabletMode()) onOpenSelector();
+      return;
+    }
     // 처방 셀 클릭/탭 시 바로 세트 처방 목록 창으로 진입
     onOpenSelector();
   };
@@ -153,7 +160,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
           className={`flex items-center w-full h-full px-2 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30'} rounded-sm`}
           title={getTitle()}
         >
-          <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-14 py-0.5">
+          <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-24 sm:pr-20 md:pr-24 py-0.5">
             <div className={`text-[15px] sm:text-[16px] xl:text-[15px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[32px] ${enableStepInteraction ? 'pointer-events-auto' : 'pointer-events-none'}`}>
               <TreatmentTextRenderer
                 value={value}
