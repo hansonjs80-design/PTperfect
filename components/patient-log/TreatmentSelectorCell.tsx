@@ -90,11 +90,15 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     e.preventDefault();
     setHoverInfo(null);
     if (enableStepInteraction) {
-      // 모바일/태블릿에서는 처방 칩의 빈 공간 터치 시 처방 변경 창으로 진입
-      if (isMobileOrTabletMode()) onOpenSelector();
+      // 활성 행: 데스크탑 빈공간 클릭은 설정 수정창(풀 에디터), 모바일/태블릿은 처방 변경창 유지
+      if (isMobileOrTabletMode()) {
+        onOpenSelector();
+      } else {
+        onOpenFullEditor?.();
+      }
       return;
     }
-    // 처방 셀 클릭/탭 시 바로 세트 처방 목록 창으로 진입
+    // 비활성/완료 행은 클릭 시 처방 변경 창
     onOpenSelector();
   };
 

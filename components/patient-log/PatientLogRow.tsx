@@ -485,7 +485,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           onSwapSteps={handleSwapActiveSteps}
           onReplaceStep={handleReplaceActiveStep}
           onOpenFullEditor={() => bed && onEditActive?.(bed.id)}
-          onAddStep={() => bed && onEditActive?.(bed.id)}
+          onAddStep={handleTreatmentSelectorOpen}
           isReadOnly={isTreatmentLockedByTimer}
         />
       </td>
