@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { Pause, Play } from 'lucide-react';
+import { Pause, Play, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { QuickTreatment } from '../../types';
 import { StepReplacePopup } from '../bed-card/StepReplacePopup';
 
@@ -133,6 +133,27 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
     );
   }
 
+
+  const canShowMobileStepControls = () => (
+    interactiveStepEdit
+    && selectedStepIndex !== null
+    && isMobileOrTabletMode()
+  );
+
+  const handleMobileMove = (direction: 'left' | 'right') => {
+    if (selectedStepIndex === null) return;
+    const target = direction === 'left' ? selectedStepIndex - 1 : selectedStepIndex + 1;
+    if (target < 0 || target >= parts.length) return;
+    onMoveStep?.(selectedStepIndex, direction);
+    setSelectedStepIndex(target);
+  };
+
+  const handleMobileDelete = () => {
+    if (selectedStepIndex === null) return;
+    onDeleteStep?.(selectedStepIndex);
+    setSelectedStepIndex(null);
+  };
+
   const handleChipClick = (e: React.MouseEvent<HTMLSpanElement>, idx: number) => {
     if (!interactiveStepEdit) return;
 
@@ -260,6 +281,49 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
           );
         })}
       </div>
+
+      {canShowMobileStepControls() && (
+        <div className="mt-1 flex items-center gap-1.5" data-step-chip="true">
+          <button
+            type="button"
+            data-step-chip="true"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMobileDelete();
+            }}
+            className="inline-flex h-6 min-w-6 items-center justify-center rounded bg-red-500 text-white active:scale-95"
+            title="선택 처방 삭제"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            data-step-chip="true"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMobileMove('left');
+            }}
+            className="inline-flex h-6 min-w-6 items-center justify-center rounded bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-100 disabled:opacity-40 active:scale-95"
+            disabled={selectedStepIndex === null || selectedStepIndex <= 0}
+            title="왼쪽 이동"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            data-step-chip="true"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMobileMove('right');
+            }}
+            className="inline-flex h-6 min-w-6 items-center justify-center rounded bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-100 disabled:opacity-40 active:scale-95"
+            disabled={selectedStepIndex === null || selectedStepIndex >= parts.length - 1}
+            title="오른쪽 이동"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {replacePopup && onReplaceStep && quickTreatments.length > 0 && (
         <StepReplacePopup
