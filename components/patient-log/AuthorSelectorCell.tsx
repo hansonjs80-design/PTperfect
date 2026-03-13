@@ -1,12 +1,13 @@
 
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, Trash2, Settings } from 'lucide-react';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { computePopupPosition } from '../../utils/popupUtils';
 
-const DEFAULT_AUTHORS = ['K', 'J', 'M', 'L'];
+const DEFAULT_AUTHORS = ['S', 'K', 'J'];
+const LEGACY_DEFAULT_AUTHORS = ['K', 'J', 'M', 'L'];
 
 interface AuthorSelectorCellProps {
   gridId?: string;
@@ -28,7 +29,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
   const [authorOptions, setAuthorOptions] = useLocalStorage<string[]>('physio-author-options', DEFAULT_AUTHORS);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuClickPos, setMenuClickPos] = useState({ x: 0, y: 0 });
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useLocalStorage<boolean>('physio-author-edit-mode', false);
   const [newOption, setNewOption] = useState('');
 
   const cellRef = useRef<HTMLDivElement>(null);
@@ -38,6 +39,16 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
 
   const { handleGridKeyDown } = useGridNavigation(11);
+
+  useEffect(() => {
+    const hasLegacyDefaultOptions =
+      authorOptions.length === LEGACY_DEFAULT_AUTHORS.length
+      && LEGACY_DEFAULT_AUTHORS.every((opt, idx) => authorOptions[idx] === opt);
+
+    if (hasLegacyDefaultOptions) {
+      setAuthorOptions(DEFAULT_AUTHORS);
+    }
+  }, [authorOptions, setAuthorOptions]);
 
   // Refine dropdown position with actual measured dimensions
   useLayoutEffect(() => {
@@ -61,7 +72,6 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
       clickPos = { x: me.clientX, y: me.clientY };
     }
     setMenuClickPos(clickPos);
-    setIsEditMode(false);
     // Pre-compute initial position (estimated height ~200px)
     setDropdownPos(computePopupPosition(clickPos, 180, 200, { centerOnClick: true, gap: 4 }));
     setMenuOpen(true);
@@ -110,7 +120,6 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
 
   const closeMenu = () => {
     setMenuOpen(false);
-    setIsEditMode(false);
     setNewOption('');
     setTimeout(() => cellRef.current?.focus(), 0);
   };
