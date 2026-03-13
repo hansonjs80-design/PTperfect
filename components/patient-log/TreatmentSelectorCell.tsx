@@ -160,7 +160,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
           className={`flex items-center w-full h-full px-2 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30'} rounded-sm`}
           title={getTitle()}
         >
-          <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-24 sm:pr-20 md:pr-24 py-0.5">
+          <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-[4px] py-0.5">
             <div className={`text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[32px] ${enableStepInteraction ? 'pointer-events-auto' : 'pointer-events-none'}`}>
               <TreatmentTextRenderer
                 value={value}
