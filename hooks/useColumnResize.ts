@@ -15,6 +15,8 @@ const clampWidthByIndex = (width: number, index: number) => Math.max(MIN_COL_WID
 
 const TREATMENT_COL_INDEX = 3;
 const TREATMENT_DEFAULT_WIDTH_FACTOR = 1.3;
+const STATUS_COL_INDEX = 7;
+const STATUS_DEFAULT_WIDTH_FACTOR = 1.5;
 
 
 const applyDefaultWidthProfile = (widths: number[]) => {
@@ -23,6 +25,12 @@ const applyDefaultWidthProfile = (widths: number[]) => {
     next[TREATMENT_COL_INDEX] = clampWidthByIndex(
       next[TREATMENT_COL_INDEX] * TREATMENT_DEFAULT_WIDTH_FACTOR,
       TREATMENT_COL_INDEX
+    );
+  }
+  if (next[STATUS_COL_INDEX] > 0) {
+    next[STATUS_COL_INDEX] = clampWidthByIndex(
+      next[STATUS_COL_INDEX] * STATUS_DEFAULT_WIDTH_FACTOR,
+      STATUS_COL_INDEX
     );
   }
   return next;

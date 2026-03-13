@@ -606,10 +606,10 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className="p-0 text-center">
+      <td className="p-0 text-center w-[24px] min-w-[24px] max-w-[24px]">
         {!isDraft && visit && onDelete && (
           <div
-            className="flex justify-center items-center h-full outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px]"
+            className="flex justify-center items-center h-full px-[4px] outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px]"
             tabIndex={0}
             data-grid-id={`${rowIndex}-9`}
             onKeyDown={handleDeleteKeyDown}
@@ -619,17 +619,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
               className={`
                 transition-all duration-200 active:scale-95 flex items-center justify-center
                 ${deleteStep === 'idle'
-                  ? 'p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg'
-                  : 'px-2 py-1 bg-red-600 text-white rounded text-[10px] font-bold shadow-md hover:bg-red-700 w-[90%]'}
+                  ? 'w-4 h-4 text-gray-300 hover:text-red-500 rounded-sm'
+                  : 'w-4 h-4 text-red-600 dark:text-red-400'}
               `}
               title={deleteStep === 'idle' ? "삭제 (클릭하여 확인)" : "삭제 확정"}
               tabIndex={-1}
             >
-              {deleteStep === 'idle' ? (
-                <Trash2 className="w-4 h-4 xl:w-5 xl:h-5" />
-              ) : (
-                "삭제"
-              )}
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         )}
