@@ -144,7 +144,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }
   };
 
-  const getTitle = () => (value ? '클릭하여 세트 처방 선택' : '클릭하여 처방 선택');
+  const getTitle = () => (value ? '더블클릭하여 세트 처방 선택' : '더블클릭하여 처방 선택');
 
   return (
     <>
@@ -152,8 +152,8 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         ref={cellRef}
         tabIndex={0}
         data-grid-id={gridId}
-        onClick={openSelector}
-        onDoubleClick={(e) => e.preventDefault()}
+        onClick={(e) => e.preventDefault()}
+        onDoubleClick={openSelector}
         onContextMenu={(e) => e.preventDefault()}
         onKeyDown={handleKeyDown}
         onMouseEnter={handleMouseEnter}
