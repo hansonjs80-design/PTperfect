@@ -63,7 +63,7 @@ export const BedCard: React.FC<BedCardProps> = memo(({
   const swapSourceIndex = getSelectedSwapIndex(steps);
 
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
-  const isOvertime = isTimerActive && bed.remainingTime <= 0;
+  const isOvertime = isTimerActive && bed.remainingTime < 0;
   const isNearEnd = isTimerActive && bed.remainingTime > 0 && bed.remainingTime <= 60;
 
   const containerClass = useMemo(() => getBedCardStyles(bed, isOvertime, isNearEnd), [

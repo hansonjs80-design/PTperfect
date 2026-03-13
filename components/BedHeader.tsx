@@ -82,7 +82,7 @@ export const BedHeader = memo(({
   const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
 
   const isTimerActive = bed.status === BedStatus.ACTIVE && !!currentStep?.enableTimer;
-  const isOvertime = isTimerActive && bed.remainingTime <= 0;
+  const isOvertime = isTimerActive && bed.remainingTime < 0;
   const isNearEnd = isTimerActive && bed.remainingTime > 0 && bed.remainingTime <= 60;
 
   // --- Handlers using useResponsiveClick Hook ---

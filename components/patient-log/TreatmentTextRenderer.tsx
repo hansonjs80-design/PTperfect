@@ -234,7 +234,7 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
                         ? 'text-white'
                         : 'text-emerald-100'
                   }`}>
-                    {formatTimer(remainingTime)}
+                    {formatTimer((!isPaused && remainingTime === 0) ? 1 : remainingTime)}
                   </span>
                   {onTogglePause && (
                     <button

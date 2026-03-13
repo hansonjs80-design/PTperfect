@@ -26,7 +26,7 @@ export const getRowActiveStatus = (
       const currentStepInfo = currentPreset?.steps[bed.currentStepIndex];
 
       if (currentStepInfo?.enableTimer) {
-        if (bed.remainingTime <= 0) {
+        if (bed.remainingTime < 0) {
           result.timerStatus = 'overtime';
         } else if (bed.remainingTime < 60) {
           result.timerStatus = 'warning';
