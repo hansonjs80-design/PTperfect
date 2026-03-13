@@ -1,5 +1,5 @@
 
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { usePatientLogContext } from '../contexts/PatientLogContext';
 import { PatientLogPrintView } from './patient-log/PatientLogPrintView';
@@ -33,7 +33,94 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setPrintModalOpen
   } = useTreatmentContext();
   
-  const { visits, currentDate, setCurrentDate, changeDate, addVisit, deleteVisit } = usePatientLogContext();
+  const { visits, setVisits, currentDate, setCurrentDate, changeDate, addVisit, deleteVisit } = usePatientLogContext();
+  const panelRootRef = useRef<HTMLDivElement>(null);
+  const undoStackRef = useRef<PatientVisit[][]>([]);
+  const redoStackRef = useRef<PatientVisit[][]>([]);
+  const MAX_UNDO_STACK = 250;
+
+  const cloneVisits = useCallback((rows: PatientVisit[]) => rows.map((v) => ({ ...v })), []);
+
+  const syncSnapshotToDb = useCallback(async (snapshot: PatientVisit[]) => {
+    if (!isOnlineMode() || !supabase) return;
+
+    const now = new Date().toISOString();
+    const rowsToUpsert = snapshot.map((v) => ({ ...v, updated_at: now }));
+
+    if (rowsToUpsert.length > 0) {
+      const { error } = await supabase.from('patient_visits').upsert(rowsToUpsert);
+      if (error) {
+        console.error('Undo DB upsert failed:', error);
+      }
+    }
+
+    const { data: existingRows, error: selectError } = await supabase
+      .from('patient_visits')
+      .select('id')
+      .eq('visit_date', currentDate);
+
+    if (selectError) {
+      console.error('Undo DB read failed:', selectError);
+      return;
+    }
+
+    const snapshotIds = new Set(snapshot.map((v) => v.id));
+    const idsToDelete = (existingRows || [])
+      .map((row) => row.id as string)
+      .filter((id) => !snapshotIds.has(id));
+
+    if (idsToDelete.length > 0) {
+      const { error: deleteError } = await supabase.from('patient_visits').delete().in('id', idsToDelete);
+      if (deleteError) {
+        console.error('Undo DB delete failed:', deleteError);
+      }
+    }
+  }, [currentDate]);
+
+  const pushUndoSnapshot = useCallback(() => {
+    undoStackRef.current.push(cloneVisits(visits));
+    if (undoStackRef.current.length > MAX_UNDO_STACK) {
+      undoStackRef.current.shift();
+    }
+    redoStackRef.current = [];
+  }, [cloneVisits, visits]);
+
+  const trackedUpdateVisitWithBedSync = useCallback(async (id: string, updates: Partial<PatientVisit>, skipBedSync: boolean = false) => {
+    pushUndoSnapshot();
+    await updateVisitWithBedSync(id, updates, skipBedSync);
+  }, [pushUndoSnapshot, updateVisitWithBedSync]);
+
+  const trackedAddVisit = useCallback(async (initialData: Partial<PatientVisit> = {}): Promise<string> => {
+    pushUndoSnapshot();
+    return await addVisit(initialData);
+  }, [addVisit, pushUndoSnapshot]);
+
+  const trackedDeleteVisit = useCallback(async (visitId: string) => {
+    pushUndoSnapshot();
+    await deleteVisit(visitId);
+  }, [deleteVisit, pushUndoSnapshot]);
+
+  const undoLogOnly = useCallback(async () => {
+    if (undoStackRef.current.length === 0) return;
+
+    const prev = undoStackRef.current.pop();
+    if (!prev) return;
+
+    redoStackRef.current.push(cloneVisits(visits));
+    setVisits(prev);
+    await syncSnapshotToDb(prev);
+  }, [cloneVisits, setVisits, syncSnapshotToDb, visits]);
+
+  const redoLogOnly = useCallback(async () => {
+    if (redoStackRef.current.length === 0) return;
+
+    const next = redoStackRef.current.pop();
+    if (!next) return;
+
+    undoStackRef.current.push(cloneVisits(visits));
+    setVisits(next);
+    await syncSnapshotToDb(next);
+  }, [cloneVisits, setVisits, syncSnapshotToDb, visits]);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isMemoHistoryModalOpen, setIsMemoHistoryModalOpen] = useState(false);
   const [searchName, setSearchName] = useState('');
@@ -82,8 +169,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       }
     }
 
-    return await addVisit(initialData);
-  }, [beds, addVisit, clearBed]);
+    return await trackedAddVisit(initialData);
+  }, [beds, trackedAddVisit, clearBed]);
 
   // Handle Deletion with Bed Sync
   const handleDeleteVisit = useCallback((visitId: string) => {
@@ -97,13 +184,13 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     if (rowStatus === 'active' && visit.bed_id) {
         if (window.confirm(`${visit.bed_id}번 배드가 사용 중입니다. 기록을 삭제하고 배드를 비우시겠습니까?`)) {
             clearBed(visit.bed_id);
-            deleteVisit(visitId);
+            void trackedDeleteVisit(visitId);
         }
     } else {
         // For normal deletion, we rely on the Row's 2-step button, so we execute immediately here.
-        deleteVisit(visitId);
+        void trackedDeleteVisit(visitId);
     }
-  }, [visits, getRowStatus, clearBed, deleteVisit]);
+  }, [visits, getRowStatus, clearBed, trackedDeleteVisit]);
 
   const resetSearchModal = useCallback(() => {
     setIsSearchModalOpen(false);
@@ -267,7 +354,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
     if (!targetVisit) {
       if (selectionAnchor.row === null) return false;
-      const createdId = await addVisit({
+      const createdId = await trackedAddVisit({
         bed_id: null,
         patient_name: targetPatientNameForHistoryPaste,
         memo: nextMemo,
@@ -281,10 +368,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     if (!(targetVisit.patient_name || '').trim() && targetPatientNameForHistoryPaste) {
       updatePayload.patient_name = targetPatientNameForHistoryPaste;
     }
-    await updateVisitWithBedSync(targetVisit.id, updatePayload, true);
+    await trackedUpdateVisitWithBedSync(targetVisit.id, updatePayload, true);
     setDraftImport((prev) => ({ ...(prev || {}), patient_name: updatePayload.patient_name || prev?.patient_name || '', memo: nextMemo }));
     return true;
-  }, [selectionAnchor.row, selectedVisitIdForImport, updateVisitWithBedSync, visits, addVisit, targetPatientNameForHistoryPaste]);
+  }, [selectionAnchor.row, selectedVisitIdForImport, trackedUpdateVisitWithBedSync, visits, trackedAddVisit, targetPatientNameForHistoryPaste]);
 
   const applySpecialNoteToSelectedRow = useCallback(async (specialNoteText: string): Promise<boolean> => {
     const nextSpecialNote = specialNoteText.trim();
@@ -297,7 +384,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
     if (!targetVisit) {
       if (selectionAnchor.row === null) return false;
-      const createdId = await addVisit({
+      const createdId = await trackedAddVisit({
         bed_id: null,
         patient_name: targetPatientNameForHistoryPaste,
         special_note: nextSpecialNote,
@@ -311,10 +398,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     if (!(targetVisit.patient_name || '').trim() && targetPatientNameForHistoryPaste) {
       updatePayload.patient_name = targetPatientNameForHistoryPaste;
     }
-    await updateVisitWithBedSync(targetVisit.id, updatePayload, true);
+    await trackedUpdateVisitWithBedSync(targetVisit.id, updatePayload, true);
     setDraftImport((prev) => ({ ...(prev || {}), patient_name: updatePayload.patient_name || prev?.patient_name || '', special_note: nextSpecialNote }));
     return true;
-  }, [selectionAnchor.row, selectedVisitIdForImport, updateVisitWithBedSync, visits, addVisit, targetPatientNameForHistoryPaste]);
+  }, [selectionAnchor.row, selectedVisitIdForImport, trackedUpdateVisitWithBedSync, visits, trackedAddVisit, targetPatientNameForHistoryPaste]);
 
   const selectResult = useCallback((visit: PatientVisit) => {
     setSelectedResult(visit);
@@ -346,17 +433,41 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     const targetVisit = targetVisitById || targetVisitByRow;
 
     if (targetVisit) {
-      await updateVisitWithBedSync(targetVisit.id, payload, true);
+      await trackedUpdateVisitWithBedSync(targetVisit.id, payload, true);
     } else {
-      await addVisit({ bed_id: null, ...payload });
+      await trackedAddVisit({ bed_id: null, ...payload });
     }
 
     resetSearchModal();
-  }, [addVisit, draftImport, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, updateVisitWithBedSync]);
+  }, [trackedAddVisit, draftImport, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, trackedUpdateVisitWithBedSync]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z';
+      const isRedo = (e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'));
+      if (!isUndo && !isRedo) return;
+
+      const target = e.target as HTMLElement | null;
+      if (!target || !panelRootRef.current?.contains(target)) return;
+
+      const isEditingText = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      if (isEditingText) return;
+
+      e.preventDefault();
+      if (isUndo) {
+        void undoLogOnly();
+      } else {
+        void redoLogOnly();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [undoLogOnly, redoLogOnly]);
 
   return (
     <>
-      <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-xl print:hidden">
+      <div ref={panelRootRef} className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-xl print:hidden">
         
         {/* Header: Visible on all layouts so desktop also shows total/date controls */}
         <div className="shrink-0">
@@ -375,7 +486,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           beds={beds}
           presets={presets}
           getRowStatus={getRowStatus}
-          onUpdate={updateVisitWithBedSync}
+          onUpdate={trackedUpdateVisitWithBedSync}
           onDelete={handleDeleteVisit}
           onCreate={handleCreateWithBedSync}
           onSelectLog={handleSelectLog}
