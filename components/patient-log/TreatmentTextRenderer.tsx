@@ -160,7 +160,7 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
               }}
               className={`
                 inline-flex items-center gap-1 rounded-md border px-1.5 py-[1px]
-                text-[12px] sm:text-[13px] xl:text-[12px] font-black leading-tight
+                text-[13px] sm:text-[14px] xl:text-[13px] font-black leading-tight
                 transition-colors duration-200
                 ${isSelected ? 'ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-slate-900' : ''}
                 ${interactiveStepEdit ? 'cursor-pointer' : ''}
@@ -172,11 +172,11 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
               <span>{part}</span>
               {isCurrent && typeof remainingTime === 'number' && (
                 <>
-                  <span className={`text-[10px] sm:text-[11px] font-black ${
+                  <span className={`text-[11px] sm:text-[12px] font-black ${
                     timerStatus === 'overtime'
                       ? 'text-red-200'
                       : timerStatus === 'warning'
-                        ? 'text-yellow-100'
+                        ? 'text-white'
                         : 'text-emerald-100'
                   }`}>
                     {formatTimer(remainingTime)}
