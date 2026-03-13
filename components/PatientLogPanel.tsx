@@ -226,8 +226,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     <>
       <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-xl print:hidden">
         
-        {/* Header: Visible on Mobile/Tablet, Hidden on Desktop (xl:hidden) */}
-        <div className="xl:hidden shrink-0">
+        {/* Header: Visible on all layouts so desktop also shows total/date controls */}
+        <div className="shrink-0">
           <PatientLogHeader 
             totalCount={visits.length}
             currentDate={currentDate}
