@@ -2,7 +2,6 @@
 import React, { useState, useRef, memo } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { PatientVisit } from '../../types';
-import { PatientStatusIcons } from './PatientStatusIcons';
 import { StatusSelectionMenu } from './StatusSelectionMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 
@@ -30,7 +29,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   const lastClickTimeRef = useRef<number>(0);
-  const { handleGridKeyDown } = useGridNavigation(8);
+  const { handleGridKeyDown } = useGridNavigation(11);
 
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent, isKeyboard: boolean = false) => {
     e.preventDefault();
@@ -83,12 +82,13 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     if (isDraft && onCreate) {
       await onCreate({ [key]: newVal });
     } else if (visit) {
+      // 활성 행은 배드 상태 아이콘과 연동, 그 외 행은 로그 전용
       const skipSync = rowStatus !== 'active';
       onUpdate(visit.id, { [key]: newVal }, skipSync);
     }
   };
 
-  const menuTitle = rowStatus === 'active' ? "상태 변경 (배드 연동)" : "상태 변경 (단순 기록)";
+  const menuTitle = rowStatus === 'active' ? "추가 사항 변경 (배드 연동)" : "추가 사항 변경 (단순 기록)";
 
   const hasActiveStatus = visit && (
     visit.is_injection ||
@@ -96,22 +96,33 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     visit.is_manual ||
     visit.is_eswt ||
     visit.is_traction ||
-    !!visit.memo
+    visit.is_ion ||
+    visit.is_exercise
   );
+
+  const statusPills = [
+    { active: !!visit?.is_injection, label: '주사', bg: 'bg-red-500' },
+    { active: !!visit?.is_fluid, label: '수액', bg: 'bg-cyan-500' },
+    { active: !!visit?.is_manual, label: '도수', bg: 'bg-violet-500' },
+    { active: !!visit?.is_eswt, label: '충격파', bg: 'bg-blue-500' },
+    { active: !!visit?.is_traction, label: '견인', bg: 'bg-orange-500' },
+    { active: !!visit?.is_ion, label: '이온', bg: 'bg-emerald-500' },
+    { active: !!visit?.is_exercise, label: '운동', bg: 'bg-lime-500' },
+  ].filter((item) => item.active);
 
   // Helper for title (tooltip)
   const getTitle = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      return `더블탭하여 상태 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`;
+      return `더블탭하여 추가 사항 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`;
     }
-    return `클릭하여 상태 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`;
+    return `클릭하여 추가 사항 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`;
   };
 
   return (
     <>
       <div
         ref={cellRef}
-        className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:ring-2 focus:ring-sky-400 focus:z-10"
+        className="w-full h-full flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
         onClick={handleInteraction}
         onKeyDown={handleKeyDown}
         tabIndex={0}
@@ -119,7 +130,15 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         title={getTitle()}
       >
         {hasActiveStatus ? (
-          <PatientStatusIcons visit={visit!} />
+          <div className="w-full h-full px-1.5 py-0.5 flex items-center justify-start">
+            <div className="flex flex-wrap items-center justify-start gap-1 max-w-full">
+              {statusPills.map((item) => (
+                <span key={item.label} className={`px-1.5 py-0.5 rounded-md text-[10px] font-black text-white ${item.bg}`}>
+                  {item.label}
+                </span>
+              ))}
+            </div>
+          </div>
         ) : (
           <div className="opacity-0 group-hover:opacity-50 transition-opacity">
             <MoreHorizontal className="w-4 h-4 text-gray-400" />
