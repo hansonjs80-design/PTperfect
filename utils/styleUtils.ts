@@ -134,7 +134,7 @@ export const getBedCardStyles = (bed: BedState, isOvertime: boolean, isNearEnd: 
   // Mobile Portrait: min-h-[112px] (Reduced by ~10% from 125px)
   // Tablet Portrait (sm): min-h-[150px] (Maintained)
   // Landscape: Preserved specific overrides
-  const heightClasses = "min-h-[112px] sm:min-h-[150px] md:min-h-0 landscape:min-h-[200px] sm:landscape:min-h-[118px] lg:landscape:min-h-[200px] ";
+  const heightClasses = "min-h-[112px] sm:min-h-[146px] md:min-h-0 landscape:min-h-0 sm:landscape:min-h-0 lg:landscape:min-h-0 ";
 
   let statusClasses = "";
 
