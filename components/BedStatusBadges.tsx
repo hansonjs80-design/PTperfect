@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet, Star, LucideIcon } from 'lucide-react';
+import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet, Star, Atom, LucideIcon } from 'lucide-react';
 import { BedState, BedStatus } from '../types';
 
 interface BedStatusBadgesProps {
@@ -22,6 +22,7 @@ const BADGES: BadgeConfig[] = [
   { key: 'isManual', label: '도수', icon: Hand, colorClass: 'text-violet-500' },
   { key: 'isESWT', label: '충격파', icon: Zap, colorClass: 'text-blue-500' },
   { key: 'isTraction', label: '견인', icon: ArrowUpFromLine, colorClass: 'text-orange-500' },
+  { key: 'isIon', label: '이온', icon: Atom, colorClass: 'text-emerald-500' },
   { key: 'patientMemo', label: '메모', icon: Star, colorClass: 'text-yellow-400' }
 ];
 
@@ -39,21 +40,18 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
     ? "grid grid-cols-2 gap-[1px] justify-items-center"
     : "flex items-center gap-[1px]";
 
-  // Icon Size Logic (Mobile Portrait Only):
-  // 기준: w-5 (20px)
-  // 1개, 2개: 20% 축소 -> w-4 (16px)
-  // 3개 이상: 30% 축소 -> w-3.5 (14px)
-  // sm(태블릿/PC) 이상은 w-7 (28px) 고정
+  // Icon Size Logic:
+  // 현재 기준에서 약 10% 축소
   let iconSizeClass = "";
 
   if (count >= 3) {
-    iconSizeClass = "w-2.5 h-2.5"; // 15% reduction from w-3
+    iconSizeClass = "w-[9px] h-[9px]";
   } else {
-    iconSizeClass = "w-3 h-3"; // 15% reduction from w-3.5
+    iconSizeClass = "w-[10.8px] h-[10.8px]";
   }
 
-  // Combine with desktop override (15% reduction: 26→22, 29→25)
-  iconSizeClass += " sm:w-[22px] sm:h-[22px] md:w-[25px] md:h-[25px]";
+  // desktop/tablet에서도 동일하게 약 10% 축소
+  iconSizeClass += " sm:w-[20px] sm:h-[20px] md:w-[23px] md:h-[23px]";
 
   return (
     <div className={layoutClass}>
@@ -82,6 +80,7 @@ export const BedStatusBadges: React.FC<BedStatusBadgesProps> = memo(({ bed }) =>
     pBed.isFluid === nBed.isFluid &&
     pBed.isManual === nBed.isManual &&
     pBed.isESWT === nBed.isESWT &&
-    pBed.isTraction === nBed.isTraction
+    pBed.isTraction === nBed.isTraction &&
+    pBed.isIon === nBed.isIon
   );
 });
