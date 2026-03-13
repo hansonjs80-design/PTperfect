@@ -72,7 +72,7 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({ initialPreset, onSav
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
           {initialPreset.id ? '처방 수정' : '새 처방 추가'}
         </h3>
-        <div>
+        <div className="space-y-2">
           <input 
             type="text" 
             value={editingPreset.name}
@@ -81,6 +81,14 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({ initialPreset, onSav
             placeholder="처방 이름 (예: 기본 물리치료)"
           />
         </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-400">세트 버튼 색상</span>
+            <ColorPicker
+              value={editingPreset.color || 'bg-brand-500'}
+              onChange={(color) => setEditingPreset({ ...editingPreset, color })}
+            />
+          </div>
+
       </div>
       
       {/* Scrollable Content Area */}

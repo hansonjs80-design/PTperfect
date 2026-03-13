@@ -28,6 +28,7 @@ export interface Preset {
   id: string;
   name: string; // e.g., "Basic"
   steps: TreatmentStep[];
+  color?: string; // set badge color in patient-log treatment cell
 }
 
 export interface BedState {

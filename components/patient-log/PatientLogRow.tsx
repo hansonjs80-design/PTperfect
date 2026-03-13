@@ -401,6 +401,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const treatmentDisplayValue = rowStatus === 'active'
     ? (activeBedTreatmentValue || visitTreatmentValue)
     : nonActiveDisplayValue;
+
+  const matchedPresetForDisplay = (() => {
+    if (currentPreset && rowStatus === 'active') return currentPreset;
+    const normalized = treatmentDisplayValue.trim();
+    if (!normalized) return null;
+    return presets.find((p) => generateTreatmentString(p.steps).trim() === normalized) || null;
+  })();
   const handleTogglePauseFromTreatmentCell = (!isDraft && rowStatus === 'active' && bed)
     ? () => togglePause(bed.id)
     : undefined;
@@ -502,6 +509,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           rowStatus={rowStatus}
           onCommitText={handleTreatmentTextCommit}
           onOpenSelector={handleTreatmentSelectorOpen}
+          presetLabel={matchedPresetForDisplay?.name}
+          presetColor={matchedPresetForDisplay?.color || matchedPresetForDisplay?.steps?.[0]?.color || 'bg-brand-500'}
           directSelector={isNoBedAssigned || !hasTreatment || isLogEditMode}
           activeStepColor={activeStepColor}
           activeStepBgColor={activeStepBgColor}

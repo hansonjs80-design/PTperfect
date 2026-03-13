@@ -5,6 +5,7 @@ import { PatientVisit } from '../../types';
 import { TreatmentTextRenderer } from './TreatmentTextRenderer';
 import { TreatmentControlButtons } from './TreatmentControlButtons';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
+import { mapBgToTextClass } from '../../utils/styleUtils';
 
 interface TreatmentSelectorCellProps {
   visit?: PatientVisit;
@@ -37,6 +38,8 @@ interface TreatmentSelectorCellProps {
   rowIndex: number;
   colIndex: number;
   isReadOnly?: boolean;
+  presetLabel?: string;
+  presetColor?: string;
 }
 
 export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
@@ -67,7 +70,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   gridId,
   rowIndex,
   colIndex,
-  isReadOnly = false
+  isReadOnly = false,
+  presetLabel,
+  presetColor = 'bg-brand-500'
 }) => {
   const cellRef = useRef<HTMLDivElement>(null);
   const [popupState, setPopupState] = useState<{ type: 'prev' | 'next' | 'clear'; x: number; y: number } | null>(null);
@@ -174,7 +179,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
           className={`flex items-center w-full h-full px-2 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30'} rounded-sm`}
           title={getTitle()}
         >
-          <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-[4px] py-0.5">
+          <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-[4px] py-0.5 gap-2">
+            {presetLabel && (
+              <span className={`shrink-0 px-2 py-0.5 rounded-md text-[11px] font-black ${presetColor} ${mapBgToTextClass(presetColor)} border border-black/10 dark:border-white/10`}>
+                {presetLabel}
+              </span>
+            )}
             <div className={`text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[32px] ${enableStepInteraction ? 'pointer-events-auto' : 'pointer-events-none'}`}>
               <TreatmentTextRenderer
                 value={value}
