@@ -25,6 +25,8 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
     setSelectingBedId,
     selectingLogId,
     setSelectingLogId,
+    selectingAppendMode,
+    setSelectingAppendMode,
     editingBedId,
     setEditingBedId,
     movingPatientState,
@@ -37,6 +39,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
     toggleTraction,
     toggleESWT,
     toggleManual,
+    toggleIon,
     updateBedSteps,
     updateBedDuration,
     updatePresets
@@ -51,7 +54,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
     handleQuickStart,
     handleStartTraction,
     handleClearLog
-  } = useModalActions(selectingLogId, selectingBedId, setSelectingLogId, setSelectingBedId, presets);
+  } = useModalActions(selectingLogId, selectingBedId, setSelectingLogId, setSelectingBedId, presets, selectingAppendMode, setSelectingAppendMode);
 
   // --- Back Button Handling (SPA UX) ---
   const isModalOpen = selectingBedId !== null || selectingLogId !== null || editingBedId !== null || movingPatientState !== null || isMenuOpen;
@@ -68,6 +71,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         // When back button is pressed (or history popped), close all modals
         setSelectingBedId(null);
         setSelectingLogId(null);
+        setSelectingAppendMode(false);
         setEditingBedId(null);
         setMovingPatientState(null);
         if (isMenuOpen) onCloseMenu();
@@ -79,7 +83,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         window.removeEventListener('popstate', handlePopState);
       };
     }
-  }, [isModalOpen, isMenuOpen, onCloseMenu, setSelectingBedId, setSelectingLogId, setEditingBedId, setMovingPatientState]);
+  }, [isModalOpen, isMenuOpen, onCloseMenu, setSelectingBedId, setSelectingLogId, setSelectingAppendMode, setEditingBedId, setMovingPatientState]);
 
   // Helper to close modal and pop history manually (SAFE: Checks if modalOpen exists)
   const closeAndPop = (setter: (val: any) => void) => {
@@ -109,6 +113,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         if (selectingBedId !== null || selectingLogId !== null) {
           setSelectingBedId(null);
           setSelectingLogId(null);
+          setSelectingAppendMode(false);
           if (window.history.state?.modalOpen) {
             window.history.back();
           }
@@ -128,7 +133,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [movingPatientState, editingBedId, selectingBedId, selectingLogId, isMenuOpen, setMovingPatientState, setEditingBedId, setSelectingBedId, setSelectingLogId, onCloseMenu]);
+  }, [movingPatientState, editingBedId, selectingBedId, selectingLogId, isMenuOpen, setMovingPatientState, setEditingBedId, setSelectingBedId, setSelectingLogId, setSelectingAppendMode, onCloseMenu]);
 
   const activeLogEntry = useMemo(() => {
     if (!selectingLogId) return null;
@@ -143,6 +148,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         isTraction: !!activeLogEntry.is_traction,
         isESWT: !!activeLogEntry.is_eswt,
         isManual: !!activeLogEntry.is_manual,
+        isIon: !!activeLogEntry.is_ion,
       };
     }
     return undefined;
@@ -196,12 +202,15 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         <BedEditOverlay
           bed={editingBed}
           steps={editingBedSteps}
+          presets={presets}
+          quickTreatments={quickTreatments}
           onClose={() => closeAndPop(setEditingBedId)}
           onToggleInjection={toggleInjection}
           onToggleFluid={toggleFluid}
           onToggleTraction={toggleTraction}
           onToggleESWT={toggleESWT}
           onToggleManual={toggleManual}
+          onToggleIon={toggleIon}
           onUpdateSteps={updateBedSteps}
           onUpdateDuration={updateBedDuration}
         />
