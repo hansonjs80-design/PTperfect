@@ -402,8 +402,22 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     ? (activeBedTreatmentValue || visitTreatmentValue)
     : nonActiveDisplayValue;
 
+  const activeBasePreset = bed?.currentPresetId ? presets.find((p) => p.id === bed.currentPresetId) : undefined;
+  const isActivePresetModified = rowStatus === 'active' && currentPreset?.name === '치료(수정됨)' && !!activeBasePreset;
+
   const matchedPresetForDisplay = (() => {
-    if (currentPreset && rowStatus === 'active') return currentPreset;
+    if (rowStatus === 'active' && currentPreset) {
+      if (isActivePresetModified && activeBasePreset) {
+        return {
+          ...currentPreset,
+          name: activeBasePreset.name,
+          color: activeBasePreset.color || currentPreset.color,
+          textColor: activeBasePreset.textColor || currentPreset.textColor,
+        };
+      }
+      return currentPreset;
+    }
+
     const normalized = treatmentDisplayValue.trim();
     if (!normalized) return null;
     return presets.find((p) => generateTreatmentString(p.steps).trim() === normalized) || null;
@@ -512,6 +526,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           presetLabel={matchedPresetForDisplay?.name}
           presetColor={matchedPresetForDisplay?.color || matchedPresetForDisplay?.steps?.[0]?.color || 'bg-brand-500'}
           presetTextColor={matchedPresetForDisplay?.textColor}
+          presetIsModified={isActivePresetModified}
           directSelector={isNoBedAssigned || !hasTreatment || isLogEditMode}
           activeStepColor={activeStepColor}
           activeStepBgColor={activeStepBgColor}

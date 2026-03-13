@@ -41,6 +41,7 @@ interface TreatmentSelectorCellProps {
   presetLabel?: string;
   presetColor?: string;
   presetTextColor?: string;
+  presetIsModified?: boolean;
 }
 
 export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
@@ -75,6 +76,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   presetLabel,
   presetColor = 'bg-brand-500',
   presetTextColor,
+  presetIsModified = false,
 }) => {
   const cellRef = useRef<HTMLDivElement>(null);
   const [popupState, setPopupState] = useState<{ type: 'prev' | 'next' | 'clear'; x: number; y: number } | null>(null);
@@ -162,7 +164,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const getTitle = () => (value ? '더블클릭하여 세트 처방 선택' : '더블클릭하여 처방 선택');
-  const presetBadgeTextClass = presetLabel === '치료(수정됨)'
+  const presetBadgeTextClass = presetIsModified
     ? 'text-yellow-200'
     : (presetTextColor || mapBgToTextClass(presetColor));
 
