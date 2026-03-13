@@ -2,7 +2,6 @@ import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Pause, Play, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { QuickTreatment } from '../../types';
 import { StepReplacePopup } from '../bed-card/StepReplacePopup';
-import { mapBgToTextClass } from '../../utils/styleUtils';
 
 interface TreatmentTextRendererProps {
   value: string;
@@ -56,28 +55,6 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
   };
 
   const parts = useMemo(() => value.split('/').map((part) => part.trim()).filter(Boolean), [value]);
-
-  const partTextColorClasses = useMemo(() => {
-    const normalize = (text: string) => text.trim().toUpperCase();
-
-    return parts.map((part) => {
-      const normalizedPart = normalize(part);
-
-      const exact = quickTreatments.find((qt) => (
-        normalize(qt.label || '') === normalizedPart
-        || normalize(qt.name || '') === normalizedPart
-      ));
-
-      const partial = exact || (normalizedPart.length >= 2
-        ? quickTreatments.find((qt) => (
-            normalize(qt.label || '').includes(normalizedPart)
-            || normalize(qt.name || '').includes(normalizedPart)
-          ))
-        : undefined);
-
-      return partial ? mapBgToTextClass(partial.color || '') : '';
-    });
-  }, [parts, quickTreatments]);
 
   useEffect(() => {
     if (selectedStepIndex === null || !interactiveStepEdit) return;
@@ -268,7 +245,7 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
                   : 'bg-slate-100 dark:bg-slate-700/70 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600'}
               `}
             >
-              <span className={!isCurrent ? (partTextColorClasses[i] || undefined) : undefined}>{part}</span>
+              <span className={!isCurrent ? 'text-black dark:text-slate-100' : undefined}>{part}</span>
               {isCurrent && typeof remainingTime === 'number' && (
                 <>
                   <span className={`text-[12.1px] sm:text-[13.2px] font-black ${
