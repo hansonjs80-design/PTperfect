@@ -41,7 +41,10 @@ export const MainLayout: React.FC = () => {
         (activeEl as HTMLElement).isContentEditable
       );
 
-      if (e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 's') {
+      const isDesktopViewport = window.matchMedia('(min-width: 768px)').matches;
+      const isCtrlSShortcut = e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 's';
+      const isMacCommandSShortcut = isDesktopViewport && e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 's';
+      if (isCtrlSShortcut || isMacCommandSShortcut) {
         e.preventDefault();
         toggleLog();
         return;
