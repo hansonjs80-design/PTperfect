@@ -35,6 +35,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   
   const { visits, currentDate, setCurrentDate, changeDate, addVisit, deleteVisit } = usePatientLogContext();
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isMemoHistoryModalOpen, setIsMemoHistoryModalOpen] = useState(false);
   const [searchName, setSearchName] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<PatientVisit[]>([]);
@@ -106,6 +107,14 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
   const resetSearchModal = useCallback(() => {
     setIsSearchModalOpen(false);
+    setSearchName('');
+    setSearchResults([]);
+    setSelectedResult(null);
+    setDraftImport(null);
+  }, []);
+
+  const resetMemoHistoryModal = useCallback(() => {
+    setIsMemoHistoryModalOpen(false);
     setSearchName('');
     setSearchResults([]);
     setSelectedResult(null);
@@ -206,12 +215,37 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     return history;
   }, [searchResults, searchName, selectedPatientNameForSearch]);
 
+  const specialNoteHistory = useMemo(() => {
+    const exactName = selectedPatientNameForSearch || searchName.trim();
+    if (!exactName) return [] as Array<{ id: string; visitDate: string; specialNote: string }>;
+
+    const normalized = exactName.toLowerCase();
+    const unique = new Set<string>();
+    const history: Array<{ id: string; visitDate: string; specialNote: string }> = [];
+
+    searchResults.forEach((visit) => {
+      const visitName = (visit.patient_name || '').trim().toLowerCase();
+      const specialNote = (visit.special_note || '').trim();
+      if (visitName !== normalized || !specialNote || unique.has(specialNote)) return;
+      unique.add(specialNote);
+      history.push({ id: visit.id, visitDate: visit.visit_date, specialNote });
+    });
+
+    return history;
+  }, [searchResults, searchName, selectedPatientNameForSearch]);
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const isFindShortcut = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f';
-      if (!isFindShortcut) return;
+      const isMemoShortcut = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm';
+      if (!isFindShortcut && !isMemoShortcut) return;
       e.preventDefault();
-      setIsSearchModalOpen(true);
+
+      if (isMemoShortcut) {
+        setIsMemoHistoryModalOpen(true);
+      } else {
+        setIsSearchModalOpen(true);
+      }
 
       if (selectedPatientNameForSearch) {
         void handleSearchByName(selectedPatientNameForSearch);
@@ -234,6 +268,21 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
     await updateVisitWithBedSync(targetVisit.id, { memo: nextMemo }, true);
     setDraftImport((prev) => ({ ...(prev || {}), memo: nextMemo }));
+  }, [selectionAnchor.row, selectedVisitIdForImport, updateVisitWithBedSync, visits]);
+
+  const applySpecialNoteToSelectedRow = useCallback(async (specialNoteText: string) => {
+    const nextSpecialNote = specialNoteText.trim();
+    if (!nextSpecialNote) return;
+
+    const selectedRow = selectionAnchor.row;
+    const targetVisitByRow = selectedRow !== null ? visits[selectedRow] : undefined;
+    const targetVisitById = selectedVisitIdForImport ? visits.find((v) => v.id === selectedVisitIdForImport) : undefined;
+    const targetVisit = targetVisitById || targetVisitByRow;
+
+    if (!targetVisit) return;
+
+    await updateVisitWithBedSync(targetVisit.id, { special_note: nextSpecialNote }, true);
+    setDraftImport((prev) => ({ ...(prev || {}), special_note: nextSpecialNote }));
   }, [selectionAnchor.row, selectedVisitIdForImport, updateVisitWithBedSync, visits]);
 
   const selectResult = useCallback((visit: PatientVisit) => {
@@ -414,11 +463,119 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                       </div>
                     )}
                   </div>
+                  <div className="mt-1 border border-gray-200 dark:border-slate-700 rounded-lg p-2 bg-gray-50 dark:bg-slate-800/40">
+                    <p className="text-[11px] font-bold text-gray-500 mb-1">동일 이름 특이사항 내역</p>
+                    {specialNoteHistory.length === 0 ? (
+                      <p className="text-[11px] text-gray-400">검색된 특이사항 내역이 없습니다.</p>
+                    ) : (
+                      <div className="max-h-[120px] overflow-y-auto space-y-1">
+                        {specialNoteHistory.map((item) => (
+                          <div key={`${item.id}-${item.visitDate}-special`} className="rounded border border-gray-200 dark:border-slate-700 p-1.5 bg-white dark:bg-slate-900">
+                            <p className="text-[10px] text-gray-500 mb-1">{item.visitDate}</p>
+                            <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.specialNote}</p>
+                            <button
+                              type="button"
+                              onClick={() => applySpecialNoteToSelectedRow(item.specialNote)}
+                              disabled={!selectedVisitForSearch}
+                              className="mt-1 px-2 py-1 text-[10px] font-bold rounded bg-brand-600 text-white disabled:opacity-40"
+                            >
+                              선택 행 특이사항 셀에 붙여넣기
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div className="mt-auto flex justify-end gap-2">
                     <button onClick={resetSearchModal} className="px-3 py-2 text-xs font-bold rounded bg-gray-100 dark:bg-slate-800">취소</button>
                     <button onClick={handleImportToToday} disabled={!draftImport} className="px-3 py-2 text-xs font-bold rounded bg-brand-600 text-white disabled:opacity-50">선택 행에 입력/추가</button>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isMemoHistoryModalOpen && (
+        <div className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-3" onClick={resetMemoHistoryModal}>
+          <div className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700">
+              <h3 className="text-sm font-black text-gray-800 dark:text-gray-100">메모/특이사항 이력 (Ctrl/Cmd + M)</h3>
+              <button onClick={resetMemoHistoryModal} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800"><X className="w-4 h-4" /></button>
+            </div>
+
+            <div className="p-4 flex flex-col gap-3">
+              <div className="flex gap-2">
+                <input
+                  autoFocus
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSearchByName(); }}
+                  placeholder="이름 입력..."
+                  className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
+                />
+                <button onClick={() => { void handleSearchByName(); }} className="px-3 py-2 rounded-lg bg-brand-600 text-white text-sm font-bold flex items-center gap-1.5">
+                  <Search className="w-4 h-4" /> 검색
+                </button>
+              </div>
+
+              {selectedPatientNameForSearch && (
+                <p className="text-[11px] text-brand-600 dark:text-brand-400 px-1 font-bold">선택 행 이름 기준 검색: {selectedPatientNameForSearch}</p>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[280px]">
+                <div className="border border-gray-200 dark:border-slate-700 rounded-xl p-3 bg-gray-50 dark:bg-slate-800/40">
+                  <p className="text-[11px] font-bold text-gray-500 mb-2">동일 이름 메모 내역</p>
+                  {memoHistory.length === 0 ? (
+                    <p className="text-[11px] text-gray-400">검색된 메모 내역이 없습니다.</p>
+                  ) : (
+                    <div className="max-h-[300px] overflow-y-auto space-y-1.5">
+                      {memoHistory.map((item) => (
+                        <div key={`${item.id}-${item.visitDate}-memo-only`} className="rounded border border-gray-200 dark:border-slate-700 p-2 bg-white dark:bg-slate-900">
+                          <p className="text-[10px] text-gray-500 mb-1">{item.visitDate}</p>
+                          <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.memo}</p>
+                          <button
+                            type="button"
+                            onClick={() => applyMemoToSelectedRow(item.memo)}
+                            disabled={!selectedVisitForSearch}
+                            className="mt-1 px-2 py-1 text-[10px] font-bold rounded bg-brand-600 text-white disabled:opacity-40"
+                          >
+                            선택 행 메모 셀에 붙여넣기
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="border border-gray-200 dark:border-slate-700 rounded-xl p-3 bg-gray-50 dark:bg-slate-800/40">
+                  <p className="text-[11px] font-bold text-gray-500 mb-2">동일 이름 특이사항 내역</p>
+                  {specialNoteHistory.length === 0 ? (
+                    <p className="text-[11px] text-gray-400">검색된 특이사항 내역이 없습니다.</p>
+                  ) : (
+                    <div className="max-h-[300px] overflow-y-auto space-y-1.5">
+                      {specialNoteHistory.map((item) => (
+                        <div key={`${item.id}-${item.visitDate}-special-only`} className="rounded border border-gray-200 dark:border-slate-700 p-2 bg-white dark:bg-slate-900">
+                          <p className="text-[10px] text-gray-500 mb-1">{item.visitDate}</p>
+                          <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.specialNote}</p>
+                          <button
+                            type="button"
+                            onClick={() => applySpecialNoteToSelectedRow(item.specialNote)}
+                            disabled={!selectedVisitForSearch}
+                            className="mt-1 px-2 py-1 text-[10px] font-bold rounded bg-brand-600 text-white disabled:opacity-40"
+                          >
+                            선택 행 특이사항 셀에 붙여넣기
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button onClick={resetMemoHistoryModal} className="px-3 py-2 text-xs font-bold rounded bg-gray-100 dark:bg-slate-800">닫기</button>
               </div>
             </div>
           </div>

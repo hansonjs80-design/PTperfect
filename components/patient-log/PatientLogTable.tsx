@@ -11,7 +11,7 @@ import { generateTreatmentString } from '../../utils/bedUtils';
 type GridCellPos = { row: number; col: number };
 type GridSelection = { start: GridCellPos; end: GridCellPos } | null;
 
-const SELECTABLE_COLS = new Set([1, 2, 3, 4, 5, 9]);
+const SELECTABLE_COLS = new Set([1, 2, 3, 4, 5, 6, 9]);
 
 const normalizeSelectionBounds = (selection: GridSelection) => {
   if (!selection) return null;
@@ -165,6 +165,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       case 3: return visit.body_part || '';
       case 4: return visit.treatment_name || '';
       case 5: return visit.memo || '';
+      case 6: return visit.special_note || '';
       case 9: return visit.author || '';
       default: return '';
     }
@@ -190,6 +191,9 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       }
       case 5:
         onUpdate(visit.id, { memo: text }, true);
+        return;
+      case 6:
+        onUpdate(visit.id, { special_note: text }, true);
         return;
       case 9:
         onUpdate(visit.id, { author: text }, true);

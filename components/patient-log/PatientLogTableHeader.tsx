@@ -69,8 +69,9 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
           메모
           {handle(5)}
         </th>
-        <th className={`${thBase} w-[70px] md:w-[170px] xl:w-[130px] relative hidden`}>
+        <th className={`${thBase} w-[70px] md:w-[170px] xl:w-[130px] relative`}>
           특이사항
+          {handle(6)}
         </th>
         <th className={`${thBase} w-[82px] md:w-[110px] xl:w-[100px] relative ${showTimerColumn ? "" : "hidden"}`}>
           타이머

@@ -537,7 +537,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0 hidden`}>
+      <td className={`${cellBorderClass} p-0`}>
         <EditableCell
           gridId={`${rowIndex}-6`}
           rowIndex={rowIndex}
