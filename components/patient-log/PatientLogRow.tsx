@@ -71,6 +71,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const { activateVisitFromLog, togglePause, updateBedSteps, quickTreatments } = useTreatmentContext();
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
   const [optimisticTreatmentName, setOptimisticTreatmentName] = useState<string | null>(null);
+  const [stickyTreatmentName, setStickyTreatmentName] = useState<string>('');
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clean up timeout on unmount
@@ -86,6 +87,19 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       setOptimisticTreatmentName(null);
     }
   }, [optimisticTreatmentName, visit?.treatment_name]);
+
+  useEffect(() => {
+    const current = visit?.treatment_name?.trim() || '';
+    if (current) {
+      setStickyTreatmentName(current);
+      return;
+    }
+
+    // 배드와 미연동된 비활성 행에서는 동기화 지연 중에도 마지막 처방명을 유지한다.
+    if (!visit?.bed_id && rowStatus === 'none') return;
+
+    setStickyTreatmentName('');
+  }, [visit?.treatment_name, visit?.bed_id, rowStatus]);
 
 
   const handleAssign = async (newBedId: number) => {
@@ -138,6 +152,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
   const handleTreatmentTextCommit = async (val: string) => {
     setOptimisticTreatmentName(val);
+    setStickyTreatmentName(val.trim());
 
     if (isDraft && onCreate) {
       await onCreate({ treatment_name: val }, 3);
@@ -347,9 +362,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     : '';
   const rawVisitTreatmentValue = optimisticTreatmentName ?? visit?.treatment_name ?? '';
   const visitTreatmentValue = rawVisitTreatmentValue.trim() !== '' ? rawVisitTreatmentValue : '';
+  const shouldUseStickyForUnlinkedRow = !visit?.bed_id && rowStatus === 'none';
+  const nonActiveDisplayValue = shouldUseStickyForUnlinkedRow
+    ? (visitTreatmentValue || stickyTreatmentName)
+    : (visitTreatmentValue || activeBedTreatmentValue);
   const treatmentDisplayValue = rowStatus === 'active'
     ? (activeBedTreatmentValue || visitTreatmentValue)
-    : (visitTreatmentValue || activeBedTreatmentValue);
+    : nonActiveDisplayValue;
   const handleTogglePauseFromTreatmentCell = (!isDraft && rowStatus === 'active' && bed)
     ? () => togglePause(bed.id)
     : undefined;
