@@ -42,6 +42,8 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
     ? 'text-3xl sm:text-[33px] md:portrait:text-[28px] lg:portrait:text-[32px] md:landscape:text-[38px] lg:landscape:text-[44px]'
     : 'text-3xl sm:text-[33px] md:text-[38px] lg:text-[44px]';
 
+  const displayRemaining = (!bed.isPaused && bed.remainingTime === 0) ? 1 : bed.remainingTime;
+
   return (
     <div
       className={`flex items-center justify-end gap-[5px] sm:gap-[10px] cursor-pointer transition-all scale-[0.95] lg:scale-100 origin-right lg:origin-center ${bed.isPaused ? 'opacity-50 grayscale' : ''}`}
@@ -52,7 +54,7 @@ export const BedTimer: React.FC<BedTimerProps> = memo(({
           isNearEnd ? 'text-orange-500 animate-pulse' :
             'text-slate-700 dark:text-slate-200'
           }`}>
-        {isOvertime && '+'}{formatTime(bed.remainingTime)}
+        {isOvertime && '+'}{formatTime(displayRemaining)}
       </span>
 
       <button
