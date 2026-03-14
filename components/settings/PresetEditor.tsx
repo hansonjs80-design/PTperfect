@@ -5,6 +5,14 @@ import { Preset, TreatmentStep, QuickTreatment } from '../../types';
 import { ColorPicker } from '../common/ColorPicker';
 import { getStepLabel } from '../../utils/bedUtils';
 
+const PRESET_TEXT_COLOR_OPTIONS = [
+  { label: '자동', value: '' },
+  { label: '흰색', value: 'text-white' },
+  { label: '검정', value: 'text-black' },
+  { label: '진회색', value: 'text-slate-900' },
+  { label: '노랑', value: 'text-yellow-200' },
+];
+
 interface PresetEditorProps {
   initialPreset: Preset;
   onSave: (preset: Preset) => void;
@@ -72,7 +80,7 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({ initialPreset, onSav
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
           {initialPreset.id ? '처방 수정' : '새 처방 추가'}
         </h3>
-        <div>
+        <div className="space-y-2">
           <input 
             type="text" 
             value={editingPreset.name}
@@ -80,6 +88,29 @@ export const PresetEditor: React.FC<PresetEditorProps> = ({ initialPreset, onSav
             className="w-full p-2.5 border rounded-lg bg-gray-50 text-gray-900 border-gray-300 dark:bg-slate-900 dark:text-white dark:border-slate-600 font-bold focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500"
             placeholder="처방 이름 (예: 기본 물리치료)"
           />
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-400">세트 버튼 색상</span>
+            <ColorPicker
+              value={editingPreset.color || 'bg-brand-500'}
+              onChange={(color) => setEditingPreset({ ...editingPreset, color })}
+            />
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-400">세트 글자색</span>
+            {PRESET_TEXT_COLOR_OPTIONS.map((opt) => {
+              const isActive = (editingPreset.textColor || '') === opt.value;
+              return (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={() => setEditingPreset({ ...editingPreset, textColor: opt.value || undefined })}
+                  className={`px-2 py-1 rounded-md text-[11px] font-bold border transition-colors ${isActive ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-brand-900/30 dark:border-brand-700 dark:text-brand-300' : 'bg-white border-gray-200 text-gray-600 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-300'}`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
       
