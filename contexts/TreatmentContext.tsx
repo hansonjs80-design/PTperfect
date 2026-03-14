@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, ReactNode, useRef, useEffect, useCallback, useMemo } from 'react';
-import { BedState, Preset, TreatmentStep, PatientVisit, QuickTreatment } from '../types';
+import { BedState, BedStatus, Preset, TreatmentStep, PatientVisit, QuickTreatment } from '../types';
 import { usePresetManager } from '../hooks/usePresetManager';
 import { useQuickTreatmentManager } from '../hooks/useQuickTreatmentManager';
 import { useBedManager } from '../hooks/useBedManager';
@@ -10,6 +10,8 @@ import { useTreatmentSettings } from '../hooks/useTreatmentSettings';
 import { useTreatmentUI } from '../hooks/useTreatmentUI';
 import { usePatientBedSync } from '../hooks/usePatientBedSync';
 import { useHistory } from '../hooks/useHistory';
+import { useBedPatientFields } from '../hooks/useBedPatientFields';
+import { useActiveBedStability } from '../hooks/useActiveBedStability';
 import { supabase, isOnlineMode } from '../lib/supabase';
 
 interface MovingPatientState {
@@ -36,8 +38,11 @@ interface TreatmentContextType {
   // UI State for Modals
   selectingBedId: number | null;
   setSelectingBedId: (id: number | null) => void;
+  openTreatmentSelectorForBed: (bedId: number) => void;
   selectingLogId: string | null;
   setSelectingLogId: (id: string | null) => void;
+  selectingAppendMode: boolean;
+  setSelectingAppendMode: (v: boolean) => void;
   editingBedId: number | null;
   setEditingBedId: (id: number | null) => void;
   isPrintModalOpen: boolean;
@@ -62,6 +67,8 @@ interface TreatmentContextType {
   toggleTraction: (bedId: number) => void;
   toggleESWT: (bedId: number) => void;
   toggleManual: (bedId: number) => void;
+  toggleIon: (bedId: number) => void;
+  toggleExercise: (bedId: number) => void;
   toggleInjectionCompleted: (bedId: number) => void;
   updateBedSteps: (bedId: number, steps: TreatmentStep[], newStepIndex?: number) => void;
   updatePatientMemo: (bedId: number, memo: string | undefined) => void;
@@ -77,11 +84,14 @@ interface TreatmentContextType {
   canUndo: boolean;
   canRedo: boolean;
 
-  // Bed-Patient Name Mapping
+  // Bed-Patient Name/BodyPart Mapping
   bedPatientNames: Record<number, string>;
+  bedPatientBodyParts: Record<number, string>;
 
-  // Exposed for Log Component usage
+  // Exposed for Log/Bed Header usage
   updateVisitWithBedSync: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => Promise<void>;
+  updateActiveVisitFields: (bedId: number, updates: Partial<PatientVisit>) => Promise<void>;
+  activateVisitFromLog: (visitId: string, forceRestart?: boolean) => { ok: boolean; reason?: string };
 }
 
 const TreatmentContext = createContext<TreatmentContextType | undefined>(undefined);
@@ -91,31 +101,11 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const { quickTreatments, updateQuickTreatments } = useQuickTreatmentManager();
   const settings = useTreatmentSettings();
   const uiState = useTreatmentUI();
-  const { visits, addVisit, updateVisit: updateLogVisit, setVisits } = usePatientLogContext();
+  const { currentDate, visits, addVisit, updateVisit: updateLogVisit, setVisits } = usePatientLogContext();
   const { saveSnapshot, undoOp, redoOp, canUndo, canRedo } = useHistory(20);
 
   const visitsRef = useRef(visits);
   useEffect(() => { visitsRef.current = visits; }, [visits]);
-
-  // Bed ID → Patient Name mapping (latest visit per bed)
-  const bedPatientNames = useMemo(() => {
-    const map: Record<number, string> = {};
-    const visitsByBed: Record<number, PatientVisit[]> = {};
-    visits.forEach(v => {
-      if (v.bed_id) {
-        if (!visitsByBed[v.bed_id]) visitsByBed[v.bed_id] = [];
-        visitsByBed[v.bed_id].push(v);
-      }
-    });
-    Object.entries(visitsByBed).forEach(([bedIdStr, bedVisits]) => {
-      bedVisits.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
-      const latest = bedVisits[bedVisits.length - 1];
-      if (latest?.patient_name) {
-        map[parseInt(bedIdStr)] = latest.patient_name;
-      }
-    });
-    return map;
-  }, [visits]);
 
   const logUpdateHandlerRef = useRef<(bedId: number, updates: Partial<PatientVisit>) => void>(() => { });
 
@@ -131,6 +121,7 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const {
     beds,
     updateBedState,
+    updateBedMemoFromLog,
     restoreBeds,
     refreshBeds, // Destructure
     // Destructure original actions to wrap them with snapshot logic
@@ -149,16 +140,20 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     toggleTraction: _toggleTraction,
     toggleESWT: _toggleESWT,
     toggleManual: _toggleManual,
+    toggleIon: _toggleIon,
+    toggleExercise: _toggleExercise,
     toggleInjectionCompleted: _toggleInjectionCompleted,
     updateBedSteps: _updateBedSteps
   } = bedManager;
 
   const bedsRef = useRef(beds);
   useEffect(() => { bedsRef.current = beds; }, [beds]);
+  const { bedPatientNames, bedPatientBodyParts, getLatestVisitForBed } = useBedPatientFields(beds, visits);
 
-  const { handleLogUpdate, movePatient: _movePatient, updateVisitWithBedSync } = usePatientBedSync(
+  const { handleLogUpdate, movePatient: _movePatient, updateVisitWithBedSync, activateVisitFromLog } = usePatientBedSync(
     bedsRef,
     visitsRef,
+    currentDate,
     updateLogVisit,
     _clearBed,
     bedManager
@@ -167,6 +162,42 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   useEffect(() => {
     logUpdateHandlerRef.current = handleLogUpdate;
   }, [handleLogUpdate]);
+
+
+  const updateActiveVisitFields = useCallback(async (bedId: number, updates: Partial<PatientVisit>) => {
+    const bed = bedsRef.current.find((item) => item.id === bedId);
+    if (!bed || bed.status === BedStatus.IDLE) return;
+
+    const latestVisit = getLatestVisitForBed(bedId, visitsRef.current);
+    if (!latestVisit) return;
+
+    await updateLogVisit(latestVisit.id, updates);
+  }, [updateLogVisit, getLatestVisitForBed]);
+
+  const openTreatmentSelectorForBed = useCallback((bedId: number) => {
+    const bed = bedsRef.current.find((item) => item.id === bedId);
+    if (!bed) return;
+
+    if (bed.status !== BedStatus.IDLE) {
+      const latestVisit = getLatestVisitForBed(bedId, visitsRef.current);
+      uiState.setSelectingLogId(latestVisit?.id || null);
+    } else {
+      uiState.setSelectingLogId(null);
+    }
+
+    uiState.setSelectingBedId(bedId);
+  }, [getLatestVisitForBed, uiState]);
+
+
+
+  useActiveBedStability({
+    beds,
+    visits,
+    currentDate,
+    clearBed: _clearBed,
+    updateBedMemoFromLog,
+  });
+
 
   // --- Snapshot Wrappers for Actions ---
 
@@ -192,6 +223,8 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
   const toggleTraction = withSnapshot(_toggleTraction);
   const toggleESWT = withSnapshot(_toggleESWT);
   const toggleManual = withSnapshot(_toggleManual);
+  const toggleIon = withSnapshot(_toggleIon);
+  const toggleExercise = withSnapshot(_toggleExercise);
   const toggleInjectionCompleted = withSnapshot(_toggleInjectionCompleted);
   const updateBedSteps = withSnapshot(_updateBedSteps);
 
@@ -260,6 +293,8 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     prevStep,
     toggleESWT,
     toggleManual,
+    toggleIon,
+    toggleExercise,
     toggleInjectionCompleted,
     updateBedSteps,
     clearBed,
@@ -267,7 +302,11 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     refreshBeds,
     movePatient,
     bedPatientNames,
+    bedPatientBodyParts,
     updateVisitWithBedSync,
+    updateActiveVisitFields,
+    activateVisitFromLog,
+    openTreatmentSelectorForBed,
     undo,
     redo,
     canUndo,
