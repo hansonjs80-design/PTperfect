@@ -26,6 +26,7 @@ interface TreatmentSelectorCellProps {
   onPrevStep?: () => void;
   onClearBed?: () => void;
   onTogglePause?: () => void;
+  onOpenTimerEdit?: (position: { x: number; y: number }) => void;
   enableStepInteraction?: boolean;
   quickTreatments?: import('../../types').QuickTreatment[];
   onDeleteStep?: (idx: number) => void;
@@ -61,6 +62,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   onPrevStep,
   onClearBed,
   onTogglePause,
+  onOpenTimerEdit,
   enableStepInteraction = false,
   quickTreatments = [],
   onDeleteStep,
@@ -228,6 +230,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                 remainingTime={remainingTime}
                 isPaused={isPaused}
                 onTogglePause={onTogglePause}
+                onOpenTimerEdit={onOpenTimerEdit}
                 interactiveStepEdit={enableStepInteraction}
                 quickTreatments={quickTreatments}
                 onDeleteStep={onDeleteStep}

@@ -10,6 +10,7 @@ import { GenderSelectorCell } from './GenderSelectorCell';
 import { BedState, PatientVisit, Preset, TreatmentStep, QuickTreatment } from '../../types';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { formatBodyPartText } from '../../utils/patientLogUtils';
+import { TimerEditPopup } from '../bed-card/TimerEditPopup';
 import { useTreatmentContext } from '../../contexts/TreatmentContext';
 import { findExactPresetByTreatmentString, formatTime, generateTreatmentString } from '../../utils/bedUtils';
 
@@ -69,8 +70,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   showTimerColumn = false
 }) => {
   const { handleGridKeyDown } = useGridNavigation(11);
-  const { activateVisitFromLog, togglePause, updateBedSteps, quickTreatments } = useTreatmentContext();
+  const { activateVisitFromLog, togglePause, updateBedSteps, updateBedDuration, quickTreatments } = useTreatmentContext();
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
+  const [timerPopupPos, setTimerPopupPos] = useState<{ x: number; y: number } | null>(null);
   const [optimisticTreatmentName, setOptimisticTreatmentName] = useState<string | null>(null);
   const [stickyTreatmentName, setStickyTreatmentName] = useState<string>('');
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -430,6 +432,18 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
     return presetMatchedFromDisplay;
   })();
+
+  const handleOpenTimerEdit = (position: { x: number; y: number }) => {
+    if (!bed) return;
+    setTimerPopupPos(position);
+  };
+
+  const handleTimerDurationConfirm = (seconds: number) => {
+    if (!bed) return;
+    updateBedDuration(bed.id, seconds);
+    setTimerPopupPos(null);
+  };
+
   const handleTogglePauseFromTreatmentCell = (!isDraft && rowStatus === 'active' && bed)
     ? () => togglePause(bed.id)
     : undefined;
@@ -439,7 +453,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const canStartFromTimerCell = false;
 
   return (
-    <tr className={rowClasses}>
+    <>
+      <tr className={rowClasses}>
       <td className={`${cellBorderClass} p-0 relative`}>
         <BedSelectorCell
           gridId={`${rowIndex}-0`}
@@ -547,6 +562,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           onPrevStep={onPrevStep}
           onClearBed={onClearBed}
           onTogglePause={handleTogglePauseFromTreatmentCell}
+          onOpenTimerEdit={handleOpenTimerEdit}
           enableStepInteraction={canInteractActiveSteps}
           quickTreatments={quickTreatments}
           onDeleteStep={handleDeleteActiveStep}
@@ -699,6 +715,17 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           </div>
         )}
       </td>
-    </tr>
+      </tr>
+
+      {timerPopupPos && bed && (
+        <TimerEditPopup
+          title={`${bed.id === 11 ? '견인치료기' : `${bed.id}번 배드`} 시간 설정`}
+          initialSeconds={bed.remainingTime}
+          position={timerPopupPos}
+          onConfirm={handleTimerDurationConfirm}
+          onCancel={() => setTimerPopupPos(null)}
+        />
+      )}
+    </>
   );
 });

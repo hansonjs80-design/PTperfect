@@ -14,6 +14,7 @@ interface TreatmentTextRendererProps {
   remainingTime?: number;
   isPaused?: boolean;
   onTogglePause?: () => void;
+  onOpenTimerEdit?: (position: { x: number; y: number }) => void;
   interactiveStepEdit?: boolean;
   quickTreatments?: QuickTreatment[];
   onDeleteStep?: (idx: number) => void;
@@ -35,6 +36,7 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
   remainingTime,
   isPaused,
   onTogglePause,
+  onOpenTimerEdit,
   interactiveStepEdit = false,
   quickTreatments = [],
   onDeleteStep,
@@ -245,15 +247,24 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
               <span className={!isCurrent ? 'text-black dark:text-slate-100' : undefined}>{part}</span>
               {isCurrent && typeof remainingTime === 'number' && (
                 <>
-                  <span className={`text-[12.1px] sm:text-[13.2px] font-black ${
-                    timerStatus === 'overtime'
-                      ? 'text-red-200'
-                      : timerStatus === 'warning'
-                        ? 'text-white'
-                        : 'text-emerald-100'
-                  }`}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                      onOpenTimerEdit?.({ x: rect.left + rect.width / 2, y: rect.bottom + 6 });
+                    }}
+                    className={`text-[12.1px] sm:text-[13.2px] font-black underline underline-offset-2 decoration-dotted ${
+                      timerStatus === 'overtime'
+                        ? 'text-red-200'
+                        : timerStatus === 'warning'
+                          ? 'text-white'
+                          : 'text-emerald-100'
+                    }`}
+                    title="시간 조정"
+                  >
                     {formatTimer((!isPaused && remainingTime === 0) ? 1 : remainingTime)}
-                  </span>
+                  </button>
                   {onTogglePause && (
                     <button
                       type="button"
