@@ -51,7 +51,11 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
   const canDeleteSelected = selectedStepIndex !== null;
 
   const shouldShowMobileSelectedStepControls =
-    rowStatus === 'active' && isMobileOrTablet && !!onDeleteSelectedStep && !!onMoveSelectedStep;
+    rowStatus === 'active'
+    && isMobileOrTablet
+    && selectedStepIndex !== null
+    && !!onDeleteSelectedStep
+    && !!onMoveSelectedStep;
 
   return (
     <>
