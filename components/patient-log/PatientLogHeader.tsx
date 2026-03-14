@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight, CalendarCheck, Printer, X, Undo2, Redo2 } from 'lucide-react';
-import { useTreatmentContext } from '../../contexts/TreatmentContext';
 
 interface PatientLogHeaderProps {
   totalCount: number;
@@ -10,6 +9,10 @@ interface PatientLogHeaderProps {
   onDateSelect: (date: string) => void;
   onPrint: () => void;
   onClose?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
@@ -18,10 +21,12 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
   onDateChange,
   onDateSelect,
   onPrint,
-  onClose
+  onClose,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
 }) => {
-  const { undo, redo, canUndo, canRedo } = useTreatmentContext();
-
   const handleTodayClick = () => {
     const now = new Date();
     const offset = now.getTimezoneOffset() * 60000;
@@ -30,15 +35,8 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
   };
 
   const handleUndoRedo = (type: 'undo' | 'redo') => {
-    // Desktop/Tablet immediate execution (matches main layout logic)
-    if (window.innerWidth >= 768) {
-      if (type === 'undo') undo();
-      else redo();
-    } else {
-      // Mobile behavior
-      if (type === 'undo') undo();
-      else redo();
-    }
+    if (type === 'undo') onUndo?.();
+    else onRedo?.();
   };
 
   // 공통 버튼 스타일 정의
