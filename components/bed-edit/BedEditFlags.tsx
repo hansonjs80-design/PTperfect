@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet, Star } from 'lucide-react';
+import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet, Star, Atom } from 'lucide-react';
 import { BedState } from '../../types';
 
 interface BedEditFlagsProps {
@@ -10,6 +10,8 @@ interface BedEditFlagsProps {
   onToggleManual?: (bedId: number) => void;
   onToggleESWT?: (bedId: number) => void;
   onToggleTraction?: (bedId: number) => void;
+  onToggleIon?: (bedId: number) => void;
+  onToggleExercise?: (bedId: number) => void;
   onToggleInjectionCompleted?: (bedId: number) => void;
   onEditMemo?: (bedId: number) => void;
 }
@@ -21,6 +23,8 @@ export const BedEditFlags: React.FC<BedEditFlagsProps> = ({
   onToggleManual,
   onToggleESWT,
   onToggleTraction,
+  onToggleIon,
+  onToggleExercise,
   onToggleInjectionCompleted,
   onEditMemo
 }) => {
@@ -30,6 +34,8 @@ export const BedEditFlags: React.FC<BedEditFlagsProps> = ({
     { key: 'isManual', label: '도수', icon: Hand, activeClass: 'bg-violet-500 text-white shadow-violet-200 border-transparent', onClick: onToggleManual },
     { key: 'isESWT', label: '충격파', icon: Zap, activeClass: 'bg-blue-500 text-white shadow-blue-200 border-transparent', onClick: onToggleESWT },
     { key: 'isTraction', label: '견인', icon: ArrowUpFromLine, activeClass: 'bg-orange-500 text-white shadow-orange-200 border-transparent', onClick: onToggleTraction },
+    { key: 'isIon', label: '이온', icon: Atom, activeClass: 'bg-emerald-500 text-white shadow-emerald-200 border-transparent', onClick: onToggleIon },
+    { key: 'isExercise', label: '운동', icon: Zap, activeClass: 'bg-lime-500 text-white shadow-lime-200 border-transparent', onClick: onToggleExercise },
     { key: 'patientMemo', label: '메모', icon: Star, activeClass: 'bg-yellow-400 text-white shadow-yellow-100 border-transparent', onClick: onEditMemo },
   ];
 
