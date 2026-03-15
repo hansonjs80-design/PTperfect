@@ -5,6 +5,7 @@ import { X, Plus, Trash2, Settings } from 'lucide-react';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { computePopupPosition } from '../../utils/popupUtils';
+import { normalizeUpperEnglishKeyInput } from '../../utils/keyboardLayout';
 
 const DEFAULT_AUTHORS = ['S', 'K', 'J'];
 const LEGACY_DEFAULT_AUTHORS = ['K', 'J', 'M', 'L'];
@@ -93,9 +94,21 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       openMenu(e, true);
-    } else {
-      handleGridKeyDown(e, rowIndex, colIndex);
+      return;
     }
+
+    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+    if (isPlainTypingKey) {
+      const nextInitial = normalizeUpperEnglishKeyInput(e.key).trim().slice(0, 1);
+      if (nextInitial) {
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect(nextInitial);
+        return;
+      }
+    }
+
+    handleGridKeyDown(e, rowIndex, colIndex);
   };
 
   const handleOptionSelect = (option: string) => {
@@ -105,7 +118,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
   };
 
   const handleAddOption = () => {
-    const trimmed = newOption.trim().toUpperCase();
+    const trimmed = normalizeUpperEnglishKeyInput(newOption.trim());
     if (trimmed && !authorOptions.includes(trimmed)) {
       setAuthorOptions([...authorOptions, trimmed]);
     }
@@ -232,7 +245,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
                       ref={newInputRef}
                       type="text"
                       value={newOption}
-                      onChange={(e) => setNewOption(e.target.value.toUpperCase())}
+                      onChange={(e) => setNewOption(normalizeUpperEnglishKeyInput(e.target.value))}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();

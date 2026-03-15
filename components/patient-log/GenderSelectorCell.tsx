@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
+import { normalizeUpperEnglishKeyInput } from '../../utils/keyboardLayout';
 
 interface GenderSelectorCellProps {
   gridId?: string;
@@ -46,6 +47,19 @@ export const GenderSelectorCell: React.FC<GenderSelectorCellProps> = ({
       openMenu(rect ? rect.left + rect.width / 2 : 0, rect ? rect.bottom : 0);
       return;
     }
+
+    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+    if (isPlainTypingKey) {
+      const normalized = normalizeUpperEnglishKeyInput(e.key).trim();
+      const candidate = normalized.slice(0, 1);
+      if (candidate === 'M' || candidate === 'F') {
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect(candidate);
+        return;
+      }
+    }
+
     handleGridKeyDown(e, rowIndex, colIndex);
   };
 
