@@ -13,6 +13,12 @@ interface QuickTreatmentEditorProps {
 export const QuickTreatmentEditor: React.FC<QuickTreatmentEditorProps> = ({ initialItem, onSave, onCancel }) => {
   const [item, setItem] = useState<QuickTreatment>(initialItem);
 
+  const toHalfMinuteStep = (value: number) => {
+    const normalized = Number.isFinite(value) ? value : 0.5;
+    const clamped = Math.max(0.5, normalized);
+    return Math.round(clamped * 2) / 2;
+  };
+
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm animate-in fade-in slide-in-from-right-2 overflow-hidden">
       
@@ -52,13 +58,19 @@ export const QuickTreatmentEditor: React.FC<QuickTreatmentEditorProps> = ({ init
                 </div>
                 
                 <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">기본 시간 (분)</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">기본 시간 (30초 단위)</label>
                 <input 
                     type="number" 
                     value={item.duration}
-                    onChange={(e) => setItem({...item, duration: parseInt(e.target.value) || 0})}
+                    min={0.5}
+                    step={0.5}
+                    onChange={(e) => {
+                      const raw = parseFloat(e.target.value);
+                      setItem({ ...item, duration: toHalfMinuteStep(raw) });
+                    }}
                     className="w-full p-3 border rounded-xl bg-white text-gray-900 border-gray-300 dark:bg-slate-700 dark:text-white dark:border-slate-600 font-bold focus:ring-2 focus:ring-brand-500 outline-none text-center"
                 />
+                  <p className="text-[9px] text-gray-400 mt-1">* 0.5 = 30초, 1 = 1분</p>
                 </div>
             </div>
 
