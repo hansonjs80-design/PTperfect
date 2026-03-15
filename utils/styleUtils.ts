@@ -128,13 +128,13 @@ export const getStepColor = (
 export const getBedCardStyles = (bed: BedState, isOvertime: boolean, isNearEnd: boolean): string => {
   // Mobile Portrait: h-auto to shrink wrap content
   // Desktop/Tablet/Landscape: sm:h-full to fill grid
-  let base = "relative flex flex-col h-auto sm:h-full rounded-2xl overflow-hidden select-none transition-all duration-300 ease-in-out hover:shadow-lg focus-within:ring-2 focus-within:ring-brand-400 focus-within:ring-offset-2 ";
+  let base = "relative flex flex-col h-auto sm:h-full min-w-0 rounded-2xl overflow-hidden select-none transition-all duration-300 ease-in-out hover:shadow-lg focus-within:ring-2 focus-within:ring-brand-400 focus-within:ring-offset-2 ";
 
   // Height Logic Updated:
   // Mobile Portrait: min-h-[112px] (Reduced by ~10% from 125px)
   // Tablet Portrait (sm): min-h-[150px] (Maintained)
   // Landscape: Preserved specific overrides
-  const heightClasses = "min-h-[112px] sm:min-h-[150px] md:min-h-0 landscape:min-h-[200px] sm:landscape:min-h-[118px] lg:landscape:min-h-[200px] ";
+  const heightClasses = "min-h-[112px] sm:min-h-[146px] md:min-h-0 landscape:min-h-0 sm:landscape:min-h-0 lg:landscape:min-h-0 ";
 
   let statusClasses = "";
 
@@ -149,7 +149,7 @@ export const getBedCardStyles = (bed: BedState, isOvertime: boolean, isNearEnd: 
     statusClasses = "bg-white dark:bg-slate-800 ring-4 ring-orange-500 shadow-[0_4px_20px_rgba(249,115,22,0.5)] z-10 animate-pulse";
   } else if (bed.status === BedStatus.ACTIVE) {
     // 활성 상태: 방 번호 색상에 맞춘 테두리와 강한 그림자 적용
-    statusClasses = "bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform ";
+    statusClasses = "bg-slate-50 dark:bg-slate-900/90 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform ";
 
     if (bed.id === 1 || bed.id === 2) {
       // Sky Group
