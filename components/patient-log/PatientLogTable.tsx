@@ -209,7 +209,13 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         const normalizedTreatment = normalizeTreatmentPasteText(text);
         const isActiveRow = getRowStatus(visit.id, visit.bed_id) === 'active';
         const shouldSkipBedSync = !isActiveRow || !visit.bed_id;
+
         onUpdate(visit.id, { treatment_name: normalizedTreatment }, shouldSkipBedSync);
+
+        // 활성 행 처방을 비우면 배드 카드/행도 즉시 비활성화한다.
+        if (normalizedTreatment === '' && isActiveRow && visit.bed_id) {
+          onClearBed?.(visit.bed_id);
+        }
         return;
       }
       case 6:
@@ -224,7 +230,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       default:
         return;
     }
-  }, [onUpdate, getRowStatus, normalizeTreatmentPasteText]);
+  }, [onUpdate, getRowStatus, normalizeTreatmentPasteText, onClearBed]);
 
   const handleGridClipboardCopy = useCallback((shouldCut: boolean) => {
     const bounds = normalizeSelectionBounds(selection);

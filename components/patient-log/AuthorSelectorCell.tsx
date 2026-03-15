@@ -59,7 +59,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
     }
   }, [menuOpen, menuClickPos, isEditMode, authorOptions.length]);
 
-  const openMenu = (e: React.MouseEvent | React.KeyboardEvent, isKeyboard = false) => {
+  const openMenu = (e: React.MouseEvent | React.KeyboardEvent | React.TouchEvent, isKeyboard = false) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -67,6 +67,9 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
     if (isKeyboard && cellRef.current) {
       const rect = cellRef.current.getBoundingClientRect();
       clickPos = { x: rect.left + rect.width / 2, y: rect.bottom };
+    } else if ('changedTouches' in e && e.changedTouches.length > 0) {
+      const touch = e.changedTouches[0];
+      clickPos = { x: touch.clientX, y: touch.clientY };
     } else {
       const me = e as React.MouseEvent;
       clickPos = { x: me.clientX, y: me.clientY };
@@ -77,11 +80,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
     setMenuOpen(true);
   };
 
-  const handleClick = (e: React.MouseEvent) => {
-    if (window.innerWidth >= 768) {
-      openMenu(e);
-      return;
-    }
+  const handleTouchEnd = (e: React.TouchEvent) => {
     const now = Date.now();
     if (now - lastClickTimeRef.current < 350 && now - lastClickTimeRef.current > 0) {
       openMenu(e);
@@ -129,11 +128,12 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
       <div
         ref={cellRef}
         className={`w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 ${isDraft ? 'opacity-50 hover:opacity-100' : ''}`}
-        onClick={handleClick}
+        onDoubleClick={openMenu}
+        onTouchEnd={handleTouchEnd}
         onKeyDown={handleKeyDown}
         tabIndex={0}
         data-grid-id={gridId}
-        title="클릭하여 작성자 선택"
+        title="더블클릭/더블터치로 작성자 선택"
       >
         {value ? (
           <span className="text-sm xl:text-base font-bold text-gray-600 dark:text-gray-300">{value}</span>

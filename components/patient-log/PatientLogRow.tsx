@@ -175,9 +175,15 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (!isDraft && visit && onUpdate) {
+      const normalizedTreatment = val.trim();
       const isAssignmentMode = !!visit.bed_id && (!visit.treatment_name || visit.treatment_name.trim() === '');
       const shouldSyncActiveBed = rowStatus === 'active' && !!visit.bed_id;
-      await Promise.resolve(onUpdate(visit.id, { treatment_name: val }, !(isAssignmentMode || shouldSyncActiveBed)));
+      await Promise.resolve(onUpdate(visit.id, { treatment_name: normalizedTreatment }, !(isAssignmentMode || shouldSyncActiveBed)));
+
+      // 활성 행 처방을 명시적으로 지우면 배드 카드/행도 즉시 비활성화한다.
+      if (normalizedTreatment === '' && rowStatus === 'active' && visit.bed_id) {
+        onClearBed?.();
+      }
     }
   };
 
