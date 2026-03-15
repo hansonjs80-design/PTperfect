@@ -128,13 +128,13 @@ export const getStepColor = (
 export const getBedCardStyles = (bed: BedState, isOvertime: boolean, isNearEnd: boolean): string => {
   // Mobile Portrait: h-auto to shrink wrap content
   // Desktop/Tablet/Landscape: sm:h-full to fill grid
-  let base = "relative flex flex-col h-auto sm:h-full rounded-2xl overflow-hidden select-none transition-all duration-300 ease-in-out hover:shadow-lg focus-within:ring-2 focus-within:ring-brand-400 focus-within:ring-offset-2 ";
+  let base = "relative flex flex-col h-auto sm:h-full min-w-0 rounded-2xl overflow-hidden select-none transition-all duration-300 ease-in-out hover:shadow-lg focus-within:ring-2 focus-within:ring-brand-400 focus-within:ring-offset-2 ";
 
   // Height Logic Updated:
   // Mobile Portrait: min-h-[112px] (Reduced by ~10% from 125px)
   // Tablet Portrait (sm): min-h-[150px] (Maintained)
   // Landscape: Preserved specific overrides
-  const heightClasses = "min-h-[112px] sm:min-h-[150px] md:min-h-0 landscape:min-h-[200px] sm:landscape:min-h-[118px] lg:landscape:min-h-[200px] ";
+  const heightClasses = "min-h-[112px] sm:min-h-[146px] md:min-h-0 landscape:min-h-0 sm:landscape:min-h-0 lg:landscape:min-h-0 ";
 
   let statusClasses = "";
 
