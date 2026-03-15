@@ -1,4 +1,3 @@
-
 {
   "name": "PhysioTrack Pro",
   "short_name": "PhysioTrack",
@@ -10,17 +9,17 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%230f172a'/%3E%3Cpath fill='%23ffffff' d='M140 112h80c53 0 96 43 96 96s-43 96-96 96h-32v96h-48V112zm48 48v96h32c26.5 0 48-21.5 48-48s-21.5-48-48-48h-32z'/%3E%3Cpath fill='%2338bdf8' d='M310 112h110v48h-31v240h-48v-240h-31z'/%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%0A%3Cdefs%3E%0A%3ClinearGradient%20id%3D%27bg%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%230f172a%27%2F%3E%0A%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23111827%27%2F%3E%0A%3C%2FlinearGradient%3E%0A%3C%2Fdefs%3E%0A%3Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27128%27%20fill%3D%27url%28%23bg%29%27%2F%3E%0A%3Crect%20x%3D%27116%27%20y%3D%2798%27%20width%3D%2764%27%20height%3D%27316%27%20rx%3D%2724%27%20fill%3D%27%23ffffff%27%2F%3E%0A%3Cpath%20d%3D%27M180%2098h64c70%200%20126%2056%20126%20126s-56%20126-126%20126h-64v-64h64c34%200%2062-28%2062-62s-28-62-62-62h-64z%27%20fill%3D%27%23ffffff%27%2F%3E%0A%3Crect%20x%3D%27296%27%20y%3D%2798%27%20width%3D%27112%27%20height%3D%2756%27%20rx%3D%2720%27%20fill%3D%27%2338bdf8%27%2F%3E%0A%3Crect%20x%3D%27336%27%20y%3D%27154%27%20width%3D%2732%27%20height%3D%27260%27%20rx%3D%2716%27%20fill%3D%27%2338bdf8%27%2F%3E%0A%3C%2Fsvg%3E",
       "sizes": "192x192",
       "type": "image/svg+xml"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%230f172a'/%3E%3Cpath fill='%23ffffff' d='M140 112h80c53 0 96 43 96 96s-43 96-96 96h-32v96h-48V112zm48 48v96h32c26.5 0 48-21.5 48-48s-21.5-48-48-48h-32z'/%3E%3Cpath fill='%2338bdf8' d='M310 112h110v48h-31v240h-48v-240h-31z'/%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%0A%3Cdefs%3E%0A%3ClinearGradient%20id%3D%27bg%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%230f172a%27%2F%3E%0A%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23111827%27%2F%3E%0A%3C%2FlinearGradient%3E%0A%3C%2Fdefs%3E%0A%3Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27128%27%20fill%3D%27url%28%23bg%29%27%2F%3E%0A%3Crect%20x%3D%27116%27%20y%3D%2798%27%20width%3D%2764%27%20height%3D%27316%27%20rx%3D%2724%27%20fill%3D%27%23ffffff%27%2F%3E%0A%3Cpath%20d%3D%27M180%2098h64c70%200%20126%2056%20126%20126s-56%20126-126%20126h-64v-64h64c34%200%2062-28%2062-62s-28-62-62-62h-64z%27%20fill%3D%27%23ffffff%27%2F%3E%0A%3Crect%20x%3D%27296%27%20y%3D%2798%27%20width%3D%27112%27%20height%3D%2756%27%20rx%3D%2720%27%20fill%3D%27%2338bdf8%27%2F%3E%0A%3Crect%20x%3D%27336%27%20y%3D%27154%27%20width%3D%2732%27%20height%3D%27260%27%20rx%3D%2716%27%20fill%3D%27%2338bdf8%27%2F%3E%0A%3C%2Fsvg%3E",
       "sizes": "512x512",
       "type": "image/svg+xml"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%230f172a'/%3E%3Cpath fill='%23ffffff' d='M140 112h80c53 0 96 43 96 96s-43 96-96 96h-32v96h-48V112zm48 48v96h32c26.5 0 48-21.5 48-48s-21.5-48-48-48h-32z'/%3E%3Cpath fill='%2338bdf8' d='M310 112h110v48h-31v240h-48v-240h-31z'/%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%0A%3Cdefs%3E%0A%3ClinearGradient%20id%3D%27bg%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%230f172a%27%2F%3E%0A%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23111827%27%2F%3E%0A%3C%2FlinearGradient%3E%0A%3C%2Fdefs%3E%0A%3Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27128%27%20fill%3D%27url%28%23bg%29%27%2F%3E%0A%3Crect%20x%3D%27116%27%20y%3D%2798%27%20width%3D%2764%27%20height%3D%27316%27%20rx%3D%2724%27%20fill%3D%27%23ffffff%27%2F%3E%0A%3Cpath%20d%3D%27M180%2098h64c70%200%20126%2056%20126%20126s-56%20126-126%20126h-64v-64h64c34%200%2062-28%2062-62s-28-62-62-62h-64z%27%20fill%3D%27%23ffffff%27%2F%3E%0A%3Crect%20x%3D%27296%27%20y%3D%2798%27%20width%3D%27112%27%20height%3D%2756%27%20rx%3D%2720%27%20fill%3D%27%2338bdf8%27%2F%3E%0A%3Crect%20x%3D%27336%27%20y%3D%27154%27%20width%3D%2732%27%20height%3D%27260%27%20rx%3D%2716%27%20fill%3D%27%2338bdf8%27%2F%3E%0A%3C%2Fsvg%3E",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
