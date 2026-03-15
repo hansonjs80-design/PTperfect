@@ -4,6 +4,7 @@ import React from 'react';
 interface PatientLogTableHeaderProps {
   onResizeStart?: (colIndex: number, clientX: number) => void;
   isResizing?: boolean;
+  activeResizeColIndex?: number | null;
   showTimerColumn?: boolean;
 }
 
@@ -15,6 +16,7 @@ const thBase =
 export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
   onResizeStart,
   isResizing,
+  activeResizeColIndex = null,
   showTimerColumn = false,
 }) => {
   const handle = (colIndex: number) => {
@@ -32,10 +34,12 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
         }}
       >
         <div
-          className={`w-[2px] h-[60%] rounded-full transition-colors duration-150 ${
-            isResizing
-              ? 'bg-blue-400/50'
-              : 'bg-transparent hover:bg-blue-400/60'
+          className={`w-[2px] rounded-full transition-all duration-150 ${
+            activeResizeColIndex === colIndex
+              ? 'h-[90%] bg-blue-500'
+              : isResizing
+                ? 'h-[60%] bg-transparent'
+                : 'h-[60%] bg-transparent hover:bg-blue-400/60'
           }`}
         />
       </div>

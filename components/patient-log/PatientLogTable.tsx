@@ -73,7 +73,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
   // Column resize (desktop & tablet portrait)
   const tableRef = useRef<HTMLTableElement>(null);
-  const { columnWidths, isResizing, onResizeStart } = useColumnResize(tableRef);
+  const { columnWidths, isResizing, activeResizeColIndex, onResizeStart } = useColumnResize(tableRef);
 
   // Auto-focus logic for new row creation
   // Stores { rowOffset, colIndex }
@@ -552,7 +552,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
             })}
           </colgroup>
         )}
-        <PatientLogTableHeader onResizeStart={onResizeStart} isResizing={isResizing} showTimerColumn={showTimerColumn} />
+        <PatientLogTableHeader
+          onResizeStart={onResizeStart}
+          isResizing={isResizing}
+          activeResizeColIndex={activeResizeColIndex}
+          showTimerColumn={showTimerColumn}
+        />
         <tbody>
           {visits.map((visit, index) => {
             const rowStatus = getRowStatus(visit.id, visit.bed_id);

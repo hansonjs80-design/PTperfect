@@ -50,6 +50,7 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
     return null;
   });
   const [isResizing, setIsResizing] = useState(false);
+  const [activeResizeColIndex, setActiveResizeColIndex] = useState<number | null>(null);
   const stateRef = useRef<{
     colIndex: number;
     startX: number;
@@ -88,6 +89,7 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
     if (!columnWidths) setColumnWidths(widths);
 
     stateRef.current = { colIndex, startX: clientX, startWidths: [...widths] };
+    setActiveResizeColIndex(colIndex);
     setIsResizing(true);
   }, [columnWidths, captureWidths]);
 
@@ -115,6 +117,7 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
     };
     const onEnd = () => {
       stateRef.current = null;
+      setActiveResizeColIndex(null);
       setIsResizing(false);
       // Persist column widths to localStorage
       const current = widthsRef.current;
@@ -141,5 +144,5 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
     };
   }, [isResizing]);
 
-  return { columnWidths, isResizing, onResizeStart };
+  return { columnWidths, isResizing, activeResizeColIndex, onResizeStart };
 }
