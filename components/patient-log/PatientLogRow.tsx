@@ -75,6 +75,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const [timerPopupPos, setTimerPopupPos] = useState<{ x: number; y: number } | null>(null);
   const [optimisticTreatmentName, setOptimisticTreatmentName] = useState<string | null>(null);
   const [stickyTreatmentName, setStickyTreatmentName] = useState<string>('');
+  const lastActivePresetBadgeRef = useRef<{ treatmentKey: string; preset: Preset } | null>(null);
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clean up timeout on unmount
@@ -436,8 +437,25 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       }
     }
 
+    // 침상 비우기 직후(rowStatus: none)에도 직전에 활성 상태에서 보이던 세트 배지는 유지한다.
+    // 단, 처방 문자열이 바뀌면 즉시 해제한다.
+    if (!presetMatchedFromDisplay && lastActivePresetBadgeRef.current && normalized === lastActivePresetBadgeRef.current.treatmentKey) {
+      return lastActivePresetBadgeRef.current.preset;
+    }
+
     return presetMatchedFromDisplay;
   })();
+
+  useEffect(() => {
+    if (rowStatus !== 'active' || !matchedPresetForDisplay) return;
+    const treatmentKey = treatmentDisplayValue.trim();
+    if (!treatmentKey) return;
+
+    lastActivePresetBadgeRef.current = {
+      treatmentKey,
+      preset: matchedPresetForDisplay,
+    };
+  }, [rowStatus, matchedPresetForDisplay, treatmentDisplayValue]);
 
   const handleOpenTimerEdit = (position: { x: number; y: number }) => {
     if (!bed) return;
