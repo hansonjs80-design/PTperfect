@@ -158,6 +158,11 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     special_note: true,
   }), []);
   const [importFieldSelection, setImportFieldSelection] = useState(defaultImportFieldSelection);
+  const defaultMemoPasteSelection = useMemo(() => ({
+    memo: true,
+    special_note: true,
+  }), []);
+  const [memoPasteSelection, setMemoPasteSelection] = useState(defaultMemoPasteSelection);
   const [selectionAnchor, setSelectionAnchor] = useState<{ row: number | null; col: number | null }>({ row: null, col: null });
   const [selectedVisitIdForImport, setSelectedVisitIdForImport] = useState<string | null>(null);
   
@@ -260,7 +265,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setSearchResults([]);
     setSelectedResult(null);
     setDraftImport(null);
-  }, []);
+    setMemoPasteSelection(defaultMemoPasteSelection);
+  }, [defaultMemoPasteSelection]);
 
   const mappedResults = useMemo(() => searchResults.slice(0, 5), [searchResults]);
 
@@ -493,6 +499,27 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setDraftImport((prev) => ({ ...(prev || {}), patient_name: updatePayload.patient_name || prev?.patient_name || '', special_note: nextSpecialNote }));
     return true;
   }, [selectionAnchor.row, selectedVisitIdForImport, trackedUpdateVisitWithBedSync, visits, trackedAddVisit, targetPatientNameForHistoryPaste]);
+
+  const applyHistoryBySelection = useCallback(async (historyVisitId: string): Promise<boolean> => {
+    if (!memoPasteSelection.memo && !memoPasteSelection.special_note) return false;
+
+    const sourceVisit = searchResults.find((visit) => visit.id === historyVisitId);
+    if (!sourceVisit) return false;
+
+    let hasApplied = false;
+
+    if (memoPasteSelection.memo) {
+      const appliedMemo = await applyMemoToSelectedRow(sourceVisit.memo || '');
+      hasApplied = hasApplied || appliedMemo;
+    }
+
+    if (memoPasteSelection.special_note) {
+      const appliedSpecial = await applySpecialNoteToSelectedRow(sourceVisit.special_note || '');
+      hasApplied = hasApplied || appliedSpecial;
+    }
+
+    return hasApplied;
+  }, [memoPasteSelection, searchResults, applyMemoToSelectedRow, applySpecialNoteToSelectedRow]);
 
   const selectResult = useCallback((visit: PatientVisit) => {
     setSelectedResult(visit);
@@ -777,13 +804,13 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                               <button
                                 type="button"
                                 onClick={async () => {
-                              const applied = await applyMemoToSelectedRow(item.memo);
+                              const applied = await applyHistoryBySelection(item.id);
                               if (applied) resetMemoHistoryModal();
                             }}
                                 disabled={selectionAnchor.row === null}
                                 className="mt-1 px-2 py-1 text-[10px] font-bold rounded bg-brand-600 text-white disabled:opacity-40"
                               >
-                                선택 행 메모 셀에 붙여넣기
+                                선택 옵션으로 붙여넣기
                               </button>
                             </div>
                           ))}
@@ -804,13 +831,13 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                               <button
                                 type="button"
                                 onClick={async () => {
-                              const applied = await applySpecialNoteToSelectedRow(item.specialNote);
+                              const applied = await applyHistoryBySelection(item.id);
                               if (applied) resetMemoHistoryModal();
                             }}
                                 disabled={selectionAnchor.row === null}
                                 className="mt-1 px-2 py-1 text-[10px] font-bold rounded bg-brand-600 text-white disabled:opacity-40"
                               >
-                                선택 행 특이사항 셀에 붙여넣기
+                                선택 옵션으로 붙여넣기
                               </button>
                             </div>
                           ))}
@@ -856,6 +883,30 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                 <p className="text-[11px] text-brand-600 dark:text-brand-400 px-1 font-bold">선택 행 이름 기준 검색: {selectedPatientNameForSearch}</p>
               )}
 
+              <div className="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 p-2">
+                <p className="text-[11px] font-bold text-gray-500 mb-1">붙여넣기 항목 선택</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
+                    <input
+                      type="checkbox"
+                      checked={memoPasteSelection.memo}
+                      onChange={(e) => setMemoPasteSelection((prev) => ({ ...prev, memo: e.target.checked }))}
+                      className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                    />
+                    메모
+                  </label>
+                  <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
+                    <input
+                      type="checkbox"
+                      checked={memoPasteSelection.special_note}
+                      onChange={(e) => setMemoPasteSelection((prev) => ({ ...prev, special_note: e.target.checked }))}
+                      className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                    />
+                    특이사항
+                  </label>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[280px]">
                 <div className="border border-gray-200 dark:border-slate-700 rounded-xl p-3 bg-gray-50 dark:bg-slate-800/40">
                   <p className="text-[11px] font-bold text-gray-500 mb-2">동일 이름 메모 내역</p>
@@ -870,13 +921,13 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           <button
                             type="button"
                             onClick={async () => {
-                              const applied = await applyMemoToSelectedRow(item.memo);
+                              const applied = await applyHistoryBySelection(item.id);
                               if (applied) resetMemoHistoryModal();
                             }}
                             disabled={selectionAnchor.row === null}
                             className="mt-1 px-2 py-1 text-[10px] font-bold rounded bg-brand-600 text-white disabled:opacity-40"
                           >
-                            선택 행 메모 셀에 붙여넣기
+                            선택 옵션으로 붙여넣기
                           </button>
                         </div>
                       ))}
@@ -897,13 +948,13 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           <button
                             type="button"
                             onClick={async () => {
-                              const applied = await applySpecialNoteToSelectedRow(item.specialNote);
+                              const applied = await applyHistoryBySelection(item.id);
                               if (applied) resetMemoHistoryModal();
                             }}
                             disabled={selectionAnchor.row === null}
                             className="mt-1 px-2 py-1 text-[10px] font-bold rounded bg-brand-600 text-white disabled:opacity-40"
                           >
-                            선택 행 특이사항 셀에 붙여넣기
+                            선택 옵션으로 붙여넣기
                           </button>
                         </div>
                       ))}
