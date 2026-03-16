@@ -148,6 +148,16 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [searchResults, setSearchResults] = useState<PatientVisit[]>([]);
   const [selectedResult, setSelectedResult] = useState<PatientVisit | null>(null);
   const [draftImport, setDraftImport] = useState<Partial<PatientVisit> | null>(null);
+  const defaultImportFieldSelection = useMemo(() => ({
+    patient_name: true,
+    gender: true,
+    body_part: true,
+    treatment_name: true,
+    author: true,
+    memo: true,
+    special_note: true,
+  }), []);
+  const [importFieldSelection, setImportFieldSelection] = useState(defaultImportFieldSelection);
   const [selectionAnchor, setSelectionAnchor] = useState<{ row: number | null; col: number | null }>({ row: null, col: null });
   const [selectedVisitIdForImport, setSelectedVisitIdForImport] = useState<string | null>(null);
   
@@ -241,7 +251,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setSearchResults([]);
     setSelectedResult(null);
     setDraftImport(null);
-  }, []);
+    setImportFieldSelection(defaultImportFieldSelection);
+  }, [defaultImportFieldSelection]);
 
   const resetMemoHistoryModal = useCallback(() => {
     setIsMemoHistoryModalOpen(false);
@@ -491,22 +502,25 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const handleImportToToday = useCallback(async () => {
     if (!draftImport) return;
 
-    const payload: Partial<PatientVisit> = {
-      patient_name: draftImport.patient_name || '',
-      gender: (draftImport.gender || '').toUpperCase(),
-      body_part: draftImport.body_part || '',
-      treatment_name: normalizeImportedTreatmentName(draftImport.treatment_name),
-      memo: draftImport.memo || '',
-      special_note: draftImport.special_note || '',
-      is_injection: draftImport.is_injection || false,
-      is_fluid: draftImport.is_fluid || false,
-      is_traction: draftImport.is_traction || false,
-      is_eswt: draftImport.is_eswt || false,
-      is_manual: draftImport.is_manual || false,
-      is_ion: draftImport.is_ion || false,
-      is_exercise: draftImport.is_exercise || false,
-      is_injection_completed: draftImport.is_injection_completed || false,
-    };
+    const payload: Partial<PatientVisit> = {};
+
+    if (importFieldSelection.patient_name) payload.patient_name = draftImport.patient_name || '';
+    if (importFieldSelection.gender) payload.gender = (draftImport.gender || '').toUpperCase();
+    if (importFieldSelection.body_part) payload.body_part = draftImport.body_part || '';
+    if (importFieldSelection.treatment_name) {
+      payload.treatment_name = normalizeImportedTreatmentName(draftImport.treatment_name);
+      payload.is_injection = draftImport.is_injection || false;
+      payload.is_fluid = draftImport.is_fluid || false;
+      payload.is_traction = draftImport.is_traction || false;
+      payload.is_eswt = draftImport.is_eswt || false;
+      payload.is_manual = draftImport.is_manual || false;
+      payload.is_ion = draftImport.is_ion || false;
+      payload.is_exercise = draftImport.is_exercise || false;
+      payload.is_injection_completed = draftImport.is_injection_completed || false;
+    }
+    if (importFieldSelection.author) payload.author = draftImport.author || '';
+    if (importFieldSelection.memo) payload.memo = draftImport.memo || '';
+    if (importFieldSelection.special_note) payload.special_note = draftImport.special_note || '';
 
     const selectedRow = selectionAnchor.row;
     const targetVisitByRow = selectedRow !== null ? visits[selectedRow] : undefined;
@@ -520,7 +534,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     }
 
     resetSearchModal();
-  }, [trackedAddVisit, draftImport, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, trackedUpdateVisitWithBedSync, normalizeImportedTreatmentName]);
+  }, [trackedAddVisit, draftImport, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, trackedUpdateVisitWithBedSync, normalizeImportedTreatmentName, importFieldSelection]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -662,8 +676,32 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                   ))}
                 </div>
 
-                <div className="border border-gray-200 dark:border-slate-700 rounded-xl p-3 flex flex-col gap-2">
+                <div className="border border-gray-200 dark:border-slate-700 rounded-xl p-3 flex flex-col gap-2 bg-gray-50/60 dark:bg-slate-800/30">
                   <p className="text-[11px] font-bold text-gray-500">오늘 행으로 가져오기 전 수정</p>
+                  <div className="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2">
+                    <p className="text-[10px] font-bold text-gray-500 mb-1.5">가져올 항목 선택 (기본: 전체)</p>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                      {[
+                        { key: 'patient_name', label: '이름' },
+                        { key: 'gender', label: '성별' },
+                        { key: 'body_part', label: '부위' },
+                        { key: 'treatment_name', label: '치료' },
+                        { key: 'author', label: '작성자' },
+                        { key: 'memo', label: '메모' },
+                        { key: 'special_note', label: '특이사항' },
+                      ].map((item) => (
+                        <label key={item.key} className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
+                          <input
+                            type="checkbox"
+                            checked={importFieldSelection[item.key as keyof typeof importFieldSelection]}
+                            onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, [item.key]: e.target.checked }))}
+                            className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          />
+                          {item.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                   <input value={draftImport?.patient_name || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), patient_name: e.target.value }))} placeholder="이름" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
                   <select value={(draftImport?.gender || '').toUpperCase()} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), gender: e.target.value }))} className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
                     <option value="">성별 선택</option>
