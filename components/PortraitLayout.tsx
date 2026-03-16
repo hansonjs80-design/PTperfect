@@ -8,8 +8,8 @@ import { useTreatmentContext } from '../contexts/TreatmentContext';
 export const PortraitLayout: React.FC<BedLayoutProps> = memo(({ beds, presets }) => {
   const { layoutMode } = useTreatmentContext();
   
-  const getBed = useCallback((id: number): BedState => {
-    return beds.find(b => b.id === id) || beds[0];
+  const getBed = useCallback((id: number): BedState | null => {
+    return beds.find(b => b.id === id) || null;
   }, [beds]);
 
   const config = layoutMode === 'default' ? PORTRAIT_PAIRS_CONFIG : PORTRAIT_PAIRS_CONFIG_ALT;

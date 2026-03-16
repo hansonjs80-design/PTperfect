@@ -4,6 +4,26 @@ import { STANDARD_TREATMENTS } from '../constants';
 
 // --- Formatters ---
 
+const STEP_LABEL_ALIASES: Record<string, string[]> = {
+  'H': ['핫팩 (Hot Pack)', 'HOT PACK'],
+  'HP': ['핫팩 (Hot Pack)', 'HOT PACK'],
+  '자': ['자기장 (Magnetic)', 'MAGNETIC'],
+  'MG': ['자기장 (Magnetic)', 'MAGNETIC'],
+  'LA': ['Laser', 'LASER', '레이저'],
+};
+
+const matchByAlias = (part: string, list: QuickTreatment[]): QuickTreatment | undefined => {
+  const alias = STEP_LABEL_ALIASES[part.toUpperCase()];
+  if (!alias) return undefined;
+  const upperAliases = alias.map((v) => v.toUpperCase());
+  return list.find((t) => {
+    const upperName = t.name.toUpperCase();
+    const upperLabel = (t.label || '').toUpperCase();
+    return upperAliases.some((a) => upperName.includes(a) || upperLabel === a);
+  });
+};
+
+
 export const formatTime = (seconds: number): string => {
   // Safe guard for NaN or undefined/null
   if (typeof seconds !== 'number' || isNaN(seconds)) {
@@ -46,22 +66,56 @@ export const generateTreatmentString = (steps: TreatmentStep[]) => {
   return steps.map(s => s.label || getAbbreviation(s.name)).join('/');
 };
 
+export const normalizeTreatmentString = (value: string | null | undefined): string => {
+  if (!value) return '';
+  return value
+    .split(/[\/,]+/)
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .join('/');
+};
+
+export const findExactPresetByTreatmentString = (presets: Preset[], treatmentString: string | null | undefined): Preset | undefined => {
+  const normalizedTarget = normalizeTreatmentString(treatmentString);
+  if (!normalizedTarget) return undefined;
+
+  return presets.find((preset) => normalizeTreatmentString(generateTreatmentString(preset.steps)) === normalizedTarget);
+};
+
 export const parseTreatmentString = (treatmentString: string | null, customTreatments: QuickTreatment[] = []): TreatmentStep[] => {
   if (!treatmentString) return [];
 
   const referenceList = customTreatments.length > 0 ? customTreatments : STANDARD_TREATMENTS;
 
-  const parts = treatmentString.split('/').map(s => s.trim());
+  const parts = treatmentString.split(/[\/,]+/).map(s => s.trim());
   const reconstructedSteps: TreatmentStep[] = [];
 
   for (const part of parts) {
     if (!part) continue;
 
-    const match = referenceList.find(t =>
-      t.label.toUpperCase() === part.toUpperCase() ||
-      getAbbreviation(t.name).toUpperCase() === part.toUpperCase() ||
-      t.name.toUpperCase().includes(part.toUpperCase())
-    );
+    const upperPart = part.toUpperCase();
+    const findBy = (predicate: (t: QuickTreatment) => boolean) => referenceList.find(predicate);
+
+    // 0) 현장 약어 별칭 우선 (H/자 등)
+    let match = matchByAlias(part, referenceList);
+
+    // 1) 정확 매칭 우선 (라벨/약어/이름)
+    if (!match) match = findBy((t) => (t.label || '').toUpperCase() === upperPart);
+    if (!match) match = findBy((t) => getAbbreviation(t.name).toUpperCase() === upperPart);
+    if (!match) match = findBy((t) => t.name.toUpperCase() === upperPart);
+
+    // 2) 접두 매칭 (오입력 보정)
+    if (!match) {
+      match = findBy((t) =>
+        t.name.toUpperCase().startsWith(upperPart) ||
+        (t.label || '').toUpperCase().startsWith(upperPart)
+      );
+    }
+
+    // 3) 포함 매칭은 마지막 fallback으로만 사용 (한 글자/짧은 토큰 오인식 방지)
+    if (!match && part.length >= 2) {
+      match = findBy((t) => t.name.toUpperCase().includes(upperPart));
+    }
 
     if (match) {
       reconstructedSteps.push({
@@ -90,7 +144,7 @@ export const findMatchingPreset = (presets: Preset[], treatmentString: string | 
   if (!treatmentString) return undefined;
 
   // 1. Exact Match
-  const exactMatch = presets.find(p => generateTreatmentString(p.steps) === treatmentString);
+  const exactMatch = findExactPresetByTreatmentString(presets, treatmentString);
   if (exactMatch) return exactMatch;
 
   // 2. Reconstruct from string
