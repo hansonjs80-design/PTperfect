@@ -678,41 +678,90 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
                 <div className="border border-gray-200 dark:border-slate-700 rounded-xl p-3 flex flex-col gap-2 bg-gray-50/60 dark:bg-slate-800/30">
                   <p className="text-[11px] font-bold text-gray-500">오늘 행으로 가져오기 전 수정</p>
-                  <div className="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2">
-                    <p className="text-[10px] font-bold text-gray-500 mb-1.5">가져올 항목 선택 (기본: 전체)</p>
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                      {[
-                        { key: 'patient_name', label: '이름' },
-                        { key: 'gender', label: '성별' },
-                        { key: 'body_part', label: '부위' },
-                        { key: 'treatment_name', label: '치료' },
-                        { key: 'author', label: '작성자' },
-                        { key: 'memo', label: '메모' },
-                        { key: 'special_note', label: '특이사항' },
-                      ].map((item) => (
-                        <label key={item.key} className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
-                          <input
-                            type="checkbox"
-                            checked={importFieldSelection[item.key as keyof typeof importFieldSelection]}
-                            onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, [item.key]: e.target.checked }))}
-                            className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-                          />
-                          {item.label}
-                        </label>
-                      ))}
-                    </div>
+                  <p className="text-[10px] font-bold text-gray-500">각 항목 좌측 체크박스로 가져올 내용을 선택하세요. (기본: 전체)</p>
+
+                  <div className="grid grid-cols-[82px_1fr] items-center gap-2">
+                    <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
+                      <input
+                        type="checkbox"
+                        checked={importFieldSelection.patient_name}
+                        onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, patient_name: e.target.checked }))}
+                        className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      이름
+                    </label>
+                    <input value={draftImport?.patient_name || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), patient_name: e.target.value }))} placeholder="이름" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+
+                    <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
+                      <input
+                        type="checkbox"
+                        checked={importFieldSelection.gender}
+                        onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, gender: e.target.checked }))}
+                        className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      성별
+                    </label>
+                    <select value={(draftImport?.gender || '').toUpperCase()} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), gender: e.target.value }))} className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                      <option value="">성별 선택</option>
+                      <option value="M">M</option>
+                      <option value="F">F</option>
+                    </select>
+
+                    <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
+                      <input
+                        type="checkbox"
+                        checked={importFieldSelection.body_part}
+                        onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, body_part: e.target.checked }))}
+                        className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      부위
+                    </label>
+                    <input value={draftImport?.body_part || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), body_part: e.target.value }))} placeholder="부위" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+
+                    <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
+                      <input
+                        type="checkbox"
+                        checked={importFieldSelection.treatment_name}
+                        onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, treatment_name: e.target.checked }))}
+                        className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      치료
+                    </label>
+                    <input value={draftImport?.treatment_name || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), treatment_name: e.target.value }))} placeholder="치료" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+
+                    <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
+                      <input
+                        type="checkbox"
+                        checked={importFieldSelection.author}
+                        onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, author: e.target.checked }))}
+                        className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      작성자
+                    </label>
+                    <input value={draftImport?.author || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), author: e.target.value }))} placeholder="담당자" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+
+                    <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none self-start pt-1">
+                      <input
+                        type="checkbox"
+                        checked={importFieldSelection.memo}
+                        onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, memo: e.target.checked }))}
+                        className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      메모
+                    </label>
+                    <textarea value={draftImport?.memo || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), memo: e.target.value }))} placeholder="메모" rows={4} className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+
+                    <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
+                      <input
+                        type="checkbox"
+                        checked={importFieldSelection.special_note}
+                        onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, special_note: e.target.checked }))}
+                        className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      특이사항
+                    </label>
+                    <input value={draftImport?.special_note || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), special_note: e.target.value }))} placeholder="특이사항" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
                   </div>
-                  <input value={draftImport?.patient_name || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), patient_name: e.target.value }))} placeholder="이름" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
-                  <select value={(draftImport?.gender || '').toUpperCase()} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), gender: e.target.value }))} className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
-                    <option value="">성별 선택</option>
-                    <option value="M">M</option>
-                    <option value="F">F</option>
-                  </select>
-                  <input value={draftImport?.body_part || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), body_part: e.target.value }))} placeholder="부위" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
-                  <input value={draftImport?.treatment_name || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), treatment_name: e.target.value }))} placeholder="치료" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
-                  <input value={draftImport?.author || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), author: e.target.value }))} placeholder="담당자" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
-                  <textarea value={draftImport?.memo || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), memo: e.target.value }))} placeholder="메모" rows={4} className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
-                  <input value={draftImport?.special_note || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), special_note: e.target.value }))} placeholder="특이사항" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
 
                   <div className="mt-1 grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-2 bg-gray-50 dark:bg-slate-800/40">
