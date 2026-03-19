@@ -9,6 +9,7 @@ interface PatientLogTableHeaderProps {
 }
 
 const RESIZABLE_COLUMNS = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+const ALWAYS_VISIBLE_HANDLE_COLUMNS = new Set([7, 9]);
 
 const thBase =
   'py-3.5 px-1.5 text-xs md:text-sm font-extrabold text-slate-600 dark:text-slate-300 tracking-[0.02em] text-center border-r border-slate-200 dark:border-slate-700 last:border-r-0';
@@ -39,7 +40,9 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
               ? 'h-[90%] bg-blue-500'
               : isResizing
                 ? 'h-[60%] bg-transparent'
-                : 'h-[60%] bg-transparent hover:bg-blue-400/60'
+                : ALWAYS_VISIBLE_HANDLE_COLUMNS.has(colIndex)
+                  ? 'h-[60%] bg-blue-300/50 hover:bg-blue-400/70'
+                  : 'h-[60%] bg-transparent hover:bg-blue-400/60'
           }`}
         />
       </div>
@@ -85,11 +88,11 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
           타이머
           {handle(8)}
         </th>
-        <th className={`${thBase} w-[56px] min-w-[56px] max-w-[56px] relative whitespace-nowrap`}>
+        <th className={`${thBase} w-[72px] min-w-[72px] max-w-[72px] relative whitespace-nowrap`}>
           작성
           {handle(9)}
         </th>
-        <th className="py-3 px-0 w-[15px] min-w-[15px] max-w-[15px]"></th>
+        <th className="py-3 px-0 w-[20px] min-w-[20px] max-w-[20px]"></th>
       </tr>
     </thead>
   );

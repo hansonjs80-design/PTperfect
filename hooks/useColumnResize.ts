@@ -5,11 +5,11 @@ const MIN_COL_WIDTH = 24;
 const MIN_COL_WIDTH_BY_INDEX: Record<number, number> = {
   8: 82, // 타이머
   5: 70, // 상태
-  9: 56, // 작성
-  10: 15, // 삭제(쓰레기통)
+  9: 72, // 작성
+  10: 20, // 삭제(쓰레기통)
 };
 export const FLEX_COL_INDEX = -1; // 모든 컬럼을 고정 폭으로 리사이즈
-const STORAGE_KEY = 'physio-column-widths-v6';
+const STORAGE_KEY = 'physio-column-widths-v7';
 
 const getMinWidthByIndex = (index: number) => {
   if (index === 7 && typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
@@ -29,7 +29,7 @@ const STATUS_DEFAULT_WIDTH_FACTOR = 1.5;
 const SPECIAL_NOTE_COL_INDEX = 7;
 const SPECIAL_NOTE_DEFAULT_WIDTH = 150;
 const AUTHOR_COL_INDEX = 9;
-const AUTHOR_DESKTOP_DEFAULT_WIDTH = 56;
+const AUTHOR_DESKTOP_DEFAULT_WIDTH = 72;
 
 
 const applyDefaultWidthProfile = (widths: number[]) => {
