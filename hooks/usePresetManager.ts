@@ -29,9 +29,22 @@ export const usePresetManager = () => {
            const dbPresets: Preset[] = data.map((row: any) => ({
             id: row.id,
             name: row.name,
-            steps: row.steps
+            steps: row.steps,
+            color: row.color,
+            textColor: row.text_color,
           }));
-          setLocalPresets(dbPresets);
+
+          // DB 스키마에 색상 컬럼이 없거나 누락된 경우를 대비해
+          // 로컬에 저장된 프리셋 색상/글자색을 보존한다.
+          setLocalPresets((prev) => dbPresets.map((preset) => {
+            if (preset.color && preset.textColor) return preset;
+            const local = Array.isArray(prev) ? prev.find((item) => item.id === preset.id) : undefined;
+            return {
+              ...preset,
+              color: preset.color || local?.color,
+              textColor: preset.textColor || local?.textColor,
+            };
+          }));
         } else {
            // If DB is explicitly empty (e.g. user deleted all), reflect that locally
            setLocalPresets([]);
