@@ -9,6 +9,7 @@ const POLL_INTERVAL = 5000;
 
 /** DB 쓰기 디바운스 (ms) */
 const DB_WRITE_DEBOUNCE = 300;
+const RETRYABLE_OPTIONAL_COLUMNS = ['special_note', 'is_injection_completed', 'is_ion', 'is_exercise', 'gender'] as const;
 
 // Helper to get Local Date String (YYYY-MM-DD)
 const getLocalDateString = () => {
@@ -27,6 +28,7 @@ export const usePatientLog = () => {
 
   // 디바운스 타이머 Ref (visit ID → timeout)
   const dbWriteTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const pendingUpdates = useRef<Map<string, Partial<PatientVisit>>>(new Map());
 
   const getStorageKey = (date: string) => `physio-visits-${date}`;
 
@@ -158,6 +160,11 @@ export const usePatientLog = () => {
 
   // 5. Actions
 
+  const shouldRetryInsertWithoutOptionalFields = (error: { message?: string | null; details?: string | null }) => {
+    const raw = `${error.message || ''} ${error.details || ''}`.toLowerCase();
+    return RETRYABLE_OPTIONAL_COLUMNS.some((column) => raw.includes(column));
+  };
+
   const addVisit = useCallback(async (initialData: Partial<PatientVisit> = {}): Promise<string> => {
     const tempId = crypto.randomUUID();
     const newVisit: PatientVisit = {
@@ -166,6 +173,7 @@ export const usePatientLog = () => {
       bed_id: null,
       patient_name: '',
       body_part: '',
+      gender: '',
       treatment_name: '',
       memo: '',
       author: '',
@@ -174,6 +182,8 @@ export const usePatientLog = () => {
       is_traction: false,
       is_eswt: false,
       is_manual: false,
+      is_ion: false,
+        is_exercise: false,
       created_at: new Date().toISOString(),
       ...initialData
     };
@@ -185,6 +195,27 @@ export const usePatientLog = () => {
       return updated;
     });
 
+    const retryInsertWithoutOptionalFields = async (row: PatientVisit) => {
+      const fallbackRow = { ...row } as any;
+      RETRYABLE_OPTIONAL_COLUMNS.forEach((column) => {
+        delete fallbackRow[column];
+      });
+
+      const { data: retryData, error: retryError } = await supabase!
+        .from('patient_visits')
+        .insert([fallbackRow])
+        .select()
+        .single();
+
+      if (retryError) {
+        console.error('Retry insert without optional fields failed:', retryError);
+        fetchVisits(currentDate);
+        return null;
+      }
+
+      return retryData;
+    };
+
     // DB Sync
     if (isOnlineMode() && supabase) {
       const { data, error } = await supabase
@@ -194,8 +225,22 @@ export const usePatientLog = () => {
         .single();
 
       if (error) {
-        console.error('Error adding visit to DB:', error);
-        fetchVisits(currentDate);
+        const shouldRetryWithoutOptional = shouldRetryInsertWithoutOptionalFields(error);
+
+        if (shouldRetryWithoutOptional) {
+          const retryData = await retryInsertWithoutOptionalFields(newVisit);
+          if (retryData) {
+            setVisits(prev => {
+              const updated = prev.map(v => v.id === tempId ? retryData : v);
+              saveToLocalCache(currentDate, updated);
+              return updated;
+            });
+            return retryData.id;
+          }
+        } else {
+          console.error('Error adding visit to DB:', error);
+          fetchVisits(currentDate);
+        }
       } else if (data) {
         setVisits(prev => {
           const updated = prev.map(v => v.id === tempId ? data : v);
@@ -217,16 +262,23 @@ export const usePatientLog = () => {
       return updated;
     });
 
-    // DB Sync (디바운스 — 같은 visit에 300ms 내 연속 업데이트 시 마지막만 전송)
+    // DB Sync (디바운스 — 같은 visit에 300ms 내 연속 업데이트 시 병합 후 전송)
     if (isOnlineMode() && supabase) {
+      const prevPending = pendingUpdates.current.get(id) || {};
+      pendingUpdates.current.set(id, { ...prevPending, ...updates });
+
       const existing = dbWriteTimers.current.get(id);
       if (existing) clearTimeout(existing);
 
       dbWriteTimers.current.set(id, setTimeout(async () => {
         dbWriteTimers.current.delete(id);
+        const merged = pendingUpdates.current.get(id);
+        pendingUpdates.current.delete(id);
+        if (!merged) return;
+
         const { error } = await supabase!
           .from('patient_visits')
-          .update({ ...updates, updated_at: new Date().toISOString() })
+          .update({ ...merged, updated_at: new Date().toISOString() })
           .eq('id', id);
 
         if (error) {
@@ -243,6 +295,7 @@ export const usePatientLog = () => {
     if (existing) {
       clearTimeout(existing);
       dbWriteTimers.current.delete(id);
+      pendingUpdates.current.delete(id);
     }
 
     setVisits(prev => {

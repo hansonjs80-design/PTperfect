@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Menu, Sun, Moon, Download, ClipboardList, Maximize, Activity, ArrowUpDown, ChevronLeft, ChevronRight, CalendarCheck, Printer, X, Undo2, Redo2, RotateCw } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
@@ -40,6 +40,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     // Ensure animation plays for at least 800ms for visual feedback
     setTimeout(() => setIsRefreshing(false), 800);
   };
+
 
   // 공통 버튼 스타일
   const buttonClass = "relative flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 md:w-9 md:h-9 xl:w-10 xl:h-10 landscape:w-9 landscape:h-9 lg:landscape:w-10 lg:landscape:h-10 rounded-xl transition-all duration-200 active:scale-90 hover:bg-white/80 dark:hover:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-700";
@@ -126,6 +127,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               <span className="hidden sm:inline">설치</span>
             </button>
           )}
+
 
           <button 
             onClick={onToggleFullScreen}

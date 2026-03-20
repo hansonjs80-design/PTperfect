@@ -1,12 +1,14 @@
 
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, Trash2, Settings } from 'lucide-react';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { computePopupPosition } from '../../utils/popupUtils';
+import { normalizeUpperEnglishKeyInput } from '../../utils/keyboardLayout';
 
-const DEFAULT_AUTHORS = ['K', 'J', 'M', 'L'];
+const DEFAULT_AUTHORS = ['S', 'K', 'J'];
+const LEGACY_DEFAULT_AUTHORS = ['K', 'J', 'M', 'L'];
 
 interface AuthorSelectorCellProps {
   gridId?: string;
@@ -28,7 +30,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
   const [authorOptions, setAuthorOptions] = useLocalStorage<string[]>('physio-author-options', DEFAULT_AUTHORS);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuClickPos, setMenuClickPos] = useState({ x: 0, y: 0 });
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useLocalStorage<boolean>('physio-author-edit-mode', false);
   const [newOption, setNewOption] = useState('');
 
   const cellRef = useRef<HTMLDivElement>(null);
@@ -37,7 +39,17 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
   const lastClickTimeRef = useRef<number>(0);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
 
-  const { handleGridKeyDown } = useGridNavigation(8);
+  const { handleGridKeyDown } = useGridNavigation(11);
+
+  useEffect(() => {
+    const hasLegacyDefaultOptions =
+      authorOptions.length === LEGACY_DEFAULT_AUTHORS.length
+      && LEGACY_DEFAULT_AUTHORS.every((opt, idx) => authorOptions[idx] === opt);
+
+    if (hasLegacyDefaultOptions) {
+      setAuthorOptions(DEFAULT_AUTHORS);
+    }
+  }, [authorOptions, setAuthorOptions]);
 
   // Refine dropdown position with actual measured dimensions
   useLayoutEffect(() => {
@@ -48,7 +60,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
     }
   }, [menuOpen, menuClickPos, isEditMode, authorOptions.length]);
 
-  const openMenu = (e: React.MouseEvent | React.KeyboardEvent, isKeyboard = false) => {
+  const openMenu = (e: React.MouseEvent | React.KeyboardEvent | React.TouchEvent, isKeyboard = false) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -56,22 +68,20 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
     if (isKeyboard && cellRef.current) {
       const rect = cellRef.current.getBoundingClientRect();
       clickPos = { x: rect.left + rect.width / 2, y: rect.bottom };
+    } else if ('changedTouches' in e && e.changedTouches.length > 0) {
+      const touch = e.changedTouches[0];
+      clickPos = { x: touch.clientX, y: touch.clientY };
     } else {
       const me = e as React.MouseEvent;
       clickPos = { x: me.clientX, y: me.clientY };
     }
     setMenuClickPos(clickPos);
-    setIsEditMode(false);
     // Pre-compute initial position (estimated height ~200px)
     setDropdownPos(computePopupPosition(clickPos, 180, 200, { centerOnClick: true, gap: 4 }));
     setMenuOpen(true);
   };
 
-  const handleClick = (e: React.MouseEvent) => {
-    if (window.innerWidth >= 768) {
-      openMenu(e);
-      return;
-    }
+  const handleTouchEnd = (e: React.TouchEvent) => {
     const now = Date.now();
     if (now - lastClickTimeRef.current < 350 && now - lastClickTimeRef.current > 0) {
       openMenu(e);
@@ -84,9 +94,21 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       openMenu(e, true);
-    } else {
-      handleGridKeyDown(e, rowIndex, colIndex);
+      return;
     }
+
+    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+    if (isPlainTypingKey) {
+      const nextInitial = normalizeUpperEnglishKeyInput(e.key).trim().slice(0, 1);
+      if (nextInitial) {
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect(nextInitial);
+        return;
+      }
+    }
+
+    handleGridKeyDown(e, rowIndex, colIndex);
   };
 
   const handleOptionSelect = (option: string) => {
@@ -96,7 +118,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
   };
 
   const handleAddOption = () => {
-    const trimmed = newOption.trim().toUpperCase();
+    const trimmed = normalizeUpperEnglishKeyInput(newOption.trim());
     if (trimmed && !authorOptions.includes(trimmed)) {
       setAuthorOptions([...authorOptions, trimmed]);
     }
@@ -110,7 +132,6 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
 
   const closeMenu = () => {
     setMenuOpen(false);
-    setIsEditMode(false);
     setNewOption('');
     setTimeout(() => cellRef.current?.focus(), 0);
   };
@@ -119,17 +140,18 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
     <>
       <div
         ref={cellRef}
-        className={`w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:ring-2 focus:ring-sky-400 focus:z-10 ${isDraft ? 'opacity-50 hover:opacity-100' : ''}`}
-        onClick={handleClick}
+        className={`w-full min-w-0 h-full min-h-[36px] px-2 flex items-center justify-center text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 ${isDraft ? 'opacity-50 hover:opacity-100' : ''}`}
+        onDoubleClick={openMenu}
+        onTouchEnd={handleTouchEnd}
         onKeyDown={handleKeyDown}
         tabIndex={0}
         data-grid-id={gridId}
-        title="클릭하여 작성자 선택"
+        title="더블클릭/더블터치로 작성자 선택"
       >
         {value ? (
-          <span className="text-sm xl:text-base font-bold text-gray-600 dark:text-gray-300">{value}</span>
+          <span className="block w-full text-center text-sm xl:text-base font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap">{value}</span>
         ) : (
-          <span className="text-gray-300 dark:text-gray-600 text-sm font-bold">-</span>
+          <span className="block w-full text-center text-gray-300 dark:text-gray-600 text-sm font-bold">-</span>
         )}
       </div>
 
@@ -190,7 +212,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
                   {value && (
                     <button
                       onClick={() => handleOptionSelect(value)}
-                      className="mt-1 text-[10px] text-gray-400 hover:text-red-500 transition-colors text-center py-1"
+                      className="mt-1 w-full py-1.5 rounded-lg border border-red-200 bg-red-50 text-[11px] font-bold text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-800/60 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/35 transition-colors"
                     >
                       선택 해제
                     </button>
@@ -223,7 +245,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
                       ref={newInputRef}
                       type="text"
                       value={newOption}
-                      onChange={(e) => setNewOption(e.target.value.toUpperCase())}
+                      onChange={(e) => setNewOption(normalizeUpperEnglishKeyInput(e.target.value))}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
