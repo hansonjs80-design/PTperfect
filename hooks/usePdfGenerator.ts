@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import type { Html2PdfOptions } from 'html2pdf.js';
 
 export const usePdfGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -13,7 +14,7 @@ export const usePdfGenerator = () => {
 
     setIsGenerating(true);
 
-    const opt = {
+    const opt: Html2PdfOptions = {
       margin: 10,
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
@@ -22,7 +23,6 @@ export const usePdfGenerator = () => {
     };
 
     try {
-      // @ts-ignore
       const html2pdfModule = await import('html2pdf.js');
       const html2pdf = html2pdfModule.default || html2pdfModule;
       await html2pdf().set(opt).from(element).save();
