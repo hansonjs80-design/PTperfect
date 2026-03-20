@@ -1,25 +1,28 @@
 
-import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
-import ReactDOM from 'react-dom';
+import React, { memo, useState, useRef, useEffect } from 'react';
 import { Trash2, Check, X } from 'lucide-react';
 import { EditableCell } from './EditableCell';
 import { BedSelectorCell } from './BedSelectorCell';
 import { TreatmentSelectorCell } from './TreatmentSelectorCell';
 import { PatientStatusCell } from './PatientStatusCell';
 import { AuthorSelectorCell } from './AuthorSelectorCell';
-import { PatientVisit } from '../../types';
+import { GenderSelectorCell } from './GenderSelectorCell';
+import { BedState, PatientVisit, Preset, TreatmentStep, QuickTreatment } from '../../types';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
-import { PatientMemoModal } from '../modals/PatientMemoModal';
+import { formatBodyPartText } from '../../utils/patientLogUtils';
+import { TimerEditPopup } from '../bed-card/TimerEditPopup';
+import { useTreatmentContext } from '../../contexts/TreatmentContext';
+import { findExactPresetByTreatmentString, formatTime, generateTreatmentString, normalizeTreatmentString, parseTreatmentString } from '../../utils/bedUtils';
 
 interface PatientLogRowProps {
   rowIndex: number;
   visit?: PatientVisit;
   isDraft?: boolean;
   rowStatus?: 'active' | 'completed' | 'none';
-  onUpdate?: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => void;
+  onUpdate?: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => void | Promise<void>;
   onDelete?: (id: string) => void;
   onCreate?: (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => Promise<string>;
-  onSelectLog?: (id: string, bedId?: number | null) => void;
+  onSelectLog?: (id: string, bedId?: number | null, options?: { append?: boolean }) => void;
   onMovePatient?: (visitId: string, currentBedId: number, newBedId: number) => void;
   onEditActive?: (bedId: number) => void;
   activeBedIds?: number[];
@@ -29,52 +32,15 @@ interface PatientLogRowProps {
   isLastStep?: boolean;
   timerStatus?: 'normal' | 'warning' | 'overtime';
   remainingTime?: number;
+  bed?: BedState;
+  presets?: Preset[];
   isPaused?: boolean;
   onNextStep?: () => void;
   onPrevStep?: () => void;
   onClearBed?: () => void;
   onBulkAuthorUpdate?: (val: string) => void;
+  showTimerColumn?: boolean;
 }
-
-// ── 메모 호버 툴팁 (화면 경계 자동 조정) ──
-const MemoTooltip: React.FC<{ memo: string; anchorX: number; anchorY: number }> = ({ memo, anchorX, anchorY }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const el = ref.current;
-    const rect = el.getBoundingClientRect();
-    const pad = 8;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    // 기본: 셀 위쪽 중앙 배치
-    let left = anchorX - rect.width / 2;
-    let top = anchorY - rect.height - 6;
-
-    // 화면 좌측 넘침 방지
-    if (left < pad) left = pad;
-    // 화면 우측 넘침 방지
-    if (left + rect.width > vw - pad) left = vw - pad - rect.width;
-    // 화면 상단 넘침 → 셀 아래쪽에 표시
-    if (top < pad) top = anchorY + 40;
-    // 화면 하단 넘침 방지
-    if (top + rect.height > vh - pad) top = vh - pad - rect.height;
-
-    setPos({ left, top });
-  }, [anchorX, anchorY]);
-
-  return (
-    <div
-      ref={ref}
-      style={{ left: pos?.left ?? anchorX, top: pos?.top ?? anchorY, visibility: pos ? 'visible' : 'hidden' }}
-      className="fixed z-[9999] max-w-[280px] px-3 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs text-gray-700 dark:text-gray-200 font-medium leading-relaxed whitespace-pre-wrap break-words pointer-events-none"
-    >
-      {memo}
-    </div>
-  );
-};
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   rowIndex,
@@ -94,52 +60,72 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   isLastStep = false,
   timerStatus = 'normal',
   remainingTime,
+  bed,
+  presets = [],
   isPaused,
   onNextStep,
   onPrevStep,
   onClearBed,
-  onBulkAuthorUpdate
+  onBulkAuthorUpdate,
+  showTimerColumn = false
 }) => {
-  const { handleGridKeyDown } = useGridNavigation(8);
+  const { handleGridKeyDown } = useGridNavigation(11);
+  const { activateVisitFromLog, togglePause, updateBedSteps, updateBedDuration, quickTreatments } = useTreatmentContext();
   const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
-  const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
+  const [timerPopupPos, setTimerPopupPos] = useState<{ x: number; y: number } | null>(null);
+  const [optimisticTreatmentName, setOptimisticTreatmentName] = useState<string | null>(null);
+  const [stickyTreatmentName, setStickyTreatmentName] = useState<string>('');
+  const lastActivePresetBadgeRef = useRef<{ treatmentKey: string; preset: Preset } | null>(null);
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [memoTooltip, setMemoTooltip] = useState<{ x: number; y: number } | null>(null);
-  const memoHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const memoTooltipRef = useRef<HTMLDivElement>(null);
 
   // Clean up timeout on unmount
   useEffect(() => {
     return () => {
       if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
-      if (memoHoverTimer.current) clearTimeout(memoHoverTimer.current);
     };
   }, []);
 
-  const handleMemoMouseEnter = useCallback((e: React.MouseEvent) => {
-    if (!visit?.memo) return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    memoHoverTimer.current = setTimeout(() => {
-      setMemoTooltip({ x: rect.left + rect.width / 2, y: rect.top });
-    }, 300); // 300ms 딜레이로 불필요한 깜빡임 방지
-  }, [visit?.memo]);
+  useEffect(() => {
+    if (optimisticTreatmentName === null) return;
 
-  const handleMemoMouseLeave = useCallback(() => {
-    if (memoHoverTimer.current) {
-      clearTimeout(memoHoverTimer.current);
-      memoHoverTimer.current = null;
+    const optimisticTrimmed = optimisticTreatmentName.trim();
+    const visitTrimmed = (visit?.treatment_name || '').trim();
+
+    if (visitTrimmed === optimisticTrimmed) {
+      setOptimisticTreatmentName(null);
     }
-    setMemoTooltip(null);
-  }, []);
+  }, [optimisticTreatmentName, visit?.treatment_name]);
+
+  useEffect(() => {
+    const current = visit?.treatment_name?.trim() || '';
+    if (current) {
+      setStickyTreatmentName(current);
+      return;
+    }
+
+    // 비활성 행에서는 동기화 지연 중에도 마지막 처방명을 유지한다.
+    if (rowStatus !== 'active') return;
+
+    setStickyTreatmentName('');
+  }, [visit?.treatment_name, visit?.bed_id, rowStatus]);
+
 
   const handleAssign = async (newBedId: number) => {
     // Convert 0 (from "Unassign" button) to null for DB
     const bedIdToSave = newBedId === 0 ? null : newBedId;
+    const fallbackTreatmentName = (optimisticTreatmentName?.trim() || stickyTreatmentName.trim());
+    const hasPersistedTreatment = !!visit?.treatment_name && visit.treatment_name.trim() !== '';
+    const updates: Partial<PatientVisit> = {
+      bed_id: bedIdToSave,
+      ...(bedIdToSave && !hasPersistedTreatment && fallbackTreatmentName
+        ? { treatment_name: fallbackTreatmentName }
+        : {}),
+    };
 
     if (isDraft && onCreate) {
-      await onCreate({ bed_id: bedIdToSave }, 0);
+      await onCreate(updates, 0);
     } else if (!isDraft && visit && onUpdate) {
-      onUpdate(visit.id, { bed_id: bedIdToSave });
+      onUpdate(visit.id, updates);
     }
   };
 
@@ -170,31 +156,44 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
   };
 
-  const handleChange = async (field: keyof PatientVisit, value: string, skipSync: boolean, colIndex: number, navDirection?: 'down' | 'right' | 'left') => {
+  const handleChange = async (field: keyof PatientVisit, value: string, _skipSync: boolean, colIndex: number, navDirection?: 'down' | 'right' | 'left') => {
     if (isDraft && onCreate) {
       await onCreate({ [field]: value }, colIndex, navDirection);
     } else if (!isDraft && visit && onUpdate) {
-      onUpdate(visit.id, { [field]: value }, skipSync);
+      // 배드번호/처방목록 외 환자로그 텍스트 셀은 항상 로그만 수정한다.
+      // (활성 배드/타이머 상태에는 절대 영향 주지 않음)
+      onUpdate(visit.id, { [field]: value }, true);
     }
   };
 
   const handleTreatmentTextCommit = async (val: string) => {
+    setOptimisticTreatmentName(val);
+    setStickyTreatmentName(val.trim());
+
     if (isDraft && onCreate) {
       await onCreate({ treatment_name: val }, 3);
       return;
     }
 
     if (!isDraft && visit && onUpdate) {
+      const normalizedTreatment = val.trim();
       const isAssignmentMode = !!visit.bed_id && (!visit.treatment_name || visit.treatment_name.trim() === '');
-      onUpdate(visit.id, { treatment_name: val }, !isAssignmentMode);
+      const shouldSyncActiveBed = rowStatus === 'active' && !!visit.bed_id;
+      await Promise.resolve(onUpdate(visit.id, { treatment_name: normalizedTreatment }, !(isAssignmentMode || shouldSyncActiveBed)));
+
+      // 활성 행 처방을 명시적으로 지우면 배드 카드/행도 즉시 비활성화한다.
+      if (normalizedTreatment === '' && rowStatus === 'active' && visit.bed_id) {
+        onClearBed?.();
+      }
     }
   };
 
+  const hasMeaningfulTreatmentName = (name?: string | null) => Boolean(name?.trim());
+
   const handleTreatmentSelectorOpen = async () => {
-    if (rowStatus === 'active' && visit && visit.bed_id && onEditActive) {
-      onEditActive(visit.bed_id);
-      return;
-    }
+    const bedId = visit?.bed_id ?? null;
+    const hasBed = typeof bedId === 'number';
+    const hasTreatment = hasMeaningfulTreatmentName(visit?.treatment_name);
 
     if (isDraft && onCreate) {
       const newId = await onCreate({}, 3);
@@ -202,14 +201,77 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       return;
     }
 
+    // 처방이 이미 있는 경우: 배드카드 설정 버튼과 동일한 "설정 및 수정" 창으로 진입
+    if (!isDraft && hasBed && hasTreatment && onEditActive) {
+      onEditActive(bedId);
+      return;
+    }
+
     if (!isDraft && visit && onSelectLog) {
-      if (visit.bed_id && (!visit.treatment_name || visit.treatment_name.trim() === '')) {
-        onSelectLog(visit.id, visit.bed_id);
-      }
-      else {
+      if (hasBed) {
+        onSelectLog(visit.id, bedId);
+      } else {
         onSelectLog(visit.id, null);
       }
     }
+  };
+
+
+
+
+
+
+
+
+  const replaceStepAt = (steps: TreatmentStep[], idx: number, qt: QuickTreatment): TreatmentStep[] => {
+    const next = [...steps];
+    next[idx] = {
+      ...next[idx],
+      id: next[idx]?.id || crypto.randomUUID(),
+      name: qt.name,
+      label: qt.label,
+      duration: Math.max(1, Math.round(qt.duration * 60)),
+      enableTimer: qt.enableTimer,
+      color: qt.color,
+    };
+    return next;
+  };
+
+  const appendStepAtEnd = (steps: TreatmentStep[], qt: QuickTreatment): TreatmentStep[] => {
+    const nextStep: TreatmentStep = {
+      id: crypto.randomUUID(),
+      name: qt.name,
+      label: qt.label,
+      duration: Math.max(1, Math.round(qt.duration * 60)),
+      enableTimer: qt.enableTimer,
+      color: qt.color,
+    };
+    return [...steps, nextStep];
+  };
+
+  const moveStep = (steps: TreatmentStep[], idx: number, direction: 'left' | 'right'): TreatmentStep[] => {
+    const target = direction === 'left' ? idx - 1 : idx + 1;
+    if (target < 0 || target >= steps.length) return steps;
+    const next = [...steps];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    return next;
+  };
+
+  const removeStepAt = (steps: TreatmentStep[], idx: number): TreatmentStep[] => {
+    if (idx < 0 || idx >= steps.length) return steps;
+    return steps.filter((_, i) => i !== idx);
+  };
+
+  const handleQuickActivate = async (forceRestart: boolean = false) => {
+    if (isDraft || !visit) return;
+
+    if (onUpdate) {
+      const reorderTimestamp = new Date().toISOString();
+      await Promise.resolve(onUpdate(visit.id, { created_at: reorderTimestamp }, true));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    activateVisitFromLog(visit.id, forceRestart);
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -250,23 +312,23 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
       }
     } else {
-      handleGridKeyDown(e, rowIndex, 7);
+      handleGridKeyDown(e, rowIndex, 9);
     }
   };
 
   // Row Styling Logic
   // Using transition-colors for smooth hover effect
-  let rowClasses = 'group transition-colors duration-75 border-b border-gray-300 dark:border-slate-600 h-[36px] ';
+  let rowClasses = 'group transition-colors duration-150 border-b border-slate-200 dark:border-slate-700 h-[36px] ';
 
   if (rowStatus === 'active') {
     // Active Row: Blue tint -> Darker Blue on Hover
-    rowClasses += 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-100 dark:hover:bg-blue-900/30';
+    rowClasses += 'bg-sky-50/70 dark:bg-sky-900/10 hover:bg-sky-100/80 dark:hover:bg-sky-900/20';
   } else if (rowStatus === 'completed') {
     // Completed Row: Gray tint -> Darker Gray on Hover
-    rowClasses += 'bg-slate-50 dark:bg-slate-800/50 opacity-80 hover:opacity-100 hover:bg-slate-200 dark:hover:bg-slate-700';
+    rowClasses += 'bg-slate-50/80 dark:bg-slate-800/55 opacity-85 hover:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-700/80';
   } else {
     // Default Row: White -> Distinct Gray on Hover
-    rowClasses += 'bg-white dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800';
+    rowClasses += 'bg-white/95 dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70';
   }
 
   if (isDraft) {
@@ -274,17 +336,192 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   }
 
   const isNoBedAssigned = !visit?.bed_id;
-  const hasTreatment = !!visit?.treatment_name && visit.treatment_name.trim() !== '';
+  const hasTreatment = hasMeaningfulTreatmentName(visit?.treatment_name);
   const isLogEditMode = !isDraft && !!visit?.bed_id && hasTreatment && rowStatus !== 'active';
 
   let dotColorClass = 'bg-brand-500';
   if (timerStatus === 'warning') dotColorClass = 'bg-orange-500';
   if (timerStatus === 'overtime') dotColorClass = 'bg-red-600 animate-pulse';
 
-  const cellBorderClass = "border-r border-gray-300 dark:border-slate-600";
+  const cellBorderClass = "border-r border-slate-200 dark:border-slate-700";
+  const currentPreset = bed?.customPreset || presets.find(p => p.id === bed?.currentPresetId);
+  const currentStep = currentPreset?.steps[bed?.currentStepIndex || 0];
+  const activeSteps = currentPreset?.steps || [];
+  const canInteractActiveSteps = !isDraft && rowStatus === 'active' && !!bed && activeSteps.length > 0;
+
+  const commitActiveSteps = (steps: TreatmentStep[], preferredIndex?: number) => {
+    if (!bed) return;
+    const safeIndex = Math.min(Math.max(preferredIndex ?? bed.currentStepIndex, 0), Math.max(0, steps.length - 1));
+    updateBedSteps(bed.id, steps, safeIndex);
+  };
+
+  const handleDeleteActiveStep = (idx: number) => {
+    if (!canInteractActiveSteps || !bed || activeSteps.length <= 1) return;
+    const next = removeStepAt(activeSteps, idx);
+    const nextIndex = idx < bed.currentStepIndex ? bed.currentStepIndex - 1 : bed.currentStepIndex;
+    commitActiveSteps(next, nextIndex);
+  };
+
+  const handleMoveActiveStep = (idx: number, direction: 'left' | 'right') => {
+    if (!canInteractActiveSteps || !bed) return;
+    const target = direction === 'left' ? idx - 1 : idx + 1;
+    if (target < 0 || target >= activeSteps.length) return;
+    const next = moveStep(activeSteps, idx, direction);
+    let nextIndex = bed.currentStepIndex;
+    if (bed.currentStepIndex === idx) nextIndex = target;
+    else if (bed.currentStepIndex === target) nextIndex = idx;
+    commitActiveSteps(next, nextIndex);
+  };
+
+  const handleSwapActiveSteps = (fromIdx: number, toIdx: number) => {
+    if (!canInteractActiveSteps || !bed || fromIdx === toIdx) return;
+    if (fromIdx < 0 || toIdx < 0 || fromIdx >= activeSteps.length || toIdx >= activeSteps.length) return;
+    const next = [...activeSteps];
+    [next[fromIdx], next[toIdx]] = [next[toIdx], next[fromIdx]];
+    let nextIndex = bed.currentStepIndex;
+    if (bed.currentStepIndex === fromIdx) nextIndex = toIdx;
+    else if (bed.currentStepIndex === toIdx) nextIndex = fromIdx;
+    commitActiveSteps(next, nextIndex);
+  };
+
+
+  const handleAddStepFromButton = (qt: QuickTreatment) => {
+    if (!bed || !canInteractActiveSteps) return;
+    const next = appendStepAtEnd(activeSteps, qt);
+    commitActiveSteps(next, bed.currentStepIndex);
+  };
+
+  const commitInactiveSteps = (steps: TreatmentStep[]) => {
+    void handleTreatmentTextCommit(generateTreatmentString(steps));
+  };
+
+  const handleDeleteInactiveStep = (idx: number) => {
+    if (!canInteractInactiveSteps) return;
+    const next = removeStepAt(displayedSteps, idx);
+    commitInactiveSteps(next);
+  };
+
+  const handleMoveInactiveStep = (idx: number, direction: 'left' | 'right') => {
+    if (!canInteractInactiveSteps) return;
+    const next = moveStep(displayedSteps, idx, direction);
+    commitInactiveSteps(next);
+  };
+
+  const handleSwapInactiveSteps = (fromIdx: number, toIdx: number) => {
+    if (!canInteractInactiveSteps || fromIdx === toIdx) return;
+    if (fromIdx < 0 || toIdx < 0 || fromIdx >= displayedSteps.length || toIdx >= displayedSteps.length) return;
+    const next = [...displayedSteps];
+    [next[fromIdx], next[toIdx]] = [next[toIdx], next[fromIdx]];
+    commitInactiveSteps(next);
+  };
+
+  const handleReplaceInactiveStep = (idx: number, qt: QuickTreatment) => {
+    if (!canInteractInactiveSteps) return;
+    const next = replaceStepAt(displayedSteps, idx, qt);
+    commitInactiveSteps(next);
+  };
+
+  const handleReplaceActiveStep = (idx: number, qt: QuickTreatment) => {
+    if (!canInteractActiveSteps || !bed) return;
+    const next = replaceStepAt(activeSteps, idx, qt);
+    commitActiveSteps(next, bed.currentStepIndex);
+  };
+  const isTreatmentLockedByTimer = false;
+  const isTimerCellActive = false;
+  const activeBedTreatmentValue = currentPreset?.steps?.length
+    ? generateTreatmentString(currentPreset.steps)
+    : '';
+  const rawVisitTreatmentValue = optimisticTreatmentName ?? visit?.treatment_name ?? '';
+  const visitTreatmentValue = rawVisitTreatmentValue.trim() !== '' ? rawVisitTreatmentValue : '';
+  const shouldUseStickyForNonActiveRow = rowStatus !== 'active';
+  const nonActiveDisplayValue = shouldUseStickyForNonActiveRow
+    ? (visitTreatmentValue || stickyTreatmentName || activeBedTreatmentValue)
+    : (visitTreatmentValue || activeBedTreatmentValue);
+  const treatmentDisplayValue = rowStatus === 'active'
+    ? (visitTreatmentValue || activeBedTreatmentValue)
+    : nonActiveDisplayValue;
+
+  const displayedSteps = parseTreatmentString(treatmentDisplayValue, quickTreatments);
+  const canInteractInactiveSteps = !isDraft && rowStatus !== 'active' && displayedSteps.length > 0;
+  const canInteractTreatmentSteps = canInteractActiveSteps || canInteractInactiveSteps;
+
+  const activeBasePreset = bed?.currentPresetId ? presets.find((p) => p.id === bed.currentPresetId) : undefined;
+  const isActivePresetModified = (() => {
+    if (!(rowStatus === 'active' && currentPreset?.name === '치료(수정됨)' && activeBasePreset)) {
+      return false;
+    }
+
+    // 세트와 현재 처방 문자열이 정확히 같으면(원복된 상태) 노란색 수정 표시를 하지 않는다.
+    const currentNormalized = normalizeTreatmentString(treatmentDisplayValue);
+    const baseNormalized = normalizeTreatmentString(generateTreatmentString(activeBasePreset.steps));
+    return !!currentNormalized && currentNormalized !== baseNormalized;
+  })();
+
+  const matchedPresetForDisplay = (() => {
+    const normalized = treatmentDisplayValue.trim();
+    const presetMatchedFromDisplay = normalized
+      ? (findExactPresetByTreatmentString(presets, normalized) || null)
+      : null;
+
+    if (rowStatus === 'active') {
+      // 세트 처방이 변경되면(특히 플레이 직후 동기화 지연 구간) 문자열 기준 세트명을 우선 반영한다.
+      if (presetMatchedFromDisplay) return presetMatchedFromDisplay;
+
+      if (currentPreset) {
+        if (isActivePresetModified && activeBasePreset) {
+          return {
+            ...currentPreset,
+            name: activeBasePreset.name,
+            color: activeBasePreset.color || currentPreset.color,
+            textColor: activeBasePreset.textColor || currentPreset.textColor,
+          };
+        }
+        return currentPreset;
+      }
+    }
+
+    // 침상 비우기 직후(rowStatus: none)에도 직전에 활성 상태에서 보이던 세트 배지는 유지한다.
+    // 단, 처방 문자열이 바뀌면 즉시 해제한다.
+    if (!presetMatchedFromDisplay && lastActivePresetBadgeRef.current && normalized === lastActivePresetBadgeRef.current.treatmentKey) {
+      return lastActivePresetBadgeRef.current.preset;
+    }
+
+    return presetMatchedFromDisplay;
+  })();
+
+  useEffect(() => {
+    if (rowStatus !== 'active' || !matchedPresetForDisplay) return;
+    const treatmentKey = treatmentDisplayValue.trim();
+    if (!treatmentKey) return;
+
+    lastActivePresetBadgeRef.current = {
+      treatmentKey,
+      preset: matchedPresetForDisplay,
+    };
+  }, [rowStatus, matchedPresetForDisplay, treatmentDisplayValue]);
+
+  const handleOpenTimerEdit = (position: { x: number; y: number }) => {
+    if (!bed) return;
+    setTimerPopupPos(position);
+  };
+
+  const handleTimerDurationConfirm = (seconds: number) => {
+    if (!bed) return;
+    updateBedDuration(bed.id, seconds);
+    setTimerPopupPos(null);
+  };
+
+  const handleTogglePauseFromTreatmentCell = (!isDraft && rowStatus === 'active' && bed)
+    ? () => togglePause(bed.id)
+    : undefined;
+  const timerText = isTimerCellActive
+    ? `${timerStatus === 'overtime' ? '+' : ''}${formatTime(remainingTime || 0)}`
+    : '';
+  const canStartFromTimerCell = false;
 
   return (
-    <tr className={rowClasses}>
+    <>
+      <tr className={rowClasses}>
       <td className={`${cellBorderClass} p-0 relative`}>
         <BedSelectorCell
           gridId={`${rowIndex}-0`}
@@ -299,6 +536,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           className={isDraft ? "opacity-50 hover:opacity-100" : ""}
           activeBedIds={activeBedIds}
           isLogEditMode={isLogEditMode}
+          onQuickActivate={handleQuickActivate}
         />
         {rowStatus !== 'none' && (
           <div className="absolute top-1.5 right-1 pointer-events-none">
@@ -330,20 +568,33 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       <td className={`${cellBorderClass} p-0`}>
-        <EditableCell
+        <GenderSelectorCell
           gridId={`${rowIndex}-2`}
           rowIndex={rowIndex}
           colIndex={2}
+          value={(visit?.gender || '').toUpperCase()}
+          onSelect={async (val) => {
+            if (isDraft && onCreate) {
+              await onCreate({ gender: val }, 2);
+            } else if (visit && onUpdate) {
+              onUpdate(visit.id, { gender: val }, true);
+            }
+          }}
+        />
+      </td>
+
+      <td className={`${cellBorderClass} p-0`}>
+        <EditableCell
+          gridId={`${rowIndex}-3`}
+          rowIndex={rowIndex}
+          colIndex={3}
           value={visit?.body_part || ''}
           placeholder=""
           menuTitle="치료 부위 수정 (로그만 변경)"
           className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[12.6px] sm:text-[13.5px] xl:text-[14.4px]"
           onCommit={(val, skipSync, navDir) => {
-            let formattedVal = (val || '').replace(/\b\w/g, (c) => c.toUpperCase());
-            const upperCaseWords = ['ITB', 'TFL', 'SIJ', 'LS', 'CT', 'TL', 'TMJ', 'ACL', 'MCL', 'ATFL', 'PV', 'AC', 'SC'];
-            const pattern = new RegExp(`\\b(${upperCaseWords.join('|')})\\b`, 'gi');
-            formattedVal = formattedVal.replace(pattern, (match) => match.toUpperCase());
-            handleChange('body_part', formattedVal, skipSync, 2, navDir);
+            const formattedVal = formatBodyPartText(val || '');
+            handleChange('body_part', formattedVal, skipSync, 3, navDir);
           }}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -353,15 +604,19 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td className={`${cellBorderClass} p-0 relative`}>
         <TreatmentSelectorCell
-          gridId={`${rowIndex}-3`}
+          gridId={`${rowIndex}-4`}
           rowIndex={rowIndex}
-          colIndex={3}
+          colIndex={4}
           visit={visit}
-          value={visit?.treatment_name || ''}
-          placeholder="처방 입력..."
+          value={treatmentDisplayValue}
+          placeholder=""
           rowStatus={rowStatus}
           onCommitText={handleTreatmentTextCommit}
           onOpenSelector={handleTreatmentSelectorOpen}
+          presetLabel={matchedPresetForDisplay?.name}
+          presetColor={matchedPresetForDisplay?.color || matchedPresetForDisplay?.steps?.[0]?.color || 'bg-brand-500'}
+          presetTextColor={matchedPresetForDisplay?.textColor}
+          presetIsModified={isActivePresetModified}
           directSelector={isNoBedAssigned || !hasTreatment || isLogEditMode}
           activeStepColor={activeStepColor}
           activeStepBgColor={activeStepBgColor}
@@ -373,14 +628,25 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           onNextStep={onNextStep}
           onPrevStep={onPrevStep}
           onClearBed={onClearBed}
+          onTogglePause={handleTogglePauseFromTreatmentCell}
+          onOpenTimerEdit={handleOpenTimerEdit}
+          enableStepInteraction={canInteractTreatmentSteps}
+          quickTreatments={quickTreatments}
+          onDeleteStep={rowStatus === 'active' ? handleDeleteActiveStep : handleDeleteInactiveStep}
+          onMoveStep={rowStatus === 'active' ? handleMoveActiveStep : handleMoveInactiveStep}
+          onSwapSteps={rowStatus === 'active' ? handleSwapActiveSteps : handleSwapInactiveSteps}
+          onReplaceStep={rowStatus === 'active' ? handleReplaceActiveStep : handleReplaceInactiveStep}
+          onOpenFullEditor={handleTreatmentSelectorOpen}
+          onAddStep={handleAddStepFromButton}
+          isReadOnly={isTreatmentLockedByTimer}
         />
       </td>
 
       <td className={`${cellBorderClass} p-0`}>
         <PatientStatusCell
-          gridId={`${rowIndex}-4`}
+          gridId={`${rowIndex}-5`}
           rowIndex={rowIndex}
-          colIndex={4}
+          colIndex={5}
           visit={visit}
           rowStatus={rowStatus}
           onUpdate={onUpdate || (() => { })}
@@ -390,14 +656,99 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       <td className={`${cellBorderClass} p-0`}>
-        <AuthorSelectorCell
-          gridId={`${rowIndex}-5`}
+        <EditableCell
+          gridId={`${rowIndex}-6`}
           rowIndex={rowIndex}
-          colIndex={5}
+          colIndex={6}
+          value={visit?.memo || ''}
+          placeholder=""
+          menuTitle="메모 수정 (로그만 변경)"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.3px] xl:text-[13px]"
+          onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 6, navDir)}
+          directEdit={true}
+          syncOnDirectEdit={false}
+          suppressEnterNav={isDraft}
+        />
+      </td>
+
+      <td className={`${cellBorderClass} p-0`}>
+        <EditableCell
+          gridId={`${rowIndex}-7`}
+          rowIndex={rowIndex}
+          colIndex={7}
+          value={visit?.special_note || ''}
+          placeholder=""
+          menuTitle="특이사항 수정 (로그만 변경)"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.2px] sm:text-[12.5px]"
+          onCommit={(val, skipSync, navDir) => handleChange('special_note', val || '', skipSync, 7, navDir)}
+          directEdit={true}
+          syncOnDirectEdit={false}
+          suppressEnterNav={isDraft}
+        />
+      </td>
+
+      <td className={`${cellBorderClass} p-0 ${showTimerColumn ? "" : "hidden"}`}>
+        <div
+          className="w-full h-full min-h-[36px] flex items-center justify-center px-1 text-[11px] sm:text-[12px] font-black tracking-tight"
+          data-grid-id={`${rowIndex}-8`}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && canStartFromTimerCell) {
+              e.preventDefault();
+              handleQuickActivate(true);
+              return;
+            }
+            handleGridKeyDown(e, rowIndex, 8);
+          }}
+        >
+          <div className="flex items-center justify-center gap-1.5 w-full">
+            {isTimerCellActive ? (
+              <>
+                <span className={`${timerStatus === 'overtime' ? 'text-red-600 dark:text-red-400 animate-pulse' : timerStatus === 'warning' ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-700 dark:text-emerald-300'}`}>
+                  {isPaused ? `일시정지 ${timerText}` : timerText}
+                </span>
+                {!!onClearBed && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onClearBed();
+                    }}
+                    className="px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-black hover:bg-red-700"
+                    title="타이머 종료 후 침상 비우기"
+                  >
+                    종료·비우기
+                  </button>
+                )}
+              </>
+            ) : canStartFromTimerCell ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleQuickActivate(true);
+                }}
+                className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-black hover:bg-emerald-700"
+                title="해당 배드 타이머 시작"
+              >
+                타이머 시작
+              </button>
+            ) : (
+              <span className="text-gray-300 dark:text-gray-600">-</span>
+            )}
+          </div>
+        </div>
+      </td>
+
+      <td className={`${cellBorderClass} p-0 align-middle text-center min-w-[96px]`}>
+        <AuthorSelectorCell
+          gridId={`${rowIndex}-9`}
+          rowIndex={rowIndex}
+          colIndex={9}
           value={visit?.author || ''}
           onSelect={async (val) => {
             if (isDraft && onCreate) {
-              await onCreate({ author: val }, 5);
+              await onCreate({ author: val }, 9);
             } else if (visit && onUpdate) {
               // 선택한 셀만 변경 (빈 셀이든 이미 입력된 셀이든 동일하게 처리)
               onUpdate(visit.id, { author: val }, true);
@@ -407,43 +758,12 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0`}>
-        <div
-          className="w-full h-full min-h-[36px] flex items-center justify-center cursor-pointer transition-colors text-gray-600 dark:text-gray-400 font-bold bg-transparent text-center text-[11.3px] xl:text-[13px] hover:bg-gray-50 dark:hover:bg-slate-700/50 outline-none focus:ring-2 focus:ring-sky-400 focus:z-10"
-          onClick={() => {
-            if (!isDraft) setIsMemoModalOpen(true);
-          }}
-          onMouseEnter={handleMemoMouseEnter}
-          onMouseLeave={handleMemoMouseLeave}
-          tabIndex={0}
-          data-grid-id={`${rowIndex}-6`}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              if (!isDraft) setIsMemoModalOpen(true);
-            } else {
-              handleGridKeyDown(e, rowIndex, 6);
-            }
-          }}
-          title={undefined}
-        >
-          {visit?.memo ? (
-            <span className="truncate max-w-[80px] px-2">{visit.memo}</span>
-          ) : (
-            <span className="text-gray-300 dark:text-gray-600"></span>
-          )}
-        </div>
-        {memoTooltip && visit?.memo && ReactDOM.createPortal(
-          <MemoTooltip memo={visit.memo} anchorX={memoTooltip.x} anchorY={memoTooltip.y} />,
-          document.body
-        )}
-      </td>
-
-      <td className="p-0 text-center">
+      <td className="p-0 text-center min-w-[52px] border-l border-slate-200 dark:border-slate-700">
         {!isDraft && visit && onDelete && (
           <div
-            className="flex justify-center items-center h-full outline-none focus:ring-inset focus:ring-2 focus:ring-sky-400"
+            className="flex justify-center items-center h-full px-[4px] outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px]"
             tabIndex={0}
-            data-grid-id={`${rowIndex}-7`}
+            data-grid-id={`${rowIndex}-10`}
             onKeyDown={handleDeleteKeyDown}
           >
             <button
@@ -451,31 +771,28 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
               className={`
                 transition-all duration-200 active:scale-95 flex items-center justify-center
                 ${deleteStep === 'idle'
-                  ? 'p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg'
-                  : 'px-2 py-1 bg-red-600 text-white rounded text-[10px] font-bold shadow-md hover:bg-red-700 w-[90%]'}
+                  ? 'w-4 h-4 text-gray-300 hover:text-red-500 rounded-sm'
+                  : 'h-5 px-1.5 rounded bg-red-600 text-white text-[9px] font-black hover:bg-red-700'}
               `}
               title={deleteStep === 'idle' ? "삭제 (클릭하여 확인)" : "삭제 확정"}
               tabIndex={-1}
             >
-              {deleteStep === 'idle' ? (
-                <Trash2 className="w-4 h-4 xl:w-5 xl:h-5" />
-              ) : (
-                "삭제"
-              )}
+              {deleteStep === 'idle' ? <Trash2 className="w-4 h-4" /> : '삭제'}
             </button>
           </div>
         )}
       </td>
+      </tr>
 
-      {!isDraft && visit && (
-        <PatientMemoModal
-          isOpen={isMemoModalOpen}
-          onClose={() => setIsMemoModalOpen(false)}
-          initialMemo={visit.memo || ''}
-          onSave={(newMemo) => handleChange('memo', newMemo, false, 6)}
-          patientName={visit.patient_name}
+      {timerPopupPos && bed && (
+        <TimerEditPopup
+          title={`${bed.id === 11 ? '견인치료기' : `${bed.id}번 배드`} 시간 설정`}
+          initialSeconds={bed.remainingTime}
+          position={timerPopupPos}
+          onConfirm={handleTimerDurationConfirm}
+          onCancel={() => setTimerPopupPos(null)}
         />
       )}
-    </tr>
+    </>
   );
 });
