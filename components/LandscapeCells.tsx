@@ -13,7 +13,7 @@ interface LandscapeBedCellProps {
 
 export const LandscapeBedCell: React.FC<LandscapeBedCellProps> = memo(({ bed, presets }) => {
   return (
-    <div className="w-full h-full min-h-0">
+    <div className="w-full h-full min-h-0 min-w-0">
       <BedCard 
         bed={bed}
         presets={presets}
@@ -64,7 +64,7 @@ export const LandscapeEmptyCell: React.FC = memo(() => {
   };
 
   return (
-    <div className="w-full h-full flex gap-1.5 lg:gap-2 p-1 lg:p-0 min-h-[120px] sm:min-h-full">
+    <div className="w-full h-full md:h-[95%] md:self-start xl:h-[77%] flex gap-1.5 lg:gap-2 p-1 lg:p-0 min-h-[120px] sm:min-h-full xl:min-h-0">
       {/* Undo / Redo Group */}
       <div className="flex-1 flex flex-col gap-1.5 h-full">
         {/* Undo Button */}
