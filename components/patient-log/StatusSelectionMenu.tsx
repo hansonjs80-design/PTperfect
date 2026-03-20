@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet } from 'lucide-react';
+import { Syringe, Hand, Zap, ArrowUpFromLine, Droplet, Atom, Dumbbell } from 'lucide-react';
 import { PatientVisit } from '../../types';
 import { ContextMenu } from '../common/ContextMenu';
 
@@ -25,6 +25,8 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
     { key: 'is_manual', label: '도수 (Manual)', icon: Hand, color: 'text-violet-500' },
     { key: 'is_eswt', label: '충격파 (ESWT)', icon: Zap, color: 'text-blue-500' },
     { key: 'is_traction', label: '견인 (Traction)', icon: ArrowUpFromLine, color: 'text-orange-500' },
+    { key: 'is_ion', label: '이온 (Ion)', icon: Atom, color: 'text-emerald-500' },
+    { key: 'is_exercise', label: '운동 (Exercise)', icon: Dumbbell, color: 'text-lime-500' },
   ];
 
   return (
