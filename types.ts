@@ -28,6 +28,8 @@ export interface Preset {
   id: string;
   name: string; // e.g., "Basic"
   steps: TreatmentStep[];
+  color?: string; // set badge color in patient-log treatment cell
+  textColor?: string; // set badge text color in patient-log treatment cell
 }
 
 export interface BedState {
@@ -46,6 +48,8 @@ export interface BedState {
   isTraction: boolean; // Tracks if the patient needs traction
   isESWT: boolean; // Tracks if the patient needs Shockwave (ESWT)
   isManual: boolean; // Tracks if the patient needs Manual Therapy (Do-su)
+  isIon?: boolean; // Tracks if the patient needs Ion therapy
+  isExercise?: boolean; // Tracks if the patient needs exercise therapy
   isInjectionCompleted?: boolean; // Tracks if the injection is completed
   patientMemo?: string; // Memo for the patient in this bed
   updatedAt?: string; // ISO String from DB, used for sync conflict resolution
@@ -58,8 +62,10 @@ export interface PatientVisit {
   bed_id: number | null;
   patient_name: string;
   body_part: string;
+  gender?: string;
   treatment_name: string;
   memo?: string; // Added memo field
+  special_note?: string;
   author: string;
   created_at?: string;
   updated_at?: string;
@@ -70,6 +76,8 @@ export interface PatientVisit {
   is_traction?: boolean;
   is_eswt?: boolean;
   is_manual?: boolean;
+  is_ion?: boolean;
+  is_exercise?: boolean;
 }
 
 export interface AppState {
@@ -92,4 +100,6 @@ export interface SelectPresetOptions {
   isTraction?: boolean;
   isESWT?: boolean;
   isManual?: boolean;
+  isIon?: boolean;
+  isExercise?: boolean;
 }

@@ -1,7 +1,6 @@
 
 import React from 'react';
-import { ChevronLeft, ChevronRight, CalendarCheck, Printer, X, Undo2, Redo2 } from 'lucide-react';
-import { useTreatmentContext } from '../../contexts/TreatmentContext';
+import { ChevronLeft, ChevronRight, CalendarCheck, Printer, X, Undo2, Redo2, Trash2 } from 'lucide-react';
 
 interface PatientLogHeaderProps {
   totalCount: number;
@@ -10,6 +9,12 @@ interface PatientLogHeaderProps {
   onDateSelect: (date: string) => void;
   onPrint: () => void;
   onClose?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onClearAllBeds?: () => void;
+  canClearAllBeds?: boolean;
 }
 
 export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
@@ -18,10 +23,14 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
   onDateChange,
   onDateSelect,
   onPrint,
-  onClose
+  onClose,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
+  onClearAllBeds,
+  canClearAllBeds = false,
 }) => {
-  const { undo, redo, canUndo, canRedo } = useTreatmentContext();
-
   const handleTodayClick = () => {
     const now = new Date();
     const offset = now.getTimezoneOffset() * 60000;
@@ -30,15 +39,8 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
   };
 
   const handleUndoRedo = (type: 'undo' | 'redo') => {
-    // Desktop/Tablet immediate execution (matches main layout logic)
-    if (window.innerWidth >= 768) {
-      if (type === 'undo') undo();
-      else redo();
-    } else {
-      // Mobile behavior
-      if (type === 'undo') undo();
-      else redo();
-    }
+    if (type === 'undo') onUndo?.();
+    else onRedo?.();
   };
 
   // 공통 버튼 스타일 정의
@@ -58,6 +60,17 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
       {/* Right: Controls */}
       <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden justify-end flex-1 pl-2">
          
+         {/* Bulk Clear Active Beds */}
+         <button
+           onClick={() => onClearAllBeds?.()}
+           disabled={!canClearAllBeds}
+           className="flex items-center gap-1 px-2.5 h-8 sm:h-9 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/35 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+           title="활성 침상 일괄 비우기"
+         >
+           <Trash2 className="w-3.5 h-3.5" />
+           <span className="hidden sm:inline text-[11px] font-black">일괄 비우기</span>
+         </button>
+
          {/* Undo/Redo Group */}
          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700 shrink-0">
             <button 
