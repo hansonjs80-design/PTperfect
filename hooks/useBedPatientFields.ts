@@ -8,7 +8,9 @@ const getLocalISODate = (): string => {
 };
 
 const getVisitTimestamp = (visit: PatientVisit) => {
-  return new Date(visit.updated_at || visit.created_at || 0).getTime();
+  // 침상별 대표 환자정보는 created_at 우선 기준으로 고정한다.
+  // 단순 로그 편집(updated_at)으로 대표 행이 뒤집히는 현상을 방지한다.
+  return new Date(visit.created_at || visit.updated_at || 0).getTime();
 };
 
 export const useBedPatientFields = (beds: BedState[], visits: PatientVisit[]) => {

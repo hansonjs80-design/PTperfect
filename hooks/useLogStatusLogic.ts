@@ -2,7 +2,9 @@ import { useMemo, useCallback } from 'react';
 import { BedState, BedStatus, PatientVisit } from '../types';
 
 const getVisitTimestamp = (visit: PatientVisit) => {
-  return new Date(visit.updated_at || visit.created_at || 0).getTime();
+  // Row 활성/비활성 판단은 "행 생성(또는 명시적 재정렬) 시점" 기준으로 유지한다.
+  // 이름/부위 같은 로그 편집으로 updated_at이 바뀌어도 최신 행 판정이 뒤집히지 않게 한다.
+  return new Date(visit.created_at || visit.updated_at || 0).getTime();
 };
 
 export const useLogStatusLogic = (beds: BedState[], visits: PatientVisit[]) => {
