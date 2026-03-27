@@ -734,8 +734,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         </div>
       </td>
 
-      <td className={`${cellBorderClass} p-0 relative align-middle text-center min-w-[96px] border-r-2 border-slate-300 dark:border-slate-600`}>
-        <div className="absolute right-0 top-0 h-full w-px bg-slate-300 dark:bg-slate-600 pointer-events-none" />
+      <td className={`${cellBorderClass} p-0 relative align-middle text-center min-w-[80px] xl:min-w-[96px]`}>
         <AuthorSelectorCell
           gridId={`${rowIndex}-9`}
           rowIndex={rowIndex}
@@ -753,8 +752,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className="p-0 relative text-center w-[52px] min-w-[52px] max-w-[52px] border-l-2 border-slate-300 dark:border-slate-600">
-        <div className="absolute left-0 top-0 h-full w-px bg-slate-300 dark:bg-slate-600 pointer-events-none" />
+      <td className="p-0 relative text-center w-[52px] min-w-[52px] max-w-[52px]">
         {!isDraft && visit && onDelete && (
           <div
             className="w-full min-h-[36px] flex justify-center items-center h-full px-[4px] outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px]"

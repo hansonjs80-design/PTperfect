@@ -93,13 +93,11 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
           타이머
           {handle(8)}
         </th>
-        <th className={`${thBase} min-w-[96px] relative whitespace-nowrap border-r-2 border-slate-300 dark:border-slate-600`}>
-          <div className="absolute right-0 top-0 h-full w-px bg-slate-300 dark:bg-slate-600 pointer-events-none" />
+        <th className={`${thBase} min-w-[80px] w-[80px] xl:w-[96px] relative`}>
           작성
           {handle(9)}
         </th>
-        <th className={`${thBase} w-[52px] min-w-[52px] max-w-[52px] relative whitespace-nowrap border-l-2 border-slate-300 dark:border-slate-600`}>
-          <div className="absolute left-0 top-0 h-full w-px bg-slate-300 dark:bg-slate-600 pointer-events-none" />
+        <th className={`${thBase} w-[52px] min-w-[52px] max-w-[52px] relative`}>
           <div
             className="absolute top-0 left-0 -translate-x-1/2 w-[14px] h-full z-40 flex items-center justify-center cursor-col-resize touch-none"
             onMouseDown={(e) => {

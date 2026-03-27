@@ -140,7 +140,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
     <>
       <div
         ref={cellRef}
-        className={`w-full min-w-0 h-full min-h-[36px] px-2 grid place-items-center text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 ${isDraft ? 'opacity-50 hover:opacity-100' : ''}`}
+        className={`w-full min-w-0 h-full min-h-[36px] px-2 flex items-center justify-center text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 ${isDraft ? 'opacity-50 hover:opacity-100' : ''}`}
         onDoubleClick={openMenu}
         onTouchEnd={handleTouchEnd}
         onKeyDown={handleKeyDown}
