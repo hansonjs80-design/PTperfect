@@ -630,6 +630,23 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     });
   }, []);
 
+  // Ctrl+F 검색 모달에서 메모/특이사항 체크박스 체크 시 draftImport 필드에 반영
+  useEffect(() => {
+    if (!isSearchModalOpen) return;
+    if (selectedMemoTexts.size > 0) {
+      const combined = Array.from(selectedMemoTexts).join('\n');
+      setDraftImport(prev => ({ ...(prev || {}), memo: combined }));
+    }
+  }, [selectedMemoTexts, isSearchModalOpen]);
+
+  useEffect(() => {
+    if (!isSearchModalOpen) return;
+    if (selectedSpecialNoteTexts.size > 0) {
+      const combined = Array.from(selectedSpecialNoteTexts).join('\n');
+      setDraftImport(prev => ({ ...(prev || {}), special_note: combined }));
+    }
+  }, [selectedSpecialNoteTexts, isSearchModalOpen]);
+
   const selectResult = useCallback((visit: PatientVisit) => {
     setSelectedResult(visit);
     setDraftImport(sanitizeImportedVisit(visit));
