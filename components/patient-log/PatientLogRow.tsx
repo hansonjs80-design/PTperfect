@@ -734,47 +734,51 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         </div>
       </td>
 
-      <td className={`${cellBorderClass} p-0 relative align-middle text-center min-w-[80px] xl:min-w-[96px]`}>
-        <AuthorSelectorCell
-          gridId={`${rowIndex}-9`}
-          rowIndex={rowIndex}
-          colIndex={9}
-          value={visit?.author || ''}
-          onSelect={async (val) => {
-            if (isDraft && onCreate) {
-              await onCreate({ author: val }, 9);
-            } else if (visit && onUpdate) {
-              // 선택한 셀만 변경 (빈 셀이든 이미 입력된 셀이든 동일하게 처리)
-              onUpdate(visit.id, { author: val }, true);
-            }
-          }}
-          isDraft={isDraft}
-        />
+      <td className={`${cellBorderClass} p-0 align-middle text-center min-w-[80px] xl:min-w-[96px]`}>
+        <div className="relative w-full h-full min-h-[36px]">
+          <AuthorSelectorCell
+            gridId={`${rowIndex}-9`}
+            rowIndex={rowIndex}
+            colIndex={9}
+            value={visit?.author || ''}
+            onSelect={async (val) => {
+              if (isDraft && onCreate) {
+                await onCreate({ author: val }, 9);
+              } else if (visit && onUpdate) {
+                // 선택한 셀만 변경 (빈 셀이든 이미 입력된 셀이든 동일하게 처리)
+                onUpdate(visit.id, { author: val }, true);
+              }
+            }}
+            isDraft={isDraft}
+          />
+        </div>
       </td>
 
-      <td className="p-0 relative text-center w-[52px] min-w-[52px] max-w-[52px]">
-        {!isDraft && visit && onDelete && (
-          <div
-            className="w-full min-h-[36px] flex justify-center items-center h-full px-[4px] outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px]"
-            tabIndex={0}
-            data-grid-id={`${rowIndex}-10`}
-            onKeyDown={handleDeleteKeyDown}
-          >
-            <button
-              onClick={handleDeleteClick}
-              className={`
-                transition-all duration-200 active:scale-95 flex items-center justify-center
-                ${deleteStep === 'idle'
-                  ? 'w-4 h-4 text-gray-300 hover:text-red-500 rounded-sm'
-                  : 'h-5 px-1.5 rounded bg-red-600 text-white text-[9px] font-black hover:bg-red-700'}
-              `}
-              title={deleteStep === 'idle' ? "삭제 (클릭하여 확인)" : "삭제 확정"}
-              tabIndex={-1}
+      <td className="p-0 text-center w-[52px] min-w-[52px] max-w-[52px]">
+        <div className="relative w-full h-full min-h-[36px]">
+          {!isDraft && visit && onDelete && (
+            <div
+              className="absolute inset-0 flex justify-center items-center px-[4px] outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px]"
+              tabIndex={0}
+              data-grid-id={`${rowIndex}-10`}
+              onKeyDown={handleDeleteKeyDown}
             >
-              {deleteStep === 'idle' ? <Trash2 className="w-4 h-4" /> : '삭제'}
-            </button>
-          </div>
-        )}
+              <button
+                onClick={handleDeleteClick}
+                className={`
+                  transition-all duration-200 active:scale-95 flex items-center justify-center
+                  ${deleteStep === 'idle'
+                    ? 'w-4 h-4 text-gray-300 hover:text-red-500 rounded-sm'
+                    : 'h-5 px-1.5 rounded bg-red-600 text-white text-[9px] font-black hover:bg-red-700'}
+                `}
+                title={deleteStep === 'idle' ? "삭제 (클릭하여 확인)" : "삭제 확정"}
+                tabIndex={-1}
+              >
+                {deleteStep === 'idle' ? <Trash2 className="w-4 h-4" /> : '삭제'}
+              </button>
+            </div>
+          )}
+        </div>
       </td>
       </tr>
 
