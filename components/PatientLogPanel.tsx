@@ -235,7 +235,14 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       }
     }
 
-    return await trackedAddVisit(initialData);
+    const createdId = await trackedAddVisit(initialData);
+    
+    // Draft 행에서 텍스트 입력 직후, 단축키나 외부 이벤트로 blur(포커스 잃음)가 발생해 
+    // 행이 생성될 때 "가져오기" 대상(selectedVisitIdForImport)도 새로 생성된 행으로 
+    // 동기화시켜 주어야 이후의 가져오기 모달에서 중복 생성되는 버그를 막을 수 있습니다.
+    setSelectedVisitIdForImport(createdId);
+
+    return createdId;
   }, [beds, trackedAddVisit, clearBed]);
 
   // Handle Deletion with Bed Sync
