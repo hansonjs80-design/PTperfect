@@ -754,7 +754,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         </div>
       </td>
 
-      <td className="p-0 text-center w-[52px] min-w-[52px] max-w-[52px]">
+      <td className="border-l border-slate-200 dark:border-slate-700 p-0 text-center w-[52px] min-w-[52px] max-w-[52px]">
         <div className="relative w-full h-full min-h-[36px]">
           {!isDraft && visit && onDelete && (
             <div

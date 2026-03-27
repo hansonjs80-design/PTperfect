@@ -96,7 +96,7 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
         <th className={`${thBase} min-w-[80px] w-[80px] xl:w-[96px] relative`}>
           작성
         </th>
-        <th className={`${thBase} w-[52px] min-w-[52px] max-w-[52px] relative`}>
+        <th className={`${thBase} border-l border-slate-200 dark:border-slate-700 w-[52px] min-w-[52px] max-w-[52px] relative`}>
           <div
             className="absolute top-0 left-0 -translate-x-1/2 w-[24px] h-full z-50 flex items-center justify-center cursor-col-resize touch-none group/resize"
             onMouseDown={(e) => {
