@@ -448,13 +448,17 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       const isMemoShortcut = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g';
       if (!isFindShortcut && !isMemoShortcut) return;
 
-      const target = e.target as HTMLElement | null;
-      const activeInputValue = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
-        ? ((target as HTMLInputElement | HTMLTextAreaElement).value || '').trim()
-        : '';
-      const keyword = activeInputValue || selectedKeywordForSearch;
-
       e.preventDefault();
+
+      // 한글 IME 조합 중 Ctrl+F/G 누르면 마지막 글자가 중복되는 문제 방지:
+      // 현재 포커스된 입력 요소를 blur하여 IME 조합을 깔끔하게 종료
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        (target as HTMLElement).blur();
+      }
+
+      // 저장된 방문 데이터에서 키워드를 가져옴 (IME 조합 중인 값이 아닌 확정된 값 사용)
+      const keyword = selectedKeywordForSearch;
 
       if (isMemoShortcut) {
         setIsMemoHistoryModalOpen(true);
@@ -468,6 +472,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
+
   }, [handleSearchByName, selectedKeywordForSearch]);
 
   const applyMemoToSelectedRow = useCallback(async (memoText: string): Promise<boolean> => {
