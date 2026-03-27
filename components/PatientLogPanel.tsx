@@ -471,11 +471,21 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       // 동적 DOM에서 현재 셀의 값을 읽어와 STALE Closure 방지
       let keyword = selectedKeywordForSearch;
       if (isTableEditing && gridId) {
+         const [r, c] = gridId.split('-').map(Number);
+         const visit = visits[r];
+         
+         // 확실한 가져오기 대상 행 고정을 위해 단축키 발동 시 DOM 기반 위치로 상태 강제 동기화
+         setSelectionAnchor({ row: r, col: c });
+         if (visit) {
+             setSelectedVisitIdForImport(visit.id);
+         } else {
+             // 방문 기록이 없는 Draft Row일 경우
+             setSelectedVisitIdForImport(null);
+         }
+
          if (activeInputValue) {
              keyword = activeInputValue;
          } else {
-             const [r, c] = gridId.split('-').map(Number);
-             const visit = visits[r];
              if (visit) {
                  if (c === 1) keyword = (visit.chart_number || '').trim();
                  else if (c === 2) keyword = (visit.patient_name || '').trim();
