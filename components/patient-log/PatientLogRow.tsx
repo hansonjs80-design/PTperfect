@@ -615,6 +615,12 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           presetTextColor={matchedPresetForDisplay?.textColor}
           presetIsModified={isActivePresetModified}
           onDeletePresetBadge={() => setDetachedBadgeValue(treatmentDisplayValue.trim())}
+          presets={presets}
+          onRenamePresetBadge={(newPreset) => {
+            // 배지 이름/색만 로컬에서 덮어쓰기 (처방 항목은 유지)
+            stickyPresetBadgeRef.current = newPreset;
+            setDetachedBadgeValue(null);
+          }}
           directSelector={isNoBedAssigned || !hasTreatment || isLogEditMode}
           activeStepColor={activeStepColor}
           activeStepBgColor={activeStepBgColor}

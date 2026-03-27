@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, X } from 'lucide-react';
-import { PatientVisit } from '../../types';
+import { PatientVisit, Preset } from '../../types';
 import { TreatmentTextRenderer } from './TreatmentTextRenderer';
 import { TreatmentControlButtons } from './TreatmentControlButtons';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
@@ -44,6 +44,8 @@ interface TreatmentSelectorCellProps {
   presetTextColor?: string;
   presetIsModified?: boolean;
   onDeletePresetBadge?: () => void;
+  presets?: Preset[];
+  onRenamePresetBadge?: (newPreset: Preset) => void;
 }
 
 export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
@@ -81,12 +83,15 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   presetTextColor,
   presetIsModified = false,
   onDeletePresetBadge,
+  presets = [],
+  onRenamePresetBadge,
 }) => {
   const cellRef = useRef<HTMLDivElement>(null);
   const [popupState, setPopupState] = useState<{ type: 'prev' | 'next' | 'clear'; x: number; y: number } | null>(null);
   const [hoverInfo, setHoverInfo] = useState<{ x: number; y: number } | null>(null);
   const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null);
   const [isBadgeSelected, setIsBadgeSelected] = useState(false);
+  const [badgeRenamePopup, setBadgeRenamePopup] = useState<{ x: number; y: number } | null>(null);
   const lastTouchTimeRef = useRef<number>(0);
   const { handleGridKeyDown } = useGridNavigation(11);
 
@@ -252,6 +257,13 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   e.stopPropagation();
                   setIsBadgeSelected(prev => !prev);
                 }}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (isBadgeSelected && presets.length > 0) {
+                    setBadgeRenamePopup({ x: e.clientX, y: e.clientY });
+                  }
+                }}
                 className={`shrink-0 px-2 py-0.5 rounded-md text-[14.3px] font-black ${presetColor} ${presetBadgeTextClass} border ${isBadgeSelected ? 'border-sky-500 outline outline-2 outline-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]' : 'border-black/10 dark:border-white/10'} cursor-pointer transition-all`}
               >
                 {presetLabel}
@@ -344,6 +356,42 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
               </button>
             </div>
             <div className="absolute bottom-[-5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white dark:bg-slate-800 border-b border-r border-gray-200 dark:border-slate-600 rotate-45 transform"></div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {badgeRenamePopup && createPortal(
+        <div className="fixed inset-0 z-[9999]" onClick={() => setBadgeRenamePopup(null)}>
+          <div
+            className="absolute bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150 origin-top-left flex flex-col"
+            style={{ top: badgeRenamePopup.y, left: badgeRenamePopup.x, width: 220, maxHeight: 320 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 py-2.5 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 shrink-0">
+              <span className="font-bold text-gray-800 dark:text-white text-xs">세트 이름 변경</span>
+            </div>
+            <div className="p-1.5 flex flex-col gap-0.5 overflow-y-auto max-h-[260px]">
+              {presets.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    onRenamePresetBadge?.(p);
+                    setBadgeRenamePopup(null);
+                    setIsBadgeSelected(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-[13px] font-bold transition-colors flex items-center gap-2 ${
+                    p.name === presetLabel
+                      ? 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300'
+                      : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <span className={`w-3 h-3 rounded-full shrink-0 ${p.color || 'bg-gray-400'}`} />
+                  {p.name}
+                  {p.name === presetLabel && <Check className="w-3.5 h-3.5 ml-auto text-sky-500" />}
+                </button>
+              ))}
+            </div>
           </div>
         </div>,
         document.body
