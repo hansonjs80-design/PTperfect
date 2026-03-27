@@ -205,6 +205,7 @@ create table if not exists public.patient_visits (
   visit_date date not null default current_date,
   bed_id integer,
   patient_name text,
+  chart_number text,
   body_part text,
   gender text,
   treatment_name text,
@@ -226,6 +227,9 @@ create table if not exists public.patient_visits (
 -- Migrations for patient_visits
 do $$ 
 begin 
+  if not exists (select 1 from information_schema.columns where table_name = 'patient_visits' and column_name = 'chart_number') then
+    alter table public.patient_visits add column chart_number text;
+  end if;
   if not exists (select 1 from information_schema.columns where table_name = 'patient_visits' and column_name = 'body_part') then
     alter table public.patient_visits add column body_part text;
   end if;
