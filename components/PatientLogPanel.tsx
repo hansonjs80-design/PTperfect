@@ -450,25 +450,42 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
       e.preventDefault();
 
-      const target = e.target as HTMLElement | null;
+      const activeEl = document.activeElement as HTMLElement | null;
+      let gridInput = activeEl;
+      if (gridInput && gridInput.tagName !== 'INPUT' && gridInput.tagName !== 'TEXTAREA') {
+         gridInput = gridInput.querySelector('input') || gridInput;
+      }
 
-      // 1) 현재 편집 중인 INPUT/TEXTAREA의 값을 blur 전에 먼저 캡처
-      //    (사용자가 새로 입력 중인 값이 아직 visit 데이터에 저장되지 않았을 수 있음)
       let activeInputValue = '';
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-        activeInputValue = ((target as HTMLInputElement | HTMLTextAreaElement).value || '').trim();
+      if (gridInput && (gridInput.tagName === 'INPUT' || gridInput.tagName === 'TEXTAREA')) {
+        activeInputValue = ((gridInput as HTMLInputElement | HTMLTextAreaElement).value || '').trim();
       }
 
-      // 2) 포커스된 입력 요소를 blur하여 한글 IME 조합을 확정·종료
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
-        (target as HTMLElement).blur();
+      const gridId = gridInput?.getAttribute('data-grid-id') || gridInput?.closest('[data-grid-id]')?.getAttribute('data-grid-id');
+      const isTableEditing = !!gridId;
+
+      if (gridInput && (gridInput.tagName === 'INPUT' || gridInput.tagName === 'TEXTAREA' || gridInput.isContentEditable)) {
+        (gridInput as HTMLElement).blur();
       }
 
-      // 3) 캡처한 입력값 우선 사용, 없으면 저장된 방문 데이터에서 키워드 가져옴
-      const keyword = activeInputValue || selectedKeywordForSearch;
+      // 동적 DOM에서 현재 셀의 값을 읽어와 STALE Closure 방지
+      let keyword = selectedKeywordForSearch;
+      if (isTableEditing && gridId) {
+         if (activeInputValue) {
+             keyword = activeInputValue;
+         } else {
+             const [r, c] = gridId.split('-').map(Number);
+             const visit = visits[r];
+             if (visit) {
+                 if (c === 1) keyword = (visit.chart_number || '').trim();
+                 else if (c === 2) keyword = (visit.patient_name || '').trim();
+                 else keyword = (visit.patient_name || visit.chart_number || '').trim();
+             } else {
+                 keyword = '';
+             }
+         }
+      }
 
-      // 4) requestAnimationFrame으로 모달 열기를 한 프레임 지연
-      //    → blur 후 남은 IME 잔여 문자가 검색 입력창(autoFocus)으로 유입되는 것을 방지
       requestAnimationFrame(() => {
         if (isMemoShortcut) {
           setIsMemoHistoryModalOpen(true);
