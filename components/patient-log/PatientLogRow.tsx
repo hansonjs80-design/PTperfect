@@ -76,6 +76,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const [optimisticTreatmentName, setOptimisticTreatmentName] = useState<string | null>(null);
   const [stickyTreatmentName, setStickyTreatmentName] = useState<string>('');
   const [detachedBadgeValue, setDetachedBadgeValue] = useState<string | null>(null);
+  const [renamedBadgeOverride, setRenamedBadgeOverride] = useState<Preset | null>(null);
   const stickyPresetBadgeRef = useRef<Preset | null>(null);
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -462,6 +463,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     const normalized = treatmentDisplayValue.trim();
     if (detachedBadgeValue === normalized) return null;
 
+    // 사용자가 우클릭으로 배지 이름을 명시적으로 변경한 경우 최우선 적용
+    if (renamedBadgeOverride) return renamedBadgeOverride;
+
     const presetMatchedFromDisplay = normalized
       ? (findExactPresetByTreatmentString(presets, normalized, quickTreatments) || null)
       : null;
@@ -618,7 +622,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           presets={presets}
           onRenamePresetBadge={(newPreset) => {
             // 배지 이름/색만 로컬에서 덮어쓰기 (처방 항목은 유지)
-            stickyPresetBadgeRef.current = newPreset;
+            setRenamedBadgeOverride(newPreset);
             setDetachedBadgeValue(null);
           }}
           directSelector={isNoBedAssigned || !hasTreatment || isLogEditMode}
