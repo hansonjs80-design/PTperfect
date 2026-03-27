@@ -375,8 +375,17 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     return visits[selectionAnchor.row] || null;
   }, [selectedVisitIdForImport, visits, selectionAnchor.row]);
 
-  const selectedKeywordForSearch = (selectedVisitForSearch?.chart_number || selectedVisitForSearch?.patient_name || '').trim();
-  const targetPatientNameForHistoryPaste = (selectedKeywordForSearch || searchName.trim()).trim();
+  const selectedKeywordForSearch = useMemo(() => {
+    if (selectionAnchor.col === 1) {
+      return (selectedVisitForSearch?.chart_number || '').trim();
+    }
+    if (selectionAnchor.col === 2) {
+      return (selectedVisitForSearch?.patient_name || '').trim();
+    }
+    return (selectedVisitForSearch?.patient_name || selectedVisitForSearch?.chart_number || '').trim();
+  }, [selectionAnchor.col, selectedVisitForSearch]);
+  
+  const targetPatientNameForHistoryPaste = (selectedVisitForSearch?.patient_name || '').trim() || (selectionAnchor.col === 2 ? searchName.trim() : '');
 
   const memoHistory = useMemo(() => {
     const exactKeyword = selectedKeywordForSearch || searchName.trim();
