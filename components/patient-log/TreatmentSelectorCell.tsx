@@ -229,7 +229,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const getTitle = () => (value ? '더블클릭하여 세트 처방 선택' : '더블클릭하여 처방 선택');
   const presetBadgeTextClass = presetIsModified
     ? 'text-yellow-200'
-    : (presetTextColor || mapBgToTextClass(presetColor));
+    : (presetTextColor || 'text-white');
 
   return (
     <>
