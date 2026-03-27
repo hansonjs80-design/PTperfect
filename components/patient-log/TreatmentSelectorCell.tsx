@@ -43,6 +43,7 @@ interface TreatmentSelectorCellProps {
   presetColor?: string;
   presetTextColor?: string;
   presetIsModified?: boolean;
+  onDeletePresetBadge?: () => void;
 }
 
 export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
@@ -79,11 +80,13 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   presetColor = 'bg-brand-500',
   presetTextColor,
   presetIsModified = false,
+  onDeletePresetBadge,
 }) => {
   const cellRef = useRef<HTMLDivElement>(null);
   const [popupState, setPopupState] = useState<{ type: 'prev' | 'next' | 'clear'; x: number; y: number } | null>(null);
   const [hoverInfo, setHoverInfo] = useState<{ x: number; y: number } | null>(null);
   const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null);
+  const [isBadgeSelected, setIsBadgeSelected] = useState(false);
   const lastTouchTimeRef = useRef<number>(0);
   const { handleGridKeyDown } = useGridNavigation(11);
 
@@ -113,6 +116,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     e.stopPropagation();
     e.preventDefault();
     setHoverInfo(null);
+    if (isBadgeSelected) {
+      setIsBadgeSelected(false);
+    }
     if (enableStepInteraction) {
       // 활성 행: 데스크탑 빈공간 클릭은 설정 수정창(풀 에디터), 모바일/태블릿은 처방 변경창 유지
       if (isMobileOrTabletMode()) {
@@ -133,6 +139,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       e.preventDefault();
       e.stopPropagation();
       setHoverInfo(null);
+      if (isBadgeSelected) {
+        setIsBadgeSelected(false);
+      }
       if (enableStepInteraction) {
         onOpenSelector();
       } else {
@@ -148,7 +157,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if ((e.key === 'Delete' || e.key === 'Backspace') && !isReadOnly) {
       e.preventDefault();
       e.stopPropagation();
-      if (value.trim() !== '') {
+      if (isBadgeSelected && onDeletePresetBadge) {
+        onDeletePresetBadge();
+        setIsBadgeSelected(false);
+      } else if (value.trim() !== '') {
         onCommitText('');
       }
       return;
@@ -235,7 +247,13 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         >
           <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-[4px] py-0.5 gap-2">
             {presetLabel && (
-              <span className={`shrink-0 px-2 py-0.5 rounded-md text-[14.3px] font-black ${presetColor} ${presetBadgeTextClass} border border-black/10 dark:border-white/10`}>
+              <span 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsBadgeSelected(prev => !prev);
+                }}
+                className={`shrink-0 px-2 py-0.5 rounded-md text-[14.3px] font-black ${presetColor} ${presetBadgeTextClass} border ${isBadgeSelected ? 'border-sky-500 outline outline-2 outline-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]' : 'border-black/10 dark:border-white/10'} cursor-pointer transition-all`}
+              >
                 {presetLabel}
               </span>
             )}

@@ -75,6 +75,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const [timerPopupPos, setTimerPopupPos] = useState<{ x: number; y: number } | null>(null);
   const [optimisticTreatmentName, setOptimisticTreatmentName] = useState<string | null>(null);
   const [stickyTreatmentName, setStickyTreatmentName] = useState<string>('');
+  const [detachedBadgeValue, setDetachedBadgeValue] = useState<string | null>(null);
   const stickyPresetBadgeRef = useRef<Preset | null>(null);
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -459,6 +460,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
   const matchedPresetForDisplay = (() => {
     const normalized = treatmentDisplayValue.trim();
+    if (detachedBadgeValue === normalized) return null;
+
     const presetMatchedFromDisplay = normalized
       ? (findExactPresetByTreatmentString(presets, normalized, quickTreatments) || null)
       : null;
@@ -611,6 +614,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           presetColor={matchedPresetForDisplay?.color || matchedPresetForDisplay?.steps?.[0]?.color || 'bg-brand-500'}
           presetTextColor={matchedPresetForDisplay?.textColor}
           presetIsModified={isActivePresetModified}
+          onDeletePresetBadge={() => setDetachedBadgeValue(treatmentDisplayValue.trim())}
           directSelector={isNoBedAssigned || !hasTreatment || isLogEditMode}
           activeStepColor={activeStepColor}
           activeStepBgColor={activeStepBgColor}
