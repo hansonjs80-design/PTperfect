@@ -75,11 +75,18 @@ export const normalizeTreatmentString = (value: string | null | undefined): stri
     .join('/');
 };
 
-export const findExactPresetByTreatmentString = (presets: Preset[], treatmentString: string | null | undefined): Preset | undefined => {
-  const normalizedTarget = normalizeTreatmentString(treatmentString);
-  if (!normalizedTarget) return undefined;
+export const findExactPresetByTreatmentString = (presets: Preset[], treatmentString: string | null | undefined, customTreatments: QuickTreatment[] = []): Preset | undefined => {
+  if (!treatmentString) return undefined;
 
-  return presets.find((preset) => normalizeTreatmentString(generateTreatmentString(preset.steps)) === normalizedTarget);
+  const targetSteps = parseTreatmentString(treatmentString, customTreatments);
+  if (targetSteps.length === 0) return undefined;
+
+  const targetNorm = targetSteps.map(s => s.name).sort().join('/');
+
+  return presets.find((preset) => {
+    const presetNorm = preset.steps.map(s => s.name).sort().join('/');
+    return presetNorm === targetNorm;
+  });
 };
 
 export const parseTreatmentString = (treatmentString: string | null, customTreatments: QuickTreatment[] = []): TreatmentStep[] => {

@@ -451,16 +451,16 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       return false;
     }
 
-    // 세트와 현재 처방 문자열이 정확히 같으면(원복된 상태) 노란색 수정 표시를 하지 않는다.
-    const currentNormalized = normalizeTreatmentString(treatmentDisplayValue);
-    const baseNormalized = normalizeTreatmentString(generateTreatmentString(activeBasePreset.steps));
-    return !!currentNormalized && currentNormalized !== baseNormalized;
+    // 세트와 현재 처방 문자열이 동일한 처방 내역인지(이름/항목 기준, 순서 무관) 확인한다.
+    const targetNorm = displayedSteps.map((s) => s.name).sort().join('/');
+    const baseNorm = activeBasePreset.steps.map((s) => s.name).sort().join('/');
+    return !!targetNorm && targetNorm !== baseNorm;
   })();
 
   const matchedPresetForDisplay = (() => {
     const normalized = treatmentDisplayValue.trim();
     const presetMatchedFromDisplay = normalized
-      ? (findExactPresetByTreatmentString(presets, normalized) || null)
+      ? (findExactPresetByTreatmentString(presets, normalized, quickTreatments) || null)
       : null;
 
     if (rowStatus === 'active') {
