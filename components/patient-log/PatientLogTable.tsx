@@ -549,11 +549,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       onMouseUpCapture={() => {
         isDraggingRef.current = false;
       }}
-      onMouseLeave={() => {
-        isDraggingRef.current = false;
-      }}
     >
-      <table ref={tableRef} className="w-full min-w-[500px] md:min-w-full border-collapse table-fixed bg-white/90 dark:bg-slate-900">
+      <table ref={tableRef} className="w-max border-collapse table-fixed bg-white/90 dark:bg-slate-900">
         {columnWidths && (
           <colgroup>
             {columnWidths.map((w, i) => {

@@ -201,28 +201,7 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
       const delta = clientX - s.startX;
       if (s.startWidths[s.colIndex] <= 0) return;
 
-      // 기본: 선택한 경계(핸들) 기준으로 좌/우 컬럼을 동시에 조정해
-      // 선택한 보더만 이동하는 것처럼 동작시킨다.
-      if (s.pairedColIndex !== null && s.startWidths[s.pairedColIndex] > 0) {
-        const leftMin = MIN_COL_WIDTH_BY_INDEX[s.colIndex] ?? MIN_COL_WIDTH;
-        const rightMin = MIN_COL_WIDTH_BY_INDEX[s.pairedColIndex] ?? MIN_COL_WIDTH;
-        const maxExpand = s.startWidths[s.pairedColIndex] - rightMin;
-        const maxShrink = s.startWidths[s.colIndex] - leftMin;
-        const safeDelta = Math.min(Math.max(delta, -maxShrink), maxExpand);
-        const leftWidth = clampWidthByIndex(s.startWidths[s.colIndex] + safeDelta, s.colIndex);
-        const rightWidth = clampWidthByIndex(s.startWidths[s.pairedColIndex] - safeDelta, s.pairedColIndex);
-
-        setColumnWidths(prev => {
-          if (!prev) return prev;
-          const next = [...prev];
-          next[s.colIndex] = leftWidth;
-          next[s.pairedColIndex!] = rightWidth;
-          return next;
-        });
-        return;
-      }
-
-      // 예외: 마지막 컬럼 등 짝 컬럼이 없을 때는 단일 컬럼 리사이즈
+      // 항상 단일 컬럼 리사이즈만 수행하여 전체 테이블 너비가 늘어나도록 설정 (가로 스크롤 허용)
       const newWidth = clampWidthByIndex(s.startWidths[s.colIndex] + delta, s.colIndex);
       setColumnWidths(prev => {
         if (!prev) return prev;
