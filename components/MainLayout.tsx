@@ -1,12 +1,11 @@
 
 import React, { useState, useRef, useEffect, Suspense, useCallback } from 'react';
-import { Minimize, GripVertical } from 'lucide-react';
+import { Minimize } from 'lucide-react';
 import { useHeaderScroll } from '../hooks/useHeaderScroll';
 import { AppHeader } from './AppHeader';
 import { BedLayoutContainer } from './BedLayoutContainer';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { GlobalModals } from './GlobalModals';
-import { useSidebarResize } from '../hooks/useSidebarResize';
 import { usePatientLogVisibility } from '../hooks/usePatientLogVisibility';
 import { useLayoutStyles } from '../hooks/useLayoutStyles';
 
@@ -19,13 +18,11 @@ export const MainLayout: React.FC = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   
   // Custom Hooks
-  const { sidebarWidth, isResizing, startResizing } = useSidebarResize(620);
   const { isLogOpen, toggleLog, closeLog } = usePatientLogVisibility(); 
   const { headerHeightClass, mainContentPaddingTop, mainContentPaddingBottom, closeButtonClass } = useLayoutStyles(isFullScreen);
   
   const mainRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
-  const sidebarRef = useRef<HTMLDivElement>(null);
   
   useHeaderScroll(mainRef, headerRef);
 
@@ -34,27 +31,49 @@ export const MainLayout: React.FC = () => {
     else document.documentElement.classList.remove('dark');
   }, [isDarkMode]);
 
-  // Global Keyboard Shortcut (Ctrl + Z)
+  // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-        const activeEl = document.activeElement;
-        const isTyping = activeEl && (
-          activeEl.tagName === 'INPUT' || 
-          activeEl.tagName === 'TEXTAREA' || 
-          (activeEl as HTMLElement).isContentEditable
-        );
+      const activeEl = document.activeElement;
+      const isTyping = !!activeEl && (
+        activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        (activeEl as HTMLElement).isContentEditable
+      );
 
-        if (!isTyping && canUndo) {
+      const isDesktopViewport = window.matchMedia('(min-width: 768px)').matches;
+      const isCtrlSShortcut = e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 's';
+      const isMacCommandSShortcut = isDesktopViewport && e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 's';
+      if (isCtrlSShortcut || isMacCommandSShortcut) {
+        e.preventDefault();
+        toggleLog();
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        if (!isTyping && !isLogOpen && canUndo) {
           e.preventDefault();
           undo();
         }
+        return;
+      }
+
+      const isOptionTabToggle = (
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.shiftKey &&
+        (e.altKey || e.getModifierState?.('AltGraph')) &&
+        (e.key === 'Tab' || e.code === 'Tab' || e.keyCode === 9)
+      );
+      if (isOptionTabToggle && !isTyping) {
+        e.preventDefault();
+        toggleLog();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, canUndo]);
+  }, [undo, canUndo, isLogOpen, toggleLog]);
 
   const handleCloseMenu = useCallback(() => setMenuOpen(false), []);
 
@@ -104,46 +123,9 @@ export const MainLayout: React.FC = () => {
           </button>
         )}
 
-        {/* Desktop Sidebar Resizer */}
-        {isLogOpen && !isFullScreen && (
-          <div
-            className={`hidden xl:flex w-3 hover:w-3 cursor-col-resize z-50 items-center justify-center -ml-1.5 transition-all group select-none ${isResizing ? 'bg-brand-500/10' : ''}`}
-            style={{ paddingTop: 'calc(60px + env(safe-area-inset-top))' }}
-            onMouseDown={startResizing}
-          >
-            <div className={`w-1 h-12 rounded-full transition-all group-hover:h-20 group-hover:bg-brand-400 ${isResizing ? 'bg-brand-500 h-24' : 'bg-gray-300 dark:bg-slate-700'}`} />
-            <div className={`absolute p-1 bg-white dark:bg-slate-800 rounded-full shadow-md border border-gray-200 dark:border-slate-700 transition-opacity ${isResizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-               <GripVertical className="w-3 h-3 text-gray-400" />
-            </div>
-          </div>
-        )}
-
-        {/* Desktop Sidebar */}
-        <aside 
-          ref={sidebarRef}
-          className={`
-            hidden xl:block 
-            h-full shrink-0 relative z-30 
-            transition-[width,opacity,transform] duration-300 ease-out overflow-x-auto sidebar-scrollbar
-            ${isFullScreen ? '!hidden' : ''}
-            ${isLogOpen ? 'opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-20 overflow-hidden'}
-            ${!isFullScreen ? 'pt-[calc(60px+env(safe-area-inset-top))]' : ''}
-          `}
-          style={{ width: isLogOpen ? sidebarWidth : 0 }}
-        >
-           <div 
-             className="h-full border-l border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900"
-             style={{ minWidth: '620px', width: '100%' }}
-           >
-             <Suspense fallback={<div className="w-full h-full bg-white dark:bg-slate-900 animate-pulse" />}>
-               <PatientLogPanel onClose={closeLog} />
-             </Suspense>
-           </div>
-        </aside>
-
-        {/* Mobile/Tablet Overlay Sidebar */}
+        {/* Unified Overlay Sidebar (Desktop/Mobile/Tablet) */}
         <div className={`
-          fixed inset-0 z-[100] bg-white dark:bg-slate-900 transition-transform duration-300 xl:hidden flex flex-col
+          fixed inset-0 z-[100] bg-white dark:bg-slate-900 transition-transform duration-300 flex flex-col
           ${isLogOpen ? 'translate-x-0' : 'translate-x-full'}
           pt-[env(safe-area-inset-top)]
         `}>
