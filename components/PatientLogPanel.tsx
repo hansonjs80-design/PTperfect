@@ -450,29 +450,39 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
       e.preventDefault();
 
-      // 한글 IME 조합 중 Ctrl+F/G 누르면 마지막 글자가 중복되는 문제 방지:
-      // 현재 포커스된 입력 요소를 blur하여 IME 조합을 깔끔하게 종료
       const target = e.target as HTMLElement | null;
+
+      // 1) 현재 편집 중인 INPUT/TEXTAREA의 값을 blur 전에 먼저 캡처
+      //    (사용자가 새로 입력 중인 값이 아직 visit 데이터에 저장되지 않았을 수 있음)
+      let activeInputValue = '';
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        activeInputValue = ((target as HTMLInputElement | HTMLTextAreaElement).value || '').trim();
+      }
+
+      // 2) 포커스된 입력 요소를 blur하여 한글 IME 조합을 확정·종료
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
         (target as HTMLElement).blur();
       }
 
-      // 저장된 방문 데이터에서 키워드를 가져옴 (IME 조합 중인 값이 아닌 확정된 값 사용)
-      const keyword = selectedKeywordForSearch;
+      // 3) 캡처한 입력값 우선 사용, 없으면 저장된 방문 데이터에서 키워드 가져옴
+      const keyword = activeInputValue || selectedKeywordForSearch;
 
-      if (isMemoShortcut) {
-        setIsMemoHistoryModalOpen(true);
-      } else {
-        setIsSearchModalOpen(true);
-      }
+      // 4) requestAnimationFrame으로 모달 열기를 한 프레임 지연
+      //    → blur 후 남은 IME 잔여 문자가 검색 입력창(autoFocus)으로 유입되는 것을 방지
+      requestAnimationFrame(() => {
+        if (isMemoShortcut) {
+          setIsMemoHistoryModalOpen(true);
+        } else {
+          setIsSearchModalOpen(true);
+        }
 
-      if (keyword) {
-        void handleSearchByName(keyword);
-      }
+        if (keyword) {
+          void handleSearchByName(keyword);
+        }
+      });
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-
   }, [handleSearchByName, selectedKeywordForSearch]);
 
   const applyMemoToSelectedRow = useCallback(async (memoText: string): Promise<boolean> => {
