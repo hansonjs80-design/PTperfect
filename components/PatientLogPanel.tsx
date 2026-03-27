@@ -154,6 +154,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     gender: true,
     body_part: true,
     treatment_name: true,
+    additional_options: true,
     author: true,
     memo: true,
     special_note: true,
@@ -167,6 +168,11 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [memoPasteSelection, setMemoPasteSelection] = useState(defaultMemoPasteSelection);
   const [selectionAnchor, setSelectionAnchor] = useState<{ row: number | null; col: number | null }>({ row: null, col: null });
   const [selectedVisitIdForImport, setSelectedVisitIdForImport] = useState<string | null>(null);
+  
+  const [selectedMemoTexts, setSelectedMemoTexts] = useState<Set<string>>(new Set());
+  const [selectedSpecialNoteTexts, setSelectedSpecialNoteTexts] = useState<Set<string>>(new Set());
+  const [combinedMemoPreview, setCombinedMemoPreview] = useState('');
+  const [combinedSpecialNotePreview, setCombinedSpecialNotePreview] = useState('');
   
   // Performance Optimization: 
   // Extract status logic to prevent re-rendering on every timer tick.
@@ -268,6 +274,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setSelectedResult(null);
     setDraftImport(null);
     setMemoPasteSelection(defaultMemoPasteSelection);
+    setSelectedMemoTexts(new Set());
+    setSelectedSpecialNoteTexts(new Set());
+    setCombinedMemoPreview('');
+    setCombinedSpecialNotePreview('');
   }, [defaultMemoPasteSelection]);
 
   const mappedResults = useMemo(() => searchResults.slice(0, 5), [searchResults]);
@@ -576,6 +586,50 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     return hasApplied;
   }, [memoPasteSelection, searchResults, applyChartNumberToSelectedRow, applyMemoToSelectedRow, applySpecialNoteToSelectedRow]);
 
+  const applyCombinedTextsToSelectedRow = useCallback(async (): Promise<boolean> => {
+    const hasMemoContent = combinedMemoPreview.trim().length > 0;
+    const hasSpecialNoteContent = combinedSpecialNotePreview.trim().length > 0;
+    if (!hasMemoContent && !hasSpecialNoteContent) return false;
+    
+    let hasApplied = false;
+    if (memoPasteSelection.chart_number && memoHistory[0]) {
+      const sourceVisit = searchResults.find(v => v.id === memoHistory[0].id);
+      if (sourceVisit && sourceVisit.chart_number) {
+        hasApplied = await applyChartNumberToSelectedRow(sourceVisit.chart_number) || hasApplied;
+      }
+    }
+
+    if (memoPasteSelection.memo && hasMemoContent) {
+      hasApplied = await applyMemoToSelectedRow(combinedMemoPreview.trim()) || hasApplied;
+    }
+
+    if (memoPasteSelection.special_note && hasSpecialNoteContent) {
+      hasApplied = await applySpecialNoteToSelectedRow(combinedSpecialNotePreview.trim()) || hasApplied;
+    }
+
+    return hasApplied;
+  }, [combinedMemoPreview, combinedSpecialNotePreview, memoPasteSelection, searchResults, memoHistory, applyChartNumberToSelectedRow, applyMemoToSelectedRow, applySpecialNoteToSelectedRow]);
+
+  const toggleMemoText = useCallback((text: string) => {
+    setSelectedMemoTexts(prev => {
+      const next = new Set(prev);
+      if (next.has(text)) next.delete(text);
+      else next.add(text);
+      setCombinedMemoPreview(Array.from(next).join('\n'));
+      return next;
+    });
+  }, []);
+
+  const toggleSpecialNoteText = useCallback((text: string) => {
+    setSelectedSpecialNoteTexts(prev => {
+      const next = new Set(prev);
+      if (next.has(text)) next.delete(text);
+      else next.add(text);
+      setCombinedSpecialNotePreview(Array.from(next).join('\n'));
+      return next;
+    });
+  }, []);
+
   const selectResult = useCallback((visit: PatientVisit) => {
     setSelectedResult(visit);
     setDraftImport(sanitizeImportedVisit(visit));
@@ -592,6 +646,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     if (importFieldSelection.body_part) payload.body_part = draftImport.body_part || '';
     if (importFieldSelection.treatment_name) {
       payload.treatment_name = normalizeImportedTreatmentName(draftImport.treatment_name);
+    }
+    if (importFieldSelection.additional_options) {
       payload.is_injection = draftImport.is_injection || false;
       payload.is_fluid = draftImport.is_fluid || false;
       payload.is_traction = draftImport.is_traction || false;
@@ -751,12 +807,20 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                     <button
                       key={v.id}
                       onClick={() => selectResult(v)}
-                      className={`w-full text-left px-2 py-2 rounded-lg border mb-1 ${selectedResult?.id === v.id ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20' : 'border-transparent hover:border-gray-200 dark:hover:border-slate-700'}`}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl border mb-2 shadow-sm transition-all duration-200 ${selectedResult?.id === v.id ? 'border-brand-400 bg-brand-50/50 dark:bg-brand-900/30 ring-1 ring-brand-400' : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600 hover:shadow-md'}`}
                     >
-                      <p className="text-xs font-bold text-gray-800 dark:text-gray-100">
-                        {v.patient_name || '(이름없음)'} {v.chart_number && <span className="text-brand-500 font-medium ml-1">[{v.chart_number}]</span>}
-                      </p>
-                      <p className="text-[11px] text-gray-500">{v.visit_date} · {(v.gender || '-').toUpperCase()} · {v.body_part || '-'} · {v.treatment_name || '-'}</p>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-extrabold text-gray-900 dark:text-gray-100">{v.patient_name || '(이름없음)'}</span>
+                          {v.chart_number && <span className="text-[10px] font-mono font-bold bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-600">#{v.chart_number}</span>}
+                        </div>
+                        <span className="text-[11px] font-medium text-gray-500 bg-gray-50 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-gray-100 dark:border-slate-700">{v.visit_date}</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300 px-1.5 py-0.5 rounded">{(v.gender || '-').toUpperCase()}</span>
+                        <span className="text-[10px] font-medium text-amber-700 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-300 px-1.5 py-0.5 rounded">{v.body_part || '-'}</span>
+                        <span className="text-[11px] text-gray-600 dark:text-gray-300 truncate max-w-[140px] pl-1">{v.treatment_name || '-'}</span>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -821,9 +885,22 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                         onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, treatment_name: e.target.checked }))}
                         className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                       />
-                      치료
+                      처방 목록
                     </label>
-                    <input value={draftImport?.treatment_name || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), treatment_name: e.target.value }))} placeholder="치료" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+                    <input value={draftImport?.treatment_name || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), treatment_name: e.target.value }))} placeholder="처방 목록" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+
+                    <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
+                      <input
+                        type="checkbox"
+                        checked={importFieldSelection.additional_options}
+                        onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, additional_options: e.target.checked }))}
+                        className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      추가 사항
+                    </label>
+                    <div className="flex gap-1.5 items-center px-2 py-1.5 text-[13px] text-gray-700 dark:text-gray-300">
+                      {['is_injection', 'is_fluid', 'is_traction', 'is_eswt', 'is_manual', 'is_ion', 'is_exercise'].filter(k => draftImport?.[k as keyof PatientVisit]).map(k => ({ is_injection: '주', is_fluid: '수', is_traction: '견', is_eswt: '충', is_manual: '도', is_ion: '이', is_exercise: '운' }[k])).join(', ') || '-'}
+                    </div>
 
                     <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
                       <input
@@ -867,22 +944,19 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                       ) : (
                         <div className="max-h-[120px] overflow-y-auto space-y-1">
                           {memoHistory.map((item) => (
-                            <div key={`${item.id}-${item.visitDate}`} className="rounded border border-gray-200 dark:border-slate-700 p-1.5 bg-white dark:bg-slate-900">
-                              <p className="text-[10px] text-gray-500 mb-1">
-                                {item.visitDate} {item.id && searchResults.find(r => r.id === item.id)?.chart_number && <span className="text-brand-500 font-semibold ml-1">[{searchResults.find(r => r.id === item.id)?.chart_number}]</span>}
-                              </p>
-                              <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.memo}</p>
-                              <button
-                                type="button"
-                                onClick={async () => {
-                              const applied = await applyHistoryBySelection(item.id);
-                              if (applied) resetMemoHistoryModal();
-                            }}
-                                disabled={selectionAnchor.row === null}
-                                className="mt-1 px-2 py-1 text-[10px] font-bold rounded bg-brand-600 text-white disabled:opacity-40"
-                              >
-                                선택 옵션으로 붙여넣기
-                              </button>
+                            <div key={`${item.id}-${item.visitDate}`} className="rounded border border-gray-200 dark:border-slate-700 p-2 bg-white dark:bg-slate-900 flex gap-2 items-start">
+                              <input 
+                                type="checkbox" 
+                                checked={selectedMemoTexts.has(item.memo)}
+                                onChange={() => toggleMemoText(item.memo)}
+                                className="mt-1 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                              />
+                              <div className="flex-1 cursor-pointer" onClick={() => toggleMemoText(item.memo)}>
+                                <p className="text-[10px] text-gray-500 mb-1">
+                                  {item.visitDate} {item.id && searchResults.find(r => r.id === item.id)?.chart_number && <span className="text-brand-500 font-semibold ml-1">[{searchResults.find(r => r.id === item.id)?.chart_number}]</span>}
+                                </p>
+                                <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.memo}</p>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -896,22 +970,19 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                       ) : (
                         <div className="max-h-[120px] overflow-y-auto space-y-1">
                           {specialNoteHistory.map((item) => (
-                            <div key={`${item.id}-${item.visitDate}-special`} className="rounded border border-gray-200 dark:border-slate-700 p-1.5 bg-white dark:bg-slate-900">
-                              <p className="text-[10px] text-gray-500 mb-1">
-                                {item.visitDate} {item.id && searchResults.find(r => r.id === item.id)?.chart_number && <span className="text-brand-500 font-semibold ml-1">[{searchResults.find(r => r.id === item.id)?.chart_number}]</span>}
-                              </p>
-                              <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.specialNote}</p>
-                              <button
-                                type="button"
-                                onClick={async () => {
-                              const applied = await applyHistoryBySelection(item.id);
-                              if (applied) resetMemoHistoryModal();
-                            }}
-                                disabled={selectionAnchor.row === null}
-                                className="mt-1 px-2 py-1 text-[10px] font-bold rounded bg-brand-600 text-white disabled:opacity-40"
-                              >
-                                선택 옵션으로 붙여넣기
-                              </button>
+                            <div key={`${item.id}-${item.visitDate}-special`} className="rounded border border-gray-200 dark:border-slate-700 p-2 bg-white dark:bg-slate-900 flex gap-2 items-start">
+                              <input 
+                                type="checkbox" 
+                                checked={selectedSpecialNoteTexts.has(item.specialNote)}
+                                onChange={() => toggleSpecialNoteText(item.specialNote)}
+                                className="mt-1 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                              />
+                              <div className="flex-1 cursor-pointer" onClick={() => toggleSpecialNoteText(item.specialNote)}>
+                                <p className="text-[10px] text-gray-500 mb-1">
+                                  {item.visitDate} {item.id && searchResults.find(r => r.id === item.id)?.chart_number && <span className="text-brand-500 font-semibold ml-1">[{searchResults.find(r => r.id === item.id)?.chart_number}]</span>}
+                                </p>
+                                <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.specialNote}</p>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -997,20 +1068,17 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                   ) : (
                     <div className="max-h-[300px] overflow-y-auto space-y-1.5">
                       {memoHistory.map((item) => (
-                        <div key={`${item.id}-${item.visitDate}-memo-only`} className="rounded border border-gray-200 dark:border-slate-700 p-2 bg-white dark:bg-slate-900">
-                          <p className="text-[10px] text-gray-500 mb-1">{item.visitDate}</p>
-                          <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.memo}</p>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              const applied = await applyHistoryBySelection(item.id);
-                              if (applied) resetMemoHistoryModal();
-                            }}
-                            disabled={selectionAnchor.row === null}
-                            className="mt-1 px-2 py-1 text-[10px] font-bold rounded bg-brand-600 text-white disabled:opacity-40"
-                          >
-                            선택 옵션으로 붙여넣기
-                          </button>
+                        <div key={`${item.id}-${item.visitDate}-memo-only`} className="rounded border border-gray-200 dark:border-slate-700 p-2 bg-white dark:bg-slate-900 flex gap-2 items-start">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedMemoTexts.has(item.memo)}
+                            onChange={() => toggleMemoText(item.memo)}
+                            className="mt-1 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          />
+                          <div className="flex-1 cursor-pointer" onClick={() => toggleMemoText(item.memo)}>
+                            <p className="text-[10px] text-gray-500 mb-1">{item.visitDate}</p>
+                            <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.memo}</p>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1024,20 +1092,17 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                   ) : (
                     <div className="max-h-[300px] overflow-y-auto space-y-1.5">
                       {specialNoteHistory.map((item) => (
-                        <div key={`${item.id}-${item.visitDate}-special-only`} className="rounded border border-gray-200 dark:border-slate-700 p-2 bg-white dark:bg-slate-900">
-                          <p className="text-[10px] text-gray-500 mb-1">{item.visitDate}</p>
-                          <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.specialNote}</p>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              const applied = await applyHistoryBySelection(item.id);
-                              if (applied) resetMemoHistoryModal();
-                            }}
-                            disabled={selectionAnchor.row === null}
-                            className="mt-1 px-2 py-1 text-[10px] font-bold rounded bg-brand-600 text-white disabled:opacity-40"
-                          >
-                            선택 옵션으로 붙여넣기
-                          </button>
+                        <div key={`${item.id}-${item.visitDate}-special-only`} className="rounded border border-gray-200 dark:border-slate-700 p-2 bg-white dark:bg-slate-900 flex gap-2 items-start">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedSpecialNoteTexts.has(item.specialNote)}
+                            onChange={() => toggleSpecialNoteText(item.specialNote)}
+                            className="mt-1 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          />
+                          <div className="flex-1 cursor-pointer" onClick={() => toggleSpecialNoteText(item.specialNote)}>
+                            <p className="text-[10px] text-gray-500 mb-1">{item.visitDate}</p>
+                            <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.specialNote}</p>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1045,8 +1110,45 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <button onClick={resetMemoHistoryModal} className="px-3 py-2 text-xs font-bold rounded bg-gray-100 dark:bg-slate-800">닫기</button>
+              {/* 미리보기 및 편집 영역 */}
+              {(selectedMemoTexts.size > 0 || selectedSpecialNoteTexts.size > 0) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border border-brand-200 dark:border-brand-800 rounded-xl p-3 bg-brand-50/40 dark:bg-brand-950/20">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[11px] font-bold text-brand-600 dark:text-brand-400">📝 메모 미리보기 (직접 수정 가능)</p>
+                    <textarea
+                      value={combinedMemoPreview}
+                      onChange={(e) => setCombinedMemoPreview(e.target.value)}
+                      placeholder="체크한 메모가 여기에 합쳐집니다..."
+                      rows={4}
+                      className="w-full px-2.5 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-brand-400 focus:border-brand-400 resize-y"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[11px] font-bold text-brand-600 dark:text-brand-400">📋 특이사항 미리보기 (직접 수정 가능)</p>
+                    <textarea
+                      value={combinedSpecialNotePreview}
+                      onChange={(e) => setCombinedSpecialNotePreview(e.target.value)}
+                      placeholder="체크한 특이사항이 여기에 합쳐집니다..."
+                      rows={4}
+                      className="w-full px-2.5 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-brand-400 focus:border-brand-400 resize-y"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center mt-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const applied = await applyCombinedTextsToSelectedRow();
+                    if (applied) resetMemoHistoryModal();
+                  }}
+                  disabled={selectionAnchor.row === null || (combinedMemoPreview.trim().length === 0 && combinedSpecialNotePreview.trim().length === 0)}
+                  className="px-4 py-2 font-bold rounded-lg bg-brand-600 text-white disabled:opacity-40 shadow-sm hover:bg-brand-700 transition-colors"
+                >
+                  ✅ 선택된 내용 가져오기 ({selectedMemoTexts.size + selectedSpecialNoteTexts.size}개)
+                </button>
+                <button onClick={resetMemoHistoryModal} className="px-3 py-2 text-xs font-bold rounded bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">닫기</button>
               </div>
             </div>
           </div>
