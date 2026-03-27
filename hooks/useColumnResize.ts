@@ -5,7 +5,7 @@ const MIN_COL_WIDTH = 24;
 const MIN_COL_WIDTH_BY_INDEX: Record<number, number> = {
   8: 82, // 타이머
   5: 70, // 상태
-  9: 60, // 작성
+  9: 30, // 작성
   10: 52, // 삭제
 };
 const MAX_COL_WIDTH_BY_INDEX: Record<number, number> = {
