@@ -150,6 +150,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [draftImport, setDraftImport] = useState<Partial<PatientVisit> | null>(null);
   const defaultImportFieldSelection = useMemo(() => ({
     patient_name: true,
+    chart_number: true,
     gender: true,
     body_part: true,
     treatment_name: true,
@@ -159,6 +160,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   }), []);
   const [importFieldSelection, setImportFieldSelection] = useState(defaultImportFieldSelection);
   const defaultMemoPasteSelection = useMemo(() => ({
+    chart_number: true,
     memo: true,
     special_note: true,
   }), []);
@@ -480,6 +482,36 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     return true;
   }, [selectionAnchor.row, selectedVisitIdForImport, trackedUpdateVisitWithBedSync, visits, trackedAddVisit, targetPatientNameForHistoryPaste]);
 
+  const applyChartNumberToSelectedRow = useCallback(async (chartNumberText: string): Promise<boolean> => {
+    const nextChartNumber = chartNumberText.trim();
+    if (!nextChartNumber) return false;
+
+    const selectedRow = selectionAnchor.row;
+    const targetVisitByRow = selectedRow !== null ? visits[selectedRow] : undefined;
+    const targetVisitById = selectedVisitIdForImport ? visits.find((v) => v.id === selectedVisitIdForImport) : undefined;
+    const targetVisit = targetVisitById || targetVisitByRow;
+
+    if (!targetVisit) {
+      if (selectionAnchor.row === null) return false;
+      const createdId = await trackedAddVisit({
+        bed_id: null,
+        patient_name: targetPatientNameForHistoryPaste,
+        chart_number: nextChartNumber,
+      });
+      setSelectedVisitIdForImport(createdId);
+      setDraftImport((prev) => ({ ...(prev || {}), patient_name: targetPatientNameForHistoryPaste, chart_number: nextChartNumber }));
+      return true;
+    }
+
+    const updatePayload: Partial<PatientVisit> = { chart_number: nextChartNumber };
+    if (!(targetVisit.patient_name || '').trim() && targetPatientNameForHistoryPaste) {
+      updatePayload.patient_name = targetPatientNameForHistoryPaste;
+    }
+    await trackedUpdateVisitWithBedSync(targetVisit.id, updatePayload, true);
+    setDraftImport((prev) => ({ ...(prev || {}), patient_name: updatePayload.patient_name || prev?.patient_name || '', chart_number: nextChartNumber }));
+    return true;
+  }, [selectionAnchor.row, selectedVisitIdForImport, trackedUpdateVisitWithBedSync, visits, trackedAddVisit, targetPatientNameForHistoryPaste]);
+
   const applySpecialNoteToSelectedRow = useCallback(async (specialNoteText: string): Promise<boolean> => {
     const nextSpecialNote = specialNoteText.trim();
     if (!nextSpecialNote) return false;
@@ -511,12 +543,17 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   }, [selectionAnchor.row, selectedVisitIdForImport, trackedUpdateVisitWithBedSync, visits, trackedAddVisit, targetPatientNameForHistoryPaste]);
 
   const applyHistoryBySelection = useCallback(async (historyVisitId: string): Promise<boolean> => {
-    if (!memoPasteSelection.memo && !memoPasteSelection.special_note) return false;
+    if (!memoPasteSelection.memo && !memoPasteSelection.special_note && !memoPasteSelection.chart_number) return false;
 
     const sourceVisit = searchResults.find((visit) => visit.id === historyVisitId);
     if (!sourceVisit) return false;
 
     let hasApplied = false;
+
+    if (memoPasteSelection.chart_number) {
+      const appliedChart = await applyChartNumberToSelectedRow(sourceVisit.chart_number || '');
+      hasApplied = hasApplied || appliedChart;
+    }
 
     if (memoPasteSelection.memo) {
       const appliedMemo = await applyMemoToSelectedRow(sourceVisit.memo || '');
@@ -529,7 +566,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     }
 
     return hasApplied;
-  }, [memoPasteSelection, searchResults, applyMemoToSelectedRow, applySpecialNoteToSelectedRow]);
+  }, [memoPasteSelection, searchResults, applyChartNumberToSelectedRow, applyMemoToSelectedRow, applySpecialNoteToSelectedRow]);
 
   const selectResult = useCallback((visit: PatientVisit) => {
     setSelectedResult(visit);
@@ -542,6 +579,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     const payload: Partial<PatientVisit> = {};
 
     if (importFieldSelection.patient_name) payload.patient_name = draftImport.patient_name || '';
+    if (importFieldSelection.chart_number) payload.chart_number = draftImport.chart_number || '';
     if (importFieldSelection.gender) payload.gender = (draftImport.gender || '').toUpperCase();
     if (importFieldSelection.body_part) payload.body_part = draftImport.body_part || '';
     if (importFieldSelection.treatment_name) {
@@ -732,6 +770,17 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                     <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
                       <input
                         type="checkbox"
+                        checked={importFieldSelection.chart_number}
+                        onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, chart_number: e.target.checked }))}
+                        className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      차트 번호
+                    </label>
+                    <input value={draftImport?.chart_number || ''} onChange={(e) => setDraftImport((p) => ({ ...(p || {}), chart_number: e.target.value }))} placeholder="차트 번호" className="px-2 py-1.5 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" />
+
+                    <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
+                      <input
+                        type="checkbox"
                         checked={importFieldSelection.gender}
                         onChange={(e) => setImportFieldSelection((prev) => ({ ...prev, gender: e.target.checked }))}
                         className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
@@ -896,6 +945,15 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
               <div className="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 p-2">
                 <p className="text-[11px] font-bold text-gray-500 mb-1">붙여넣기 항목 선택</p>
                 <div className="flex flex-wrap items-center gap-3">
+                  <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
+                    <input
+                      type="checkbox"
+                      checked={memoPasteSelection.chart_number}
+                      onChange={(e) => setMemoPasteSelection((prev) => ({ ...prev, chart_number: e.target.checked }))}
+                      className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                    />
+                    차트 번호
+                  </label>
                   <label className="inline-flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-200 select-none">
                     <input
                       type="checkbox"
