@@ -441,6 +441,16 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
     return history;
   }, [searchResults, searchName, selectedKeywordForSearch]);
+  const visitsRef = useRef(visits);
+  const selectedKeywordForSearchRef = useRef(selectedKeywordForSearch);
+
+  useEffect(() => {
+    visitsRef.current = visits;
+  }, [visits]);
+
+  useEffect(() => {
+    selectedKeywordForSearchRef.current = selectedKeywordForSearch;
+  }, [selectedKeywordForSearch]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -469,10 +479,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       }
 
       // 동적 DOM에서 현재 셀의 값을 읽어와 STALE Closure 방지
-      let keyword = selectedKeywordForSearch;
+      let keyword = selectedKeywordForSearchRef.current;
       if (isTableEditing && gridId) {
          const [r, c] = gridId.split('-').map(Number);
-         const visit = visits[r];
+         const visit = visitsRef.current[r];
          
          // 확실한 가져오기 대상 행 고정을 위해 단축키 발동 시 DOM 기반 위치로 상태 강제 동기화
          setSelectionAnchor({ row: r, col: c });
@@ -510,7 +520,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleSearchByName, selectedKeywordForSearch]);
+  }, [handleSearchByName]);
 
   const applyMemoToSelectedRow = useCallback(async (memoText: string): Promise<boolean> => {
     const nextMemo = memoText.trim();
