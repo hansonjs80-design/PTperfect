@@ -557,7 +557,6 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
               if (!showTimerColumn && i === 8) return null;
               const normalizedWidth = (() => {
                 if (i === 10) return 52; // 삭제는 항상 고정 폭
-                if (i === 9) return 80; // 작성은 고정 폭 유지
                 return w;
               })();
               return (
