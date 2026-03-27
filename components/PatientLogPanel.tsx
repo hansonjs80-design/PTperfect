@@ -745,7 +745,9 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                       onClick={() => selectResult(v)}
                       className={`w-full text-left px-2 py-2 rounded-lg border mb-1 ${selectedResult?.id === v.id ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20' : 'border-transparent hover:border-gray-200 dark:hover:border-slate-700'}`}
                     >
-                      <p className="text-xs font-bold text-gray-800 dark:text-gray-100">{v.patient_name || '(이름없음)'}</p>
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-100">
+                        {v.patient_name || '(이름없음)'} {v.chart_number && <span className="text-brand-500 font-medium ml-1">[{v.chart_number}]</span>}
+                      </p>
                       <p className="text-[11px] text-gray-500">{v.visit_date} · {(v.gender || '-').toUpperCase()} · {v.body_part || '-'} · {v.treatment_name || '-'}</p>
                     </button>
                   ))}
@@ -858,7 +860,9 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                         <div className="max-h-[120px] overflow-y-auto space-y-1">
                           {memoHistory.map((item) => (
                             <div key={`${item.id}-${item.visitDate}`} className="rounded border border-gray-200 dark:border-slate-700 p-1.5 bg-white dark:bg-slate-900">
-                              <p className="text-[10px] text-gray-500 mb-1">{item.visitDate}</p>
+                              <p className="text-[10px] text-gray-500 mb-1">
+                                {item.visitDate} {item.id && searchResults.find(r => r.id === item.id)?.chart_number && <span className="text-brand-500 font-semibold ml-1">[{searchResults.find(r => r.id === item.id)?.chart_number}]</span>}
+                              </p>
                               <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.memo}</p>
                               <button
                                 type="button"
@@ -885,7 +889,9 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                         <div className="max-h-[120px] overflow-y-auto space-y-1">
                           {specialNoteHistory.map((item) => (
                             <div key={`${item.id}-${item.visitDate}-special`} className="rounded border border-gray-200 dark:border-slate-700 p-1.5 bg-white dark:bg-slate-900">
-                              <p className="text-[10px] text-gray-500 mb-1">{item.visitDate}</p>
+                              <p className="text-[10px] text-gray-500 mb-1">
+                                {item.visitDate} {item.id && searchResults.find(r => r.id === item.id)?.chart_number && <span className="text-brand-500 font-semibold ml-1">[{searchResults.find(r => r.id === item.id)?.chart_number}]</span>}
+                              </p>
                               <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{item.specialNote}</p>
                               <button
                                 type="button"
