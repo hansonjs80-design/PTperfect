@@ -95,11 +95,10 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
         </th>
         <th className={`${thBase} min-w-[80px] w-[80px] xl:w-[96px] relative`}>
           작성
-          {handle(9)}
         </th>
         <th className={`${thBase} w-[52px] min-w-[52px] max-w-[52px] relative`}>
           <div
-            className="absolute top-0 left-0 -translate-x-1/2 w-[14px] h-full z-40 flex items-center justify-center cursor-col-resize touch-none"
+            className="absolute top-0 left-0 -translate-x-1/2 w-[24px] h-full z-50 flex items-center justify-center cursor-col-resize touch-none group/resize"
             onMouseDown={(e) => {
               e.preventDefault();
               handleAuthorDeleteBoundaryStart(e.clientX);
@@ -110,7 +109,7 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
             }}
             title="작성/삭제 너비 조정"
           >
-            <div className="w-[3px] h-[72%] rounded-full bg-blue-400/80 hover:bg-blue-500 transition-colors" />
+            <div className={`w-[2.5px] h-[60%] rounded-full transition-all duration-150 ${activeResizeColIndex === 9 || isResizing ? (activeResizeColIndex === 9 ? 'bg-blue-500 h-[90%]' : 'bg-transparent') : 'bg-blue-300/60 group-hover/resize:bg-blue-400 group-hover/resize:h-[65%]'}`} />
           </div>
           삭제
         </th>
