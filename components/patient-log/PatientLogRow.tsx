@@ -469,7 +469,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0`}>
+      <td className={`${cellBorderClass} p-0 relative`}>
         <AuthorSelectorCell
           gridId={`${rowIndex}-8`}
           rowIndex={rowIndex}
@@ -487,7 +487,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className="p-0 text-center">
+      <td className="p-0 text-center relative">
         {!isDraft && visit && onDelete && (
           <div
             className="flex justify-center items-center h-full outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px]"
