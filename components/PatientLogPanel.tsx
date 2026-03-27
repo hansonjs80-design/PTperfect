@@ -400,7 +400,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       const visitChart = (visit.chart_number || '').trim().toLowerCase();
       const memo = (visit.memo || '').trim();
       
-      const isMatch = visitName === normalized || visitChart === normalized;
+      const isMatch = visitName.includes(normalized) || visitChart.includes(normalized);
       if (!isMatch || !memo || unique.has(memo)) return;
       
       unique.add(memo);
@@ -422,8 +422,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       const visitName = (visit.patient_name || '').trim().toLowerCase();
       const visitChart = (visit.chart_number || '').trim().toLowerCase();
       const specialNote = (visit.special_note || '').trim();
-      
-      const isMatch = visitName === normalized || visitChart === normalized;
+      const isMatch = visitName.includes(normalized) || visitChart.includes(normalized);
       if (!isMatch || !specialNote || unique.has(specialNote)) return;
       
       unique.add(specialNote);
