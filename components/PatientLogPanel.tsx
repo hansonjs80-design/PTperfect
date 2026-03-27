@@ -319,7 +319,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         const { data } = await supabase
           .from('patient_visits')
           .select('*')
-          .ilike('patient_name', `%${keyword}%`)
+          .or(`patient_name.ilike.%${keyword}%,chart_number.ilike.%${keyword}%`)
           .lt('visit_date', currentDate)
           .order('visit_date', { ascending: false })
           .order('created_at', { ascending: false })
@@ -346,7 +346,9 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           const parsed = JSON.parse(raw);
           if (!Array.isArray(parsed)) return;
           parsed.forEach((v: PatientVisit) => {
-            if ((v.patient_name || '').toLowerCase().includes(keyword.toLowerCase()) && v.visit_date < currentDate) {
+            const matchName = (v.patient_name || '').toLowerCase().includes(keyword.toLowerCase());
+            const matchChart = (v.chart_number || '').toLowerCase().includes(keyword.toLowerCase());
+            if ((matchName || matchChart) && v.visit_date < currentDate) {
               merged.push(v);
             }
           });
@@ -371,46 +373,54 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     return visits[selectionAnchor.row] || null;
   }, [selectedVisitIdForImport, visits, selectionAnchor.row]);
 
-  const selectedPatientNameForSearch = (selectedVisitForSearch?.patient_name || '').trim();
-  const targetPatientNameForHistoryPaste = (selectedPatientNameForSearch || searchName.trim()).trim();
+  const selectedKeywordForSearch = (selectedVisitForSearch?.chart_number || selectedVisitForSearch?.patient_name || '').trim();
+  const targetPatientNameForHistoryPaste = (selectedKeywordForSearch || searchName.trim()).trim();
 
   const memoHistory = useMemo(() => {
-    const exactName = selectedPatientNameForSearch || searchName.trim();
-    if (!exactName) return [] as Array<{ id: string; visitDate: string; memo: string }>;
+    const exactKeyword = selectedKeywordForSearch || searchName.trim();
+    if (!exactKeyword) return [] as Array<{ id: string; visitDate: string; memo: string }>;
 
-    const normalized = exactName.toLowerCase();
+    const normalized = exactKeyword.toLowerCase();
     const unique = new Set<string>();
     const history: Array<{ id: string; visitDate: string; memo: string }> = [];
 
     searchResults.forEach((visit) => {
       const visitName = (visit.patient_name || '').trim().toLowerCase();
+      const visitChart = (visit.chart_number || '').trim().toLowerCase();
       const memo = (visit.memo || '').trim();
-      if (visitName !== normalized || !memo || unique.has(memo)) return;
+      
+      const isMatch = visitName === normalized || visitChart === normalized;
+      if (!isMatch || !memo || unique.has(memo)) return;
+      
       unique.add(memo);
       history.push({ id: visit.id, visitDate: visit.visit_date, memo });
     });
 
     return history;
-  }, [searchResults, searchName, selectedPatientNameForSearch]);
+  }, [searchResults, searchName, selectedKeywordForSearch]);
 
   const specialNoteHistory = useMemo(() => {
-    const exactName = selectedPatientNameForSearch || searchName.trim();
-    if (!exactName) return [] as Array<{ id: string; visitDate: string; specialNote: string }>;
+    const exactKeyword = selectedKeywordForSearch || searchName.trim();
+    if (!exactKeyword) return [] as Array<{ id: string; visitDate: string; specialNote: string }>;
 
-    const normalized = exactName.toLowerCase();
+    const normalized = exactKeyword.toLowerCase();
     const unique = new Set<string>();
     const history: Array<{ id: string; visitDate: string; specialNote: string }> = [];
 
     searchResults.forEach((visit) => {
       const visitName = (visit.patient_name || '').trim().toLowerCase();
+      const visitChart = (visit.chart_number || '').trim().toLowerCase();
       const specialNote = (visit.special_note || '').trim();
-      if (visitName !== normalized || !specialNote || unique.has(specialNote)) return;
+      
+      const isMatch = visitName === normalized || visitChart === normalized;
+      if (!isMatch || !specialNote || unique.has(specialNote)) return;
+      
       unique.add(specialNote);
       history.push({ id: visit.id, visitDate: visit.visit_date, specialNote });
     });
 
     return history;
-  }, [searchResults, searchName, selectedPatientNameForSearch]);
+  }, [searchResults, searchName, selectedKeywordForSearch]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -422,7 +432,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       const activeInputValue = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
         ? ((target as HTMLInputElement | HTMLTextAreaElement).value || '').trim()
         : '';
-      const keyword = activeInputValue || selectedPatientNameForSearch;
+      const keyword = activeInputValue || selectedKeywordForSearch;
 
       e.preventDefault();
 
@@ -438,7 +448,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleSearchByName, selectedPatientNameForSearch]);
+  }, [handleSearchByName, selectedKeywordForSearch]);
 
   const applyMemoToSelectedRow = useCallback(async (memoText: string): Promise<boolean> => {
     const nextMemo = memoText.trim();

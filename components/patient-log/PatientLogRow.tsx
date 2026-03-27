@@ -554,6 +554,25 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           gridId={`${rowIndex}-1`}
           rowIndex={rowIndex}
           colIndex={1}
+          value={visit?.chart_number || ''}
+          placeholder=""
+          menuTitle="차트 번호 수정 (로그만 변경)"
+          className={`bg-transparent justify-center text-center ${!visit?.chart_number
+            ? 'font-normal text-gray-300 dark:text-gray-500'
+            : 'font-black text-slate-800 dark:text-slate-100'
+            } ${isDraft ? 'placeholder-gray-300 font-normal' : ''} text-[13.5px] sm:text-[14.4px]`}
+          onCommit={(val, skipSync, navDir) => handleChange('chart_number', val || '', skipSync, 1, navDir)}
+          directEdit={true}
+          syncOnDirectEdit={false}
+          suppressEnterNav={isDraft}
+        />
+      </td>
+
+      <td className={`${cellBorderClass} p-0`}>
+        <EditableCell
+          gridId={`${rowIndex}-2`}
+          rowIndex={rowIndex}
+          colIndex={2}
           value={visit?.patient_name || ''}
           placeholder=""
           menuTitle="이름 수정 (로그만 변경)"
@@ -561,7 +580,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
             ? 'font-normal text-gray-300 dark:text-gray-500'
             : 'font-black text-slate-800 dark:text-slate-100'
             } ${isDraft ? 'placeholder-gray-300 font-normal' : ''} text-[13.5px] sm:text-[14.4px]`}
-          onCommit={(val, skipSync, navDir) => handleChange('patient_name', val || '', skipSync, 1, navDir)}
+          onCommit={(val, skipSync, navDir) => handleChange('patient_name', val || '', skipSync, 2, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
           suppressEnterNav={isDraft}
@@ -570,13 +589,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td className={`${cellBorderClass} p-0`}>
         <GenderSelectorCell
-          gridId={`${rowIndex}-2`}
+          gridId={`${rowIndex}-3`}
           rowIndex={rowIndex}
-          colIndex={2}
+          colIndex={3}
           value={(visit?.gender || '').toUpperCase()}
           onSelect={async (val) => {
             if (isDraft && onCreate) {
-              await onCreate({ gender: val }, 2);
+              await onCreate({ gender: val }, 3);
             } else if (visit && onUpdate) {
               onUpdate(visit.id, { gender: val }, true);
             }
@@ -586,16 +605,16 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell
-          gridId={`${rowIndex}-3`}
+          gridId={`${rowIndex}-4`}
           rowIndex={rowIndex}
-          colIndex={3}
+          colIndex={4}
           value={visit?.body_part || ''}
           placeholder=""
           menuTitle="치료 부위 수정 (로그만 변경)"
           className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[12.6px] sm:text-[13.5px] xl:text-[14.4px]"
           onCommit={(val, skipSync, navDir) => {
             const formattedVal = formatBodyPartText(val || '');
-            handleChange('body_part', formattedVal, skipSync, 3, navDir);
+            handleChange('body_part', formattedVal, skipSync, 4, navDir);
           }}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -605,9 +624,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td className={`${cellBorderClass} p-0 relative`}>
         <TreatmentSelectorCell
-          gridId={`${rowIndex}-4`}
+          gridId={`${rowIndex}-5`}
           rowIndex={rowIndex}
-          colIndex={4}
+          colIndex={5}
           visit={visit}
           value={treatmentDisplayValue}
           placeholder=""
@@ -652,9 +671,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td className={`${cellBorderClass} p-0`}>
         <PatientStatusCell
-          gridId={`${rowIndex}-5`}
+          gridId={`${rowIndex}-6`}
           rowIndex={rowIndex}
-          colIndex={5}
+          colIndex={6}
           visit={visit}
           rowStatus={rowStatus}
           onUpdate={onUpdate || (() => { })}
@@ -665,14 +684,14 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell
-          gridId={`${rowIndex}-6`}
+          gridId={`${rowIndex}-7`}
           rowIndex={rowIndex}
-          colIndex={6}
+          colIndex={7}
           value={visit?.memo || ''}
           placeholder=""
           menuTitle="메모 수정 (로그만 변경)"
           className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.3px] xl:text-[13px]"
-          onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 6, navDir)}
+          onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 7, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
           suppressEnterNav={isDraft}
@@ -681,14 +700,14 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td className={`${cellBorderClass} p-0`}>
         <EditableCell
-          gridId={`${rowIndex}-7`}
+          gridId={`${rowIndex}-8`}
           rowIndex={rowIndex}
-          colIndex={7}
+          colIndex={8}
           value={visit?.special_note || ''}
           placeholder=""
           menuTitle="특이사항 수정 (로그만 변경)"
           className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.2px] sm:text-[12.5px]"
-          onCommit={(val, skipSync, navDir) => handleChange('special_note', val || '', skipSync, 7, navDir)}
+          onCommit={(val, skipSync, navDir) => handleChange('special_note', val || '', skipSync, 8, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
           suppressEnterNav={isDraft}
@@ -698,7 +717,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       <td className={`${cellBorderClass} p-0 ${showTimerColumn ? "" : "hidden"}`}>
         <div
           className="w-full h-full min-h-[36px] flex items-center justify-center px-1 text-[11px] sm:text-[12px] font-black tracking-tight"
-          data-grid-id={`${rowIndex}-8`}
+          data-grid-id={`${rowIndex}-9`}
           tabIndex={0}
           onKeyDown={(e) => {
             if ((e.key === 'Enter' || e.key === ' ') && canStartFromTimerCell) {
@@ -706,7 +725,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
               handleQuickActivate(true);
               return;
             }
-            handleGridKeyDown(e, rowIndex, 8);
+            handleGridKeyDown(e, rowIndex, 9);
           }}
         >
           <div className="flex items-center justify-center gap-1.5 w-full">
@@ -751,13 +770,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       <td className={`${cellBorderClass} p-0 align-middle text-center min-w-[80px] w-[80px] max-w-[80px] xl:w-[96px] xl:max-w-[96px]`}>
         <div className="relative w-full h-full min-h-[36px]">
           <AuthorSelectorCell
-            gridId={`${rowIndex}-9`}
+            gridId={`${rowIndex}-10`}
             rowIndex={rowIndex}
-            colIndex={9}
+            colIndex={10}
             value={visit?.author || ''}
             onSelect={async (val) => {
               if (isDraft && onCreate) {
-                await onCreate({ author: val }, 9);
+                await onCreate({ author: val }, 10);
               } else if (visit && onUpdate) {
                 // 선택한 셀만 변경 (빈 셀이든 이미 입력된 셀이든 동일하게 처리)
                 onUpdate(visit.id, { author: val }, true);
@@ -774,7 +793,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
             <div
               className="absolute inset-0 flex justify-center items-center px-[4px] outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px]"
               tabIndex={0}
-              data-grid-id={`${rowIndex}-10`}
+              data-grid-id={`${rowIndex}-11`}
               onKeyDown={handleDeleteKeyDown}
             >
               <button

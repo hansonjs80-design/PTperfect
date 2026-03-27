@@ -20,10 +20,11 @@ export const PatientLogPrintView: React.FC<PatientLogPrintViewProps> = ({
   // Widths roughly mimic the previous flex-basis percentages/pixels
   const colWidths = (
     <colgroup>
-      <col className="w-[8%]" />  {/* No */}
-      <col className="w-[12%]" /> {/* Name */}
-      <col className="w-[12%]" /> {/* Part */}
-      <col className="w-[38%]" /> {/* Treatment (Flexible) */}
+      <col className="w-[5%]" />  {/* No */}
+      <col className="w-[10%]" /> {/* Chart */}
+      <col className="w-[10%]" /> {/* Name */}
+      <col className="w-[10%]" /> {/* Part */}
+      <col className="w-[35%]" /> {/* Treatment (Flexible) */}
       <col className="w-[10%]" /> {/* Status */}
       <col className="w-[20%]" /> {/* Memo */}
     </colgroup>
@@ -55,6 +56,7 @@ export const PatientLogPrintView: React.FC<PatientLogPrintViewProps> = ({
           {/* Removed border-t-2 border-black as requested */}
           <tr className="bg-gray-100 border-b border-gray-600 text-xs font-black text-gray-900 text-center">
             <th className="py-2 border-r border-gray-300">No.</th>
+            <th className="py-2 border-r border-gray-300">차트</th>
             <th className="py-2 border-r border-gray-300">이름</th>
             <th className="py-2 border-r border-gray-300">부위</th>
             <th className="py-2 border-r border-gray-300">처방명</th>
@@ -75,6 +77,10 @@ export const PatientLogPrintView: React.FC<PatientLogPrintViewProps> = ({
               */}
               <td className="py-1.5 px-1 border-r border-gray-300 align-middle text-center font-black text-gray-900">
                 {visit.bed_id || (index + 1)}
+              </td>
+              
+              <td className="py-1.5 px-1 border-r border-gray-300 align-middle text-center font-black text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
+                {visit.chart_number || "-"}
               </td>
               
               <td className="py-1.5 px-1 border-r border-gray-300 align-middle text-center font-black text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
@@ -104,6 +110,7 @@ export const PatientLogPrintView: React.FC<PatientLogPrintViewProps> = ({
           {/* Fill empty space rows for aesthetic paper look */}
           {Array.from({ length: Math.max(0, 15 - visits.length) }).map((_, i) => (
             <tr key={`empty-${i}`} className="border-b border-gray-200 break-inside-avoid">
+              <td className="py-3 border-r border-gray-100">&nbsp;</td>
               <td className="py-3 border-r border-gray-100">&nbsp;</td>
               <td className="py-3 border-r border-gray-100">&nbsp;</td>
               <td className="py-3 border-r border-gray-100">&nbsp;</td>

@@ -61,6 +61,7 @@ export interface PatientVisit {
   visit_date: string; // YYYY-MM-DD
   bed_id: number | null;
   patient_name: string;
+  chart_number?: string;
   body_part: string;
   gender?: string;
   treatment_name: string;

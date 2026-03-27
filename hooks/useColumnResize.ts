@@ -3,16 +3,16 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 
 const MIN_COL_WIDTH = 24;
 const MIN_COL_WIDTH_BY_INDEX: Record<number, number> = {
-  8: 82, // 타이머
-  5: 70, // 상태
-  9: 30, // 작성
-  10: 52, // 삭제
+  9: 82, // 타이머
+  6: 70, // 상태
+  10: 30, // 작성
+  11: 52, // 삭제
 };
 const MAX_COL_WIDTH_BY_INDEX: Record<number, number> = {
-  10: 52, // 삭제 컬럼은 고정 폭 유지(작성 영역 침범 방지)
+  11: 52, // 삭제 컬럼은 고정 폭 유지(작성 영역 침범 방지)
 };
 export const FLEX_COL_INDEX = -1; // 강제 채움 비활성화: 컬럼 리사이즈는 실제 너비를 유지
-const STORAGE_KEY = 'physio-column-widths-v8';
+const STORAGE_KEY = 'physio-column-widths-v9';
 
 const getMinWidthByIndex = (index: number) => {
   if (index === 7 && typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
@@ -29,15 +29,15 @@ const clampWidthByIndex = (width: number, index: number) => {
 };
 
 
-const TREATMENT_COL_INDEX = 3;
+const TREATMENT_COL_INDEX = 5;
 const TREATMENT_DEFAULT_WIDTH_FACTOR = 2.03;
 const MOBILE_TREATMENT_WIDTH_FACTOR = TREATMENT_DEFAULT_WIDTH_FACTOR * 1.2;
-const STATUS_COL_INDEX = 5;
+const STATUS_COL_INDEX = 6;
 const STATUS_DEFAULT_WIDTH_FACTOR = 1.5;
-const SPECIAL_NOTE_COL_INDEX = 7;
+const SPECIAL_NOTE_COL_INDEX = 8;
 const SPECIAL_NOTE_DEFAULT_WIDTH = 150;
-const AUTHOR_COL_INDEX = 9;
-const AUTHOR_DESKTOP_DEFAULT_WIDTH = 128;
+const AUTHOR_COL_INDEX = 10;
+const AUTHOR_DESKTOP_DEFAULT_WIDTH = 90; // Default width reduced by ~30% from 128
 
 const arraysEqual = (a: number[], b: number[]) => (
   a.length === b.length && a.every((value, index) => value === b[index])

@@ -11,7 +11,7 @@ import { generateTreatmentString } from '../../utils/bedUtils';
 type GridCellPos = { row: number; col: number };
 type GridSelection = { start: GridCellPos; end: GridCellPos } | null;
 
-const SELECTABLE_COLS = new Set([0, 1, 2, 3, 4, 6, 7, 9]);
+const SELECTABLE_COLS = new Set([0, 1, 2, 3, 4, 5, 7, 8, 10]);
 
 const normalizeSelectionBounds = (selection: GridSelection) => {
   if (!selection) return null;
@@ -161,13 +161,14 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const getVisitCellText = useCallback((visit: PatientVisit, col: number) => {
     switch (col) {
       case 0: return visit.bed_id ? String(visit.bed_id) : '';
-      case 1: return visit.patient_name || '';
-      case 2: return visit.gender || '';
-      case 3: return visit.body_part || '';
-      case 4: return visit.treatment_name || '';
-      case 6: return visit.memo || '';
-      case 7: return visit.special_note || '';
-      case 9: return visit.author || '';
+      case 1: return visit.chart_number || '';
+      case 2: return visit.patient_name || '';
+      case 3: return visit.gender || '';
+      case 4: return visit.body_part || '';
+      case 5: return visit.treatment_name || '';
+      case 7: return visit.memo || '';
+      case 8: return visit.special_note || '';
+      case 10: return visit.author || '';
       default: return '';
     }
   }, []);
@@ -207,15 +208,18 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         return;
       }
       case 1:
-        onUpdate(visit.id, { patient_name: text }, true);
+        onUpdate(visit.id, { chart_number: text }, true);
         return;
       case 2:
-        onUpdate(visit.id, { gender: text.toUpperCase().slice(0, 1) }, true);
+        onUpdate(visit.id, { patient_name: text }, true);
         return;
       case 3:
+        onUpdate(visit.id, { gender: text.toUpperCase().slice(0, 1) }, true);
+        return;
+      case 4:
         onUpdate(visit.id, { body_part: text }, true);
         return;
-      case 4: {
+      case 5: {
         // 활성 행의 처방 변경(붙여넣기 포함)은 배드카드에도 즉시 반영
         // 단, 세트 배지명이 함께 들어와도 처방 목록 문자열만 반영한다.
         const normalizedTreatment = normalizeTreatmentPasteText(text);
@@ -230,13 +234,13 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         }
         return;
       }
-      case 6:
+      case 7:
         onUpdate(visit.id, { memo: text }, true);
         return;
-      case 7:
+      case 8:
         onUpdate(visit.id, { special_note: text }, true);
         return;
-      case 9:
+      case 10:
         onUpdate(visit.id, { author: text }, true);
         return;
       default:
@@ -283,24 +287,27 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
       switch (col) {
         case 1:
-          updates.patient_name = normalized;
+          updates.chart_number = normalized;
           break;
         case 2:
-          updates.gender = normalized.toUpperCase().slice(0, 1);
+          updates.patient_name = normalized;
           break;
         case 3:
-          updates.body_part = normalized;
+          updates.gender = normalized.toUpperCase().slice(0, 1);
           break;
         case 4:
+          updates.body_part = normalized;
+          break;
+        case 5:
           updates.treatment_name = normalized;
           break;
-        case 6:
+        case 7:
           updates.memo = normalized;
           break;
-        case 7:
+        case 8:
           updates.special_note = normalized;
           break;
-        case 9:
+        case 10:
           updates.author = normalized;
           break;
         default:
@@ -421,7 +428,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       const deltaRow = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
       const deltaCol = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
       const nextRow = Math.min(Math.max(current.row + deltaRow, 0), maxRow);
-      const nextCol = Math.min(Math.max(current.col + deltaCol, 0), 10);
+      const nextCol = Math.min(Math.max(current.col + deltaCol, 0), 11);
 
       e.preventDefault();
       const nextPos = { row: nextRow, col: nextCol };
