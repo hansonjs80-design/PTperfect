@@ -56,7 +56,7 @@ export const PatientLogPrintView: React.FC<PatientLogPrintViewProps> = ({
           {/* Removed border-t-2 border-black as requested */}
           <tr className="bg-gray-100 border-b border-gray-600 text-xs font-black text-gray-900 text-center">
             <th className="py-2 border-r border-gray-300">No.</th>
-            <th className="py-2 border-r border-gray-300">차트</th>
+            <th className="py-2 border-r border-gray-300">차트 번호</th>
             <th className="py-2 border-r border-gray-300">이름</th>
             <th className="py-2 border-r border-gray-300">부위</th>
             <th className="py-2 border-r border-gray-300">처방명</th>

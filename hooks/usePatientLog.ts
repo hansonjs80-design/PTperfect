@@ -9,7 +9,7 @@ const POLL_INTERVAL = 5000;
 
 /** DB 쓰기 디바운스 (ms) */
 const DB_WRITE_DEBOUNCE = 300;
-const RETRYABLE_OPTIONAL_COLUMNS = ['special_note', 'is_injection_completed', 'is_ion', 'is_exercise', 'gender'] as const;
+const RETRYABLE_OPTIONAL_COLUMNS = ['special_note', 'is_injection_completed', 'is_ion', 'is_exercise', 'gender', 'chart_number'] as const;
 
 // Helper to get Local Date String (YYYY-MM-DD)
 const getLocalDateString = () => {
