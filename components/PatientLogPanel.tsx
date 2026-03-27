@@ -695,8 +695,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[320px]">
                 <div className="border border-gray-200 dark:border-slate-700 rounded-xl p-2 overflow-y-auto">
-                  {selectedPatientNameForSearch && (
-                    <p className="text-[11px] text-brand-600 dark:text-brand-400 px-2 pb-2 font-bold">선택 행 이름 기준 검색: {selectedPatientNameForSearch}</p>
+                  {selectedKeywordForSearch && (
+                    <p className="text-[11px] text-brand-600 dark:text-brand-400 px-2 pb-2 font-bold">선택 행 기준 검색: {selectedKeywordForSearch}</p>
                   )}
                   <p className="text-[11px] font-bold text-gray-500 mb-2">최근 일치 기록 (최대 5개)</p>
                   {isSearching && <p className="text-xs text-gray-400 px-2 py-1">검색 중...</p>}
@@ -889,8 +889,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                 </button>
               </div>
 
-              {selectedPatientNameForSearch && (
-                <p className="text-[11px] text-brand-600 dark:text-brand-400 px-1 font-bold">선택 행 이름 기준 검색: {selectedPatientNameForSearch}</p>
+              {selectedKeywordForSearch && (
+                <p className="text-[11px] text-brand-600 dark:text-brand-400 px-1 font-bold">선택 행 기준 검색: {selectedKeywordForSearch}</p>
               )}
 
               <div className="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 p-2">
