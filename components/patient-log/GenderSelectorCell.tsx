@@ -41,6 +41,14 @@ export const GenderSelectorCell: React.FC<GenderSelectorCellProps> = ({
     openMenu(e.clientX, e.clientY);
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches) {
+      e.preventDefault();
+      e.stopPropagation();
+      openMenu(e.clientX, e.clientY);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       const rect = cellRef.current?.getBoundingClientRect();
@@ -69,6 +77,7 @@ export const GenderSelectorCell: React.FC<GenderSelectorCellProps> = ({
         ref={cellRef}
         tabIndex={0}
         data-grid-id={gridId}
+        onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         onKeyDown={handleKeyDown}
         className="w-full h-full min-h-[36px] flex items-center justify-center cursor-default outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
