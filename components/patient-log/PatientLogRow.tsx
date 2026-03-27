@@ -734,7 +734,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         </div>
       </td>
 
-      <td className={`${cellBorderClass} p-0 align-middle text-center min-w-[80px] xl:min-w-[96px]`}>
+      <td className={`${cellBorderClass} p-0 align-middle text-center min-w-[80px] w-[80px] max-w-[80px] xl:w-[96px] xl:max-w-[96px]`}>
         <div className="relative w-full h-full min-h-[36px]">
           <AuthorSelectorCell
             gridId={`${rowIndex}-9`}

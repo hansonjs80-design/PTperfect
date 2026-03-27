@@ -9,7 +9,7 @@ interface PatientLogTableHeaderProps {
 }
 
 const RESIZABLE_COLUMNS = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-const ALWAYS_VISIBLE_HANDLE_COLUMNS = new Set([7, 9]);
+const ALWAYS_VISIBLE_HANDLE_COLUMNS = new Set([9]);
 
 const thBase =
   'py-3.5 px-1.5 text-xs md:text-sm font-extrabold text-slate-600 dark:text-slate-300 tracking-[0.02em] text-center border-r border-slate-200 dark:border-slate-700 last:border-r-0';
