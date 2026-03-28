@@ -142,6 +142,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const canRedoLog = redoStackRef.current.length > 0;
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isMemoHistoryModalOpen, setIsMemoHistoryModalOpen] = useState(false);
+  const [pendingSearchInput, setPendingSearchInput] = useState<{col: number, text: string} | null>(null);
+  const [draftRowKey, setDraftRowKey] = useState(0);
   const [searchName, setSearchName] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<PatientVisit[]>([]);
@@ -273,6 +275,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setSelectedResult(null);
     setDraftImport(null);
     setImportFieldSelection(defaultImportFieldSelection);
+    setPendingSearchInput(null);
+    setDraftRowKey(prev => prev + 1);
     document.body.removeAttribute('data-prevent-autofocus');
   }, [defaultImportFieldSelection]);
 
@@ -508,6 +512,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
            if (activeInputValue) {
                keyword = activeInputValue;
+               setPendingSearchInput({ col: c, text: activeInputValue });
            } else {
                if (visit) {
                    if (c === 1) keyword = (visit.chart_number || '').trim();
@@ -516,6 +521,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                } else {
                    keyword = '';
                }
+               setPendingSearchInput(null);
            }
         }
 
@@ -746,6 +752,16 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     if (importFieldSelection.author) payload.author = draftImport.author || '';
     if (importFieldSelection.memo) payload.memo = draftImport.memo || '';
     if (importFieldSelection.special_note) payload.special_note = draftImport.special_note || '';
+
+    // 모달을 열기 직전 타이핑 중이던 값(pendingSearchInput) 복원
+    // (사용자가 직접 타이핑한 값이 우선이며, 가져오기로 덮어쓰지 않는 항목일 경우에만 복원)
+    if (pendingSearchInput) {
+      if (pendingSearchInput.col === 1 && !importFieldSelection.chart_number) {
+        payload.chart_number = pendingSearchInput.text;
+      } else if (pendingSearchInput.col === 2 && !importFieldSelection.patient_name) {
+        payload.patient_name = pendingSearchInput.text;
+      }
+    }
 
     // visitsRef.current를 사용해 React 상태 지연(Stale Closure) 없이 최신 데이터 참조
     const latestVisits = visitsRef.current;

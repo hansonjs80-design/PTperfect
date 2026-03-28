@@ -48,6 +48,7 @@ interface PatientLogTableProps {
   onClearBed?: (bedId: number) => void;
   onSelectionAnchorChange?: (rowIndex: number | null, colIndex: number | null) => void;
   cancelAutoFocusRef?: React.MutableRefObject<(() => void) | null>;
+  draftRowKey?: number;
 }
 
 export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
@@ -65,7 +66,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   onPrevStep,
   onClearBed,
   onSelectionAnchorChange,
-  cancelAutoFocusRef
+  cancelAutoFocusRef,
+  draftRowKey = 0
 }) => {
   const [totalRows, setTotalRows] = useState(120);
   const [selection, setSelection] = useState<GridSelection>(null);
@@ -661,7 +663,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
           {Array.from({ length: Math.max(0, totalRows - visits.length) }).map((_, index) => (
             <PatientLogRow
-              key={`draft-${index}`}
+              key={`draft-${index}-${draftRowKey}`}
               rowIndex={visits.length + index}
               isDraft={true}
               onCreate={handleDraftCreate}
