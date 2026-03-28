@@ -8,7 +8,13 @@ import { Loader2, Search, X, Edit3 } from 'lucide-react';
 import { useLogStatusLogic } from '../hooks/useLogStatusLogic';
 import { BedStatus, PatientVisit } from '../types';
 import { isOnlineMode, supabase } from '../lib/supabase';
-import { findExactPresetByTreatmentString, generateTreatmentString } from '../utils/bedUtils';
+import { findExactPresetByTreatmentString, generateTreatmentString, parseTreatmentString } from '../utils/bedUtils';
+import { EditableCell } from './patient-log/EditableCell';
+import { GenderSelectorCell } from './patient-log/GenderSelectorCell';
+import { PatientStatusCell } from './patient-log/PatientStatusCell';
+import { TreatmentSelectorCell } from './patient-log/TreatmentSelectorCell';
+import { AuthorSelectorCell } from './patient-log/AuthorSelectorCell';
+import { TreatmentStep, QuickTreatment } from '../types';
 
 const PrintPreviewModal = React.lazy(() => import('./modals/PrintPreviewModal').then(module => ({ default: module.PrintPreviewModal })));
 
@@ -30,7 +36,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setEditingBedId, 
     clearBed,
     isPrintModalOpen,
-    setPrintModalOpen
+    setPrintModalOpen,
+    quickTreatments
   } = useTreatmentContext();
   
   const { visits, setVisits, currentDate, setCurrentDate, changeDate, addVisit, deleteVisit } = usePatientLogContext();
@@ -156,11 +163,69 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     body_part: true,
     treatment_name: true,
     additional_options: true,
-    author: true,
+    author: false,
     memo: true,
     special_note: true,
   }), []);
   const [importFieldSelection, setImportFieldSelection] = useState(defaultImportFieldSelection);
+  const [modalEdits, setModalEdits] = useState<Record<string, Partial<PatientVisit>>>({});
+
+  const handleModalLocalUpdate = useCallback((id: string, updates: Partial<PatientVisit>) => {
+    setModalEdits(prev => {
+      const existing = prev[id] || {};
+      const newEdits = { ...existing, ...updates };
+      
+      // If the currently selected result is the one being updated, synchronize it immediately
+      setSelectedResult(currentSelect => {
+        if (currentSelect && currentSelect.id === id) {
+          return { ...currentSelect, ...newEdits };
+        }
+        return currentSelect;
+      });
+      
+      return { ...prev, [id]: newEdits };
+    });
+  }, []);
+
+  const replaceStepAt = (steps: TreatmentStep[], idx: number, qt: QuickTreatment): TreatmentStep[] => {
+    const next = [...steps];
+    next[idx] = {
+      ...next[idx],
+      id: next[idx]?.id || crypto.randomUUID(),
+      name: qt.name,
+      label: qt.label,
+      duration: Math.max(1, Math.round(qt.duration * 60)),
+      enableTimer: qt.enableTimer,
+      color: qt.color,
+    };
+    return next;
+  };
+
+  const appendStepAtEnd = (steps: TreatmentStep[], qt: QuickTreatment): TreatmentStep[] => {
+    const nextStep: TreatmentStep = {
+      id: crypto.randomUUID(),
+      name: qt.name,
+      label: qt.label,
+      duration: Math.max(1, Math.round(qt.duration * 60)),
+      enableTimer: qt.enableTimer,
+      color: qt.color,
+    };
+    return [...steps, nextStep];
+  };
+
+  const moveStepLocal = (steps: TreatmentStep[], idx: number, direction: 'left' | 'right'): TreatmentStep[] => {
+    const target = direction === 'left' ? idx - 1 : idx + 1;
+    if (target < 0 || target >= steps.length) return steps;
+    const next = [...steps];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    return next;
+  };
+
+  const removeStepAt = (steps: TreatmentStep[], idx: number): TreatmentStep[] => {
+    if (idx < 0 || idx >= steps.length) return steps;
+    return steps.filter((_, i) => i !== idx);
+  };
+
   const defaultMemoPasteSelection = useMemo(() => ({
     chart_number: true,
     memo: true,
@@ -277,6 +342,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setImportFieldSelection(defaultImportFieldSelection);
     setPendingSearchInput(null);
     setDraftRowKey(prev => prev + 1);
+    setModalEdits({});
     document.body.removeAttribute('data-prevent-autofocus');
   }, [defaultImportFieldSelection]);
 
@@ -293,7 +359,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setCombinedSpecialNotePreview('');
   }, [defaultMemoPasteSelection]);
 
-  const mappedResults = useMemo(() => searchResults.slice(0, 5), [searchResults]);
+  const mappedResults = useMemo(() => searchResults.slice(0, 10).map(v => {
+    const localOverride = modalEdits[v.id];
+    return localOverride ? { ...v, ...localOverride } : v;
+  }), [searchResults, modalEdits]);
 
   const normalizeImportedTreatmentName = useCallback((rawTreatmentName: string | null | undefined) => {
     const trimmed = (rawTreatmentName || '').trim();
@@ -724,38 +793,44 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   }, [selectedSpecialNoteTexts, isSearchModalOpen]);
 
   const selectResult = useCallback((visit: PatientVisit) => {
-    setSelectedResult(visit);
-    setDraftImport(sanitizeImportedVisit(visit));
-  }, [sanitizeImportedVisit]);
+    const localOverride = modalEdits[visit.id];
+    const merged = localOverride ? { ...visit, ...localOverride } : visit;
+    setSelectedResult(merged);
+    setDraftImport(sanitizeImportedVisit(merged));
+  }, [sanitizeImportedVisit, modalEdits]);
 
   const handleImportToToday = useCallback(async () => {
-    if (!draftImport) return;
+    if (!selectedResult) return;
+
+    // Merge originalResult with any local edits made in the modal
+    const localOverride = modalEdits[selectedResult.id] || {};
+    const source = { ...selectedResult, ...localOverride };
+    const sanitized = sanitizeImportedVisit(source);
 
     const payload: Partial<PatientVisit> = {};
 
-    if (importFieldSelection.patient_name) payload.patient_name = draftImport.patient_name || '';
-    if (importFieldSelection.chart_number) payload.chart_number = draftImport.chart_number || '';
-    if (importFieldSelection.gender) payload.gender = (draftImport.gender || '').toUpperCase();
-    if (importFieldSelection.body_part) payload.body_part = draftImport.body_part || '';
+    if (importFieldSelection.patient_name) payload.patient_name = sanitized.patient_name || '';
+    if (importFieldSelection.chart_number) payload.chart_number = sanitized.chart_number || '';
+    if (importFieldSelection.gender) payload.gender = (sanitized.gender || '').toUpperCase();
+    if (importFieldSelection.body_part) payload.body_part = sanitized.body_part || '';
     if (importFieldSelection.treatment_name) {
-      payload.treatment_name = normalizeImportedTreatmentName(draftImport.treatment_name);
+      payload.treatment_name = normalizeImportedTreatmentName(sanitized.treatment_name);
     }
     if (importFieldSelection.additional_options) {
-      payload.is_injection = draftImport.is_injection || false;
-      payload.is_fluid = draftImport.is_fluid || false;
-      payload.is_traction = draftImport.is_traction || false;
-      payload.is_eswt = draftImport.is_eswt || false;
-      payload.is_manual = draftImport.is_manual || false;
-      payload.is_ion = draftImport.is_ion || false;
-      payload.is_exercise = draftImport.is_exercise || false;
-      payload.is_injection_completed = draftImport.is_injection_completed || false;
+      payload.is_injection = sanitized.is_injection || false;
+      payload.is_fluid = sanitized.is_fluid || false;
+      payload.is_traction = sanitized.is_traction || false;
+      payload.is_eswt = sanitized.is_eswt || false;
+      payload.is_manual = sanitized.is_manual || false;
+      payload.is_ion = sanitized.is_ion || false;
+      payload.is_exercise = sanitized.is_exercise || false;
+      payload.is_injection_completed = sanitized.is_injection_completed || false;
     }
-    if (importFieldSelection.author) payload.author = draftImport.author || '';
-    if (importFieldSelection.memo) payload.memo = draftImport.memo || '';
-    if (importFieldSelection.special_note) payload.special_note = draftImport.special_note || '';
+    if (importFieldSelection.author) payload.author = sanitized.author || '';
+    if (importFieldSelection.memo) payload.memo = sanitized.memo || '';
+    if (importFieldSelection.special_note) payload.special_note = sanitized.special_note || '';
 
     // 모달을 열기 직전 타이핑 중이던 값(pendingSearchInput) 복원
-    // (사용자가 직접 타이핑한 값이 우선이며, 가져오기로 덮어쓰지 않는 항목일 경우에만 복원)
     if (pendingSearchInput) {
       if (pendingSearchInput.col === 1 && !importFieldSelection.chart_number) {
         payload.chart_number = pendingSearchInput.text;
@@ -764,7 +839,6 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       }
     }
 
-    // visitsRef.current를 사용해 React 상태 지연(Stale Closure) 없이 최신 데이터 참조
     const latestVisits = visitsRef.current;
     const selectedRow = selectionAnchor.row;
     const targetVisitByRow = selectedRow !== null ? latestVisits[selectedRow] : undefined;
@@ -778,7 +852,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     }
 
     resetSearchModal();
-  }, [trackedAddVisit, draftImport, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, trackedUpdateVisitWithBedSync, normalizeImportedTreatmentName, importFieldSelection]);
+  }, [trackedAddVisit, selectedResult, modalEdits, sanitizeImportedVisit, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, trackedUpdateVisitWithBedSync, normalizeImportedTreatmentName, importFieldSelection, pendingSearchInput]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -921,88 +995,88 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
               )}
             </div>
 
-            {/* Field Selection Checkboxes */}
-            <div className="px-4 py-2.5 border-b border-gray-100 dark:border-slate-800 flex flex-wrap items-center gap-x-5 gap-y-2 shrink-0 bg-white dark:bg-slate-900 overflow-x-auto custom-scrollbar">
-               <span className="text-[11px] font-extrabold tracking-tight text-brand-600 dark:text-brand-400 whitespace-nowrap">가져올 항목 선택</span>
-               
-               <div className="flex items-center gap-4 flex-nowrap">
-                 <label className="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" checked={importFieldSelection.chart_number} onChange={e => setImportFieldSelection(p => ({...p, chart_number: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">차트번호</span>
-                 </label>
-                 
-                 <label className="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" checked={importFieldSelection.patient_name} onChange={e => setImportFieldSelection(p => ({...p, patient_name: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">이름</span>
-                 </label>
-                 
-                 <label className="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" checked={importFieldSelection.gender} onChange={e => setImportFieldSelection(p => ({...p, gender: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">성별</span>
-                 </label>
-                 
-                 <label className="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" checked={importFieldSelection.body_part} onChange={e => setImportFieldSelection(p => ({...p, body_part: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">부위</span>
-                 </label>
-                 
-                 <label className="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" checked={importFieldSelection.treatment_name} onChange={e => setImportFieldSelection(p => ({...p, treatment_name: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">처방목록</span>
-                 </label>
-                 
-                 <label className="flex items-center gap-1.5 cursor-pointer group" title="주사, 수액, 견인, 체외충격, 도수, 이온, 운동치료">
-                    <input type="checkbox" checked={importFieldSelection.additional_options} onChange={e => setImportFieldSelection(p => ({...p, additional_options: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">추가사항(주사 등)</span>
-                 </label>
 
-                 <label className="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" checked={importFieldSelection.author} onChange={e => setImportFieldSelection(p => ({...p, author: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">담당</span>
-                 </label>
-
-                 <label className="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" checked={importFieldSelection.memo} onChange={e => setImportFieldSelection(p => ({...p, memo: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">메모</span>
-                 </label>
-
-                 <label className="flex items-center gap-1.5 cursor-pointer group">
-                    <input type="checkbox" checked={importFieldSelection.special_note} onChange={e => setImportFieldSelection(p => ({...p, special_note: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">특이사항</span>
-                 </label>
-               </div>
-
-               <button onClick={() => setImportFieldSelection(defaultImportFieldSelection)} className="ml-auto text-[11px] font-bold px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors whitespace-nowrap">전체선택</button>
-            </div>
-
-            {/* Results list (Table View) */}
+            {/* Results list (Table View) with Header Checkboxes */}
             <div className="flex-1 overflow-x-auto overflow-y-auto px-4 py-3 min-h-[250px] bg-slate-50 dark:bg-slate-900/50">
               {isSearching && <p className="text-xs text-gray-400 py-8 text-center animate-pulse">데이터를 찾고 있습니다...</p>}
               {!isSearching && mappedResults.length === 0 && <p className="text-xs text-gray-400 py-8 text-center">검색 결과가 없습니다.</p>}
 
               {!isSearching && mappedResults.length > 0 && (
                 <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
-                  {/* Table Header */}
-                  <div className={`${rowGridClass} bg-gray-100 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700 text-[11px] font-bold text-gray-600 dark:text-gray-300 select-none`}>
+                  {/* Table Header with Checkboxes */}
+                  <div className={`${rowGridClass} bg-gray-100 dark:bg-slate-700/50 border-b-2 border-gray-300 dark:border-slate-600 text-[10px] font-bold text-gray-600 dark:text-gray-300 select-none`}>
                     <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">날짜</div>
-                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">차트번호</div>
-                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">이름</div>
-                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">성별</div>
-                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">부위</div>
-                    <div className="px-3 py-2 text-center border-r border-gray-200 dark:border-slate-700">처방목록</div>
-                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">추가사항</div>
-                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">담당</div>
-                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">메모</div>
-                    <div className="px-2 py-2 text-center">특이사항</div>
+                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                      <input type="checkbox" checked={importFieldSelection.chart_number} onChange={e => setImportFieldSelection(p => ({...p, chart_number: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                      <span>차트</span>
+                    </div>
+                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                      <input type="checkbox" checked={importFieldSelection.patient_name} onChange={e => setImportFieldSelection(p => ({...p, patient_name: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                      <span>이름</span>
+                    </div>
+                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                      <input type="checkbox" checked={importFieldSelection.gender} onChange={e => setImportFieldSelection(p => ({...p, gender: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                      <span>성별</span>
+                    </div>
+                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                      <input type="checkbox" checked={importFieldSelection.body_part} onChange={e => setImportFieldSelection(p => ({...p, body_part: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                      <span>부위</span>
+                    </div>
+                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                      <input type="checkbox" checked={importFieldSelection.treatment_name} onChange={e => setImportFieldSelection(p => ({...p, treatment_name: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                      <span>처방목록</span>
+                    </div>
+                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700" title="주사, 수액, 견인, 체외충격, 도수, 이온, 운동치료">
+                      <input type="checkbox" checked={importFieldSelection.additional_options} onChange={e => setImportFieldSelection(p => ({...p, additional_options: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                      <span>추가사항</span>
+                    </div>
+                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                      <input type="checkbox" checked={importFieldSelection.author} onChange={e => setImportFieldSelection(p => ({...p, author: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                      <span>담당</span>
+                    </div>
+                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                      <input type="checkbox" checked={importFieldSelection.memo} onChange={e => setImportFieldSelection(p => ({...p, memo: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                      <span>메모</span>
+                    </div>
+                    <div className="px-1 py-1.5 flex items-center justify-center gap-1">
+                      <input type="checkbox" checked={importFieldSelection.special_note} onChange={e => setImportFieldSelection(p => ({...p, special_note: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                      <span>특이</span>
+                    </div>
                   </div>
                   
-                  {/* Table Body */}
+                  {/* Table Body - Interactive Cells */}
                   <div className="flex flex-col">
-                    {mappedResults.map((v) => {
+                    {mappedResults.map((v, ridx) => {
                       const isSelected = selectedResult?.id === v.id;
-                      const matchedPreset = v.treatment_name ? findExactPresetByTreatmentString(presets, v.treatment_name.trim()) : null;
-                      const treatmentParts = (v.treatment_name || '').split('/').map(s => s.trim()).filter(Boolean);
-                      const activeStatuses = STATUS_KEYS.filter(k => v[k as keyof PatientVisit]);
+                      const treatmentValue = v.treatment_name || '';
+                      const matchedPreset = treatmentValue ? findExactPresetByTreatmentString(presets, treatmentValue.trim(), quickTreatments) : null;
+                      const displayedSteps = parseTreatmentString(treatmentValue, quickTreatments);
+
+                      const handleModalTreatmentCommit = (val: string) => {
+                        handleModalLocalUpdate(v.id, { treatment_name: val });
+                      };
+                      const handleModalDeleteStep = (idx: number) => {
+                        const next = removeStepAt(displayedSteps, idx);
+                        handleModalTreatmentCommit(generateTreatmentString(next));
+                      };
+                      const handleModalMoveStep = (idx: number, direction: 'left' | 'right') => {
+                        const next = moveStepLocal(displayedSteps, idx, direction);
+                        handleModalTreatmentCommit(generateTreatmentString(next));
+                      };
+                      const handleModalSwapSteps = (fromIdx: number, toIdx: number) => {
+                        if (fromIdx === toIdx) return;
+                        const next = [...displayedSteps];
+                        [next[fromIdx], next[toIdx]] = [next[toIdx], next[fromIdx]];
+                        handleModalTreatmentCommit(generateTreatmentString(next));
+                      };
+                      const handleModalReplaceStep = (idx: number, qt: QuickTreatment) => {
+                        const next = replaceStepAt(displayedSteps, idx, qt);
+                        handleModalTreatmentCommit(generateTreatmentString(next));
+                      };
+                      const handleModalAddStep = (qt: QuickTreatment) => {
+                        const next = appendStepAtEnd(displayedSteps, qt);
+                        handleModalTreatmentCommit(generateTreatmentString(next));
+                      };
 
                       return (
                         <div
@@ -1010,61 +1084,144 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           onClick={() => selectResult(v)}
                           className={`${rowGridClass} border-b border-gray-100 dark:border-slate-700/50 last:border-0 cursor-pointer transition-colors hover:bg-brand-50/50 dark:hover:bg-brand-900/10 ${isSelected ? 'bg-brand-50 dark:bg-brand-900/40 ring-1 ring-inset ring-brand-400 dark:ring-brand-600' : ''}`}
                         >
-                          <div className="px-2 py-2.5 flex items-center justify-center text-[11px] font-medium text-gray-500 dark:text-gray-400 border-r border-gray-100 dark:border-slate-700/50">
+                          {/* 날짜 (Read Only) */}
+                          <div className="px-2 py-2 flex items-center justify-center text-[11px] font-medium text-gray-500 dark:text-gray-400 border-r border-gray-100 dark:border-slate-700/50">
                             {v.visit_date.slice(2)}
                           </div>
                           
-                          <div className="px-2 py-2.5 flex items-center justify-center border-r border-gray-100 dark:border-slate-700/50">
-                            <span className="text-[11px] font-mono font-bold text-gray-700 dark:text-gray-300">{v.chart_number || '-'}</span>
+                          {/* 차트번호 (Editable) */}
+                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
+                            <EditableCell
+                              gridId={`modal-${ridx}-1`}
+                              rowIndex={1000 + ridx}
+                              colIndex={1}
+                              value={v.chart_number || ''}
+                              placeholder="-"
+                              className="bg-transparent justify-center text-center font-bold text-[11px] text-gray-700 dark:text-gray-300"
+                              onCommit={(val) => handleModalLocalUpdate(v.id, { chart_number: val || '' })}
+                              directEdit={true}
+                              syncOnDirectEdit={false}
+                            />
                           </div>
                           
-                          <div className="px-2 py-2.5 flex items-center justify-center border-r border-gray-100 dark:border-slate-700/50">
-                            <span className="text-[12px] font-extrabold text-gray-900 dark:text-gray-100">{v.patient_name || '-'}</span>
+                          {/* 이름 (Editable) */}
+                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
+                            <EditableCell
+                              gridId={`modal-${ridx}-2`}
+                              rowIndex={1000 + ridx}
+                              colIndex={2}
+                              value={v.patient_name || ''}
+                              placeholder="-"
+                              className="bg-transparent justify-center text-center font-extrabold text-[12px] text-gray-900 dark:text-gray-100"
+                              onCommit={(val) => handleModalLocalUpdate(v.id, { patient_name: val || '' })}
+                              directEdit={true}
+                              syncOnDirectEdit={false}
+                            />
                           </div>
                           
-                          <div className="px-2 py-2.5 flex items-center justify-center border-r border-gray-100 dark:border-slate-700/50">
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${v.gender?.toUpperCase() === 'M' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : v.gender?.toUpperCase() === 'F' ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300' : 'bg-gray-100 text-gray-500'}`}>
-                              {(v.gender || '-').toUpperCase()}
-                            </span>
+                          {/* 성별 (Popup Selector) */}
+                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
+                            <GenderSelectorCell
+                              gridId={`modal-${ridx}-3`}
+                              rowIndex={1000 + ridx}
+                              colIndex={3}
+                              value={(v.gender || '').toUpperCase()}
+                              onSelect={(val) => handleModalLocalUpdate(v.id, { gender: val })}
+                            />
                           </div>
 
-                          <div className="px-2 py-2.5 flex items-center justify-center border-r border-gray-100 dark:border-slate-700/50">
-                            <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">{v.body_part || '-'}</span>
+                          {/* 부위 (Editable) */}
+                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
+                            <EditableCell
+                              gridId={`modal-${ridx}-4`}
+                              rowIndex={1000 + ridx}
+                              colIndex={4}
+                              value={v.body_part || ''}
+                              placeholder="-"
+                              className="bg-transparent justify-center text-center font-medium text-[11px] text-amber-700 dark:text-amber-400"
+                              onCommit={(val) => handleModalLocalUpdate(v.id, { body_part: val || '' })}
+                              directEdit={true}
+                              syncOnDirectEdit={false}
+                            />
                           </div>
 
-                          <div className="px-3 py-2 flex flex-wrap items-center content-center gap-1 border-r border-gray-100 dark:border-slate-700/50 overflow-hidden">
-                            {matchedPreset && (
-                              <button className="text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm transition-transform hover:scale-105 active:scale-95 whitespace-nowrap"
-                                style={{
-                                  backgroundColor: matchedPreset.color || '#e0e7ff',
-                                  color: matchedPreset.textColor || '#3730a3',
-                                  border: `1px solid ${matchedPreset.textColor ? `${matchedPreset.textColor}40` : '#c7d2fe'}`,
-                                }}
-                              >{matchedPreset.name} 세트</button>
-                            )}
-                            {treatmentParts.map((part, idx) => (
-                              <span key={idx} className="text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-1 border border-indigo-100 dark:border-indigo-800/40 rounded whitespace-nowrap">{part}</span>
-                            ))}
-                            {treatmentParts.length === 0 && !matchedPreset && <span className="text-[10px] text-gray-400">처방 없음</span>}
+                          {/* 처방목록 (TreatmentSelectorCell) */}
+                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
+                            <TreatmentSelectorCell
+                              gridId={`modal-${ridx}-5`}
+                              rowIndex={1000 + ridx}
+                              colIndex={5}
+                              value={treatmentValue}
+                              placeholder=""
+                              rowStatus="none"
+                              onCommitText={handleModalTreatmentCommit}
+                              onOpenSelector={() => {/* noop in modal */}}
+                              presetLabel={matchedPreset?.name}
+                              presetColor={matchedPreset?.color || matchedPreset?.steps?.[0]?.color || 'bg-brand-500'}
+                              presetTextColor={matchedPreset?.textColor}
+                              presets={presets}
+                              enableStepInteraction={displayedSteps.length > 0}
+                              quickTreatments={quickTreatments}
+                              onDeleteStep={handleModalDeleteStep}
+                              onMoveStep={handleModalMoveStep}
+                              onSwapSteps={handleModalSwapSteps}
+                              onReplaceStep={handleModalReplaceStep}
+                              onAddStep={handleModalAddStep}
+                              onOpenFullEditor={() => {/* noop in modal */}}
+                            />
                           </div>
 
-                          <div className="px-2 py-2 flex flex-wrap items-center content-center gap-1 border-r border-gray-100 dark:border-slate-700/50">
-                            {activeStatuses.slice(0, 3).map(k => (
-                              <span key={k} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${STATUS_LABELS[k].color}`}>{STATUS_LABELS[k].label}</span>
-                            ))}
-                            {activeStatuses.length > 3 && <span className="text-[9px] text-gray-500">+{activeStatuses.length - 3}</span>}
+                          {/* 추가사항 (PatientStatusCell) */}
+                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
+                            <PatientStatusCell
+                              gridId={`modal-${ridx}-6`}
+                              rowIndex={1000 + ridx}
+                              colIndex={6}
+                              visit={v}
+                              rowStatus="none"
+                              onUpdate={(id, updates) => handleModalLocalUpdate(id, updates)}
+                            />
                           </div>
 
-                          <div className="px-2 py-2.5 flex items-center justify-center border-r border-gray-100 dark:border-slate-700/50">
-                            <span className="text-[10px] font-bold text-gray-600 dark:text-gray-400 truncate w-full text-center">{v.author || '-'}</span>
+                          {/* 담당 (AuthorSelectorCell) */}
+                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
+                            <AuthorSelectorCell
+                              gridId={`modal-${ridx}-7`}
+                              rowIndex={1000 + ridx}
+                              colIndex={7}
+                              value={v.author || ''}
+                              onSelect={(val) => handleModalLocalUpdate(v.id, { author: val })}
+                            />
                           </div>
 
-                          <div className="px-2 py-2.5 flex items-center border-r border-gray-100 dark:border-slate-700/50">
-                             <div className="text-[10px] text-gray-600 dark:text-gray-400 truncate w-full" title={v.memo || ''}>{v.memo || '-'}</div>
+                          {/* 메모 (Editable) */}
+                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
+                            <EditableCell
+                              gridId={`modal-${ridx}-8`}
+                              rowIndex={1000 + ridx}
+                              colIndex={8}
+                              value={v.memo || ''}
+                              placeholder="-"
+                              className="bg-transparent justify-center text-center font-medium text-[10px] text-gray-600 dark:text-gray-400"
+                              onCommit={(val) => handleModalLocalUpdate(v.id, { memo: val || '' })}
+                              directEdit={true}
+                              syncOnDirectEdit={false}
+                            />
                           </div>
 
-                          <div className="px-2 py-2.5 flex items-center">
-                             <div className="text-[10px] text-orange-600 dark:text-orange-400 truncate w-full" title={v.special_note || ''}>{v.special_note || '-'}</div>
+                          {/* 특이사항 (Editable) */}
+                          <div className="p-0" onClick={e => e.stopPropagation()}>
+                            <EditableCell
+                              gridId={`modal-${ridx}-9`}
+                              rowIndex={1000 + ridx}
+                              colIndex={9}
+                              value={v.special_note || ''}
+                              placeholder="-"
+                              className="bg-transparent justify-center text-center font-medium text-[10px] text-orange-600 dark:text-orange-400"
+                              onCommit={(val) => handleModalLocalUpdate(v.id, { special_note: val || '' })}
+                              directEdit={true}
+                              syncOnDirectEdit={false}
+                            />
                           </div>
                         </div>
                       );
