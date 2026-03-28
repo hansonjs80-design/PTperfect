@@ -274,11 +274,12 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setSelectedResult(null);
     setDraftImport(null);
     setImportFieldSelection(defaultImportFieldSelection);
+    document.body.removeAttribute('data-prevent-autofocus');
   }, [defaultImportFieldSelection]);
 
   const resetMemoHistoryModal = useCallback(() => {
     setIsMemoHistoryModalOpen(false);
-    setSearchName('');
+    document.body.removeAttribute('data-prevent-autofocus');
     setSearchResults([]);
     setSelectedResult(null);
     setDraftImport(null);
@@ -475,64 +476,62 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
          gridInput = gridInput.querySelector('input') || gridInput;
       }
 
-      let activeInputValue = '';
-      if (gridInput && (gridInput.tagName === 'INPUT' || gridInput.tagName === 'TEXTAREA')) {
-        activeInputValue = ((gridInput as HTMLInputElement | HTMLTextAreaElement).value || '').trim();
-      }
-
       const gridId = gridInput?.getAttribute('data-grid-id') || gridInput?.closest('[data-grid-id]')?.getAttribute('data-grid-id');
       const isTableEditing = !!gridId;
 
-      if (gridInput && (gridInput.tagName === 'INPUT' || gridInput.tagName === 'TEXTAREA' || gridInput.isContentEditable)) {
-        (gridInput as HTMLElement).blur();
-      }
+      // 브라우저의 IME 조합 중 blur() 호출 시 마지막 문자가 중복되는 현상 방지.
+      // 포커스를 일시적으로 유지하고 비동기로 blur와 모달을 열어 이벤트를 끊어줌.
+      document.body.setAttribute('data-prevent-autofocus', 'true');
 
-      // blur()가 Draft Row에서 handleDraftCreate를 트리거하면 auto-focus가 설정됨.
-      // 검색 모달을 열 것이므로 auto-focus를 즉시 취소하여 아래 행으로의 포커스 이동을 방지.
-      cancelAutoFocusRef.current?.();
-
-      // 동적 DOM에서 현재 셀의 값을 읽어와 STALE Closure 방지
-      let keyword = selectedKeywordForSearchRef.current;
-      if (isTableEditing && gridId) {
-         const [r, c] = gridId.split('-').map(Number);
-         // blur() 직후에는 React 상태가 아직 업데이트되지 않았으므로
-         // visitsRef.current[r]에 방금 생성된 행이 없을 수 있음.
-         // handleCreateWithBedSync가 비동기로 완료되면 selectedVisitIdForImport를 설정함.
-         const visit = visitsRef.current[r];
-         
-         // 확실한 가져오기 대상 행 고정을 위해 단축키 발동 시 DOM 기반 위치로 상태 강제 동기화
-         setSelectionAnchor({ row: r, col: c });
-         if (visit) {
-             setSelectedVisitIdForImport(visit.id);
-         }
-         // Draft Row인 경우 selectedVisitIdForImport를 null로 설정하지 않음.
-         // handleCreateWithBedSync가 행 생성 완료 후 자동으로 설정하기 때문.
-         // null로 먼저 설정하면 타이밍 경합으로 인해 import가 잘못된 행을 타겟팅할 수 있음.
-
-         if (activeInputValue) {
-             keyword = activeInputValue;
-         } else {
-             if (visit) {
-                 if (c === 1) keyword = (visit.chart_number || '').trim();
-                 else if (c === 2) keyword = (visit.patient_name || '').trim();
-                 else keyword = (visit.patient_name || visit.chart_number || '').trim();
-             } else {
-                 keyword = '';
-             }
-         }
-      }
-
-      requestAnimationFrame(() => {
-        if (isMemoShortcut) {
-          setIsMemoHistoryModalOpen(true);
-        } else {
-          setIsSearchModalOpen(true);
+      setTimeout(() => {
+        let activeInputValue = '';
+        if (gridInput && (gridInput.tagName === 'INPUT' || gridInput.tagName === 'TEXTAREA')) {
+          activeInputValue = ((gridInput as HTMLInputElement | HTMLTextAreaElement).value || '').trim();
         }
 
-        if (keyword) {
-          void handleSearchByName(keyword);
+        if (gridInput && (gridInput.tagName === 'INPUT' || gridInput.tagName === 'TEXTAREA' || gridInput.isContentEditable)) {
+          (gridInput as HTMLElement).blur();
         }
-      });
+
+        cancelAutoFocusRef.current?.();
+
+        // 동적 DOM에서 현재 셀의 값을 읽어와 STALE Closure 방지
+        let keyword = selectedKeywordForSearchRef.current;
+        if (isTableEditing && gridId) {
+           const [r, c] = gridId.split('-').map(Number);
+           const visit = visitsRef.current[r];
+           
+           // 확실한 가져오기 대상 행 고정을 위해 단축키 발동 시 DOM 기반 위치로 상태 강제 동기화
+           setSelectionAnchor({ row: r, col: c });
+           if (visit) {
+               setSelectedVisitIdForImport(visit.id);
+           }
+
+           if (activeInputValue) {
+               keyword = activeInputValue;
+           } else {
+               if (visit) {
+                   if (c === 1) keyword = (visit.chart_number || '').trim();
+                   else if (c === 2) keyword = (visit.patient_name || '').trim();
+                   else keyword = (visit.patient_name || visit.chart_number || '').trim();
+               } else {
+                   keyword = '';
+               }
+           }
+        }
+
+        requestAnimationFrame(() => {
+          if (isMemoShortcut) {
+            setIsMemoHistoryModalOpen(true);
+          } else {
+            setIsSearchModalOpen(true);
+          }
+
+          if (keyword) {
+            void handleSearchByName(keyword);
+          }
+        });
+      }, 50);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);

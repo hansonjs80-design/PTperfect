@@ -118,8 +118,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
           return;
         }
 
-        // If a modal overlay is open (search / memo history), never steal focus.
-        if (document.querySelector('[data-modal-overlay="true"]')) {
+        // If a modal overlay is open (search / memo history) or a modal transition is in progress, never steal focus.
+        if (document.querySelector('[data-modal-overlay="true"]') || document.body.getAttribute('data-prevent-autofocus') === 'true') {
           focusTargetRef.current = null;
           return;
         }
