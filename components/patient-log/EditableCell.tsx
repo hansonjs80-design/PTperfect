@@ -113,11 +113,19 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   };
 
   const handleBlur = () => {
+    // 단축키로 모달이 열리는 도중 발생한 blur라면 (data-prevent-autofocus가 true)
+    // 텍스트는 임시 유지(Hold)하고, 새 행이 DB에 곧바로 생성(Commit)되지 않도록 무시합니다.
+    if (document.body.getAttribute('data-prevent-autofocus') === 'true') {
+      return;
+    }
+
     if (mode === 'edit') {
       setMode('view');
     }
 
-    commitValue(localValue, navIntentRef.current || undefined);
+    // 모달 여는 상황이 아니면 정상적으로 데이터 동기화(Commit)
+    const finalValue = inputRef.current ? inputRef.current.value : localValue;
+    commitValue(finalValue, navIntentRef.current || undefined);
     navIntentRef.current = null;
   };
 
