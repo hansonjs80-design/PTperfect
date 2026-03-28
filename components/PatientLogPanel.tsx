@@ -1,11 +1,10 @@
-
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { usePatientLogContext } from '../contexts/PatientLogContext';
 import { PatientLogPrintView } from './patient-log/PatientLogPrintView';
 import { PatientLogHeader } from './patient-log/PatientLogHeader';
 import { PatientLogTable } from './patient-log/PatientLogTable';
-import { Loader2, Search, X } from 'lucide-react';
+import { Loader2, Search, X, Edit3 } from 'lucide-react';
 import { useLogStatusLogic } from '../hooks/useLogStatusLogic';
 import { BedStatus, PatientVisit } from '../types';
 import { isOnlineMode, supabase } from '../lib/supabase';
@@ -874,19 +873,20 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           is_exercise: { label: '운동', color: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-300' },
         };
         const STATUS_KEYS = Object.keys(STATUS_LABELS) as Array<keyof typeof STATUS_LABELS>;
+        const rowGridClass = "grid grid-cols-[80px_70px_70px_40px_50px_minmax(160px,1fr)_120px_60px_110px_110px] min-w-[870px]";
 
         return (
         <div data-modal-overlay="true" className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-3" onClick={resetSearchModal}>
-          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-6xl bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-2xl max-h-[95vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-slate-700 shrink-0">
-              <h3 className="text-sm font-black text-gray-800 dark:text-gray-100">환자 검색</h3>
-              <button onClick={resetSearchModal} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800"><X className="w-4 h-4" /></button>
+            <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-slate-700 shrink-0">
+              <h3 className="text-sm font-black text-gray-800 dark:text-gray-100 flex items-center gap-2"><Search className="w-4 h-4 text-brand-500" /> 환자 검색 (표 뷰)</h3>
+              <button onClick={resetSearchModal} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"><X className="w-4 h-4" /></button>
             </div>
 
             {/* Search bar */}
-            <div className="px-4 pt-3 pb-2 shrink-0">
-              <div className="flex gap-2">
+            <div className="px-4 pt-3 pb-3 shrink-0 border-b border-gray-100 dark:border-slate-800">
+              <div className="flex gap-2 max-w-2xl">
                 <input
                   autoFocus
                   value={searchName}
@@ -895,129 +895,213 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                   placeholder="이름 또는 차트번호 입력..."
                   className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-brand-400 focus:border-brand-400"
                 />
-                <button onClick={() => { void handleSearchByName(); }} className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold flex items-center gap-1.5 transition-colors shadow-sm">
-                  <Search className="w-4 h-4" /> 검색
+                <button onClick={() => { void handleSearchByName(); }} className="px-5 py-2 rounded-lg bg-gray-800 dark:bg-gray-700 hover:bg-black dark:hover:bg-gray-600 text-white text-sm font-bold flex items-center gap-1.5 transition-colors shadow-sm">
+                  검색
                 </button>
               </div>
               {selectedKeywordForSearch && (
-                <p className="text-[11px] text-brand-600 dark:text-brand-400 mt-1.5 font-bold">선택 행 기준 검색: {selectedKeywordForSearch}</p>
+                <p className="text-[11px] text-brand-600 dark:text-brand-400 mt-1.5 font-bold ml-1">선택 행 기준 검색: {selectedKeywordForSearch}</p>
               )}
             </div>
 
-            {/* Results list */}
-            <div className="flex-1 overflow-y-auto px-4 pb-2 min-h-0">
-              {isSearching && <p className="text-xs text-gray-400 py-4 text-center">검색 중...</p>}
-              {!isSearching && mappedResults.length === 0 && <p className="text-xs text-gray-400 py-4 text-center">검색 결과가 없습니다.</p>}
+            {/* Editing Bar (Top Action Area) */}
+            {selectedResult && draftImport && (
+              <div className="border-b-2 border-brand-500 dark:border-brand-600 bg-brand-50/80 dark:bg-brand-950/40 p-3 shrink-0 flex flex-col gap-2 shadow-sm relative z-10">
+                 <div className="flex items-center justify-between gap-4 overflow-x-auto custom-scrollbar pb-1">
+                   <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                     <div className="w-1.5 h-4 bg-brand-500 rounded-full mr-1"></div>
+                     <span className="text-[12px] font-black text-brand-700 dark:text-brand-300">데이터 수정/선택</span>
+                   </div>
+                   
+                   <div className="flex items-center gap-4 flex-nowrap pr-2">
+                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
+                        <input type="checkbox" checked={importFieldSelection.patient_name} onChange={e => setImportFieldSelection(p => ({...p, patient_name: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">이름</span>
+                        <input value={draftImport.patient_name || ''} onChange={(e) => setDraftImport(p => ({...p!, patient_name: e.target.value}))} disabled={!importFieldSelection.patient_name} className="w-16 px-1.5 py-0.5 text-[11px] border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                      </label>
+                      
+                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
+                        <input type="checkbox" checked={importFieldSelection.chart_number} onChange={e => setImportFieldSelection(p => ({...p, chart_number: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">차트</span>
+                        <input value={draftImport.chart_number || ''} onChange={(e) => setDraftImport(p => ({...p!, chart_number: e.target.value}))} disabled={!importFieldSelection.chart_number} className="w-16 px-1.5 py-0.5 text-[11px] border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                      </label>
 
-              <div className="space-y-2">
-                {mappedResults.map((v) => {
-                  const isSelected = selectedResult?.id === v.id;
-                  const matchedPreset = v.treatment_name ? findExactPresetByTreatmentString(presets, v.treatment_name.trim()) : null;
-                  const treatmentParts = (v.treatment_name || '').split('/').map(s => s.trim()).filter(Boolean);
-                  const activeStatuses = STATUS_KEYS.filter(k => v[k as keyof PatientVisit]);
+                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
+                        <input type="checkbox" checked={importFieldSelection.gender} onChange={e => setImportFieldSelection(p => ({...p, gender: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">성별</span>
+                        <input value={draftImport.gender || ''} onChange={(e) => setDraftImport(p => ({...p!, gender: e.target.value}))} disabled={!importFieldSelection.gender} className="w-8 px-1.5 py-0.5 text-[11px] text-center border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                      </label>
 
-                  return (
-                    <button
-                      key={v.id}
-                      onClick={() => selectResult(v)}
-                      className={`w-full text-left rounded-xl border transition-all duration-150 ${isSelected ? 'border-brand-400 bg-brand-50/60 dark:bg-brand-950/30 ring-2 ring-brand-400/50 shadow-md' : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600 hover:shadow-sm'}`}
-                    >
-                      {/* Card row: table column order */}
-                      <div className="px-3 py-2.5 flex flex-col gap-1.5">
-                        {/* Row 1: chart#, name, gender, date */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {v.chart_number && (
-                            <span className="text-[11px] font-mono font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">#{v.chart_number}</span>
-                          )}
-                          <span className="text-[13px] font-extrabold text-gray-900 dark:text-gray-100">{v.patient_name || '(이름없음)'}</span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${v.gender?.toUpperCase() === 'M' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : v.gender?.toUpperCase() === 'F' ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300' : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-400'}`}>{(v.gender || '-').toUpperCase()}</span>
-                          <span className="text-[10px] font-medium text-amber-700 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-300 px-1.5 py-0.5 rounded">{v.body_part || '-'}</span>
-                          <span className="ml-auto text-[10px] text-gray-400 font-medium">{v.visit_date}</span>
+                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
+                        <input type="checkbox" checked={importFieldSelection.body_part} onChange={e => setImportFieldSelection(p => ({...p, body_part: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">부위</span>
+                        <input value={draftImport.body_part || ''} onChange={(e) => setDraftImport(p => ({...p!, body_part: e.target.value}))} disabled={!importFieldSelection.body_part} className="w-12 px-1.5 py-0.5 text-[11px] text-center border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                      </label>
+
+                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
+                        <input type="checkbox" checked={importFieldSelection.treatment_name} onChange={e => setImportFieldSelection(p => ({...p, treatment_name: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">처방</span>
+                        <input value={draftImport.treatment_name || ''} onChange={(e) => setDraftImport(p => ({...p!, treatment_name: e.target.value}))} disabled={!importFieldSelection.treatment_name} className="w-36 px-1.5 py-0.5 text-[11px] border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                      </label>
+
+                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
+                        <input type="checkbox" checked={importFieldSelection.additional_options} onChange={e => setImportFieldSelection(p => ({...p, additional_options: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">추가사항</span>
+                        <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded transition-colors ${importFieldSelection.additional_options ? 'bg-brand-600 text-white' : 'bg-gray-200 text-gray-500 dark:bg-slate-700 dark:text-gray-400'}`}>{importFieldSelection.additional_options ? '포함됨: 주사 등 일괄적용' : '제외됨'}</span>
+                      </label>
+
+                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
+                        <input type="checkbox" checked={importFieldSelection.memo} onChange={e => setImportFieldSelection(p => ({...p, memo: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">메모</span>
+                        <input value={draftImport.memo || ''} onChange={(e) => setDraftImport(p => ({...p!, memo: e.target.value}))} disabled={!importFieldSelection.memo} className="w-28 px-1.5 py-0.5 text-[11px] border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                      </label>
+                      
+                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
+                        <input type="checkbox" checked={importFieldSelection.special_note} onChange={e => setImportFieldSelection(p => ({...p, special_note: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">특이사항</span>
+                        <input value={draftImport.special_note || ''} onChange={(e) => setDraftImport(p => ({...p!, special_note: e.target.value}))} disabled={!importFieldSelection.special_note} className="w-28 px-1.5 py-0.5 text-[11px] border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                      </label>
+                   </div>
+                 </div>
+
+                 <div className="flex items-center justify-between border-t border-brand-200 dark:border-brand-800 pt-2.5 mt-1">
+                   <div className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">체크된 항목들의 내용만 현재 선택된 표의 셀에 덮어씌워집니다.</div>
+                   <div className="flex items-center gap-2">
+                     <button onClick={resetSearchModal} className="px-4 py-2 text-[12px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors">취소</button>
+                     <button onClick={(e) => { e.stopPropagation(); void handleImportToToday(); }} className="px-6 py-2 text-[12px] font-black rounded-lg bg-brand-600 hover:bg-brand-700 text-white shadow-md transition-colors animate-fade-in-up">✓ 체크 항목 가져오기</button>
+                   </div>
+                 </div>
+              </div>
+            )}
+
+            {/* Results list as Grid of Cards */}
+            <div className="flex-1 overflow-x-auto overflow-y-auto px-4 py-4 min-h-[250px] bg-slate-50 dark:bg-slate-900/50 relative">
+              {isSearching && <p className="text-xs text-gray-400 py-8 text-center animate-pulse">데이터를 찾고 있습니다...</p>}
+              {!isSearching && mappedResults.length === 0 && <p className="text-xs text-gray-400 py-8 text-center">검색 결과가 없습니다.</p>}
+
+              {!isSearching && mappedResults.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {mappedResults.map((v) => {
+                    const isSelected = selectedResult?.id === v.id;
+                    const matchedPreset = v.treatment_name ? findExactPresetByTreatmentString(presets, v.treatment_name.trim()) : null;
+                    const treatmentParts = (v.treatment_name || '').split('/').map(s => s.trim()).filter(Boolean);
+                    const activeStatuses = STATUS_KEYS.filter(k => v[k as keyof PatientVisit]);
+
+                    return (
+                      <div
+                        key={v.id}
+                        onClick={() => selectResult(v)}
+                        className={`flex flex-col relative rounded-xl border transition-all cursor-pointer overflow-hidden ${isSelected ? 'bg-white dark:bg-slate-800 border-brand-500 shadow-[0_0_0_2px_rgba(59,130,246,0.3)] dark:border-brand-500' : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 shadow-sm hover:shadow hover:border-brand-300 dark:hover:border-brand-700'}`}
+                      >
+                        {/* Card Header */}
+                        <div className={`px-3 py-2 flex items-center justify-between border-b ${isSelected ? 'bg-brand-50 dark:bg-brand-900/30 border-brand-100 dark:border-brand-800/50' : 'bg-gray-50 dark:bg-slate-800/50 border-gray-100 dark:border-slate-700'}`}>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className="text-[11px] font-black text-gray-500 dark:text-gray-400">{v.visit_date.slice(2)}</span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${v.gender?.toUpperCase() === 'M' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : v.gender?.toUpperCase() === 'F' ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300' : 'bg-gray-100 text-gray-500'}`}>
+                              {(v.gender || '-').toUpperCase()}
+                            </span>
+                          </div>
+                          <span className="text-[11px] font-mono font-bold text-gray-500 dark:text-gray-400">차트: {v.chart_number || '-'}</span>
                         </div>
 
-                        {/* Row 2: treatment pills + preset badge */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {matchedPreset && (
-                            <span
-                              className="text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm border"
-                              style={{
-                                backgroundColor: matchedPreset.color || '#e0e7ff',
-                                color: matchedPreset.textColor || '#3730a3',
-                                borderColor: matchedPreset.textColor ? `${matchedPreset.textColor}33` : '#c7d2fe',
-                              }}
-                            >{matchedPreset.name}</span>
-                          )}
-                          {treatmentParts.map((part, idx) => (
-                            <span key={idx} className="text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-100 dark:border-indigo-800/40">{part}</span>
-                          ))}
-                          {treatmentParts.length === 0 && <span className="text-[10px] text-gray-400 italic">처방 없음</span>}
-                        </div>
+                        {/* Card Body */}
+                        <div className="p-3 flex flex-col gap-2.5">
+                          {/* Name and Body Part */}
+                          <div className="flex items-end justify-between">
+                            <span className="text-sm font-extrabold text-gray-900 dark:text-gray-100 leading-none">{v.patient_name || '-'}</span>
+                            <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400">{v.body_part || '-'}</span>
+                          </div>
 
-                        {/* Row 3: status buttons + author + memo preview */}
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {activeStatuses.map(k => (
-                            <span key={k} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${STATUS_LABELS[k].color}`}>{STATUS_LABELS[k].label}</span>
-                          ))}
-                          {v.author && (
-                            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded ml-1">{v.author}</span>
+                          {/* Treatments (Prominent Set Buttons) */}
+                          <div className="flex flex-col gap-1.5 bg-gray-50 dark:bg-slate-900/40 rounded-lg p-2 border border-gray-100 dark:border-slate-800">
+                            <div className="text-[10px] font-bold text-gray-400 mb-0.5 border-b border-gray-200 dark:border-slate-700/50 pb-0.5">처방 목록</div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {matchedPreset && (
+                                <button className="text-[11px] font-black px-2.5 py-1 rounded shadow-sm transition-transform hover:scale-105 active:scale-95"
+                                  style={{
+                                    backgroundColor: matchedPreset.color || '#e0e7ff',
+                                    color: matchedPreset.textColor || '#3730a3',
+                                    border: `1px solid ${matchedPreset.textColor ? `${matchedPreset.textColor}40` : '#c7d2fe'}`,
+                                  }}>
+                                  {matchedPreset.name} 세트
+                                </button>
+                              )}
+                              {treatmentParts.map((part, idx) => (
+                                <span key={idx} className="text-[11px] font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 border border-indigo-100 dark:border-indigo-800/40 rounded">{part}</span>
+                              ))}
+                              {treatmentParts.length === 0 && !matchedPreset && <span className="text-[11px] text-gray-400">처방 없음</span>}
+                            </div>
+                          </div>
+
+                          {/* Options/Statuses */}
+                          {activeStatuses.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {activeStatuses.map(k => (
+                                <span key={k} className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${STATUS_LABELS[k].color}`}>{STATUS_LABELS[k].label}</span>
+                              ))}
+                            </div>
                           )}
-                          {v.memo && (
-                            <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate max-w-[180px] ml-1" title={v.memo}>📝 {v.memo}</span>
+
+                          {/* Memo */}
+                          {(v.memo || v.author) && (
+                             <div className="text-[11px] text-gray-600 dark:text-gray-300 pt-1 border-t border-gray-100 dark:border-slate-700/50">
+                               <span className="font-bold text-gray-400 mr-1.5">담당/메모:</span>
+                               {v.author && <span className="font-bold mr-1 text-gray-500">[{v.author}]</span>}
+                               {v.memo || '-'}
+                             </div>
                           )}
+
+                          {/* Special Note */}
                           {v.special_note && (
-                            <span className="text-[10px] text-orange-500 dark:text-orange-400 truncate max-w-[120px] ml-1" title={v.special_note}>⚠️ {v.special_note}</span>
+                             <div className="text-[11px] text-orange-600 dark:text-orange-400">
+                               <span className="font-bold text-orange-400/80 mr-1.5">특이사항:</span>
+                               {v.special_note}
+                             </div>
                           )}
                         </div>
                       </div>
-
-                      {/* Quick import bar */}
-                      {isSelected && (
-                        <div className="px-3 py-2 border-t border-brand-200 dark:border-brand-800/40 bg-brand-50/40 dark:bg-brand-950/20 rounded-b-xl flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-bold text-brand-600 dark:text-brand-400">이 기록을 선택 행에 가져옵니다</span>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); void handleImportToToday(); }}
-                            className="px-3 py-1.5 text-[11px] font-black rounded-lg bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition-colors"
-                          >✓ 가져오기</button>
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* Memo / Special Note History */}
+            {/* Memo / Special Note History (Compact) */}
             {(memoHistory.length > 0 || specialNoteHistory.length > 0) && (
-              <div className="px-4 py-2.5 border-t border-gray-200 dark:border-slate-700 shrink-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="px-4 py-3 border-t border-gray-200 dark:border-slate-700 shrink-0 bg-white dark:bg-slate-900">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {memoHistory.length > 0 && (
-                    <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-2 bg-gray-50 dark:bg-slate-800/40">
-                      <p className="text-[11px] font-bold text-gray-500 mb-1">📝 메모 내역</p>
-                      <div className="max-h-[100px] overflow-y-auto space-y-1">
+                    <div>
+                      <h4 className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1.5 flex items-center gap-1"><Edit3 className="w-3 h-3" /> 메모 내역</h4>
+                      <div className="flex flex-wrap gap-1.5">
                         {memoHistory.map((item) => (
-                          <div key={`${item.id}-${item.visitDate}`} className="rounded border border-gray-200 dark:border-slate-700 p-1.5 bg-white dark:bg-slate-900 flex gap-2 items-start">
-                            <input type="checkbox" checked={selectedMemoTexts.has(item.memo)} onChange={() => toggleMemoText(item.memo)} className="mt-0.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500 w-3.5 h-3.5" />
-                            <div className="flex-1 cursor-pointer min-w-0" onClick={() => toggleMemoText(item.memo)}>
-                              <p className="text-[10px] text-gray-400">{item.visitDate}</p>
-                              <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap break-words">{item.memo}</p>
-                            </div>
-                          </div>
+                           <button 
+                             key={`${item.id}-${item.visitDate}`} 
+                             onClick={() => toggleMemoText(item.memo)}
+                             className={`text-left text-[11px] px-2.5 py-1 rounded border transition-colors max-w-[200px] truncate ${selectedMemoTexts.has(item.memo) ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-brand-900/30 dark:border-brand-700 dark:text-brand-300 font-bold shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-300 dark:hover:bg-slate-700'}`}
+                             title={item.memo}
+                           >
+                             <span className="text-[9px] text-gray-400 mr-1.5">{item.visitDate.slice(5)}</span>
+                             {item.memo}
+                           </button>
                         ))}
                       </div>
                     </div>
                   )}
                   {specialNoteHistory.length > 0 && (
-                    <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-2 bg-gray-50 dark:bg-slate-800/40">
-                      <p className="text-[11px] font-bold text-gray-500 mb-1">⚠️ 특이사항 내역</p>
-                      <div className="max-h-[100px] overflow-y-auto space-y-1">
+                    <div>
+                      <h4 className="text-[11px] font-bold text-orange-500/80 dark:text-orange-400/80 mb-1.5 flex items-center gap-1 text-left">⚠️ 특이사항 내역</h4>
+                      <div className="flex flex-wrap gap-1.5 text-left">
                         {specialNoteHistory.map((item) => (
-                          <div key={`${item.id}-${item.visitDate}-special`} className="rounded border border-gray-200 dark:border-slate-700 p-1.5 bg-white dark:bg-slate-900 flex gap-2 items-start">
-                            <input type="checkbox" checked={selectedSpecialNoteTexts.has(item.specialNote)} onChange={() => toggleSpecialNoteText(item.specialNote)} className="mt-0.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500 w-3.5 h-3.5" />
-                            <div className="flex-1 cursor-pointer min-w-0" onClick={() => toggleSpecialNoteText(item.specialNote)}>
-                              <p className="text-[10px] text-gray-400">{item.visitDate}</p>
-                              <p className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap break-words">{item.specialNote}</p>
-                            </div>
-                          </div>
+                           <button 
+                             key={`${item.id}-${item.visitDate}-special`} 
+                             onClick={() => toggleSpecialNoteText(item.specialNote)}
+                             className={`text-left text-[11px] px-2.5 py-1 rounded border transition-colors max-w-[200px] truncate ${selectedSpecialNoteTexts.has(item.specialNote) ? 'bg-orange-50 border-orange-300 text-orange-700 dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-300 font-bold shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-300 dark:hover:bg-slate-700'}`}
+                             title={item.specialNote}
+                           >
+                             <span className="text-[9px] text-gray-400 mr-1.5">{item.visitDate.slice(5)}</span>
+                             {item.specialNote}
+                           </button>
                         ))}
                       </div>
                     </div>
@@ -1026,11 +1110,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
               </div>
             )}
 
-            {/* Footer */}
-            <div className="px-4 py-2.5 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-2 shrink-0">
-              <button onClick={resetSearchModal} className="px-3 py-1.5 text-[11px] font-bold rounded-lg bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">닫기</button>
-              <button onClick={handleImportToToday} disabled={!draftImport} className="px-4 py-1.5 text-[11px] font-black rounded-lg bg-brand-600 hover:bg-brand-700 text-white disabled:opacity-40 shadow-sm transition-colors">선택 행에 입력/추가</button>
-            </div>
+
           </div>
         </div>
         );
