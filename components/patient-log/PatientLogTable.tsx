@@ -47,6 +47,7 @@ interface PatientLogTableProps {
   onPrevStep?: (bedId: number) => void;
   onClearBed?: (bedId: number) => void;
   onSelectionAnchorChange?: (rowIndex: number | null, colIndex: number | null) => void;
+  cancelAutoFocusRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
@@ -63,7 +64,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   onNextStep,
   onPrevStep,
   onClearBed,
-  onSelectionAnchorChange
+  onSelectionAnchorChange,
+  cancelAutoFocusRef
 }) => {
   const [totalRows, setTotalRows] = useState(120);
   const [selection, setSelection] = useState<GridSelection>(null);
@@ -84,6 +86,19 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const lastPointerDownAtRef = useRef(0);
 
 
+  // Expose cancel function to parent so search shortcuts can prevent auto-focus stealing
+  useEffect(() => {
+    if (cancelAutoFocusRef) {
+      cancelAutoFocusRef.current = () => {
+        focusTargetRef.current = null;
+        if (pendingAutoFocusTimerRef.current) {
+          clearTimeout(pendingAutoFocusTimerRef.current);
+          pendingAutoFocusTimerRef.current = null;
+        }
+      };
+    }
+  });
+
   useEffect(() => {
     // If visits length increased, it means a row was added.
     if (visits.length > prevVisitsLengthRef.current && focusTargetRef.current !== null) {
@@ -99,6 +114,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       pendingAutoFocusTimerRef.current = setTimeout(() => {
         // If the user manually clicked very recently, never steal focus to another cell.
         if (Date.now() - lastPointerDownAtRef.current < 250) {
+          focusTargetRef.current = null;
+          return;
+        }
+
+        // If a modal overlay is open (search / memo history), never steal focus.
+        if (document.querySelector('[data-modal-overlay="true"]')) {
           focusTargetRef.current = null;
           return;
         }

@@ -168,6 +168,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [memoPasteSelection, setMemoPasteSelection] = useState(defaultMemoPasteSelection);
   const [selectionAnchor, setSelectionAnchor] = useState<{ row: number | null; col: number | null }>({ row: null, col: null });
   const [selectedVisitIdForImport, setSelectedVisitIdForImport] = useState<string | null>(null);
+  // Ref to cancel auto-focus in PatientLogTable when a search shortcut fires
+  const cancelAutoFocusRef = useRef<(() => void) | null>(null);
   
   const [selectedMemoTexts, setSelectedMemoTexts] = useState<Set<string>>(new Set());
   const [selectedSpecialNoteTexts, setSelectedSpecialNoteTexts] = useState<Set<string>>(new Set());
@@ -485,20 +487,27 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         (gridInput as HTMLElement).blur();
       }
 
+      // blur()가 Draft Row에서 handleDraftCreate를 트리거하면 auto-focus가 설정됨.
+      // 검색 모달을 열 것이므로 auto-focus를 즉시 취소하여 아래 행으로의 포커스 이동을 방지.
+      cancelAutoFocusRef.current?.();
+
       // 동적 DOM에서 현재 셀의 값을 읽어와 STALE Closure 방지
       let keyword = selectedKeywordForSearchRef.current;
       if (isTableEditing && gridId) {
          const [r, c] = gridId.split('-').map(Number);
+         // blur() 직후에는 React 상태가 아직 업데이트되지 않았으므로
+         // visitsRef.current[r]에 방금 생성된 행이 없을 수 있음.
+         // handleCreateWithBedSync가 비동기로 완료되면 selectedVisitIdForImport를 설정함.
          const visit = visitsRef.current[r];
          
          // 확실한 가져오기 대상 행 고정을 위해 단축키 발동 시 DOM 기반 위치로 상태 강제 동기화
          setSelectionAnchor({ row: r, col: c });
          if (visit) {
              setSelectedVisitIdForImport(visit.id);
-         } else {
-             // 방문 기록이 없는 Draft Row일 경우
-             setSelectedVisitIdForImport(null);
          }
+         // Draft Row인 경우 selectedVisitIdForImport를 null로 설정하지 않음.
+         // handleCreateWithBedSync가 행 생성 완료 후 자동으로 설정하기 때문.
+         // null로 먼저 설정하면 타이밍 경합으로 인해 import가 잘못된 행을 타겟팅할 수 있음.
 
          if (activeInputValue) {
              keyword = activeInputValue;
@@ -533,9 +542,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     const nextMemo = memoText.trim();
     if (!nextMemo) return false;
 
+    const latestVisits = visitsRef.current;
     const selectedRow = selectionAnchor.row;
-    const targetVisitByRow = selectedRow !== null ? visits[selectedRow] : undefined;
-    const targetVisitById = selectedVisitIdForImport ? visits.find((v) => v.id === selectedVisitIdForImport) : undefined;
+    const targetVisitByRow = selectedRow !== null ? latestVisits[selectedRow] : undefined;
+    const targetVisitById = selectedVisitIdForImport ? latestVisits.find((v) => v.id === selectedVisitIdForImport) : undefined;
     const targetVisit = targetVisitById || targetVisitByRow;
 
     if (!targetVisit) {
@@ -563,9 +573,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     const nextChartNumber = chartNumberText.trim();
     if (!nextChartNumber) return false;
 
+    const latestVisits = visitsRef.current;
     const selectedRow = selectionAnchor.row;
-    const targetVisitByRow = selectedRow !== null ? visits[selectedRow] : undefined;
-    const targetVisitById = selectedVisitIdForImport ? visits.find((v) => v.id === selectedVisitIdForImport) : undefined;
+    const targetVisitByRow = selectedRow !== null ? latestVisits[selectedRow] : undefined;
+    const targetVisitById = selectedVisitIdForImport ? latestVisits.find((v) => v.id === selectedVisitIdForImport) : undefined;
     const targetVisit = targetVisitById || targetVisitByRow;
 
     if (!targetVisit) {
@@ -593,9 +604,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     const nextSpecialNote = specialNoteText.trim();
     if (!nextSpecialNote) return false;
 
+    const latestVisits = visitsRef.current;
     const selectedRow = selectionAnchor.row;
-    const targetVisitByRow = selectedRow !== null ? visits[selectedRow] : undefined;
-    const targetVisitById = selectedVisitIdForImport ? visits.find((v) => v.id === selectedVisitIdForImport) : undefined;
+    const targetVisitByRow = selectedRow !== null ? latestVisits[selectedRow] : undefined;
+    const targetVisitById = selectedVisitIdForImport ? latestVisits.find((v) => v.id === selectedVisitIdForImport) : undefined;
     const targetVisit = targetVisitById || targetVisitByRow;
 
     if (!targetVisit) {
@@ -737,9 +749,11 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     if (importFieldSelection.memo) payload.memo = draftImport.memo || '';
     if (importFieldSelection.special_note) payload.special_note = draftImport.special_note || '';
 
+    // visitsRef.current를 사용해 React 상태 지연(Stale Closure) 없이 최신 데이터 참조
+    const latestVisits = visitsRef.current;
     const selectedRow = selectionAnchor.row;
-    const targetVisitByRow = selectedRow !== null ? visits[selectedRow] : undefined;
-    const targetVisitById = selectedVisitIdForImport ? visits.find((v) => v.id === selectedVisitIdForImport) : undefined;
+    const targetVisitByRow = selectedRow !== null ? latestVisits[selectedRow] : undefined;
+    const targetVisitById = selectedVisitIdForImport ? latestVisits.find((v) => v.id === selectedVisitIdForImport) : undefined;
     const targetVisit = targetVisitById || targetVisitByRow;
 
     if (targetVisit) {
@@ -819,6 +833,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
               setSelectedVisitIdForImport(visits[row].id);
             }
           }}
+          cancelAutoFocusRef={cancelAutoFocusRef}
         />
 
         <div className="p-2 border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 shrink-0 text-center">
@@ -850,7 +865,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       )}
 
       {isSearchModalOpen && (
-        <div className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-3" onClick={resetSearchModal}>
+        <div data-modal-overlay="true" className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-3" onClick={resetSearchModal}>
           <div className="w-full max-w-4xl bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700">
               <h3 className="text-sm font-black text-gray-800 dark:text-gray-100">이전 날짜 환자 검색 (Ctrl/Cmd + F)</h3>
@@ -1078,7 +1093,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       )}
 
       {isMemoHistoryModalOpen && (
-        <div className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-3" onClick={resetMemoHistoryModal}>
+        <div data-modal-overlay="true" className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-3" onClick={resetMemoHistoryModal}>
           <div className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700">
               <h3 className="text-sm font-black text-gray-800 dark:text-gray-100">메모/특이사항 이력 (Ctrl/Cmd + G)</h3>
