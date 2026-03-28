@@ -6,7 +6,7 @@ import { PatientLogHeader } from './patient-log/PatientLogHeader';
 import { PatientLogTable } from './patient-log/PatientLogTable';
 import { Loader2, Search, X, Edit3 } from 'lucide-react';
 import { useLogStatusLogic } from '../hooks/useLogStatusLogic';
-import { BedStatus, PatientVisit } from '../types';
+import { BedStatus, PatientVisit, TreatmentStep, QuickTreatment } from '../types';
 import { isOnlineMode, supabase } from '../lib/supabase';
 import { findExactPresetByTreatmentString, generateTreatmentString, parseTreatmentString } from '../utils/bedUtils';
 import { EditableCell } from './patient-log/EditableCell';
@@ -14,7 +14,6 @@ import { GenderSelectorCell } from './patient-log/GenderSelectorCell';
 import { PatientStatusCell } from './patient-log/PatientStatusCell';
 import { TreatmentSelectorCell } from './patient-log/TreatmentSelectorCell';
 import { AuthorSelectorCell } from './patient-log/AuthorSelectorCell';
-import { TreatmentStep, QuickTreatment } from '../types';
 
 const PrintPreviewModal = React.lazy(() => import('./modals/PrintPreviewModal').then(module => ({ default: module.PrintPreviewModal })));
 
@@ -173,17 +172,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const handleModalLocalUpdate = useCallback((id: string, updates: Partial<PatientVisit>) => {
     setModalEdits(prev => {
       const existing = prev[id] || {};
-      const newEdits = { ...existing, ...updates };
-      
-      // If the currently selected result is the one being updated, synchronize it immediately
-      setSelectedResult(currentSelect => {
-        if (currentSelect && currentSelect.id === id) {
-          return { ...currentSelect, ...newEdits };
-        }
-        return currentSelect;
-      });
-      
-      return { ...prev, [id]: newEdits };
+      return { ...prev, [id]: { ...existing, ...updates } };
     });
   }, []);
 
