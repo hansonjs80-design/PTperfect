@@ -348,7 +348,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           .lt('visit_date', currentDate)
           .order('visit_date', { ascending: false })
           .order('created_at', { ascending: false })
-          .limit(30);
+          .limit(10);
 
         if (data && data.length > 0) {
           setSearchResults(data as PatientVisit[]);
@@ -382,9 +382,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         }
       });
       merged.sort((a, b) => `${b.visit_date} ${b.created_at}`.localeCompare(`${a.visit_date} ${a.created_at}`));
-      setSearchResults(merged);
-      setSelectedResult(merged[0] || null);
-      setDraftImport(merged[0] ? sanitizeImportedVisit(merged[0]) : null);
+      const limited = merged.slice(0, 10);
+      setSearchResults(limited);
+      setSelectedResult(limited[0] || null);
+      setDraftImport(limited[0] ? sanitizeImportedVisit(limited[0]) : null);
     } finally {
       setIsSearching(false);
     }
