@@ -813,6 +813,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           onPrevStep={prevStep}
           onClearBed={clearBed}
           onSelectionAnchorChange={(row, col) => {
+            if (isSearchModalOpen || isMemoHistoryModalOpen) return;
             setSelectionAnchor({ row, col });
             if (row !== null && visits[row]) {
               setSelectedVisitIdForImport(visits[row].id);
