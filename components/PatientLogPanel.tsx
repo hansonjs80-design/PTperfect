@@ -920,75 +920,59 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
               )}
             </div>
 
-            {/* Editing Bar (Top Action Area) */}
-            {selectedResult && draftImport && (
-              <div className="border-b-2 border-brand-500 dark:border-brand-600 bg-brand-50/80 dark:bg-brand-950/40 p-3 shrink-0 flex flex-col gap-2 shadow-sm relative z-10">
-                 <div className="flex items-center justify-between gap-4 overflow-x-auto custom-scrollbar pb-1">
-                   <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
-                     <div className="w-1.5 h-4 bg-brand-500 rounded-full mr-1"></div>
-                     <span className="text-[12px] font-black text-brand-700 dark:text-brand-300">데이터 수정/선택</span>
-                   </div>
-                   
-                   <div className="flex items-center gap-4 flex-nowrap pr-2">
-                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
-                        <input type="checkbox" checked={importFieldSelection.patient_name} onChange={e => setImportFieldSelection(p => ({...p, patient_name: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">이름</span>
-                        <input value={draftImport.patient_name || ''} onChange={(e) => setDraftImport(p => ({...p!, patient_name: e.target.value}))} disabled={!importFieldSelection.patient_name} className="w-16 px-1.5 py-0.5 text-[11px] border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
-                      </label>
-                      
-                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
-                        <input type="checkbox" checked={importFieldSelection.chart_number} onChange={e => setImportFieldSelection(p => ({...p, chart_number: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">차트</span>
-                        <input value={draftImport.chart_number || ''} onChange={(e) => setDraftImport(p => ({...p!, chart_number: e.target.value}))} disabled={!importFieldSelection.chart_number} className="w-16 px-1.5 py-0.5 text-[11px] border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
-                      </label>
+            {/* Field Selection Checkboxes */}
+            <div className="px-4 py-2.5 border-b border-gray-100 dark:border-slate-800 flex flex-wrap items-center gap-x-5 gap-y-2 shrink-0 bg-white dark:bg-slate-900 overflow-x-auto custom-scrollbar">
+               <span className="text-[11px] font-extrabold tracking-tight text-brand-600 dark:text-brand-400 whitespace-nowrap">가져올 항목 선택</span>
+               
+               <div className="flex items-center gap-4 flex-nowrap">
+                 <label className="flex items-center gap-1.5 cursor-pointer group">
+                    <input type="checkbox" checked={importFieldSelection.chart_number} onChange={e => setImportFieldSelection(p => ({...p, chart_number: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">차트번호</span>
+                 </label>
+                 
+                 <label className="flex items-center gap-1.5 cursor-pointer group">
+                    <input type="checkbox" checked={importFieldSelection.patient_name} onChange={e => setImportFieldSelection(p => ({...p, patient_name: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">이름</span>
+                 </label>
+                 
+                 <label className="flex items-center gap-1.5 cursor-pointer group">
+                    <input type="checkbox" checked={importFieldSelection.gender} onChange={e => setImportFieldSelection(p => ({...p, gender: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">성별</span>
+                 </label>
+                 
+                 <label className="flex items-center gap-1.5 cursor-pointer group">
+                    <input type="checkbox" checked={importFieldSelection.body_part} onChange={e => setImportFieldSelection(p => ({...p, body_part: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">부위</span>
+                 </label>
+                 
+                 <label className="flex items-center gap-1.5 cursor-pointer group">
+                    <input type="checkbox" checked={importFieldSelection.treatment_name} onChange={e => setImportFieldSelection(p => ({...p, treatment_name: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">처방목록</span>
+                 </label>
+                 
+                 <label className="flex items-center gap-1.5 cursor-pointer group" title="주사, 수액, 견인, 체외충격, 도수, 이온, 운동치료">
+                    <input type="checkbox" checked={importFieldSelection.additional_options} onChange={e => setImportFieldSelection(p => ({...p, additional_options: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">추가사항(주사 등)</span>
+                 </label>
 
-                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
-                        <input type="checkbox" checked={importFieldSelection.gender} onChange={e => setImportFieldSelection(p => ({...p, gender: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">성별</span>
-                        <input value={draftImport.gender || ''} onChange={(e) => setDraftImport(p => ({...p!, gender: e.target.value}))} disabled={!importFieldSelection.gender} className="w-8 px-1.5 py-0.5 text-[11px] text-center border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
-                      </label>
+                 <label className="flex items-center gap-1.5 cursor-pointer group">
+                    <input type="checkbox" checked={importFieldSelection.author} onChange={e => setImportFieldSelection(p => ({...p, author: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">담당</span>
+                 </label>
 
-                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
-                        <input type="checkbox" checked={importFieldSelection.body_part} onChange={e => setImportFieldSelection(p => ({...p, body_part: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">부위</span>
-                        <input value={draftImport.body_part || ''} onChange={(e) => setDraftImport(p => ({...p!, body_part: e.target.value}))} disabled={!importFieldSelection.body_part} className="w-12 px-1.5 py-0.5 text-[11px] text-center border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
-                      </label>
+                 <label className="flex items-center gap-1.5 cursor-pointer group">
+                    <input type="checkbox" checked={importFieldSelection.memo} onChange={e => setImportFieldSelection(p => ({...p, memo: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">메모</span>
+                 </label>
 
-                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
-                        <input type="checkbox" checked={importFieldSelection.treatment_name} onChange={e => setImportFieldSelection(p => ({...p, treatment_name: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">처방</span>
-                        <input value={draftImport.treatment_name || ''} onChange={(e) => setDraftImport(p => ({...p!, treatment_name: e.target.value}))} disabled={!importFieldSelection.treatment_name} className="w-36 px-1.5 py-0.5 text-[11px] border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
-                      </label>
+                 <label className="flex items-center gap-1.5 cursor-pointer group">
+                    <input type="checkbox" checked={importFieldSelection.special_note} onChange={e => setImportFieldSelection(p => ({...p, special_note: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
+                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-brand-600 transition-colors">특이사항</span>
+                 </label>
+               </div>
 
-                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
-                        <input type="checkbox" checked={importFieldSelection.additional_options} onChange={e => setImportFieldSelection(p => ({...p, additional_options: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">추가사항</span>
-                        <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded transition-colors ${importFieldSelection.additional_options ? 'bg-brand-600 text-white' : 'bg-gray-200 text-gray-500 dark:bg-slate-700 dark:text-gray-400'}`}>{importFieldSelection.additional_options ? '포함됨: 주사 등 일괄적용' : '제외됨'}</span>
-                      </label>
-
-                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
-                        <input type="checkbox" checked={importFieldSelection.memo} onChange={e => setImportFieldSelection(p => ({...p, memo: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">메모</span>
-                        <input value={draftImport.memo || ''} onChange={(e) => setDraftImport(p => ({...p!, memo: e.target.value}))} disabled={!importFieldSelection.memo} className="w-28 px-1.5 py-0.5 text-[11px] border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
-                      </label>
-                      
-                      <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group">
-                        <input type="checkbox" checked={importFieldSelection.special_note} onChange={e => setImportFieldSelection(p => ({...p, special_note: e.target.checked}))} className="rounded border-gray-300 w-3.5 h-3.5 text-brand-600 focus:ring-brand-500" />
-                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 group-hover:text-brand-600 transition-colors">특이사항</span>
-                        <input value={draftImport.special_note || ''} onChange={(e) => setDraftImport(p => ({...p!, special_note: e.target.value}))} disabled={!importFieldSelection.special_note} className="w-28 px-1.5 py-0.5 text-[11px] border border-gray-300 rounded focus:border-brand-400 focus:ring-1 focus:ring-brand-400 disabled:bg-gray-100 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
-                      </label>
-                   </div>
-                 </div>
-
-                 <div className="flex items-center justify-between border-t border-brand-200 dark:border-brand-800 pt-2.5 mt-1">
-                   <div className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">체크된 항목들의 내용만 현재 선택된 표의 셀에 덮어씌워집니다.</div>
-                   <div className="flex items-center gap-2">
-                     <button onClick={resetSearchModal} className="px-4 py-2 text-[12px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors">취소</button>
-                     <button onClick={(e) => { e.stopPropagation(); void handleImportToToday(); }} className="px-6 py-2 text-[12px] font-black rounded-lg bg-brand-600 hover:bg-brand-700 text-white shadow-md transition-colors animate-fade-in-up">✓ 체크 항목 가져오기</button>
-                   </div>
-                 </div>
-              </div>
-            )}
+               <button onClick={() => setImportFieldSelection(defaultImportFieldSelection)} className="ml-auto text-[11px] font-bold px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors whitespace-nowrap">전체선택</button>
+            </div>
 
             {/* Results list (Table View) */}
             <div className="flex-1 overflow-x-auto overflow-y-auto px-4 py-3 min-h-[250px] bg-slate-50 dark:bg-slate-900/50">
@@ -1133,7 +1117,20 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
               </div>
             )}
 
-
+            {/* Modal Footer */}
+             <div className="px-5 py-4 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80 flex justify-between items-center rounded-b-2xl shrink-0 mt-auto">
+               <div className="text-[12px] text-gray-500 dark:text-gray-400">
+                  {selectedResult ? (
+                    <>선택된 항목: <span className="font-bold text-brand-700 dark:text-brand-400">{(selectedResult.patient_name || '이름 없음')} ({selectedResult.visit_date.slice(5)})</span></>
+                  ) : <span className="italic flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span>가져올 항목을 목록에서 선택해주세요.</span>}
+               </div>
+               <div className="flex items-center gap-2.5">
+                 <button onClick={resetSearchModal} className="px-4 py-2 text-sm font-bold text-gray-600 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg transition-colors shadow-sm">취소</button>
+                 <button onClick={(e) => { e.stopPropagation(); void handleImportToToday(); }} disabled={!selectedResult} className={`px-6 py-2 text-sm font-black rounded-lg shadow-md transition-all ${selectedResult ? 'bg-brand-600 hover:bg-brand-700 hover:shadow-lg text-white' : 'bg-gray-200 dark:bg-slate-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'}`}>
+                   ✓ 선택 항목 적용
+                 </button>
+               </div>
+             </div>
           </div>
         </div>
         );
