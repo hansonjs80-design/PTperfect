@@ -974,94 +974,101 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
               </div>
             )}
 
-            {/* Results list as Grid of Cards */}
-            <div className="flex-1 overflow-x-auto overflow-y-auto px-4 py-4 min-h-[250px] bg-slate-50 dark:bg-slate-900/50 relative">
+            {/* Results list (Table View) */}
+            <div className="flex-1 overflow-x-auto overflow-y-auto px-4 py-3 min-h-[250px] bg-slate-50 dark:bg-slate-900/50">
               {isSearching && <p className="text-xs text-gray-400 py-8 text-center animate-pulse">데이터를 찾고 있습니다...</p>}
               {!isSearching && mappedResults.length === 0 && <p className="text-xs text-gray-400 py-8 text-center">검색 결과가 없습니다.</p>}
 
               {!isSearching && mappedResults.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {mappedResults.map((v) => {
-                    const isSelected = selectedResult?.id === v.id;
-                    const matchedPreset = v.treatment_name ? findExactPresetByTreatmentString(presets, v.treatment_name.trim()) : null;
-                    const treatmentParts = (v.treatment_name || '').split('/').map(s => s.trim()).filter(Boolean);
-                    const activeStatuses = STATUS_KEYS.filter(k => v[k as keyof PatientVisit]);
+                <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
+                  {/* Table Header */}
+                  <div className={`${rowGridClass} bg-gray-100 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700 text-[11px] font-bold text-gray-600 dark:text-gray-300 select-none`}>
+                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">날짜</div>
+                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">차트번호</div>
+                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">이름</div>
+                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">성별</div>
+                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">부위</div>
+                    <div className="px-3 py-2 text-center border-r border-gray-200 dark:border-slate-700">처방목록</div>
+                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">추가사항</div>
+                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">담당</div>
+                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">메모</div>
+                    <div className="px-2 py-2 text-center">특이사항</div>
+                  </div>
+                  
+                  {/* Table Body */}
+                  <div className="flex flex-col">
+                    {mappedResults.map((v) => {
+                      const isSelected = selectedResult?.id === v.id;
+                      const matchedPreset = v.treatment_name ? findExactPresetByTreatmentString(presets, v.treatment_name.trim()) : null;
+                      const treatmentParts = (v.treatment_name || '').split('/').map(s => s.trim()).filter(Boolean);
+                      const activeStatuses = STATUS_KEYS.filter(k => v[k as keyof PatientVisit]);
 
-                    return (
-                      <div
-                        key={v.id}
-                        onClick={() => selectResult(v)}
-                        className={`flex flex-col relative rounded-xl border transition-all cursor-pointer overflow-hidden ${isSelected ? 'bg-white dark:bg-slate-800 border-brand-500 shadow-[0_0_0_2px_rgba(59,130,246,0.3)] dark:border-brand-500' : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 shadow-sm hover:shadow hover:border-brand-300 dark:hover:border-brand-700'}`}
-                      >
-                        {/* Card Header */}
-                        <div className={`px-3 py-2 flex items-center justify-between border-b ${isSelected ? 'bg-brand-50 dark:bg-brand-900/30 border-brand-100 dark:border-brand-800/50' : 'bg-gray-50 dark:bg-slate-800/50 border-gray-100 dark:border-slate-700'}`}>
-                          <div className="flex items-center justify-center gap-1.5">
-                            <span className="text-[11px] font-black text-gray-500 dark:text-gray-400">{v.visit_date.slice(2)}</span>
+                      return (
+                        <div
+                          key={v.id}
+                          onClick={() => selectResult(v)}
+                          className={`${rowGridClass} border-b border-gray-100 dark:border-slate-700/50 last:border-0 cursor-pointer transition-colors hover:bg-brand-50/50 dark:hover:bg-brand-900/10 ${isSelected ? 'bg-brand-50 dark:bg-brand-900/40 ring-1 ring-inset ring-brand-400 dark:ring-brand-600' : ''}`}
+                        >
+                          <div className="px-2 py-2.5 flex items-center justify-center text-[11px] font-medium text-gray-500 dark:text-gray-400 border-r border-gray-100 dark:border-slate-700/50">
+                            {v.visit_date.slice(2)}
+                          </div>
+                          
+                          <div className="px-2 py-2.5 flex items-center justify-center border-r border-gray-100 dark:border-slate-700/50">
+                            <span className="text-[11px] font-mono font-bold text-gray-700 dark:text-gray-300">{v.chart_number || '-'}</span>
+                          </div>
+                          
+                          <div className="px-2 py-2.5 flex items-center justify-center border-r border-gray-100 dark:border-slate-700/50">
+                            <span className="text-[12px] font-extrabold text-gray-900 dark:text-gray-100">{v.patient_name || '-'}</span>
+                          </div>
+                          
+                          <div className="px-2 py-2.5 flex items-center justify-center border-r border-gray-100 dark:border-slate-700/50">
                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${v.gender?.toUpperCase() === 'M' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : v.gender?.toUpperCase() === 'F' ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300' : 'bg-gray-100 text-gray-500'}`}>
                               {(v.gender || '-').toUpperCase()}
                             </span>
                           </div>
-                          <span className="text-[11px] font-mono font-bold text-gray-500 dark:text-gray-400">차트: {v.chart_number || '-'}</span>
-                        </div>
 
-                        {/* Card Body */}
-                        <div className="p-3 flex flex-col gap-2.5">
-                          {/* Name and Body Part */}
-                          <div className="flex items-end justify-between">
-                            <span className="text-sm font-extrabold text-gray-900 dark:text-gray-100 leading-none">{v.patient_name || '-'}</span>
-                            <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400">{v.body_part || '-'}</span>
+                          <div className="px-2 py-2.5 flex items-center justify-center border-r border-gray-100 dark:border-slate-700/50">
+                            <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">{v.body_part || '-'}</span>
                           </div>
 
-                          {/* Treatments (Prominent Set Buttons) */}
-                          <div className="flex flex-col gap-1.5 bg-gray-50 dark:bg-slate-900/40 rounded-lg p-2 border border-gray-100 dark:border-slate-800">
-                            <div className="text-[10px] font-bold text-gray-400 mb-0.5 border-b border-gray-200 dark:border-slate-700/50 pb-0.5">처방 목록</div>
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {matchedPreset && (
-                                <button className="text-[11px] font-black px-2.5 py-1 rounded shadow-sm transition-transform hover:scale-105 active:scale-95"
-                                  style={{
-                                    backgroundColor: matchedPreset.color || '#e0e7ff',
-                                    color: matchedPreset.textColor || '#3730a3',
-                                    border: `1px solid ${matchedPreset.textColor ? `${matchedPreset.textColor}40` : '#c7d2fe'}`,
-                                  }}>
-                                  {matchedPreset.name} 세트
-                                </button>
-                              )}
-                              {treatmentParts.map((part, idx) => (
-                                <span key={idx} className="text-[11px] font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 border border-indigo-100 dark:border-indigo-800/40 rounded">{part}</span>
-                              ))}
-                              {treatmentParts.length === 0 && !matchedPreset && <span className="text-[11px] text-gray-400">처방 없음</span>}
-                            </div>
+                          <div className="px-3 py-2 flex flex-wrap items-center content-center gap-1 border-r border-gray-100 dark:border-slate-700/50 overflow-hidden">
+                            {matchedPreset && (
+                              <button className="text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm transition-transform hover:scale-105 active:scale-95 whitespace-nowrap"
+                                style={{
+                                  backgroundColor: matchedPreset.color || '#e0e7ff',
+                                  color: matchedPreset.textColor || '#3730a3',
+                                  border: `1px solid ${matchedPreset.textColor ? `${matchedPreset.textColor}40` : '#c7d2fe'}`,
+                                }}
+                              >{matchedPreset.name} 세트</button>
+                            )}
+                            {treatmentParts.map((part, idx) => (
+                              <span key={idx} className="text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-1 border border-indigo-100 dark:border-indigo-800/40 rounded whitespace-nowrap">{part}</span>
+                            ))}
+                            {treatmentParts.length === 0 && !matchedPreset && <span className="text-[10px] text-gray-400">처방 없음</span>}
                           </div>
 
-                          {/* Options/Statuses */}
-                          {activeStatuses.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {activeStatuses.map(k => (
-                                <span key={k} className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${STATUS_LABELS[k].color}`}>{STATUS_LABELS[k].label}</span>
-                              ))}
-                            </div>
-                          )}
+                          <div className="px-2 py-2 flex flex-wrap items-center content-center gap-1 border-r border-gray-100 dark:border-slate-700/50">
+                            {activeStatuses.slice(0, 3).map(k => (
+                              <span key={k} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${STATUS_LABELS[k].color}`}>{STATUS_LABELS[k].label}</span>
+                            ))}
+                            {activeStatuses.length > 3 && <span className="text-[9px] text-gray-500">+{activeStatuses.length - 3}</span>}
+                          </div>
 
-                          {/* Memo */}
-                          {(v.memo || v.author) && (
-                             <div className="text-[11px] text-gray-600 dark:text-gray-300 pt-1 border-t border-gray-100 dark:border-slate-700/50">
-                               <span className="font-bold text-gray-400 mr-1.5">담당/메모:</span>
-                               {v.author && <span className="font-bold mr-1 text-gray-500">[{v.author}]</span>}
-                               {v.memo || '-'}
-                             </div>
-                          )}
+                          <div className="px-2 py-2.5 flex items-center justify-center border-r border-gray-100 dark:border-slate-700/50">
+                            <span className="text-[10px] font-bold text-gray-600 dark:text-gray-400 truncate w-full text-center">{v.author || '-'}</span>
+                          </div>
 
-                          {/* Special Note */}
-                          {v.special_note && (
-                             <div className="text-[11px] text-orange-600 dark:text-orange-400">
-                               <span className="font-bold text-orange-400/80 mr-1.5">특이사항:</span>
-                               {v.special_note}
-                             </div>
-                          )}
+                          <div className="px-2 py-2.5 flex items-center border-r border-gray-100 dark:border-slate-700/50">
+                             <div className="text-[10px] text-gray-600 dark:text-gray-400 truncate w-full" title={v.memo || ''}>{v.memo || '-'}</div>
+                          </div>
+
+                          <div className="px-2 py-2.5 flex items-center">
+                             <div className="text-[10px] text-orange-600 dark:text-orange-400 truncate w-full" title={v.special_note || ''}>{v.special_note || '-'}</div>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
