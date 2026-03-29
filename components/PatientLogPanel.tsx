@@ -9,6 +9,7 @@ import { useLogStatusLogic } from '../hooks/useLogStatusLogic';
 import { BedStatus, PatientVisit, TreatmentStep, QuickTreatment } from '../types';
 import { isOnlineMode, supabase } from '../lib/supabase';
 import { findExactPresetByTreatmentString, generateTreatmentString, parseTreatmentString } from '../utils/bedUtils';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const PrintPreviewModal = React.lazy(() => import('./modals/PrintPreviewModal').then(module => ({ default: module.PrintPreviewModal })));
 
@@ -40,6 +41,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const undoStackRef = useRef<PatientVisit[][]>([]);
   const redoStackRef = useRef<PatientVisit[][]>([]);
   const MAX_UNDO_STACK = 250;
+  const [authorOptions] = useLocalStorage<string[]>('physio-author-options', ['S', 'K', 'J']);
 
   const cloneVisits = useCallback((rows: PatientVisit[]) => rows.map((v) => ({ ...v })), []);
 
@@ -948,7 +950,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           is_exercise: { label: '운동', color: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-300' },
         };
         const STATUS_KEYS = Object.keys(STATUS_LABELS) as Array<keyof typeof STATUS_LABELS>;
-        const rowGridClass = "grid grid-cols-[80px_70px_70px_40px_50px_minmax(160px,1fr)_120px_60px_110px_110px] min-w-[870px]";
+        const rowGridClass = "grid grid-cols-[72px_72px_70px_62px_50px_minmax(160px,1fr)_120px_60px_110px_110px] min-w-[880px]";
 
         return (
         <div data-modal-overlay="true" className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-3" onClick={resetSearchModal}>
@@ -992,7 +994,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                     <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">날짜</div>
                     <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
                       <input type="checkbox" checked={importFieldSelection.chart_number} onChange={e => setImportFieldSelection(p => ({...p, chart_number: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
-                      <span>차트</span>
+                      <span>차트 번호</span>
                     </div>
                     <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
                       <input type="checkbox" checked={importFieldSelection.patient_name} onChange={e => setImportFieldSelection(p => ({...p, patient_name: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
@@ -1133,17 +1135,18 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                             )) : <span className="text-[10px] text-gray-400">-</span>}
                           </div>
 
-                          {/* 담당 */}
-                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
-                            <input
-                              className="w-full h-full min-h-[36px] px-1 text-[10px] font-bold text-center bg-transparent text-gray-600 dark:text-gray-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
-                              defaultValue={v.author || ''}
-                              placeholder="-"
-                              onBlur={e => {
-                                const val = e.target.value;
-                                if (val !== (v.author || '')) handleModalLocalUpdate(v.id, { author: val });
-                              }}
-                            />
+                          {/* 담당 (Author select linked to saved options) */}
+                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0 flex items-center justify-center" onClick={e => e.stopPropagation()}>
+                            <select
+                              className="w-full h-full min-h-[36px] text-[11px] font-bold text-center bg-transparent outline-none cursor-pointer focus:ring-1 focus:ring-inset focus:ring-brand-400 text-gray-700 dark:text-gray-300"
+                              value={v.author || ''}
+                              onChange={e => handleModalLocalUpdate(v.id, { author: e.target.value })}
+                            >
+                              <option value="">-</option>
+                              {authorOptions.map(opt => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
                           </div>
 
                           {/* 메모 */}
