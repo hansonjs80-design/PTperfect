@@ -9,11 +9,6 @@ import { useLogStatusLogic } from '../hooks/useLogStatusLogic';
 import { BedStatus, PatientVisit, TreatmentStep, QuickTreatment } from '../types';
 import { isOnlineMode, supabase } from '../lib/supabase';
 import { findExactPresetByTreatmentString, generateTreatmentString, parseTreatmentString } from '../utils/bedUtils';
-import { EditableCell } from './patient-log/EditableCell';
-import { GenderSelectorCell } from './patient-log/GenderSelectorCell';
-import { PatientStatusCell } from './patient-log/PatientStatusCell';
-import { TreatmentSelectorCell } from './patient-log/TreatmentSelectorCell';
-import { AuthorSelectorCell } from './patient-log/AuthorSelectorCell';
 
 const PrintPreviewModal = React.lazy(() => import('./modals/PrintPreviewModal').then(module => ({ default: module.PrintPreviewModal })));
 
@@ -1033,39 +1028,23 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                     </div>
                   </div>
                   
-                  {/* Table Body - Interactive Cells */}
+                  {/* Table Body - Simple Inline Editable */}
                   <div className="flex flex-col">
                     {mappedResults.map((v, ridx) => {
                       const isSelected = selectedResult?.id === v.id;
                       const treatmentValue = v.treatment_name || '';
                       const matchedPreset = treatmentValue ? findExactPresetByTreatmentString(presets, treatmentValue.trim(), quickTreatments) : null;
-                      const displayedSteps = parseTreatmentString(treatmentValue, quickTreatments);
-
-                      const handleModalTreatmentCommit = (val: string) => {
-                        handleModalLocalUpdate(v.id, { treatment_name: val });
+                      const treatmentParts = treatmentValue.split('/').map(s => s.trim()).filter(Boolean);
+                      const STATUS_PILL_MAP: Record<string, { label: string; bg: string }> = {
+                        is_injection: { label: '주사', bg: 'bg-red-500' },
+                        is_fluid: { label: '수액', bg: 'bg-cyan-500' },
+                        is_manual: { label: '도수', bg: 'bg-violet-500' },
+                        is_eswt: { label: '충격파', bg: 'bg-blue-500' },
+                        is_traction: { label: '견인', bg: 'bg-orange-500' },
+                        is_ion: { label: '이온', bg: 'bg-emerald-500' },
+                        is_exercise: { label: '운동', bg: 'bg-lime-500' },
                       };
-                      const handleModalDeleteStep = (idx: number) => {
-                        const next = removeStepAt(displayedSteps, idx);
-                        handleModalTreatmentCommit(generateTreatmentString(next));
-                      };
-                      const handleModalMoveStep = (idx: number, direction: 'left' | 'right') => {
-                        const next = moveStepLocal(displayedSteps, idx, direction);
-                        handleModalTreatmentCommit(generateTreatmentString(next));
-                      };
-                      const handleModalSwapSteps = (fromIdx: number, toIdx: number) => {
-                        if (fromIdx === toIdx) return;
-                        const next = [...displayedSteps];
-                        [next[fromIdx], next[toIdx]] = [next[toIdx], next[fromIdx]];
-                        handleModalTreatmentCommit(generateTreatmentString(next));
-                      };
-                      const handleModalReplaceStep = (idx: number, qt: QuickTreatment) => {
-                        const next = replaceStepAt(displayedSteps, idx, qt);
-                        handleModalTreatmentCommit(generateTreatmentString(next));
-                      };
-                      const handleModalAddStep = (qt: QuickTreatment) => {
-                        const next = appendStepAtEnd(displayedSteps, qt);
-                        handleModalTreatmentCommit(generateTreatmentString(next));
-                      };
+                      const activeStatuses = Object.keys(STATUS_PILL_MAP).filter(k => v[k as keyof PatientVisit]);
 
                       return (
                         <div
@@ -1078,138 +1057,118 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                             {v.visit_date.slice(2)}
                           </div>
                           
-                          {/* 차트번호 (Editable) */}
+                          {/* 차트번호 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
-                            <EditableCell
-                              gridId={`modal-${ridx}-1`}
-                              rowIndex={1000 + ridx}
-                              colIndex={1}
-                              value={v.chart_number || ''}
+                            <input
+                              className="w-full h-full min-h-[36px] px-1.5 text-[11px] font-mono font-bold text-center bg-transparent text-gray-700 dark:text-gray-300 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
+                              defaultValue={v.chart_number || ''}
                               placeholder="-"
-                              className="bg-transparent justify-center text-center font-bold text-[11px] text-gray-700 dark:text-gray-300"
-                              onCommit={(val) => handleModalLocalUpdate(v.id, { chart_number: val || '' })}
-                              directEdit={true}
-                              syncOnDirectEdit={false}
+                              onBlur={e => {
+                                const val = e.target.value;
+                                if (val !== (v.chart_number || '')) handleModalLocalUpdate(v.id, { chart_number: val });
+                              }}
                             />
                           </div>
                           
-                          {/* 이름 (Editable) */}
+                          {/* 이름 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
-                            <EditableCell
-                              gridId={`modal-${ridx}-2`}
-                              rowIndex={1000 + ridx}
-                              colIndex={2}
-                              value={v.patient_name || ''}
+                            <input
+                              className="w-full h-full min-h-[36px] px-1.5 text-[12px] font-extrabold text-center bg-transparent text-gray-900 dark:text-gray-100 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
+                              defaultValue={v.patient_name || ''}
                               placeholder="-"
-                              className="bg-transparent justify-center text-center font-extrabold text-[12px] text-gray-900 dark:text-gray-100"
-                              onCommit={(val) => handleModalLocalUpdate(v.id, { patient_name: val || '' })}
-                              directEdit={true}
-                              syncOnDirectEdit={false}
+                              onBlur={e => {
+                                const val = e.target.value;
+                                if (val !== (v.patient_name || '')) handleModalLocalUpdate(v.id, { patient_name: val });
+                              }}
                             />
                           </div>
                           
-                          {/* 성별 (Popup Selector) */}
-                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
-                            <GenderSelectorCell
-                              gridId={`modal-${ridx}-3`}
-                              rowIndex={1000 + ridx}
-                              colIndex={3}
+                          {/* 성별 */}
+                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0 flex items-center justify-center" onClick={e => e.stopPropagation()}>
+                            <select
+                              className="w-full h-full min-h-[36px] text-[10px] font-bold text-center bg-transparent outline-none cursor-pointer focus:ring-1 focus:ring-inset focus:ring-brand-400"
                               value={(v.gender || '').toUpperCase()}
-                              onSelect={(val) => handleModalLocalUpdate(v.id, { gender: val })}
-                            />
+                              onChange={e => handleModalLocalUpdate(v.id, { gender: e.target.value })}
+                            >
+                              <option value="">-</option>
+                              <option value="M">M</option>
+                              <option value="F">F</option>
+                            </select>
                           </div>
 
-                          {/* 부위 (Editable) */}
+                          {/* 부위 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
-                            <EditableCell
-                              gridId={`modal-${ridx}-4`}
-                              rowIndex={1000 + ridx}
-                              colIndex={4}
-                              value={v.body_part || ''}
+                            <input
+                              className="w-full h-full min-h-[36px] px-1 text-[11px] font-medium text-center bg-transparent text-amber-700 dark:text-amber-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
+                              defaultValue={v.body_part || ''}
                               placeholder="-"
-                              className="bg-transparent justify-center text-center font-medium text-[11px] text-amber-700 dark:text-amber-400"
-                              onCommit={(val) => handleModalLocalUpdate(v.id, { body_part: val || '' })}
-                              directEdit={true}
-                              syncOnDirectEdit={false}
+                              onBlur={e => {
+                                const val = e.target.value;
+                                if (val !== (v.body_part || '')) handleModalLocalUpdate(v.id, { body_part: val });
+                              }}
                             />
                           </div>
 
-                          {/* 처방목록 (TreatmentSelectorCell) */}
-                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
-                            <TreatmentSelectorCell
-                              gridId={`modal-${ridx}-5`}
-                              rowIndex={1000 + ridx}
-                              colIndex={5}
-                              value={treatmentValue}
-                              placeholder=""
-                              rowStatus="none"
-                              onCommitText={handleModalTreatmentCommit}
-                              onOpenSelector={() => {/* noop in modal */}}
-                              presetLabel={matchedPreset?.name}
-                              presetColor={matchedPreset?.color || matchedPreset?.steps?.[0]?.color || 'bg-brand-500'}
-                              presetTextColor={matchedPreset?.textColor}
-                              presets={presets}
-                              enableStepInteraction={displayedSteps.length > 0}
-                              quickTreatments={quickTreatments}
-                              onDeleteStep={handleModalDeleteStep}
-                              onMoveStep={handleModalMoveStep}
-                              onSwapSteps={handleModalSwapSteps}
-                              onReplaceStep={handleModalReplaceStep}
-                              onAddStep={handleModalAddStep}
-                              onOpenFullEditor={() => {/* noop in modal */}}
-                            />
+                          {/* 처방목록 */}
+                          <div className="px-2 py-1.5 flex flex-wrap items-center content-center gap-1 border-r border-gray-100 dark:border-slate-700/50 overflow-hidden" onClick={e => e.stopPropagation()}>
+                            {matchedPreset && (
+                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap"
+                                style={{
+                                  backgroundColor: matchedPreset.color || '#e0e7ff',
+                                  color: matchedPreset.textColor || '#3730a3',
+                                  border: `1px solid ${matchedPreset.textColor ? `${matchedPreset.textColor}40` : '#c7d2fe'}`,
+                                }}
+                              >{matchedPreset.name} 세트</span>
+                            )}
+                            {treatmentParts.map((part, idx) => (
+                              <span key={idx} className="text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-1 border border-indigo-100 dark:border-indigo-800/40 rounded whitespace-nowrap">{part}</span>
+                            ))}
+                            {treatmentParts.length === 0 && !matchedPreset && <span className="text-[10px] text-gray-400">-</span>}
                           </div>
 
-                          {/* 추가사항 (PatientStatusCell) */}
-                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
-                            <PatientStatusCell
-                              gridId={`modal-${ridx}-6`}
-                              rowIndex={1000 + ridx}
-                              colIndex={6}
-                              visit={v}
-                              rowStatus="none"
-                              onUpdate={(id, updates) => handleModalLocalUpdate(id, updates)}
-                            />
+                          {/* 추가사항 */}
+                          <div className="px-1.5 py-1 flex flex-wrap items-center content-center gap-1 border-r border-gray-100 dark:border-slate-700/50">
+                            {activeStatuses.length > 0 ? activeStatuses.map(k => (
+                              <span key={k} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md text-white ${STATUS_PILL_MAP[k].bg}`}>{STATUS_PILL_MAP[k].label}</span>
+                            )) : <span className="text-[10px] text-gray-400">-</span>}
                           </div>
 
-                          {/* 담당 (AuthorSelectorCell) */}
+                          {/* 담당 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
-                            <AuthorSelectorCell
-                              gridId={`modal-${ridx}-7`}
-                              rowIndex={1000 + ridx}
-                              colIndex={7}
-                              value={v.author || ''}
-                              onSelect={(val) => handleModalLocalUpdate(v.id, { author: val })}
-                            />
-                          </div>
-
-                          {/* 메모 (Editable) */}
-                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
-                            <EditableCell
-                              gridId={`modal-${ridx}-8`}
-                              rowIndex={1000 + ridx}
-                              colIndex={8}
-                              value={v.memo || ''}
+                            <input
+                              className="w-full h-full min-h-[36px] px-1 text-[10px] font-bold text-center bg-transparent text-gray-600 dark:text-gray-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
+                              defaultValue={v.author || ''}
                               placeholder="-"
-                              className="bg-transparent justify-center text-center font-medium text-[10px] text-gray-600 dark:text-gray-400"
-                              onCommit={(val) => handleModalLocalUpdate(v.id, { memo: val || '' })}
-                              directEdit={true}
-                              syncOnDirectEdit={false}
+                              onBlur={e => {
+                                const val = e.target.value;
+                                if (val !== (v.author || '')) handleModalLocalUpdate(v.id, { author: val });
+                              }}
                             />
                           </div>
 
-                          {/* 특이사항 (Editable) */}
+                          {/* 메모 */}
+                          <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
+                            <input
+                              className="w-full h-full min-h-[36px] px-1.5 text-[10px] font-medium bg-transparent text-gray-600 dark:text-gray-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
+                              defaultValue={v.memo || ''}
+                              placeholder="-"
+                              onBlur={e => {
+                                const val = e.target.value;
+                                if (val !== (v.memo || '')) handleModalLocalUpdate(v.id, { memo: val });
+                              }}
+                            />
+                          </div>
+
+                          {/* 특이사항 */}
                           <div className="p-0" onClick={e => e.stopPropagation()}>
-                            <EditableCell
-                              gridId={`modal-${ridx}-9`}
-                              rowIndex={1000 + ridx}
-                              colIndex={9}
-                              value={v.special_note || ''}
+                            <input
+                              className="w-full h-full min-h-[36px] px-1.5 text-[10px] font-medium bg-transparent text-orange-600 dark:text-orange-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
+                              defaultValue={v.special_note || ''}
                               placeholder="-"
-                              className="bg-transparent justify-center text-center font-medium text-[10px] text-orange-600 dark:text-orange-400"
-                              onCommit={(val) => handleModalLocalUpdate(v.id, { special_note: val || '' })}
-                              directEdit={true}
-                              syncOnDirectEdit={false}
+                              onBlur={e => {
+                                const val = e.target.value;
+                                if (val !== (v.special_note || '')) handleModalLocalUpdate(v.id, { special_note: val });
+                              }}
                             />
                           </div>
                         </div>
