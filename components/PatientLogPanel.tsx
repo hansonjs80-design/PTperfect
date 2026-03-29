@@ -399,7 +399,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         const { data } = await supabase
           .from('patient_visits')
           .select('*')
-          .or(`patient_name.ilike.%${keyword}%,chart_number.ilike.%${keyword}%`)
+          .or(`patient_name.ilike.%${keyword}%,chart_number.eq.${keyword}`)
           .lt('visit_date', currentDate)
           .order('visit_date', { ascending: false })
           .order('created_at', { ascending: false })
@@ -427,7 +427,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           if (!Array.isArray(parsed)) return;
           parsed.forEach((v: PatientVisit) => {
             const matchName = (v.patient_name || '').toLowerCase().includes(keyword.toLowerCase());
-            const matchChart = (v.chart_number || '').toLowerCase().includes(keyword.toLowerCase());
+            const matchChart = (v.chart_number || '').trim().toLowerCase() === keyword.toLowerCase();
             if ((matchName || matchChart) && v.visit_date < currentDate) {
               merged.push(v);
             }
@@ -479,7 +479,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       const visitChart = (visit.chart_number || '').trim().toLowerCase();
       const memo = (visit.memo || '').trim();
       
-      const isMatch = visitName.includes(normalized) || visitChart.includes(normalized);
+      const isMatch = visitName.includes(normalized) || visitChart === normalized;
       if (!isMatch || !memo || unique.has(memo)) return;
       
       unique.add(memo);
@@ -501,7 +501,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       const visitName = (visit.patient_name || '').trim().toLowerCase();
       const visitChart = (visit.chart_number || '').trim().toLowerCase();
       const specialNote = (visit.special_note || '').trim();
-      const isMatch = visitName.includes(normalized) || visitChart.includes(normalized);
+      const isMatch = visitName.includes(normalized) || visitChart === normalized;
       if (!isMatch || !specialNote || unique.has(specialNote)) return;
       
       unique.add(specialNote);
