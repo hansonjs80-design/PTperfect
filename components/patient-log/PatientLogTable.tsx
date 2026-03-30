@@ -528,6 +528,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     previouslyHighlighted.forEach((host) => {
       host.removeAttribute('data-grid-selection');
       host.style.boxShadow = '';
+      host.style.outline = '';
+      host.style.outlineOffset = '';
       host.style.backgroundColor = '';
       host.style.borderRadius = '';
     });
@@ -536,7 +538,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       const host = document.querySelector(`[data-grid-id="${id}"]`) as HTMLElement | null;
       if (!host) return;
       host.setAttribute('data-grid-selection', 'true');
-      host.style.boxShadow = 'inset 0 0 0 2px rgb(14 165 233)';
+      host.style.outline = '2px solid rgb(14 165 233)';
+      host.style.outlineOffset = '-1px';
       host.style.backgroundColor = 'rgba(14, 165, 233, 0.08)';
       host.style.borderRadius = '2px';
     });
