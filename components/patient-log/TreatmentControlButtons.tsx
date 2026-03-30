@@ -115,7 +115,8 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
             {onPrevStep && (rowStatus === 'active' ? activeStepIndex > 0 : true) && (
               <button
                 onClick={(e) => onActionClick(e, 'prev')}
-                className={`${btnClass} text-gray-400 hover:text-brand-600`}
+                className={`${btnClass} text-gray-400 hover:text-brand-600 disabled:opacity-30 disabled:cursor-not-allowed`}
+                disabled={shouldDisableArrowControls}
                 title="이전 단계로 복구"
               >
                 <SkipBack className={`${iconClass} fill-current`} />
@@ -150,7 +151,8 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
                 onClick={(e) => onActionClick(e, 'next')}
                 className={`${btnClass} ${
                   isLastStep ? 'text-red-600 hover:text-red-700' : 'text-gray-400 hover:text-brand-600'
-                }`}
+                } disabled:opacity-30 disabled:cursor-not-allowed`}
+                disabled={shouldDisableArrowControls}
                 title={isLastStep ? '치료 완료' : '다음 단계'}
               >
                 <SkipForward className={`${iconClass} fill-current`} />

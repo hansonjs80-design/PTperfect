@@ -150,7 +150,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [searchName, setSearchName] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<PatientVisit[]>([]);
-  const [selectedResult, setSelectedResult] = useState<PatientVisit | null>(null);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const [draftImport, setDraftImport] = useState<Partial<PatientVisit> | null>(null);
   const defaultImportFieldSelection = useMemo(() => ({
     patient_name: true,
@@ -323,7 +323,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setIsSearchModalOpen(false);
     setSearchName('');
     setSearchResults([]);
-    setSelectedResult(null);
+    setSelectedResultId(null);
     setDraftImport(null);
     setImportFieldSelection(defaultImportFieldSelection);
     setPendingSearchInput(null);
@@ -336,7 +336,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setIsMemoHistoryModalOpen(false);
     document.body.removeAttribute('data-prevent-autofocus');
     setSearchResults([]);
-    setSelectedResult(null);
+    setSelectedResultId(null);
     setDraftImport(null);
     setMemoPasteSelection(defaultMemoPasteSelection);
     setSelectedMemoTexts(new Set());
@@ -347,8 +347,29 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
   const mappedResults = useMemo(() => searchResults.slice(0, 10).map(v => {
     const localOverride = modalEdits[v.id];
-    return localOverride ? { ...v, ...localOverride } : v;
-  }), [searchResults, modalEdits]);
+    const merged = localOverride ? { ...v, ...localOverride } : v;
+    const treatmentValue = merged.treatment_name || '';
+
+    return {
+      ...merged,
+      matchedPreset: treatmentValue ? findExactPresetByTreatmentString(presets, treatmentValue.trim(), quickTreatments) : null,
+      treatmentParts: treatmentValue.split('/').map((s) => s.trim()).filter(Boolean),
+      activeStatuses: [
+        merged.is_injection ? 'is_injection' : null,
+        merged.is_fluid ? 'is_fluid' : null,
+        merged.is_manual ? 'is_manual' : null,
+        merged.is_eswt ? 'is_eswt' : null,
+        merged.is_traction ? 'is_traction' : null,
+        merged.is_ion ? 'is_ion' : null,
+        merged.is_exercise ? 'is_exercise' : null,
+      ].filter(Boolean) as string[],
+    };
+  }), [searchResults, modalEdits, presets, quickTreatments]);
+
+  const selectedResult = useMemo(
+    () => mappedResults.find((result) => result.id === selectedResultId) || null,
+    [mappedResults, selectedResultId]
+  );
 
   const normalizeImportedTreatmentName = useCallback((rawTreatmentName: string | null | undefined) => {
     const trimmed = (rawTreatmentName || '').trim();
@@ -407,11 +428,11 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
         if (data && data.length > 0) {
           setSearchResults(data as PatientVisit[]);
-          setSelectedResult(data[0] as PatientVisit);
+          setSelectedResultId((data[0] as PatientVisit).id);
           setDraftImport(sanitizeImportedVisit(data[0] as PatientVisit));
         } else {
           setSearchResults([]);
-          setSelectedResult(null);
+          setSelectedResultId(null);
           setDraftImport(null);
         }
         return;
@@ -439,7 +460,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       merged.sort((a, b) => `${b.visit_date} ${b.created_at}`.localeCompare(`${a.visit_date} ${a.created_at}`));
       const limited = merged.slice(0, 10);
       setSearchResults(limited);
-      setSelectedResult(limited[0] || null);
+      setSelectedResultId(limited[0]?.id || null);
       setDraftImport(limited[0] ? sanitizeImportedVisit(limited[0]) : null);
     } finally {
       setIsSearching(false);
@@ -781,7 +802,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const selectResult = useCallback((visit: PatientVisit) => {
     const localOverride = modalEdits[visit.id];
     const merged = localOverride ? { ...visit, ...localOverride } : visit;
-    setSelectedResult(merged);
+    setSelectedResultId(visit.id);
     setDraftImport(sanitizeImportedVisit(merged));
   }, [sanitizeImportedVisit, modalEdits]);
 
