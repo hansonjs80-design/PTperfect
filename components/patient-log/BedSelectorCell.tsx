@@ -348,7 +348,7 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
             onKeyDown={handleContainerKeyDown}
             tabIndex={0}
             data-grid-id={gridId}
-            className={`w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors group select-none outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 ${className}`}
+            className={`w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors group select-none outline-none focus:shadow-[inset_0_0_0_1px_rgb(56_189_248)] ${className}`}
             title={getTitle()}
         >
             {value ? (

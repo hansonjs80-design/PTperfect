@@ -46,6 +46,7 @@ interface TreatmentSelectorCellProps {
   onDeletePresetBadge?: () => void;
   presets?: Preset[];
   onRenamePresetBadge?: (newPreset: Preset) => void;
+  disableArrowControls?: boolean;
 }
 
 export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
@@ -85,6 +86,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   onDeletePresetBadge,
   presets = [],
   onRenamePresetBadge,
+  disableArrowControls = false,
 }) => {
   const cellRef = useRef<HTMLDivElement>(null);
   const [popupState, setPopupState] = useState<{ type: 'prev' | 'next' | 'clear'; x: number; y: number } | null>(null);
@@ -244,7 +246,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         onKeyDown={handleKeyDown}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="w-full h-full min-h-[36px] relative outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
+        className="w-full h-full min-h-[36px] relative outline-none focus:shadow-[inset_0_0_0_1px_rgb(56_189_248)]"
       >
         <div
           className={`flex items-center w-full h-full px-2 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30'} rounded-sm`}
@@ -317,6 +319,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
               stepCount={stepParts.length}
               onDeleteSelectedStep={handleDeleteSelectedStep}
               onMoveSelectedStep={handleMoveSelectedStep}
+              disableArrowControls={disableArrowControls}
             />
           )}
         </div>

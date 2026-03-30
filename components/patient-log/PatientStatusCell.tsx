@@ -24,7 +24,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   onCreate,
   gridId,
   rowIndex,
-  colIndex
+  colIndex,
 }) => {
   const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
@@ -42,6 +42,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       const mouseEvent = e as React.MouseEvent;
       setMenuPos({ x: mouseEvent.clientX, y: mouseEvent.clientY });
     }
+    window.dispatchEvent(new CustomEvent('patient-status-menu-toggle', { detail: { open: true } }));
   };
 
   // Unified click handler: Desktop (Single Click), Mobile (Manual Double Tap)
@@ -122,7 +123,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     <>
       <div
         ref={cellRef}
-        className="w-full h-full flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
+        className="w-full h-full flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:shadow-[inset_0_0_0_1px_rgb(56_189_248)]"
         onClick={handleInteraction}
         onKeyDown={handleKeyDown}
         tabIndex={0}
@@ -152,6 +153,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
           position={menuPos}
           onClose={() => {
             setMenuPos(null);
+            window.dispatchEvent(new CustomEvent('patient-status-menu-toggle', { detail: { open: false } }));
             setTimeout(() => cellRef.current?.focus(), 0);
           }}
           onToggle={toggleStatus}

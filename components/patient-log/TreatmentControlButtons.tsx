@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { SkipBack, SkipForward, CheckCircle, X, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { QuickTreatment } from '../../types';
 import { StepReplacePopup } from '../bed-card/StepReplacePopup';
@@ -17,6 +17,7 @@ interface TreatmentControlButtonsProps {
   stepCount?: number;
   onDeleteSelectedStep?: () => void;
   onMoveSelectedStep?: (direction: 'left' | 'right') => void;
+  disableArrowControls?: boolean;
 }
 
 export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = memo(({
@@ -33,8 +34,10 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
   stepCount = 0,
   onDeleteSelectedStep,
   onMoveSelectedStep,
+  disableArrowControls = false,
 }) => {
   const [addPopupPos, setAddPopupPos] = useState<{ x: number; y: number } | null>(null);
+  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
 
   const isActiveOrCompleted = rowStatus === 'active' || rowStatus === 'completed';
   const isMobileOrTablet = window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches;
@@ -46,12 +49,23 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
   const canMoveLeft = selectedStepIndex !== null && selectedStepIndex > 0;
   const canMoveRight = selectedStepIndex !== null && selectedStepIndex < Math.max(0, stepCount - 1);
   const canDeleteSelected = selectedStepIndex !== null;
+  const shouldDisableArrowControls = disableArrowControls || isStatusMenuOpen;
 
   const shouldShowMobileSelectedStepControls =
     isMobileOrTablet
     && selectedStepIndex !== null
     && !!onDeleteSelectedStep
     && !!onMoveSelectedStep;
+
+  useEffect(() => {
+    const handleStatusMenuToggle = (event: Event) => {
+      const customEvent = event as CustomEvent<{ open?: boolean }>;
+      setIsStatusMenuOpen(!!customEvent.detail?.open);
+    };
+
+    window.addEventListener('patient-status-menu-toggle', handleStatusMenuToggle as EventListener);
+    return () => window.removeEventListener('patient-status-menu-toggle', handleStatusMenuToggle as EventListener);
+  }, []);
 
   if (!isActiveOrCompleted && !shouldShowMobileSelectedStepControls) return null;
 
@@ -66,7 +80,7 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
                 onMoveSelectedStep?.('left');
               }}
               className={`${btnClass} text-gray-400 hover:text-brand-600 disabled:opacity-30 disabled:cursor-not-allowed`}
-              disabled={!canMoveLeft}
+              disabled={shouldDisableArrowControls || !canMoveLeft}
               title="선택 처방 왼쪽 이동"
             >
               <ChevronLeft className={iconClass} />
@@ -90,7 +104,7 @@ export const TreatmentControlButtons: React.FC<TreatmentControlButtonsProps> = m
                 onMoveSelectedStep?.('right');
               }}
               className={`${btnClass} text-gray-400 hover:text-brand-600 disabled:opacity-30 disabled:cursor-not-allowed`}
-              disabled={!canMoveRight}
+              disabled={shouldDisableArrowControls || !canMoveRight}
               title="선택 처방 오른쪽 이동"
             >
               <ChevronRight className={iconClass} />

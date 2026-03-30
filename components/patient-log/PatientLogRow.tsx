@@ -791,7 +791,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         <div className="relative w-full h-full min-h-[36px]">
           {!isDraft && visit && onDelete && (
             <div
-              className="absolute inset-0 flex justify-center items-center px-[4px] outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px]"
+              className="absolute inset-0 flex justify-center items-center px-[4px] outline-none focus:shadow-[inset_0_0_0_1px_rgb(56_189_248)]"
               tabIndex={0}
               data-grid-id={`${rowIndex}-11`}
               onKeyDown={handleDeleteKeyDown}
