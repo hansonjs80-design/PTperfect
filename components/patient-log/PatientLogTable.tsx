@@ -550,6 +550,11 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       const cell = host.closest('td') as HTMLElement | null;
       if (!cell) return;
 
+      host.setAttribute('data-grid-selection', 'true');
+      host.style.outline = 'none';
+      host.style.outlineOffset = '0';
+      host.style.boxShadow = 'none';
+
       cell.setAttribute('data-grid-selection', 'true');
       cell.style.boxShadow = 'inset 0 0 0 2px rgb(14 165 233)';
       cell.style.backgroundColor = 'rgba(14, 165, 233, 0.08)';
