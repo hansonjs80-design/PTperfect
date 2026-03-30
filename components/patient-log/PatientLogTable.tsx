@@ -7,6 +7,7 @@ import { PatientLogTableHeader } from './PatientLogTableHeader';
 import { getRowActiveStatus } from '../../utils/patientLogUtils';
 import { useColumnResize } from '../../hooks/useColumnResize';
 import { generateTreatmentString } from '../../utils/bedUtils';
+import { normalizeUpperEnglishKeyInput } from '../../utils/keyboardLayout';
 
 type GridCellPos = { row: number; col: number };
 type GridSelection = { start: GridCellPos; end: GridCellPos } | null;
@@ -264,7 +265,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         onUpdate(visit.id, { special_note: text }, true);
         return;
       case 10:
-        onUpdate(visit.id, { author: text }, true);
+        onUpdate(visit.id, { author: normalizeUpperEnglishKeyInput(text).slice(0, 4) }, true);
         return;
       default:
         return;
@@ -331,7 +332,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
           updates.special_note = normalized;
           break;
         case 10:
-          updates.author = normalized;
+          updates.author = normalizeUpperEnglishKeyInput(normalized).slice(0, 4);
           break;
         default:
           break;

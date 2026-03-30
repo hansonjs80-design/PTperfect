@@ -11,6 +11,7 @@ import { BedState, PatientVisit, Preset, TreatmentStep, QuickTreatment } from '.
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { formatBodyPartText } from '../../utils/patientLogUtils';
 import { TimerEditPopup } from '../bed-card/TimerEditPopup';
+import { normalizeUpperEnglishKeyInput } from '../../utils/keyboardLayout';
 import { useTreatmentContext } from '../../contexts/TreatmentContext';
 import { findExactPresetByTreatmentString, formatTime, generateTreatmentString, normalizeTreatmentString, parseTreatmentString } from '../../utils/bedUtils';
 
@@ -769,11 +770,12 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
             colIndex={10}
             value={visit?.author || ''}
             onSelect={async (val) => {
+              const normalizedAuthor = normalizeUpperEnglishKeyInput(val).slice(0, 4);
               if (isDraft && onCreate) {
-                await onCreate({ author: val }, 10);
+                await onCreate({ author: normalizedAuthor }, 10);
               } else if (visit && onUpdate) {
                 // 선택한 셀만 변경 (빈 셀이든 이미 입력된 셀이든 동일하게 처리)
-                onUpdate(visit.id, { author: val }, true);
+                onUpdate(visit.id, { author: normalizedAuthor }, true);
               }
             }}
             isDraft={isDraft}

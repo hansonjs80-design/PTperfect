@@ -141,13 +141,17 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
       <div
         ref={cellRef}
         className={`absolute inset-0 px-2 flex items-center justify-center text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 ${isDraft ? 'opacity-50 hover:opacity-100' : ''}`}
+        onMouseDown={(e) => {
+          if (e.button !== 0) return;
+          cellRef.current?.focus();
+        }}
         onClick={() => cellRef.current?.focus()}
         onDoubleClick={openMenu}
         onTouchEnd={handleTouchEnd}
         onKeyDown={handleKeyDown}
         tabIndex={0}
         data-grid-id={gridId}
-        title="더블클릭/더블터치로 작성자 선택"
+        title="클릭하여 셀 선택, 영문 입력 가능 / 더블클릭·더블터치로 작성자 선택"
       >
         {value ? (
           <span className="inline-flex w-full items-center justify-center text-center text-sm xl:text-base font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap">{value}</span>
