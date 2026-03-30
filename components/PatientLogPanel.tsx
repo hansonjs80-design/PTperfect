@@ -785,12 +785,13 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setDraftImport(sanitizeImportedVisit(merged));
   }, [sanitizeImportedVisit, modalEdits]);
 
-  const handleImportToToday = useCallback(async () => {
-    if (!selectedResult) return;
+  const handleImportToToday = useCallback(async (sourceVisitOverride?: PatientVisit) => {
+    const baseSource = sourceVisitOverride || selectedResult;
+    if (!baseSource) return;
 
     // Merge originalResult with any local edits made in the modal
-    const localOverride = modalEdits[selectedResult.id] || {};
-    const source = { ...selectedResult, ...localOverride };
+    const localOverride = modalEdits[baseSource.id] || {};
+    const source = { ...baseSource, ...localOverride };
     const sanitized = sanitizeImportedVisit(source);
 
     const payload: Partial<PatientVisit> = {};
@@ -839,6 +840,41 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
     resetSearchModal();
   }, [trackedAddVisit, selectedResult, modalEdits, sanitizeImportedVisit, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, trackedUpdateVisitWithBedSync, normalizeImportedTreatmentName, importFieldSelection, pendingSearchInput]);
+
+  useEffect(() => {
+    if (!isSearchModalOpen) return;
+
+    const onSearchModalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        resetSearchModal();
+        return;
+      }
+
+      if (e.key !== 'Enter') return;
+      if (e.repeat || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (!selectedResult) return;
+
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const isTextInputLike = !!target && (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        target.isContentEditable
+      );
+
+      if (isTextInputLike) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      void handleImportToToday();
+    };
+
+    window.addEventListener('keydown', onSearchModalKeyDown, true);
+    return () => window.removeEventListener('keydown', onSearchModalKeyDown, true);
+  }, [isSearchModalOpen, resetSearchModal, selectedResult, handleImportToToday]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -1051,7 +1087,27 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                       return (
                         <div
                           key={v.id}
-                          onClick={() => selectResult(v)}
+                          tabIndex={0}
+                          onClick={(e) => {
+                            selectResult(v);
+                            (e.currentTarget as HTMLDivElement).focus();
+                          }}
+                          onTouchEnd={(e) => {
+                            e.stopPropagation();
+                            selectResult(v);
+                            (e.currentTarget as HTMLDivElement).focus();
+                          }}
+                          onDoubleClick={() => {
+                            selectResult(v);
+                            void handleImportToToday(v);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key !== 'Enter') return;
+                            e.preventDefault();
+                            e.stopPropagation();
+                            selectResult(v);
+                            void handleImportToToday(v);
+                          }}
                           className={`${rowGridClass} border-b border-gray-100 dark:border-slate-700/50 last:border-0 cursor-pointer transition-colors hover:bg-brand-50/50 dark:hover:bg-brand-900/10 ${isSelected ? 'bg-brand-50 dark:bg-brand-900/40 ring-1 ring-inset ring-brand-400 dark:ring-brand-600' : ''}`}
                         >
                           {/* 날짜 (Read Only) */}
