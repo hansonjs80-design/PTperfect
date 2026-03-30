@@ -110,6 +110,10 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
       }
 
       if (e.key === 'ArrowLeft') {
+        if (!e.altKey) {
+          setSelectedStepIndex(null);
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
         if (selectedStepIndex <= 0) return;
@@ -119,6 +123,10 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
       }
 
       if (e.key === 'ArrowRight') {
+        if (!e.altKey) {
+          setSelectedStepIndex(null);
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
         if (selectedStepIndex >= parts.length - 1) return;
