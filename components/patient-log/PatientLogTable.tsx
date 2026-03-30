@@ -33,6 +33,26 @@ const parseGridCellId = (el: HTMLElement | null): GridCellPos | null => {
   return { row: r, col: c };
 };
 
+const findVisibleGridPos = (current: GridCellPos, direction: 'up' | 'down' | 'left' | 'right', totalRows: number): GridCellPos | null => {
+  const deltaRow = direction === 'down' ? 1 : direction === 'up' ? -1 : 0;
+  const deltaCol = direction === 'right' ? 1 : direction === 'left' ? -1 : 0;
+
+  let nextRow = current.row + deltaRow;
+  let nextCol = current.col + deltaCol;
+
+  while (nextRow >= 0 && nextRow < totalRows && nextCol >= 0 && nextCol <= 11) {
+    const host = document.querySelector(`[data-grid-id="${nextRow}-${nextCol}"]`) as HTMLElement | null;
+    if (host && host.getClientRects().length > 0) {
+      return { row: nextRow, col: nextCol };
+    }
+
+    nextRow += deltaRow;
+    nextCol += deltaCol;
+  }
+
+  return null;
+};
+
 interface PatientLogTableProps {
   visits: PatientVisit[];
   beds: BedState[];
@@ -455,14 +475,14 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       const current = anchor ?? parseGridCellId(document.activeElement as HTMLElement | null);
       if (!current) return;
 
-      const maxRow = Math.max(0, totalRows - 1);
-      const deltaRow = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
-      const deltaCol = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-      const nextRow = Math.min(Math.max(current.row + deltaRow, 0), maxRow);
-      const nextCol = Math.min(Math.max(current.col + deltaCol, 0), 11);
+      const direction =
+        e.key === 'ArrowUp' ? 'up' :
+        e.key === 'ArrowDown' ? 'down' :
+        e.key === 'ArrowLeft' ? 'left' : 'right';
+      const nextPos = findVisibleGridPos(current, direction, totalRows);
+      if (!nextPos) return;
 
       e.preventDefault();
-      const nextPos = { row: nextRow, col: nextCol };
       setSelection({ start: nextPos, end: nextPos });
       onSelectionAnchorChange?.(nextPos.row, nextPos.col);
       const host = document.querySelector(`[data-grid-id="${nextPos.row}-${nextPos.col}"]`) as HTMLElement | null;

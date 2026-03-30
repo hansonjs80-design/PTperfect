@@ -6,28 +6,28 @@ import React, { useCallback } from 'react';
 let lastGlobalNavTime = 0;
 
 export const useGridNavigation = (totalCols: number) => {
+  const findNextFocusableElement = useCallback((currentRow: number, currentCol: number, direction: 'up' | 'down' | 'left' | 'right') => {
+    const deltaRow = direction === 'down' ? 1 : direction === 'up' ? -1 : 0;
+    const deltaCol = direction === 'right' ? 1 : direction === 'left' ? -1 : 0;
 
-  const moveFocus = useCallback((currentRow: number, currentCol: number, direction: 'up' | 'down' | 'left' | 'right') => {
-    let nextRow = currentRow;
-    let nextCol = currentCol;
+    let nextRow = currentRow + deltaRow;
+    let nextCol = currentCol + deltaCol;
 
-    switch (direction) {
-      case 'up':
-        nextRow = currentRow - 1;
-        break;
-      case 'down':
-        nextRow = currentRow + 1;
-        break;
-      case 'left':
-        nextCol = currentCol - 1;
-        break;
-      case 'right':
-        nextCol = currentCol + 1;
-        break;
+    for (let step = 0; step <= totalCols + 2; step += 1) {
+      const nextElement = document.querySelector(`[data-grid-id="${nextRow}-${nextCol}"]`) as HTMLElement | null;
+      if (nextElement && nextElement.getClientRects().length > 0) {
+        return nextElement;
+      }
+
+      nextRow += deltaRow;
+      nextCol += deltaCol;
     }
 
-    // Find the next element by data attribute
-    const nextElement = document.querySelector(`[data-grid-id="${nextRow}-${nextCol}"]`) as HTMLElement;
+    return null;
+  }, [totalCols]);
+
+  const moveFocus = useCallback((currentRow: number, currentCol: number, direction: 'up' | 'down' | 'left' | 'right') => {
+    const nextElement = findNextFocusableElement(currentRow, currentCol, direction);
     
     if (nextElement) {
       requestAnimationFrame(() => {
@@ -38,7 +38,7 @@ export const useGridNavigation = (totalCols: number) => {
         }
       });
     }
-  }, []);
+  }, [findNextFocusableElement]);
 
   const handleGridKeyDown = useCallback((e: React.KeyboardEvent, row: number, col: number, isInput: boolean = false, inputElement?: HTMLInputElement | null) => {
     // Only handle navigation on Desktop/Tablet
