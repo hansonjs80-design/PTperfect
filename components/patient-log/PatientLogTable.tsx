@@ -442,8 +442,15 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
     const bounds = normalizeSelectionBounds(selection);
     const anchor = bounds ? { row: bounds.rowMin, col: bounds.colMin } : null;
+    const isStatusMenuOpen = document.body.dataset.patientStatusMenuOpen === 'true';
 
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      if (isStatusMenuOpen && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
       const current = anchor ?? parseGridCellId(document.activeElement as HTMLElement | null);
       if (!current) return;
 

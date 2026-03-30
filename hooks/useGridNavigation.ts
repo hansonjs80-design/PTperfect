@@ -83,6 +83,13 @@ export const useGridNavigation = (totalCols: number) => {
 
     // Arrow Navigation
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      const isStatusMenuOpen = document.body.dataset.patientStatusMenuOpen === 'true';
+      if (isStatusMenuOpen && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
       // If composing, let the user navigate inside the text (e.g. choosing suggestions)
       if (e.nativeEvent.isComposing) {
           return;

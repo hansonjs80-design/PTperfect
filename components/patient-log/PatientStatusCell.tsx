@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, memo } from 'react';
+import React, { useEffect, useState, useRef, memo } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { PatientVisit } from '../../types';
 import { StatusSelectionMenu } from './StatusSelectionMenu';
@@ -30,6 +30,20 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const cellRef = useRef<HTMLDivElement>(null);
   const lastClickTimeRef = useRef<number>(0);
   const { handleGridKeyDown } = useGridNavigation(11);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    if (menuPos) {
+      document.body.dataset.patientStatusMenuOpen = 'true';
+      return () => {
+        delete document.body.dataset.patientStatusMenuOpen;
+      };
+    }
+
+    delete document.body.dataset.patientStatusMenuOpen;
+    return undefined;
+  }, [menuPos]);
 
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent, isKeyboard: boolean = false) => {
     e.preventDefault();

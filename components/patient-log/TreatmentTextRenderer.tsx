@@ -93,6 +93,13 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
     const handleWindowKeyDown = (e: KeyboardEvent) => {
       if (selectedStepIndex === null) return;
 
+      const isStatusMenuOpen = document.body.dataset.patientStatusMenuOpen === 'true';
+      if (isStatusMenuOpen && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
       const target = e.target as HTMLElement | null;
       const isEditableTarget = !!target && (
         target.tagName === 'INPUT'
