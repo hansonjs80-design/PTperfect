@@ -312,10 +312,12 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
           className={`
             w-full h-full px-2 py-1 flex items-center border-none outline-none
             ${mode === 'edit'
-              ? 'bg-white dark:bg-slate-700 border-2 border-brand-500 rounded-sm text-center !text-gray-900 dark:!text-gray-100'
+              ? 'bg-transparent text-center !text-gray-900 dark:!text-gray-100'
               : 'bg-transparent'}
             ${(directEdit && mode !== 'edit') ? 'cursor-default select-none caret-transparent' : 'cursor-pointer'} hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-sm truncate
-            focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 ${mode === 'edit' ? '' : 'focus:bg-transparent dark:focus:bg-transparent'}
+            ${mode === 'edit'
+              ? 'focus:outline-none focus:ring-0 focus:bg-transparent dark:focus:bg-transparent'
+              : 'focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 focus:bg-transparent dark:focus:bg-transparent'}
             ${!localValue ? 'placeholder-gray-300 italic' : ''} ${className}
           `}
           title={directEdit ? '클릭: 셀 선택 / 더블클릭: 수정' : '클릭하여 옵션 열기'}
