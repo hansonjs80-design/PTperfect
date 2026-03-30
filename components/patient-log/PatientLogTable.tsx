@@ -524,8 +524,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       }
     }
 
-    const previouslyHighlighted = Array.from(document.querySelectorAll('[data-grid-id][data-grid-selection="true"]')) as HTMLElement[];
-    previouslyHighlighted.forEach((host) => {
+    const previouslyHighlightedHosts = Array.from(document.querySelectorAll('[data-grid-id][data-grid-selection="true"]')) as HTMLElement[];
+    previouslyHighlightedHosts.forEach((host) => {
       host.removeAttribute('data-grid-selection');
       host.style.boxShadow = '';
       host.style.outline = '';
@@ -534,14 +534,26 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       host.style.borderRadius = '';
     });
 
+    const previouslyHighlightedCells = Array.from(document.querySelectorAll('td[data-grid-selection="true"]')) as HTMLElement[];
+    previouslyHighlightedCells.forEach((cell) => {
+      cell.removeAttribute('data-grid-selection');
+      cell.style.boxShadow = '';
+      cell.style.outline = '';
+      cell.style.outlineOffset = '';
+      cell.style.backgroundColor = '';
+      cell.style.borderRadius = '';
+    });
+
     selected.forEach((id) => {
       const host = document.querySelector(`[data-grid-id="${id}"]`) as HTMLElement | null;
       if (!host) return;
-      host.setAttribute('data-grid-selection', 'true');
-      host.style.outline = '2px solid rgb(14 165 233)';
-      host.style.outlineOffset = '-1px';
-      host.style.backgroundColor = 'rgba(14, 165, 233, 0.08)';
-      host.style.borderRadius = '2px';
+      const cell = host.closest('td') as HTMLElement | null;
+      if (!cell) return;
+
+      cell.setAttribute('data-grid-selection', 'true');
+      cell.style.boxShadow = 'inset 0 0 0 2px rgb(14 165 233)';
+      cell.style.backgroundColor = 'rgba(14, 165, 233, 0.08)';
+      cell.style.borderRadius = '0';
     });
   }, [selection, visits.length, totalRows]);
 
