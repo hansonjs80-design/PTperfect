@@ -557,10 +557,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.chart_number || ''}
           placeholder=""
           menuTitle="차트 번호 수정 (로그만 변경)"
-          className={`bg-transparent justify-center text-center ${!visit?.chart_number
-            ? 'font-normal text-gray-300 dark:text-gray-500'
-            : 'font-black text-slate-800 dark:text-slate-100'
-            } ${isDraft ? 'placeholder-gray-300 font-normal' : ''} text-[13.5px] sm:text-[14.4px]`}
+          className={`bg-transparent justify-center text-center font-black text-slate-800 dark:text-slate-100 ${isDraft ? 'placeholder-gray-300' : ''} text-[13.5px] sm:text-[14.4px]`}
           onCommit={(val, skipSync, navDir) => handleChange('chart_number', val || '', skipSync, 1, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -576,10 +573,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.patient_name || ''}
           placeholder=""
           menuTitle="이름 수정 (로그만 변경)"
-          className={`bg-transparent justify-center text-center ${!visit?.patient_name
-            ? 'font-normal text-gray-300 dark:text-gray-500'
-            : 'font-black text-slate-800 dark:text-slate-100'
-            } ${isDraft ? 'placeholder-gray-300 font-normal' : ''} text-[13.5px] sm:text-[14.4px]`}
+          className={`bg-transparent justify-center text-center font-black text-slate-800 dark:text-slate-100 ${isDraft ? 'placeholder-gray-300' : ''} text-[13.5px] sm:text-[14.4px]`}
           onCommit={(val, skipSync, navDir) => handleChange('patient_name', val || '', skipSync, 2, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
