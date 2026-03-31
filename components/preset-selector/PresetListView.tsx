@@ -174,6 +174,7 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                       : 'border-transparent hover:border-brand-300 dark:hover:border-slate-600'
                 }`}
                 onClick={() => {
+                  setHighlightedIndex(currentIndex);
                   if (compactMode) return;
                   handleToggleExpand(preset.id);
                 }}
