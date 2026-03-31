@@ -2,8 +2,9 @@
 import React, { useEffect, useState, useRef, memo } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { PatientVisit } from '../../types';
-import { StatusSelectionMenu } from './StatusSelectionMenu';
+import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, StatusSelectionMenu } from './StatusSelectionMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
 
 interface PatientStatusCellProps {
   visit?: PatientVisit;
@@ -28,6 +29,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   colIndex,
   disableBedSync = false
 }) => {
+  const [statusOptions] = useLocalStorage('patient-log-status-options-v1', DEFAULT_STATUS_OPTIONS);
   const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null);
   const [selectedStatusKey, setSelectedStatusKey] = useState<keyof PatientVisit | null>(null);
   const [menuVisitSnapshot, setMenuVisitSnapshot] = useState<Partial<PatientVisit> | null>(null);
@@ -37,6 +39,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const pendingSnapshotRef = useRef<Partial<PatientVisit> | null>(null);
   const createPromiseRef = useRef<Promise<string> | null>(null);
   const { handleGridKeyDown } = useGridNavigation(11);
+  const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
 
   const STATUS_KEYS: Array<keyof PatientVisit> = [
     'is_injection',
@@ -177,15 +180,16 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     cellDisplayVisit.is_exercise
   );
 
-  const statusPills = [
-    { key: 'is_injection', active: !!cellDisplayVisit?.is_injection, label: '주사', bg: 'bg-red-500' },
-    { key: 'is_fluid', active: !!cellDisplayVisit?.is_fluid, label: '수액', bg: 'bg-cyan-500' },
-    { key: 'is_manual', active: !!cellDisplayVisit?.is_manual, label: '도수', bg: 'bg-violet-500' },
-    { key: 'is_eswt', active: !!cellDisplayVisit?.is_eswt, label: '충격파', bg: 'bg-blue-500' },
-    { key: 'is_traction', active: !!cellDisplayVisit?.is_traction, label: '견인', bg: 'bg-orange-500' },
-    { key: 'is_ion', active: !!cellDisplayVisit?.is_ion, label: '이온', bg: 'bg-emerald-500' },
-    { key: 'is_exercise', active: !!cellDisplayVisit?.is_exercise, label: '운동', bg: 'bg-lime-500' },
-  ] as const satisfies ReadonlyArray<{ key: keyof PatientVisit; active: boolean; label: string; bg: string }>;
+  const statusPills = normalizedStatusOptions.map((option) => {
+    const palette = STATUS_COLOR_OPTIONS[option.color];
+    return {
+      key: option.key as keyof PatientVisit,
+      active: !!cellDisplayVisit?.[option.key],
+      label: option.label,
+      bg: palette.button,
+      text: palette.buttonText,
+    };
+  }) as ReadonlyArray<{ key: keyof PatientVisit; active: boolean; label: string; bg: string; text: string }>;
 
   const activeStatusPills = statusPills.filter((item) => item.active);
 
@@ -236,7 +240,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                     e.stopPropagation();
                     setSelectedStatusKey((prev) => prev === item.key ? null : item.key);
                   }}
-                  className={`px-1.5 py-0.5 rounded-md text-[13px] font-black text-white ${item.bg} ${selectedStatusKey === item.key ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
+                  className={`px-1.5 py-0.5 rounded-md text-[13px] font-black ${item.bg} ${item.text} ${selectedStatusKey === item.key ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
                 >
                   {item.label}
                 </span>

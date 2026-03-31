@@ -1,10 +1,78 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, Plus, Settings2, Trash2 } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Plus, Settings2, Trash2 } from 'lucide-react';
 import { PatientVisit } from '../../types';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { ContextMenu } from '../common/ContextMenu';
 
-type StatusKey = 'is_injection' | 'is_fluid' | 'is_manual' | 'is_eswt' | 'is_traction' | 'is_ion' | 'is_exercise';
+export type StatusKey = 'is_injection' | 'is_fluid' | 'is_manual' | 'is_eswt' | 'is_traction' | 'is_ion' | 'is_exercise';
+export type StatusColorKey = 'red' | 'sky' | 'violet' | 'blue' | 'orange' | 'emerald' | 'lime' | 'pink';
+
+export interface StatusColorOption {
+  key: StatusColorKey;
+  dot: string;
+  button: string;
+  buttonText: string;
+  menuActive: string;
+}
+
+export const STATUS_COLOR_OPTIONS: Record<StatusColorKey, StatusColorOption> = {
+  red: {
+    key: 'red',
+    dot: 'bg-red-500',
+    button: 'bg-red-500',
+    buttonText: 'text-white',
+    menuActive: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300',
+  },
+  sky: {
+    key: 'sky',
+    dot: 'bg-sky-500',
+    button: 'bg-sky-500',
+    buttonText: 'text-white',
+    menuActive: 'bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-300',
+  },
+  violet: {
+    key: 'violet',
+    dot: 'bg-violet-500',
+    button: 'bg-violet-500',
+    buttonText: 'text-white',
+    menuActive: 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-300',
+  },
+  blue: {
+    key: 'blue',
+    dot: 'bg-blue-500',
+    button: 'bg-blue-500',
+    buttonText: 'text-white',
+    menuActive: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300',
+  },
+  orange: {
+    key: 'orange',
+    dot: 'bg-orange-500',
+    button: 'bg-orange-500',
+    buttonText: 'text-white',
+    menuActive: 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300',
+  },
+  emerald: {
+    key: 'emerald',
+    dot: 'bg-emerald-500',
+    button: 'bg-emerald-500',
+    buttonText: 'text-white',
+    menuActive: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300',
+  },
+  lime: {
+    key: 'lime',
+    dot: 'bg-lime-500',
+    button: 'bg-lime-500',
+    buttonText: 'text-slate-900',
+    menuActive: 'bg-lime-50 text-lime-700 dark:bg-lime-900/20 dark:text-lime-300',
+  },
+  pink: {
+    key: 'pink',
+    dot: 'bg-pink-500',
+    button: 'bg-pink-500',
+    buttonText: 'text-white',
+    menuActive: 'bg-pink-50 text-pink-700 dark:bg-pink-900/20 dark:text-pink-300',
+  },
+};
 
 interface StatusSelectionMenuProps {
   visit?: PatientVisit;
@@ -14,24 +82,36 @@ interface StatusSelectionMenuProps {
   title: string;
 }
 
-interface StatusOptionConfig {
+export interface StatusOptionConfig {
   key: StatusKey;
   label: string;
   visible: boolean;
   order: number;
+  color: StatusColorKey;
 }
 
-const DEFAULT_STATUS_OPTIONS: StatusOptionConfig[] = [
-  { key: 'is_injection', label: '주사', visible: true, order: 0 },
-  { key: 'is_fluid', label: '수액', visible: true, order: 1 },
-  { key: 'is_manual', label: '도수', visible: true, order: 2 },
-  { key: 'is_eswt', label: '충격파', visible: true, order: 3 },
-  { key: 'is_traction', label: '견인', visible: true, order: 4 },
-  { key: 'is_ion', label: '이온', visible: true, order: 5 },
-  { key: 'is_exercise', label: '운동', visible: true, order: 6 },
+export const DEFAULT_STATUS_OPTIONS: StatusOptionConfig[] = [
+  { key: 'is_injection', label: '주사', visible: true, order: 0, color: 'red' },
+  { key: 'is_fluid', label: '수액', visible: true, order: 1, color: 'sky' },
+  { key: 'is_manual', label: '도수', visible: true, order: 2, color: 'violet' },
+  { key: 'is_eswt', label: '충격파', visible: true, order: 3, color: 'blue' },
+  { key: 'is_traction', label: '견인', visible: true, order: 4, color: 'orange' },
+  { key: 'is_ion', label: '이온', visible: true, order: 5, color: 'emerald' },
+  { key: 'is_exercise', label: '운동', visible: true, order: 6, color: 'lime' },
 ];
 
 const sortStatusOptions = (options: StatusOptionConfig[]) => [...options].sort((a, b) => a.order - b.order);
+const DEFAULT_STATUS_OPTION_MAP = new Map(DEFAULT_STATUS_OPTIONS.map((option) => [option.key, option] as const));
+
+export const normalizeStatusOptions = (options: StatusOptionConfig[]) =>
+  DEFAULT_STATUS_OPTIONS.map((defaultOption) => {
+    const current = options.find((option) => option.key === defaultOption.key);
+    return {
+      ...defaultOption,
+      ...current,
+      color: current?.color ?? defaultOption.color,
+    };
+  });
 
 export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   visit,
@@ -42,8 +122,10 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 }) => {
   const [statusOptions, setStatusOptions] = useLocalStorage<StatusOptionConfig[]>('patient-log-status-options-v1', DEFAULT_STATUS_OPTIONS);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const orderedStatusOptions = useMemo(() => sortStatusOptions(statusOptions), [statusOptions]);
+  const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
+  const orderedStatusOptions = useMemo(() => sortStatusOptions(normalizedStatusOptions), [normalizedStatusOptions]);
   const visibleStatusOptions = useMemo(() => orderedStatusOptions.filter((opt) => opt.visible), [orderedStatusOptions]);
+  const hiddenStatusOptions = useMemo(() => orderedStatusOptions.filter((opt) => !opt.visible), [orderedStatusOptions]);
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const initialIndex = useMemo(() => {
     const activeIdx = visibleStatusOptions.findIndex((opt) => visit ? !!visit[opt.key] : false);
@@ -185,58 +267,130 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       )}
     >
       {isSettingsOpen ? (
-        <div className="flex flex-col gap-2">
-          {orderedStatusOptions.map((opt, idx) => (
-            <div key={opt.key} className="rounded-lg border border-slate-200 dark:border-slate-700 p-2">
-              <div className="flex items-center gap-2">
-                <input
-                  value={opt.label}
-                  onChange={(e) => updateStatusOption(opt.key, (current) => ({ ...current, label: e.target.value }))}
-                  className="flex-1 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
-                />
-                <button
-                  type="button"
-                  onClick={() => moveStatusOption(opt.key, 'up')}
-                  disabled={idx === 0}
-                  className="rounded-md p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-30 dark:text-slate-300 dark:hover:bg-slate-700"
-                  title="위로 이동"
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveStatusOption(opt.key, 'down')}
-                  disabled={idx === orderedStatusOptions.length - 1}
-                  className="rounded-md p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-30 dark:text-slate-300 dark:hover:bg-slate-700"
-                  title="아래로 이동"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500">
-                  {opt.visible ? '현재 표시 중' : '숨겨진 항목'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => updateStatusOption(opt.key, (current) => ({ ...current, visible: !current.visible }))}
-                  className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition-colors ${
-                    opt.visible
-                      ? 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300'
-                      : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300'
-                  }`}
-                >
-                  {opt.visible ? <Trash2 className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-                  {opt.visible ? '삭제' : '추가'}
-                </button>
-              </div>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
+            <div className="px-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              현재 목록
             </div>
-          ))}
+            {visibleStatusOptions.length > 0 ? visibleStatusOptions.map((opt) => {
+              const idx = orderedStatusOptions.findIndex((item) => item.key === opt.key);
+              return (
+                <div key={opt.key} className="rounded-lg border border-slate-200 dark:border-slate-700 p-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={opt.label}
+                      onChange={(e) => updateStatusOption(opt.key, (current) => ({ ...current, label: e.target.value }))}
+                      className="flex-1 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => moveStatusOption(opt.key, 'up')}
+                      disabled={idx === 0}
+                      className="rounded-md p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-30 dark:text-slate-300 dark:hover:bg-slate-700"
+                      title="위로 이동"
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveStatusOption(opt.key, 'down')}
+                      disabled={idx === orderedStatusOptions.length - 1}
+                      className="rounded-md p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-30 dark:text-slate-300 dark:hover:bg-slate-700"
+                      title="아래로 이동"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="mt-2 flex items-center gap-1">
+                    {(Object.keys(STATUS_COLOR_OPTIONS) as StatusColorKey[]).map((colorKey) => {
+                      const palette = STATUS_COLOR_OPTIONS[colorKey];
+                      const isSelectedColor = opt.color === colorKey;
+                      return (
+                        <button
+                          key={colorKey}
+                          type="button"
+                          onClick={() => updateStatusOption(opt.key, (current) => ({ ...current, color: colorKey }))}
+                          className={`relative h-6 w-6 rounded-full border-2 transition-transform hover:scale-105 ${palette.dot} ${isSelectedColor ? 'border-sky-400' : 'border-white dark:border-slate-800'}`}
+                          title={`${opt.label} 색상 변경`}
+                        >
+                          {isSelectedColor && <Check className="mx-auto h-3.5 w-3.5 text-white drop-shadow" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500">
+                      현재 표시 중
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => updateStatusOption(opt.key, (current) => ({ ...current, visible: false }))}
+                      className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-[11px] font-bold text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              );
+            }) : (
+              <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-slate-500">
+                현재 표시 중인 항목이 없습니다.
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="px-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              추가 가능한 항목
+            </div>
+            {hiddenStatusOptions.length > 0 ? hiddenStatusOptions.map((opt) => (
+              <div key={opt.key} className="rounded-lg border border-dashed border-emerald-200 bg-emerald-50/50 p-2 dark:border-emerald-800/60 dark:bg-emerald-950/20">
+                <div className="flex items-center justify-between gap-2">
+                  <input
+                    value={opt.label}
+                    onChange={(e) => updateStatusOption(opt.key, (current) => ({ ...current, label: e.target.value }))}
+                    className="flex-1 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updateStatusOption(opt.key, (current) => ({ ...current, visible: true }))}
+                    className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-600 transition-colors hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300"
+                  >
+                    <Plus className="w-3 h-3" />
+                    추가
+                  </button>
+                </div>
+                <div className="mt-2 flex items-center gap-1">
+                  {(Object.keys(STATUS_COLOR_OPTIONS) as StatusColorKey[]).map((colorKey) => {
+                    const palette = STATUS_COLOR_OPTIONS[colorKey];
+                    const isSelectedColor = opt.color === colorKey;
+                    return (
+                      <button
+                        key={colorKey}
+                        type="button"
+                        onClick={() => updateStatusOption(opt.key, (current) => ({ ...current, color: colorKey }))}
+                        className={`relative h-5 w-5 rounded-full border-2 transition-transform hover:scale-105 ${palette.dot} ${isSelectedColor ? 'border-sky-400' : 'border-white dark:border-slate-800'}`}
+                        title={`${opt.label} 색상 변경`}
+                      >
+                        {isSelectedColor && <Check className="mx-auto h-3 w-3 text-white drop-shadow" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )) : (
+              <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-slate-500">
+                더 추가할 수 있는 항목이 없습니다.
+              </div>
+            )}
+          </div>
         </div>
       ) : visibleStatusOptions.length > 0 ? (
         visibleStatusOptions.map((opt, idx) => {
           const isActive = activeKeys.has(opt.key);
           const isFocusedOption = idx === activeIndex;
+          const palette = STATUS_COLOR_OPTIONS[opt.color] || STATUS_COLOR_OPTIONS[DEFAULT_STATUS_OPTION_MAP.get(opt.key)?.color || 'sky'];
           return (
             <button
               key={opt.key}
@@ -256,12 +410,12 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
               }}
               onTouchStart={() => setActiveIndex(idx)}
               className={`flex items-center justify-between p-2 rounded-lg transition-colors text-xs font-bold w-full ${isActive
-                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                  ? palette.menuActive
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                 } ${isFocusedOption ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
             >
               <span>{opt.label}</span>
-              {isActive && <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+              {isActive && <div className={`w-1.5 h-1.5 rounded-full ${palette.dot}`} />}
             </button>
           );
         })
