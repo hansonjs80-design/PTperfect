@@ -36,6 +36,7 @@ create table if not exists public.beds (
   is_manual boolean default false,
   is_ion boolean default false,
   is_exercise boolean default false,
+  custom_statuses jsonb default '[]'::jsonb,
   is_injection_completed boolean default false,
   patient_memo text,
   memos jsonb default '{}'::jsonb,
@@ -259,6 +260,9 @@ begin
   end if;
   if not exists (select 1 from information_schema.columns where table_name = 'patient_visits' and column_name = 'is_exercise') then
     alter table public.patient_visits add column is_exercise boolean default false;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'patient_visits' and column_name = 'custom_statuses') then
+    alter table public.patient_visits add column custom_statuses jsonb default '[]'::jsonb;
   end if;
   if not exists (select 1 from information_schema.columns where table_name = 'patient_visits' and column_name = 'is_injection_completed') then
     alter table public.patient_visits add column is_injection_completed boolean default false;

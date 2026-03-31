@@ -8,6 +8,8 @@ import { getRowActiveStatus } from '../../utils/patientLogUtils';
 import { useColumnResize } from '../../hooks/useColumnResize';
 import { generateTreatmentString } from '../../utils/bedUtils';
 import { normalizeUpperEnglishKeyInput } from '../../utils/keyboardLayout';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_OPTIONS_STORAGE_KEY, type StatusOptionConfig } from './StatusSelectionMenu';
 
 type GridCellPos = { row: number; col: number };
 type GridSelection = { start: GridCellPos; end: GridCellPos } | null;
@@ -25,16 +27,24 @@ const STATUS_TEXT_PAIRS = [
   ['is_exercise', '운동'],
 ] as const satisfies ReadonlyArray<readonly [keyof PatientVisit, string]>;
 
-const buildStatusText = (visit: PatientVisit) => STATUS_TEXT_PAIRS
-  .filter(([key]) => !!visit[key])
-  .map(([, label]) => label)
-  .join(', ');
+const buildStatusText = (visit: PatientVisit, statusOptions: StatusOptionConfig[]) => [
+  ...statusOptions
+    .filter((option) => option.kind === 'predefined' && option.key && !!visit[option.key])
+    .map((option) => option.label),
+  ...(visit.custom_statuses || [])
+    .sort((a, b) => a.order - b.order)
+    .map((status) => {
+      const matched = statusOptions.find((option) => option.id === status.id);
+      return matched?.label || status.label;
+    }),
+].join(', ');
 
-const parseStatusText = (raw: string): Partial<PatientVisit> => {
+const parseStatusText = (raw: string, statusOptions: StatusOptionConfig[]): Partial<PatientVisit> => {
   const normalized = raw.trim();
   const baseFlags = Object.fromEntries(
     STATUS_TEXT_PAIRS.map(([key]) => [key, false])
-  ) as Partial<PatientVisit>;
+  ) as Partial<PatientVisit> & { custom_statuses?: PatientVisit['custom_statuses'] };
+  baseFlags.custom_statuses = [];
 
   if (!normalized) return baseFlags;
 
@@ -44,16 +54,29 @@ const parseStatusText = (raw: string): Partial<PatientVisit> => {
     .filter(Boolean);
 
   const matchedKeys = new Set<keyof PatientVisit>();
+  const matchedCustomStatuses: NonNullable<PatientVisit['custom_statuses']> = [];
   for (const token of tokens) {
-    const matched = STATUS_TEXT_PAIRS.find(([, label]) => label === token);
-    if (matched) {
-      matchedKeys.add(matched[0]);
+    const matchedPredefined = statusOptions.find((option) => option.kind === 'predefined' && option.label === token);
+    if (matchedPredefined?.key) {
+      matchedKeys.add(matchedPredefined.key);
+      continue;
+    }
+
+    const matchedCustom = statusOptions.find((option) => option.kind === 'custom' && option.label === token);
+    if (matchedCustom) {
+      matchedCustomStatuses.push({
+        id: matchedCustom.id,
+        label: matchedCustom.label,
+        color: matchedCustom.color,
+        order: matchedCustom.order,
+      });
     }
   }
 
   STATUS_TEXT_PAIRS.forEach(([key]) => {
     baseFlags[key] = matchedKeys.has(key);
   });
+  baseFlags.custom_statuses = matchedCustomStatuses;
 
   return baseFlags;
 };
@@ -145,6 +168,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   cancelAutoFocusRef,
   draftRowKey = 0
 }) => {
+  const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
+  const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
   const [totalRows, setTotalRows] = useState(120);
   const [selection, setSelection] = useState<GridSelection>(null);
   const [rowHeaderMenu, setRowHeaderMenu] = useState<{ row: number; rows: number[]; x: number; y: number } | null>(null);
@@ -356,13 +381,13 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       case 3: return visit.gender || '';
       case 4: return visit.body_part || '';
       case 5: return visit.treatment_name || '';
-      case 6: return buildStatusText(visit);
+      case 6: return buildStatusText(visit, normalizedStatusOptions);
       case 7: return visit.memo || '';
       case 8: return visit.special_note || '';
       case 10: return visit.author || '';
       default: return '';
     }
-  }, []);
+  }, [normalizedStatusOptions]);
 
 
   const normalizeTreatmentPasteText = useCallback((text: string) => {
@@ -434,7 +459,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         onUpdate(visit.id, { memo: text }, true);
         return;
       case 6: {
-        const nextFlags = parseStatusText(text);
+        const nextFlags = parseStatusText(text, normalizedStatusOptions);
         const shouldSkipBedSync = isBedActivationDisabled || getRowStatus(visit.id, visit.bed_id) !== 'active';
         onUpdate(visit.id, nextFlags, shouldSkipBedSync);
         return;
@@ -448,7 +473,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       default:
         return;
     }
-  }, [onUpdate, getRowStatus, normalizeTreatmentPasteText, onClearBed, isBedActivationDisabled]);
+  }, [onUpdate, getRowStatus, normalizeTreatmentPasteText, onClearBed, isBedActivationDisabled, normalizedStatusOptions]);
 
   const handleGridClipboardCopy = useCallback((shouldCut: boolean) => {
     const bounds = normalizeSelectionBounds(selection);
@@ -511,7 +536,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
           updates.treatment_name = normalized;
           break;
         case 6:
-          Object.assign(updates, parseStatusText(normalized));
+          Object.assign(updates, parseStatusText(normalized, normalizedStatusOptions));
           break;
         case 7:
           updates.memo = normalized;
@@ -528,7 +553,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     });
 
     return updates;
-  }, [isBedActivationDisabled]);
+  }, [isBedActivationDisabled, normalizedStatusOptions]);
 
   const handleGridPaste = useCallback(async (raw: string) => {
     if (!raw) return;

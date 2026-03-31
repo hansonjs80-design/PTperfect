@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState, useRef, memo } from 'react';
 import { MoreHorizontal } from 'lucide-react';
-import { PatientVisit } from '../../types';
-import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, StatusSelectionMenu } from './StatusSelectionMenu';
+import { PatientCustomStatus, PatientVisit } from '../../types';
+import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, STATUS_OPTIONS_STORAGE_KEY, StatusOptionConfig, StatusSelectionMenu } from './StatusSelectionMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 
@@ -29,9 +29,9 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   colIndex,
   disableBedSync = false
 }) => {
-  const [statusOptions] = useLocalStorage('patient-log-status-options-v1', DEFAULT_STATUS_OPTIONS);
+  const [statusOptions] = useLocalStorage(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null);
-  const [selectedStatusKey, setSelectedStatusKey] = useState<keyof PatientVisit | null>(null);
+  const [selectedStatusKey, setSelectedStatusKey] = useState<string | null>(null);
   const [menuVisitSnapshot, setMenuVisitSnapshot] = useState<Partial<PatientVisit> | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   const lastClickTimeRef = useRef<number>(0);
@@ -116,7 +116,10 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     if ((e.key === 'Backspace' || e.key === 'Delete') && selectedStatusKey) {
       e.preventDefault();
       e.stopPropagation();
-      void toggleStatus(selectedStatusKey);
+      const selectedOption = normalizedStatusOptions.find((option) => option.id === selectedStatusKey);
+      if (selectedOption) {
+        void toggleStatus(selectedOption);
+      }
       setSelectedStatusKey(null);
       return;
     }
@@ -124,17 +127,34 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     handleGridKeyDown(e, rowIndex, colIndex);
   };
 
-  const toggleStatus = async (key: keyof PatientVisit) => {
-    const currentVal = menuVisitSnapshot ? !!menuVisitSnapshot[key] : !!visit?.[key];
-    const newVal = !currentVal;
+  const toggleStatus = async (option: StatusOptionConfig) => {
     const targetVisitId = targetVisitIdRef.current;
-    const nextSnapshot = {
-      ...(pendingSnapshotRef.current || visit || {}),
-      [key]: newVal,
-    };
+    const baseSnapshot = pendingSnapshotRef.current || visit || {};
+    const currentCustomStatuses = [...(baseSnapshot.custom_statuses || [])] as PatientCustomStatus[];
+    const nextSnapshot = { ...baseSnapshot } as Partial<PatientVisit>;
+
+    if (option.kind === 'predefined' && option.key) {
+      const currentVal = !!baseSnapshot[option.key];
+      nextSnapshot[option.key] = !currentVal;
+    } else {
+      const existingIndex = currentCustomStatuses.findIndex((status) => status.id === option.id);
+      if (existingIndex >= 0) {
+        currentCustomStatuses.splice(existingIndex, 1);
+      } else {
+        currentCustomStatuses.push({
+          id: option.id,
+          label: option.label,
+          color: option.color,
+          order: option.order,
+        });
+      }
+      nextSnapshot.custom_statuses = currentCustomStatuses.sort((a, b) => a.order - b.order);
+    }
+
     const snapshotUpdates = Object.fromEntries(
       STATUS_KEYS.map((statusKey) => [statusKey, !!nextSnapshot[statusKey]])
-    ) as Partial<PatientVisit>;
+    ) as Partial<PatientVisit> & { custom_statuses?: PatientCustomStatus[] };
+    snapshotUpdates.custom_statuses = [...(nextSnapshot.custom_statuses || [])];
     const skipSync = disableBedSync || rowStatus !== 'active';
 
     setMenuVisitSnapshot(nextSnapshot);
@@ -147,7 +167,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
     if (isDraft && onCreate) {
       if (!createPromiseRef.current) {
-        createPromiseRef.current = onCreate({ [key]: newVal });
+        createPromiseRef.current = onCreate(snapshotUpdates);
       }
 
       const createdId = await createPromiseRef.current;
@@ -156,7 +176,8 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       const latestSnapshot = pendingSnapshotRef.current || nextSnapshot;
       const createdSnapshotUpdates = Object.fromEntries(
         STATUS_KEYS.map((statusKey) => [statusKey, !!latestSnapshot[statusKey]])
-      ) as Partial<PatientVisit>;
+      ) as Partial<PatientVisit> & { custom_statuses?: PatientCustomStatus[] };
+      createdSnapshotUpdates.custom_statuses = [...(latestSnapshot.custom_statuses || [])];
       onUpdate(createdId, createdSnapshotUpdates, skipSync);
     } else if (visit) {
       onUpdate(visit.id, snapshotUpdates, skipSync);
@@ -177,19 +198,41 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     cellDisplayVisit.is_eswt ||
     cellDisplayVisit.is_traction ||
     cellDisplayVisit.is_ion ||
-    cellDisplayVisit.is_exercise
+    cellDisplayVisit.is_exercise ||
+    !!cellDisplayVisit.custom_statuses?.length
   );
 
-  const statusPills = normalizedStatusOptions.map((option) => {
-    const palette = STATUS_COLOR_OPTIONS[option.color];
-    return {
-      key: option.key as keyof PatientVisit,
-      active: !!cellDisplayVisit?.[option.key],
-      label: option.label,
-      bg: palette.button,
-      text: palette.buttonText,
-    };
-  }) as ReadonlyArray<{ key: keyof PatientVisit; active: boolean; label: string; bg: string; text: string }>;
+  const statusPills = [
+    ...normalizedStatusOptions
+      .filter((option) => {
+        if (option.kind === 'predefined') return true;
+        return !!cellDisplayVisit?.custom_statuses?.some((status) => status.id === option.id);
+      })
+      .map((option) => {
+        const palette = STATUS_COLOR_OPTIONS[option.color];
+        return {
+          key: option.id,
+          active: option.kind === 'predefined'
+            ? !!cellDisplayVisit?.[option.key as keyof PatientVisit]
+            : !!cellDisplayVisit?.custom_statuses?.some((status) => status.id === option.id),
+          label: option.label,
+          bg: palette.button,
+          text: palette.buttonText,
+        };
+      }),
+    ...(cellDisplayVisit?.custom_statuses || [])
+      .filter((status) => !normalizedStatusOptions.some((option) => option.id === status.id))
+      .map((status) => {
+        const palette = STATUS_COLOR_OPTIONS[status.color as keyof typeof STATUS_COLOR_OPTIONS] || STATUS_COLOR_OPTIONS.pink;
+        return {
+          key: status.id,
+          active: true,
+          label: status.label,
+          bg: palette.button,
+          text: palette.buttonText,
+        };
+      }),
+  ] as ReadonlyArray<{ key: string; active: boolean; label: string; bg: string; text: string }>;
 
   const activeStatusPills = statusPills.filter((item) => item.active);
 

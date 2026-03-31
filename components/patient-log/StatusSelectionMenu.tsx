@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronUp, Plus, Settings2, Trash2 } from 'lucide-react';
-import { PatientVisit } from '../../types';
+import { PatientCustomStatus, PatientVisit } from '../../types';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { ContextMenu } from '../common/ContextMenu';
 
 export type StatusKey = 'is_injection' | 'is_fluid' | 'is_manual' | 'is_eswt' | 'is_traction' | 'is_ion' | 'is_exercise';
 export type StatusColorKey = 'red' | 'sky' | 'violet' | 'blue' | 'orange' | 'emerald' | 'lime' | 'pink';
+export const STATUS_OPTIONS_STORAGE_KEY = 'patient-log-status-options-v1';
 
 export interface StatusColorOption {
   key: StatusColorKey;
@@ -78,12 +79,14 @@ interface StatusSelectionMenuProps {
   visit?: PatientVisit;
   position: { x: number; y: number };
   onClose: () => void;
-  onToggle: (key: keyof PatientVisit) => void;
+  onToggle: (option: StatusOptionConfig) => void;
   title: string;
 }
 
 export interface StatusOptionConfig {
-  key: StatusKey;
+  id: string;
+  kind: 'predefined' | 'custom';
+  key?: StatusKey;
   label: string;
   visible: boolean;
   order: number;
@@ -91,27 +94,58 @@ export interface StatusOptionConfig {
 }
 
 export const DEFAULT_STATUS_OPTIONS: StatusOptionConfig[] = [
-  { key: 'is_injection', label: '주사', visible: true, order: 0, color: 'red' },
-  { key: 'is_fluid', label: '수액', visible: true, order: 1, color: 'sky' },
-  { key: 'is_manual', label: '도수', visible: true, order: 2, color: 'violet' },
-  { key: 'is_eswt', label: '충격파', visible: true, order: 3, color: 'blue' },
-  { key: 'is_traction', label: '견인', visible: true, order: 4, color: 'orange' },
-  { key: 'is_ion', label: '이온', visible: true, order: 5, color: 'emerald' },
-  { key: 'is_exercise', label: '운동', visible: true, order: 6, color: 'lime' },
+  { id: 'is_injection', kind: 'predefined', key: 'is_injection', label: '주사', visible: true, order: 0, color: 'red' },
+  { id: 'is_fluid', kind: 'predefined', key: 'is_fluid', label: '수액', visible: true, order: 1, color: 'sky' },
+  { id: 'is_manual', kind: 'predefined', key: 'is_manual', label: '도수', visible: true, order: 2, color: 'violet' },
+  { id: 'is_eswt', kind: 'predefined', key: 'is_eswt', label: '충격파', visible: true, order: 3, color: 'blue' },
+  { id: 'is_traction', kind: 'predefined', key: 'is_traction', label: '견인', visible: true, order: 4, color: 'orange' },
+  { id: 'is_ion', kind: 'predefined', key: 'is_ion', label: '이온', visible: true, order: 5, color: 'emerald' },
+  { id: 'is_exercise', kind: 'predefined', key: 'is_exercise', label: '운동', visible: true, order: 6, color: 'lime' },
 ];
 
 const sortStatusOptions = (options: StatusOptionConfig[]) => [...options].sort((a, b) => a.order - b.order);
-const DEFAULT_STATUS_OPTION_MAP = new Map(DEFAULT_STATUS_OPTIONS.map((option) => [option.key, option] as const));
+const DEFAULT_STATUS_OPTION_MAP = new Map(DEFAULT_STATUS_OPTIONS.map((option) => [option.id, option] as const));
+const PREDEFINED_STATUS_ID_SET = new Set(DEFAULT_STATUS_OPTIONS.map((option) => option.id));
+
+const isStatusColorKey = (value: unknown): value is StatusColorKey =>
+  typeof value === 'string' && value in STATUS_COLOR_OPTIONS;
 
 export const normalizeStatusOptions = (options: StatusOptionConfig[]) =>
-  DEFAULT_STATUS_OPTIONS.map((defaultOption) => {
-    const current = options.find((option) => option.key === defaultOption.key);
-    return {
-      ...defaultOption,
-      ...current,
-      color: current?.color ?? defaultOption.color,
-    };
-  });
+  [
+    ...DEFAULT_STATUS_OPTIONS.map((defaultOption) => {
+      const current = options.find((option) => (option.id || option.key) === defaultOption.id);
+      return {
+        ...defaultOption,
+        ...current,
+        id: current?.id || defaultOption.id,
+        kind: 'predefined' as const,
+        key: defaultOption.key,
+        color: isStatusColorKey(current?.color) ? current.color : defaultOption.color,
+      };
+    }),
+    ...options
+      .filter((option) => {
+        const normalizedId = option.id || option.key;
+        return !!normalizedId && !PREDEFINED_STATUS_ID_SET.has(normalizedId);
+      })
+      .map((option, index) => ({
+        id: option.id || `custom-${index}`,
+        kind: 'custom' as const,
+        key: option.key,
+        label: option.label || `새 항목 ${index + 1}`,
+        visible: option.visible ?? true,
+        order: typeof option.order === 'number' ? option.order : DEFAULT_STATUS_OPTIONS.length + index,
+        color: isStatusColorKey(option.color) ? option.color : 'pink',
+      })),
+  ].sort((a, b) => a.order - b.order)
+    .map((option, order) => ({ ...option, order }));
+
+const customStatusFromOption = (option: StatusOptionConfig): PatientCustomStatus => ({
+  id: option.id,
+  label: option.label,
+  color: option.color,
+  order: option.order,
+});
 
 export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   visit,
@@ -120,7 +154,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   onToggle,
   title
 }) => {
-  const [statusOptions, setStatusOptions] = useLocalStorage<StatusOptionConfig[]>('patient-log-status-options-v1', DEFAULT_STATUS_OPTIONS);
+  const [statusOptions, setStatusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
   const orderedStatusOptions = useMemo(() => sortStatusOptions(normalizedStatusOptions), [normalizedStatusOptions]);
@@ -128,17 +162,24 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   const hiddenStatusOptions = useMemo(() => orderedStatusOptions.filter((opt) => !opt.visible), [orderedStatusOptions]);
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const initialIndex = useMemo(() => {
-    const activeIdx = visibleStatusOptions.findIndex((opt) => visit ? !!visit[opt.key] : false);
+    const activeIdx = visibleStatusOptions.findIndex((opt) => {
+      if (!visit) return false;
+      if (opt.kind === 'predefined' && opt.key) return !!visit[opt.key];
+      return !!visit.custom_statuses?.some((status) => status.id === opt.id);
+    });
     return activeIdx >= 0 ? activeIdx : 0;
   }, [visibleStatusOptions, visit]);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
-  const [activeKeys, setActiveKeys] = useState<Set<StatusKey>>(new Set());
+  const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const next = new Set<StatusKey>();
+    const next = new Set<string>();
     orderedStatusOptions.forEach((opt) => {
-      if (visit?.[opt.key]) {
-        next.add(opt.key);
+      if (opt.kind === 'predefined' && opt.key && visit?.[opt.key]) {
+        next.add(opt.id);
+      }
+      if (opt.kind === 'custom' && visit?.custom_statuses?.some((status) => status.id === opt.id)) {
+        next.add(opt.id);
       }
     });
     setActiveKeys(next);
@@ -166,21 +207,21 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
     if (!option) return;
     setActiveKeys((prev) => {
       const next = new Set(prev);
-      if (next.has(option.key)) next.delete(option.key);
-      else next.add(option.key);
+      if (next.has(option.id)) next.delete(option.id);
+      else next.add(option.id);
       return next;
     });
-    onToggle(option.key);
+    onToggle(option);
   }, [onToggle, visibleStatusOptions]);
 
-  const updateStatusOption = useCallback((key: StatusKey, updater: (current: StatusOptionConfig) => StatusOptionConfig) => {
-    setStatusOptions((prev) => prev.map((opt) => opt.key === key ? updater(opt) : opt));
+  const updateStatusOption = useCallback((id: string, updater: (current: StatusOptionConfig) => StatusOptionConfig) => {
+    setStatusOptions((prev) => normalizeStatusOptions(prev).map((opt) => opt.id === id ? updater(opt) : opt));
   }, [setStatusOptions]);
 
-  const moveStatusOption = useCallback((key: StatusKey, direction: 'up' | 'down') => {
+  const moveStatusOption = useCallback((id: string, direction: 'up' | 'down') => {
     setStatusOptions((prev) => {
-      const ordered = sortStatusOptions(prev);
-      const index = ordered.findIndex((opt) => opt.key === key);
+      const ordered = normalizeStatusOptions(prev);
+      const index = ordered.findIndex((opt) => opt.id === id);
       if (index < 0) return prev;
 
       const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -189,6 +230,25 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       const swapped = [...ordered];
       [swapped[index], swapped[targetIndex]] = [swapped[targetIndex], swapped[index]];
       return swapped.map((opt, order) => ({ ...opt, order }));
+    });
+  }, [setStatusOptions]);
+
+  const addCustomStatusOption = useCallback(() => {
+    setStatusOptions((prev) => {
+      const normalized = normalizeStatusOptions(prev);
+      const nextCustomIndex = normalized.filter((option) => option.kind === 'custom').length + 1;
+      const nextOrder = normalized.length;
+      return [
+        ...normalized,
+        {
+          id: `custom-${crypto.randomUUID()}`,
+          kind: 'custom',
+          label: `새 항목 ${nextCustomIndex}`,
+          visible: true,
+          order: nextOrder,
+          color: 'pink',
+        },
+      ];
     });
   }, [setStatusOptions]);
 
@@ -230,7 +290,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
         e.preventDefault();
         e.stopPropagation();
         const activeOption = visibleStatusOptions[activeIndex];
-        const isAlreadySelected = activeOption ? activeKeys.has(activeOption.key) : false;
+        const isAlreadySelected = activeOption ? activeKeys.has(activeOption.id) : false;
         if (!isAlreadySelected) {
           toggleSelection(activeIndex);
         }
@@ -256,14 +316,26 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       onClose={onClose}
       width={isSettingsOpen ? 340 : 256}
       headerActions={(
-        <button
-          type="button"
-          onClick={() => setIsSettingsOpen((prev) => !prev)}
-          className={`transition-colors ${isSettingsOpen ? 'text-sky-500' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
-          title="추가 사항 목록 설정"
-        >
-          <Settings2 className="w-4 h-4" />
-        </button>
+        <>
+          {isSettingsOpen && (
+            <button
+              type="button"
+              onClick={addCustomStatusOption}
+              className="text-emerald-500 transition-colors hover:text-emerald-600 dark:hover:text-emerald-300"
+              title="새 추가 사항 목록 추가"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen((prev) => !prev)}
+            className={`transition-colors ${isSettingsOpen ? 'text-sky-500' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+            title="추가 사항 목록 설정"
+          >
+            <Settings2 className="w-4 h-4" />
+          </button>
+        </>
       )}
     >
       {isSettingsOpen ? (
@@ -273,18 +345,18 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
               현재 목록
             </div>
             {visibleStatusOptions.length > 0 ? visibleStatusOptions.map((opt) => {
-              const idx = orderedStatusOptions.findIndex((item) => item.key === opt.key);
+              const idx = orderedStatusOptions.findIndex((item) => item.id === opt.id);
               return (
-                <div key={opt.key} className="rounded-lg border border-slate-200 dark:border-slate-700 p-2">
+                <div key={opt.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-2">
                   <div className="flex items-center gap-2">
                     <input
                       value={opt.label}
-                      onChange={(e) => updateStatusOption(opt.key, (current) => ({ ...current, label: e.target.value }))}
+                      onChange={(e) => updateStatusOption(opt.id, (current) => ({ ...current, label: e.target.value }))}
                       className="flex-1 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
                     />
                     <button
                       type="button"
-                      onClick={() => moveStatusOption(opt.key, 'up')}
+                      onClick={() => moveStatusOption(opt.id, 'up')}
                       disabled={idx === 0}
                       className="rounded-md p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-30 dark:text-slate-300 dark:hover:bg-slate-700"
                       title="위로 이동"
@@ -293,7 +365,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => moveStatusOption(opt.key, 'down')}
+                      onClick={() => moveStatusOption(opt.id, 'down')}
                       disabled={idx === orderedStatusOptions.length - 1}
                       className="rounded-md p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-30 dark:text-slate-300 dark:hover:bg-slate-700"
                       title="아래로 이동"
@@ -309,7 +381,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                         <button
                           key={colorKey}
                           type="button"
-                          onClick={() => updateStatusOption(opt.key, (current) => ({ ...current, color: colorKey }))}
+                          onClick={() => updateStatusOption(opt.id, (current) => ({ ...current, color: colorKey }))}
                           className={`relative h-6 w-6 rounded-full border-2 transition-transform hover:scale-105 ${palette.dot} ${isSelectedColor ? 'border-sky-400' : 'border-white dark:border-slate-800'}`}
                           title={`${opt.label} 색상 변경`}
                         >
@@ -324,7 +396,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                     </span>
                     <button
                       type="button"
-                      onClick={() => updateStatusOption(opt.key, (current) => ({ ...current, visible: false }))}
+                      onClick={() => updateStatusOption(opt.id, (current) => ({ ...current, visible: false }))}
                       className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-[11px] font-bold text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -345,16 +417,16 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
               추가 가능한 항목
             </div>
             {hiddenStatusOptions.length > 0 ? hiddenStatusOptions.map((opt) => (
-              <div key={opt.key} className="rounded-lg border border-dashed border-emerald-200 bg-emerald-50/50 p-2 dark:border-emerald-800/60 dark:bg-emerald-950/20">
+              <div key={opt.id} className="rounded-lg border border-dashed border-emerald-200 bg-emerald-50/50 p-2 dark:border-emerald-800/60 dark:bg-emerald-950/20">
                 <div className="flex items-center justify-between gap-2">
                   <input
                     value={opt.label}
-                    onChange={(e) => updateStatusOption(opt.key, (current) => ({ ...current, label: e.target.value }))}
+                    onChange={(e) => updateStatusOption(opt.id, (current) => ({ ...current, label: e.target.value }))}
                     className="flex-1 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
                   />
                   <button
                     type="button"
-                    onClick={() => updateStatusOption(opt.key, (current) => ({ ...current, visible: true }))}
+                    onClick={() => updateStatusOption(opt.id, (current) => ({ ...current, visible: true }))}
                     className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-600 transition-colors hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300"
                   >
                     <Plus className="w-3 h-3" />
@@ -369,7 +441,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                       <button
                         key={colorKey}
                         type="button"
-                        onClick={() => updateStatusOption(opt.key, (current) => ({ ...current, color: colorKey }))}
+                        onClick={() => updateStatusOption(opt.id, (current) => ({ ...current, color: colorKey }))}
                         className={`relative h-5 w-5 rounded-full border-2 transition-transform hover:scale-105 ${palette.dot} ${isSelectedColor ? 'border-sky-400' : 'border-white dark:border-slate-800'}`}
                         title={`${opt.label} 색상 변경`}
                       >
@@ -388,12 +460,12 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
         </div>
       ) : visibleStatusOptions.length > 0 ? (
         visibleStatusOptions.map((opt, idx) => {
-          const isActive = activeKeys.has(opt.key);
+          const isActive = activeKeys.has(opt.id);
           const isFocusedOption = idx === activeIndex;
-          const palette = STATUS_COLOR_OPTIONS[opt.color] || STATUS_COLOR_OPTIONS[DEFAULT_STATUS_OPTION_MAP.get(opt.key)?.color || 'sky'];
+          const palette = STATUS_COLOR_OPTIONS[opt.color] || STATUS_COLOR_OPTIONS[DEFAULT_STATUS_OPTION_MAP.get(opt.id)?.color || 'sky'];
           return (
             <button
-              key={opt.key}
+              key={opt.id}
               type="button"
               ref={(el) => {
                 buttonRefs.current[idx] = el;

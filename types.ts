@@ -32,6 +32,13 @@ export interface Preset {
   textColor?: string; // set badge text color in patient-log treatment cell
 }
 
+export interface PatientCustomStatus {
+  id: string;
+  label: string;
+  color: string;
+  order: number;
+}
+
 export interface BedState {
   id: number;
   status: BedStatus;
@@ -79,6 +86,7 @@ export interface PatientVisit {
   is_manual?: boolean;
   is_ion?: boolean;
   is_exercise?: boolean;
+  custom_statuses?: PatientCustomStatus[];
 }
 
 export interface AppState {

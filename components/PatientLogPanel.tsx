@@ -6,10 +6,11 @@ import { PatientLogHeader } from './patient-log/PatientLogHeader';
 import { PatientLogTable } from './patient-log/PatientLogTable';
 import { Loader2, Search, X, Edit3 } from 'lucide-react';
 import { useLogStatusLogic } from '../hooks/useLogStatusLogic';
-import { BedStatus, PatientVisit, TreatmentStep, QuickTreatment } from '../types';
+import { BedStatus, PatientCustomStatus, PatientVisit, TreatmentStep, QuickTreatment } from '../types';
 import { isOnlineMode, supabase } from '../lib/supabase';
 import { findExactPresetByTreatmentString, generateTreatmentString, parseTreatmentString } from '../utils/bedUtils';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, STATUS_OPTIONS_STORAGE_KEY, type StatusOptionConfig } from './patient-log/StatusSelectionMenu';
 
 const PrintPreviewModal = React.lazy(() => import('./modals/PrintPreviewModal').then(module => ({ default: module.PrintPreviewModal })));
 
@@ -43,6 +44,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const MAX_UNDO_STACK = 250;
   const [authorOptions] = useLocalStorage<string[]>('physio-author-options', ['S', 'K', 'J']);
   const [isBedActivationDisabled, setIsBedActivationDisabled] = useLocalStorage<boolean>('patient-log-bed-activation-disabled', true);
+  const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
+  const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
 
   const cloneVisits = useCallback((rows: PatientVisit[]) => rows.map((v) => ({ ...v })), []);
 
@@ -403,6 +406,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       ...visit,
       bed_id: null,
       treatment_name: isTimerOnlyVisit ? '' : normalizeImportedTreatmentName(visit.treatment_name),
+      custom_statuses: (visit.custom_statuses || []).map((status) => ({ ...status })),
     };
   }, [normalizeImportedTreatmentName]);
 
@@ -866,6 +870,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       payload.is_manual = sanitized.is_manual || false;
       payload.is_ion = sanitized.is_ion || false;
       payload.is_exercise = sanitized.is_exercise || false;
+      payload.custom_statuses = (sanitized.custom_statuses || []).map((status) => ({ ...status }));
       payload.is_injection_completed = sanitized.is_injection_completed || false;
     }
     if (importFieldSelection.author) payload.author = sanitized.author || '';
@@ -1168,16 +1173,27 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                       const treatmentValue = v.treatment_name || '';
                       const matchedPreset = treatmentValue ? findExactPresetByTreatmentString(presets, treatmentValue.trim(), quickTreatments) : null;
                       const treatmentParts = treatmentValue.split('/').map(s => s.trim()).filter(Boolean);
-                      const STATUS_PILL_MAP: Record<string, { label: string; bg: string }> = {
-                        is_injection: { label: '주사', bg: 'bg-red-500' },
-                        is_fluid: { label: '수액', bg: 'bg-cyan-500' },
-                        is_manual: { label: '도수', bg: 'bg-violet-500' },
-                        is_eswt: { label: '충격파', bg: 'bg-blue-500' },
-                        is_traction: { label: '견인', bg: 'bg-orange-500' },
-                        is_ion: { label: '이온', bg: 'bg-emerald-500' },
-                        is_exercise: { label: '운동', bg: 'bg-lime-500' },
-                      };
-                      const activeStatuses = Object.keys(STATUS_PILL_MAP).filter(k => v[k as keyof PatientVisit]);
+                      const activeStatuses = [
+                        ...normalizedStatusOptions
+                          .filter((option) => option.kind === 'predefined' && option.key && !!v[option.key])
+                          .map((option) => ({
+                            id: option.id,
+                            label: option.label,
+                            bg: STATUS_COLOR_OPTIONS[option.color].button,
+                            text: STATUS_COLOR_OPTIONS[option.color].buttonText,
+                          })),
+                        ...(v.custom_statuses || []).map((status) => {
+                          const matched = normalizedStatusOptions.find((option) => option.id === status.id);
+                          const colorKey = (matched?.color || status.color) as keyof typeof STATUS_COLOR_OPTIONS;
+                          const palette = STATUS_COLOR_OPTIONS[colorKey] || STATUS_COLOR_OPTIONS.pink;
+                          return {
+                            id: status.id,
+                            label: matched?.label || status.label,
+                            bg: palette.button,
+                            text: palette.buttonText,
+                          };
+                        }),
+                      ];
 
                       return (
                         <div
@@ -1282,8 +1298,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
                           {/* 추가사항 */}
                           <div className="px-1.5 py-1 flex flex-wrap items-center content-center gap-1 border-r border-gray-100 dark:border-slate-700/50">
-                            {activeStatuses.length > 0 ? activeStatuses.map(k => (
-                              <span key={k} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md text-white ${STATUS_PILL_MAP[k].bg}`}>{STATUS_PILL_MAP[k].label}</span>
+                            {activeStatuses.length > 0 ? activeStatuses.map((status) => (
+                              <span key={status.id} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${status.bg} ${status.text}`}>{status.label}</span>
                             )) : <span className="text-[10px] text-gray-400">-</span>}
                           </div>
 
