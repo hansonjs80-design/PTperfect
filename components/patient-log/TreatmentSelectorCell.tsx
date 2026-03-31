@@ -307,6 +307,17 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     setIsInlineEditing(false);
   };
 
+  const startInlineEditing = () => {
+    if (!preferInlineTextEditing || isReadOnly) return;
+    setInlineInputValue(value);
+    setIsInlineEditing(true);
+    requestAnimationFrame(() => {
+      inlineInputRef.current?.focus();
+      const end = value.length;
+      inlineInputRef.current?.setSelectionRange(end, end);
+    });
+  };
+
   const handleInlineInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -455,9 +466,18 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   placeholder={placeholder}
                 />
                 ) : (
-                  <span className="w-full text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 whitespace-pre-wrap break-all">
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startInlineEditing();
+                    }}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                    className="max-w-full bg-transparent outline-none border-none p-0 text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 whitespace-pre-wrap break-all"
+                  >
                     {value || placeholder}
-                  </span>
+                  </button>
                 )
               ) : (
                 <TreatmentTextRenderer
