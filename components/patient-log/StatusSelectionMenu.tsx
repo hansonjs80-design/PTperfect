@@ -44,12 +44,11 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
     buttonRefs.current[activeIndex]?.focus();
   }, [activeIndex]);
 
-  const applySelection = useCallback((index: number) => {
+  const toggleSelection = useCallback((index: number) => {
     const option = statusOptions[index];
     if (!option) return;
     onToggle(option.key as keyof PatientVisit);
-    onClose();
-  }, [statusOptions, onToggle, onClose]);
+  }, [statusOptions, onToggle]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -67,10 +66,17 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
         return;
       }
 
+      if (e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleSelection(activeIndex);
+        return;
+      }
+
       if (e.key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
-        applySelection(activeIndex);
+        onClose();
         return;
       }
 
@@ -83,7 +89,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [activeIndex, applySelection, onClose, statusOptions.length]);
+  }, [activeIndex, onClose, statusOptions.length, toggleSelection]);
 
   return (
     <ContextMenu
@@ -100,7 +106,10 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
             ref={(el) => {
               buttonRefs.current[idx] = el;
             }}
-            onClick={() => applySelection(idx)}
+            onClick={() => {
+              setActiveIndex(idx);
+              toggleSelection(idx);
+            }}
             onTouchStart={() => setActiveIndex(idx)}
             className={`flex items-center justify-between p-2 rounded-lg transition-colors text-xs font-bold w-full ${isActive
                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
