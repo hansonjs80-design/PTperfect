@@ -97,6 +97,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const [badgeRenamePopup, setBadgeRenamePopup] = useState<{ x: number; y: number } | null>(null);
   const [emptyInputValue, setEmptyInputValue] = useState('');
   const [inlineInputValue, setInlineInputValue] = useState(value);
+  const [isInlineEditing, setIsInlineEditing] = useState(false);
   const lastTouchTimeRef = useRef<number>(0);
   const emptyInputRef = useRef<HTMLInputElement>(null);
   const inlineInputRef = useRef<HTMLInputElement>(null);
@@ -128,6 +129,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   useEffect(() => {
     setInlineInputValue(value);
   }, [value]);
+
+  useEffect(() => {
+    if (!preferInlineTextEditing && isInlineEditing) {
+      setIsInlineEditing(false);
+    }
+  }, [preferInlineTextEditing, isInlineEditing]);
 
   const isMobileOrTabletMode = () => window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches;
 
@@ -207,6 +214,35 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       return;
     }
 
+    const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
+    const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
+    const isPlainTypingKey = (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) || isIMEKey;
+
+    if (preferInlineTextEditing && !isReadOnly && isPlainTypingKey) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (isIMEKey) {
+        setIsInlineEditing(true);
+        requestAnimationFrame(() => {
+          inlineInputRef.current?.focus();
+          const end = inlineInputRef.current?.value.length ?? 0;
+          inlineInputRef.current?.setSelectionRange(end, end);
+        });
+        return;
+      }
+
+      const nextValue = `${value}${e.key}`;
+      setInlineInputValue(nextValue);
+      setIsInlineEditing(true);
+      requestAnimationFrame(() => {
+        inlineInputRef.current?.focus();
+        const end = nextValue.length;
+        inlineInputRef.current?.setSelectionRange(end, end);
+      });
+      return;
+    }
+
     if (e.key === 'Enter') {
       openSelector(e);
     } else {
@@ -247,8 +283,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
 
   const commitInlineInputValue = () => {
     const normalized = inlineInputValue.trim();
-    if (normalized === value.trim()) return;
-    onCommitText(normalized);
+    if (normalized !== value.trim()) {
+      onCommitText(normalized);
+    }
+    setIsInlineEditing(false);
   };
 
   const handleInlineInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -264,6 +302,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       e.preventDefault();
       e.stopPropagation();
       setInlineInputValue(value);
+      setIsInlineEditing(false);
       requestAnimationFrame(() => cellRef.current?.focus());
       return;
     }
@@ -394,6 +433,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   placeholder={placeholder}
                 />
               ) : preferInlineTextEditing && !isReadOnly ? (
+                isInlineEditing ? (
                 <input
                   ref={inlineInputRef}
                   value={inlineInputValue}
@@ -404,6 +444,11 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   className="w-full bg-transparent outline-none border-none text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 placeholder:text-gray-400"
                   placeholder={placeholder}
                 />
+                ) : (
+                  <span className="w-full text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 whitespace-pre-wrap break-all">
+                    {value || placeholder}
+                  </span>
+                )
               ) : (
                 <TreatmentTextRenderer
                   value={value}
