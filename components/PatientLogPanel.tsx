@@ -42,7 +42,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const redoStackRef = useRef<PatientVisit[][]>([]);
   const MAX_UNDO_STACK = 250;
   const [authorOptions] = useLocalStorage<string[]>('physio-author-options', ['S', 'K', 'J']);
-  const [isBedActivationDisabled, setIsBedActivationDisabled] = useLocalStorage<boolean>('patient-log-bed-activation-disabled', false);
+  const [isBedActivationDisabled, setIsBedActivationDisabled] = useLocalStorage<boolean>('patient-log-bed-activation-disabled', true);
 
   const cloneVisits = useCallback((rows: PatientVisit[]) => rows.map((v) => ({ ...v })), []);
 
@@ -880,7 +880,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         return;
       }
 
-      if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !isTextInputLike) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         if (mappedResults.length === 0) return;
 
         e.preventDefault();
