@@ -30,10 +30,21 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 }) => {
   const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null);
   const [selectedStatusKey, setSelectedStatusKey] = useState<keyof PatientVisit | null>(null);
+  const [menuVisitSnapshot, setMenuVisitSnapshot] = useState<Partial<PatientVisit> | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   const lastClickTimeRef = useRef<number>(0);
   const targetVisitIdRef = useRef<string | null>(visit?.id ?? null);
   const { handleGridKeyDown } = useGridNavigation(11);
+
+  const STATUS_KEYS: Array<keyof PatientVisit> = [
+    'is_injection',
+    'is_fluid',
+    'is_manual',
+    'is_eswt',
+    'is_traction',
+    'is_ion',
+    'is_exercise',
+  ];
 
   useEffect(() => {
     if (visit?.id) {
@@ -59,6 +70,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     e.preventDefault();
     e.stopPropagation();
     targetVisitIdRef.current = visit?.id ?? null;
+    setMenuVisitSnapshot(visit ? { ...visit } : {});
 
     if (isKeyboard && cellRef.current) {
       const rect = cellRef.current.getBoundingClientRect();
@@ -104,9 +116,14 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   };
 
   const toggleStatus = async (key: keyof PatientVisit) => {
-    const currentVal = visit ? !!visit[key] : false;
+    const currentVal = menuVisitSnapshot ? !!menuVisitSnapshot[key] : !!visit?.[key];
     const newVal = !currentVal;
     const targetVisitId = targetVisitIdRef.current;
+
+    setMenuVisitSnapshot((prev) => ({
+      ...(prev || {}),
+      [key]: newVal,
+    }));
 
     if (targetVisitId) {
       // 활성 행은 배드 상태 아이콘과 연동, 그 외 행은 로그 전용
@@ -127,24 +144,26 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
   const menuTitle = disableBedSync || rowStatus !== 'active' ? "추가 사항 변경 (단순 기록)" : "추가 사항 변경 (배드 연동)";
 
-  const hasActiveStatus = visit && (
-    visit.is_injection ||
-    visit.is_fluid ||
-    visit.is_manual ||
-    visit.is_eswt ||
-    visit.is_traction ||
-    visit.is_ion ||
-    visit.is_exercise
+  const displayVisit = menuPos ? { ...(visit || {}), ...(menuVisitSnapshot || {}) } as Partial<PatientVisit> : visit;
+
+  const hasActiveStatus = !!displayVisit && (
+    displayVisit.is_injection ||
+    displayVisit.is_fluid ||
+    displayVisit.is_manual ||
+    displayVisit.is_eswt ||
+    displayVisit.is_traction ||
+    displayVisit.is_ion ||
+    displayVisit.is_exercise
   );
 
   const statusPills = [
-    { key: 'is_injection', active: !!visit?.is_injection, label: '주사', bg: 'bg-red-500' },
-    { key: 'is_fluid', active: !!visit?.is_fluid, label: '수액', bg: 'bg-cyan-500' },
-    { key: 'is_manual', active: !!visit?.is_manual, label: '도수', bg: 'bg-violet-500' },
-    { key: 'is_eswt', active: !!visit?.is_eswt, label: '충격파', bg: 'bg-blue-500' },
-    { key: 'is_traction', active: !!visit?.is_traction, label: '견인', bg: 'bg-orange-500' },
-    { key: 'is_ion', active: !!visit?.is_ion, label: '이온', bg: 'bg-emerald-500' },
-    { key: 'is_exercise', active: !!visit?.is_exercise, label: '운동', bg: 'bg-lime-500' },
+    { key: 'is_injection', active: !!displayVisit?.is_injection, label: '주사', bg: 'bg-red-500' },
+    { key: 'is_fluid', active: !!displayVisit?.is_fluid, label: '수액', bg: 'bg-cyan-500' },
+    { key: 'is_manual', active: !!displayVisit?.is_manual, label: '도수', bg: 'bg-violet-500' },
+    { key: 'is_eswt', active: !!displayVisit?.is_eswt, label: '충격파', bg: 'bg-blue-500' },
+    { key: 'is_traction', active: !!displayVisit?.is_traction, label: '견인', bg: 'bg-orange-500' },
+    { key: 'is_ion', active: !!displayVisit?.is_ion, label: '이온', bg: 'bg-emerald-500' },
+    { key: 'is_exercise', active: !!displayVisit?.is_exercise, label: '운동', bg: 'bg-lime-500' },
   ] as const satisfies ReadonlyArray<{ key: keyof PatientVisit; active: boolean; label: string; bg: string }>;
 
   const activeStatusPills = statusPills.filter((item) => item.active);
@@ -212,10 +231,11 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
       {menuPos && (
         <StatusSelectionMenu
-          visit={visit}
+          visit={displayVisit as PatientVisit | undefined}
           position={menuPos}
           onClose={() => {
             setMenuPos(null);
+            setMenuVisitSnapshot(null);
             targetVisitIdRef.current = visit?.id ?? null;
             setTimeout(() => cellRef.current?.focus(), 0);
           }}
