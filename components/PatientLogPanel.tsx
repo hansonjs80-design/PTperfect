@@ -454,14 +454,14 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
   const selectedVisitForSearch = useMemo(() => {
     const targetVisitId = isSearchModalOpen
-      ? (searchTargetContext.visitId || selectedVisitIdForImport)
+      ? searchTargetContext.visitId
       : selectedVisitIdForImport;
 
     if (targetVisitId) {
       return visits.find((visit) => visit.id === targetVisitId) || null;
     }
     const targetRow = isSearchModalOpen
-      ? (searchTargetContext.row ?? selectionAnchor.row)
+      ? searchTargetContext.row
       : selectionAnchor.row;
     if (targetRow === null) return null;
     return visits[targetRow] || null;
@@ -688,9 +688,11 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     if (!nextSpecialNote) return false;
 
     const latestVisits = visitsRef.current;
-    const selectedRow = selectionAnchor.row;
+    const targetContext = searchTargetContextRef.current;
+    const selectedRow = isSearchModalOpen ? targetContext.row : selectionAnchor.row;
     const targetVisitByRow = selectedRow !== null ? latestVisits[selectedRow] : undefined;
-    const targetVisitById = selectedVisitIdForImport ? latestVisits.find((v) => v.id === selectedVisitIdForImport) : undefined;
+    const targetVisitId = isSearchModalOpen ? targetContext.visitId : selectedVisitIdForImport;
+    const targetVisitById = targetVisitId ? latestVisits.find((v) => v.id === targetVisitId) : undefined;
     const targetVisit = targetVisitById || targetVisitByRow;
 
     if (!targetVisit) {
@@ -880,7 +882,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     }
 
     resetSearchModal();
-  }, [trackedAddVisit, selectedResult, modalEdits, sanitizeImportedVisit, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, trackedUpdateVisitWithBedSync, normalizeImportedTreatmentName, importFieldSelection, pendingSearchInput, searchTargetContext]);
+  }, [trackedAddVisit, selectedResult, modalEdits, sanitizeImportedVisit, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, trackedUpdateVisitWithBedSync, normalizeImportedTreatmentName, importFieldSelection, pendingSearchInput, isSearchModalOpen]);
 
   useEffect(() => {
     if (!isSearchModalOpen) return;
