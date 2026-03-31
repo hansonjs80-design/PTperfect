@@ -12,7 +12,7 @@ const RESIZABLE_COLUMNS = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 const ALWAYS_VISIBLE_HANDLE_COLUMNS = new Set([10]);
 
 const thBase =
-  'py-3.5 px-1.5 text-xs md:text-sm font-extrabold text-slate-600 dark:text-slate-300 tracking-[0.02em] text-center border-r border-slate-200 dark:border-slate-700 last:border-r-0';
+  'py-3.5 px-1.5 text-xs md:text-sm font-extrabold text-slate-600 dark:text-slate-300 tracking-[0.02em] text-center border-r border-slate-300 dark:border-slate-600 last:border-r-0';
 
 export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
   onResizeStart,
@@ -100,7 +100,7 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
         <th className={`${thBase} relative`}>
           작성
         </th>
-        <th className={`${thBase} border-l border-slate-200 dark:border-slate-700 w-[52px] min-w-[52px] max-w-[52px] relative`}>
+        <th className={`${thBase} border-l border-slate-300 dark:border-slate-600 w-[52px] min-w-[52px] max-w-[52px] relative`}>
           <div
             className="absolute top-0 left-0 -translate-x-1/2 w-[24px] h-full z-50 flex items-center justify-center cursor-col-resize touch-none group/resize"
             onMouseDown={(e) => {

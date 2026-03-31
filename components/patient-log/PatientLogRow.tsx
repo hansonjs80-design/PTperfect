@@ -323,7 +323,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
   // Row Styling Logic
   // Using transition-colors for smooth hover effect
-  let rowClasses = 'group transition-colors duration-150 border-b border-slate-200 dark:border-slate-700 h-[32px] ';
+  let rowClasses = 'group transition-colors duration-150 border-b border-slate-300 dark:border-slate-600 h-[32px] ';
 
   if (rowStatus === 'active') {
     // Active Row: Blue tint -> Darker Blue on Hover
@@ -348,7 +348,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   if (timerStatus === 'warning') dotColorClass = 'bg-orange-500';
   if (timerStatus === 'overtime') dotColorClass = 'bg-red-600 animate-pulse';
 
-  const cellBorderClass = "border-r border-slate-200 dark:border-slate-700";
+  const cellBorderClass = "border-r border-slate-300 dark:border-slate-600";
   const currentPreset = bed?.customPreset || presets.find(p => p.id === bed?.currentPresetId);
   const currentStep = currentPreset?.steps[bed?.currentStepIndex || 0];
   const activeSteps = currentPreset?.steps || [];
@@ -790,7 +790,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         </div>
       </td>
 
-      <td className="border-l border-slate-200 dark:border-slate-700 p-0 text-center w-[52px] min-w-[52px] max-w-[52px]">
+      <td className="border-l border-slate-300 dark:border-slate-600 p-0 text-center w-[52px] min-w-[52px] max-w-[52px]">
         <div className="relative w-full h-full min-h-[32px]">
           {!isDraft && visit && onDelete && (
             <div
