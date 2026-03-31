@@ -27,6 +27,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   colIndex
 }) => {
   const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null);
+  const [selectedStatusKey, setSelectedStatusKey] = useState<keyof PatientVisit | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   const lastClickTimeRef = useRef<number>(0);
   const { handleGridKeyDown } = useGridNavigation(11);
@@ -78,9 +79,18 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       executeInteraction(e, true);
-    } else {
-      handleGridKeyDown(e, rowIndex, colIndex);
+      return;
     }
+
+    if ((e.key === 'Backspace' || e.key === 'Delete') && selectedStatusKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      void toggleStatus(selectedStatusKey);
+      setSelectedStatusKey(null);
+      return;
+    }
+
+    handleGridKeyDown(e, rowIndex, colIndex);
   };
 
   const toggleStatus = async (key: keyof PatientVisit) => {
@@ -109,14 +119,24 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   );
 
   const statusPills = [
-    { active: !!visit?.is_injection, label: '주사', bg: 'bg-red-500' },
-    { active: !!visit?.is_fluid, label: '수액', bg: 'bg-cyan-500' },
-    { active: !!visit?.is_manual, label: '도수', bg: 'bg-violet-500' },
-    { active: !!visit?.is_eswt, label: '충격파', bg: 'bg-blue-500' },
-    { active: !!visit?.is_traction, label: '견인', bg: 'bg-orange-500' },
-    { active: !!visit?.is_ion, label: '이온', bg: 'bg-emerald-500' },
-    { active: !!visit?.is_exercise, label: '운동', bg: 'bg-lime-500' },
-  ].filter((item) => item.active);
+    { key: 'is_injection', active: !!visit?.is_injection, label: '주사', bg: 'bg-red-500' },
+    { key: 'is_fluid', active: !!visit?.is_fluid, label: '수액', bg: 'bg-cyan-500' },
+    { key: 'is_manual', active: !!visit?.is_manual, label: '도수', bg: 'bg-violet-500' },
+    { key: 'is_eswt', active: !!visit?.is_eswt, label: '충격파', bg: 'bg-blue-500' },
+    { key: 'is_traction', active: !!visit?.is_traction, label: '견인', bg: 'bg-orange-500' },
+    { key: 'is_ion', active: !!visit?.is_ion, label: '이온', bg: 'bg-emerald-500' },
+    { key: 'is_exercise', active: !!visit?.is_exercise, label: '운동', bg: 'bg-lime-500' },
+  ] as const satisfies ReadonlyArray<{ key: keyof PatientVisit; active: boolean; label: string; bg: string }>;
+
+  const activeStatusPills = statusPills.filter((item) => item.active);
+
+  useEffect(() => {
+    if (!selectedStatusKey) return;
+    const stillActive = activeStatusPills.some((item) => item.key === selectedStatusKey);
+    if (!stillActive) {
+      setSelectedStatusKey(null);
+    }
+  }, [selectedStatusKey, activeStatusPills]);
 
   // Helper for title (tooltip)
   const getTitle = () => {
@@ -130,7 +150,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     <>
       <div
         ref={cellRef}
-        className="w-[calc(100%-2px)] h-[calc(100%-2px)] m-px rounded-[1px] flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
+        className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
         onMouseDown={(e) => {
           if (e.button !== 0) return;
           cellRef.current?.focus();
@@ -144,10 +164,21 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         title={getTitle()}
       >
         {hasActiveStatus ? (
-          <div className="w-full h-full px-1.5 py-0.5 flex items-center justify-start">
+          <div className="w-full min-h-0 px-1.5 py-0.5 flex items-center justify-start">
             <div className="flex flex-wrap items-center justify-start gap-1 max-w-full">
-              {statusPills.map((item) => (
-                <span key={item.label} className={`px-1.5 py-0.5 rounded-md text-[13px] font-black text-white ${item.bg}`}>
+              {activeStatusPills.map((item) => (
+                <span
+                  key={item.label}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    cellRef.current?.focus();
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedStatusKey((prev) => prev === item.key ? null : item.key);
+                  }}
+                  className={`px-1.5 py-0.5 rounded-md text-[13px] font-black text-white ${item.bg} ${selectedStatusKey === item.key ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
+                >
                   {item.label}
                 </span>
               ))}
