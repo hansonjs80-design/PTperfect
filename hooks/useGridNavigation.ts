@@ -46,8 +46,8 @@ export const useGridNavigation = (totalCols: number) => {
 
     // Global Debounce check
     const now = Date.now();
-    // 80ms prevents accidental double-firing while keeping arrow navigation snappy
-    if (now - lastGlobalNavTime < 80) {
+    // Keep only a very small cooldown so held arrow keys still feel immediate.
+    if (now - lastGlobalNavTime < 24) {
         // Prevent default even if debounced, to stop native focus jumps during the cooldown
         if (e.key === 'Tab' || e.key === 'Enter') {
             e.preventDefault();

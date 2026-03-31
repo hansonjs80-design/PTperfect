@@ -136,7 +136,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     <>
       <div
         ref={cellRef}
-        className="w-full h-full flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
+        className="w-[calc(100%-2px)] h-[calc(100%-2px)] m-px rounded-[1px] flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
         onClick={handleInteraction}
         onKeyDown={handleKeyDown}
         tabIndex={0}
