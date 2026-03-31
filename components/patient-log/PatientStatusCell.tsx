@@ -129,13 +129,16 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       ...(pendingSnapshotRef.current || visit || {}),
       [key]: newVal,
     };
+    const snapshotUpdates = Object.fromEntries(
+      STATUS_KEYS.map((statusKey) => [statusKey, !!nextSnapshot[statusKey]])
+    ) as Partial<PatientVisit>;
+    const skipSync = disableBedSync || rowStatus !== 'active';
 
     setMenuVisitSnapshot(nextSnapshot);
 
     if (targetVisitId) {
-      // 활성 행은 배드 상태 아이콘과 연동, 그 외 행은 로그 전용
-      const skipSync = disableBedSync || rowStatus !== 'active';
-      onUpdate(targetVisitId, { [key]: newVal }, skipSync);
+      // 팝업 선택 중에는 전체 추가사항 상태를 같은 행에 다시 써서 누락/경합을 막는다.
+      onUpdate(targetVisitId, snapshotUpdates, skipSync);
       return;
     }
 
@@ -147,42 +150,41 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       const createdId = await createPromiseRef.current;
       targetVisitIdRef.current = createdId;
       createPromiseRef.current = null;
-
       const latestSnapshot = pendingSnapshotRef.current || nextSnapshot;
-      const snapshotUpdates = Object.fromEntries(
+      const createdSnapshotUpdates = Object.fromEntries(
         STATUS_KEYS.map((statusKey) => [statusKey, !!latestSnapshot[statusKey]])
       ) as Partial<PatientVisit>;
-      const skipSync = disableBedSync || rowStatus !== 'active';
-      onUpdate(createdId, snapshotUpdates, skipSync);
+      onUpdate(createdId, createdSnapshotUpdates, skipSync);
     } else if (visit) {
-      // 활성 행은 배드 상태 아이콘과 연동, 그 외 행은 로그 전용
-      const skipSync = disableBedSync || rowStatus !== 'active';
-      onUpdate(visit.id, { [key]: newVal }, skipSync);
+      onUpdate(visit.id, snapshotUpdates, skipSync);
     }
   };
 
   const menuTitle = disableBedSync || rowStatus !== 'active' ? "추가 사항 변경 (단순 기록)" : "추가 사항 변경 (배드 연동)";
 
-  const displayVisit = menuPos ? { ...(visit || {}), ...(menuVisitSnapshot || {}) } as Partial<PatientVisit> : visit;
+  const menuDisplayVisit = menuPos ? { ...(visit || {}), ...(menuVisitSnapshot || {}) } as Partial<PatientVisit> : visit;
+  const cellDisplayVisit = menuPos && isDraft && targetVisitIdRef.current
+    ? undefined
+    : menuDisplayVisit;
 
-  const hasActiveStatus = !!displayVisit && (
-    displayVisit.is_injection ||
-    displayVisit.is_fluid ||
-    displayVisit.is_manual ||
-    displayVisit.is_eswt ||
-    displayVisit.is_traction ||
-    displayVisit.is_ion ||
-    displayVisit.is_exercise
+  const hasActiveStatus = !!cellDisplayVisit && (
+    cellDisplayVisit.is_injection ||
+    cellDisplayVisit.is_fluid ||
+    cellDisplayVisit.is_manual ||
+    cellDisplayVisit.is_eswt ||
+    cellDisplayVisit.is_traction ||
+    cellDisplayVisit.is_ion ||
+    cellDisplayVisit.is_exercise
   );
 
   const statusPills = [
-    { key: 'is_injection', active: !!displayVisit?.is_injection, label: '주사', bg: 'bg-red-500' },
-    { key: 'is_fluid', active: !!displayVisit?.is_fluid, label: '수액', bg: 'bg-cyan-500' },
-    { key: 'is_manual', active: !!displayVisit?.is_manual, label: '도수', bg: 'bg-violet-500' },
-    { key: 'is_eswt', active: !!displayVisit?.is_eswt, label: '충격파', bg: 'bg-blue-500' },
-    { key: 'is_traction', active: !!displayVisit?.is_traction, label: '견인', bg: 'bg-orange-500' },
-    { key: 'is_ion', active: !!displayVisit?.is_ion, label: '이온', bg: 'bg-emerald-500' },
-    { key: 'is_exercise', active: !!displayVisit?.is_exercise, label: '운동', bg: 'bg-lime-500' },
+    { key: 'is_injection', active: !!cellDisplayVisit?.is_injection, label: '주사', bg: 'bg-red-500' },
+    { key: 'is_fluid', active: !!cellDisplayVisit?.is_fluid, label: '수액', bg: 'bg-cyan-500' },
+    { key: 'is_manual', active: !!cellDisplayVisit?.is_manual, label: '도수', bg: 'bg-violet-500' },
+    { key: 'is_eswt', active: !!cellDisplayVisit?.is_eswt, label: '충격파', bg: 'bg-blue-500' },
+    { key: 'is_traction', active: !!cellDisplayVisit?.is_traction, label: '견인', bg: 'bg-orange-500' },
+    { key: 'is_ion', active: !!cellDisplayVisit?.is_ion, label: '이온', bg: 'bg-emerald-500' },
+    { key: 'is_exercise', active: !!cellDisplayVisit?.is_exercise, label: '운동', bg: 'bg-lime-500' },
   ] as const satisfies ReadonlyArray<{ key: keyof PatientVisit; active: boolean; label: string; bg: string }>;
 
   const activeStatusPills = statusPills.filter((item) => item.active);
@@ -250,7 +252,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
       {menuPos && (
         <StatusSelectionMenu
-          visit={displayVisit as PatientVisit | undefined}
+          visit={menuDisplayVisit as PatientVisit | undefined}
           position={menuPos}
           onClose={() => {
             setMenuPos(null);
