@@ -163,7 +163,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const menuTitle = disableBedSync || rowStatus !== 'active' ? "추가 사항 변경 (단순 기록)" : "추가 사항 변경 (배드 연동)";
 
   const menuDisplayVisit = menuPos ? { ...(visit || {}), ...(menuVisitSnapshot || {}) } as Partial<PatientVisit> : visit;
-  const cellDisplayVisit = menuPos && isDraft && targetVisitIdRef.current
+  const cellDisplayVisit = menuPos && isDraft && (targetVisitIdRef.current || createPromiseRef.current)
     ? undefined
     : menuDisplayVisit;
 
