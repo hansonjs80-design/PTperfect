@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { ArrowUpDown, Filter, Search, ChevronDown, ChevronUp, Play } from 'lucide-react';
 import { Preset } from '../../types';
 import { getStepLabel } from '../../utils/bedUtils';
@@ -14,6 +14,8 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
   const [filterStep, setFilterStep] = useState<'all' | number>('all');
   const [sortDir, setSortDir] = useState<'none' | 'asc' | 'desc'>('none');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const processedPresets = useMemo(() => {
     let result = [...presets];
@@ -43,6 +45,61 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
     e.stopPropagation(); 
     onSelect(preset);
   };
+
+  useEffect(() => {
+    if (processedPresets.length === 0) {
+      setHighlightedIndex(0);
+      return;
+    }
+
+    setHighlightedIndex((prev) => Math.min(prev, processedPresets.length - 1));
+  }, [processedPresets]);
+
+  useEffect(() => {
+    const highlightedItem = itemRefs.current[highlightedIndex];
+    highlightedItem?.scrollIntoView({ block: 'nearest' });
+  }, [highlightedIndex]);
+
+  useEffect(() => {
+    const handleWindowKeyDown = (e: KeyboardEvent) => {
+      if (processedPresets.length === 0) return;
+
+      const target = e.target as HTMLElement | null;
+      const isTextInputLike = !!target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
+      );
+      if (isTextInputLike) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        e.stopPropagation();
+        setHighlightedIndex((prev) => (prev + 1) % processedPresets.length);
+        return;
+      }
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        e.stopPropagation();
+        setHighlightedIndex((prev) => (prev - 1 + processedPresets.length) % processedPresets.length);
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        const preset = processedPresets[highlightedIndex];
+        if (!preset) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect(preset);
+      }
+    };
+
+    window.addEventListener('keydown', handleWindowKeyDown, true);
+    return () => window.removeEventListener('keydown', handleWindowKeyDown, true);
+  }, [highlightedIndex, onSelect, processedPresets]);
 
   return (
     <div className="space-y-2">
@@ -98,14 +155,21 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
           processedPresets.map(preset => {
             const totalMins = Math.floor(preset.steps.reduce((acc, s) => acc + s.duration, 0) / 60);
             const isExpanded = expandedId === preset.id;
+            const currentIndex = processedPresets.findIndex((item) => item.id === preset.id);
+            const isHighlighted = currentIndex === highlightedIndex;
 
             return (
               <div
                 key={preset.id}
+                ref={(el) => {
+                  itemRefs.current[currentIndex] = el;
+                }}
                 className={`w-full px-3 py-2.5 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border transition-all ${
                   isExpanded 
                     ? 'border-brand-500 ring-1 ring-brand-500/20 shadow-md' 
-                    : 'border-transparent hover:border-brand-300 dark:hover:border-slate-600'
+                    : isHighlighted
+                      ? 'border-sky-400 ring-1 ring-sky-300/70 shadow-md'
+                      : 'border-transparent hover:border-brand-300 dark:hover:border-slate-600'
                 }`}
                 onClick={() => handleToggleExpand(preset.id)}
               >
