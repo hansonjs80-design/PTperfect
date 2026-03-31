@@ -217,13 +217,15 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                       </span>
                     )}
 
-                    <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-colors ${
-                      isExpanded 
-                        ? 'bg-brand-100 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400' 
-                        : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500'
-                    }`}>
-                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                    </div>
+                    {!compactMode && (
+                      <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-colors ${
+                        isExpanded 
+                          ? 'bg-brand-100 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400' 
+                          : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500'
+                      }`}>
+                         {isExpanded ? <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                      </div>
+                    )}
                   </div>
                 </div>
 
