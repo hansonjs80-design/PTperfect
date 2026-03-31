@@ -11,6 +11,7 @@ interface ContextMenuProps {
   children: React.ReactNode;
   width?: number;
   headerActions?: React.ReactNode;
+  maxHeight?: number | string;
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -19,7 +20,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   onClose,
   children,
   width = 256, // w-64
-  headerActions
+  headerActions,
+  maxHeight = 'min(70vh, calc(100vh - 24px))',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   // Pre-compute initial position (estimated height ~150px)
@@ -51,7 +53,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         style={{
           top: pos.y,
           left: pos.x,
-          width: width
+          width: width,
+          maxHeight,
         }}
         onClick={(e) => e.stopPropagation()}
         onDoubleClick={(e) => e.stopPropagation()}
@@ -71,7 +74,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           </div>
         </div>
 
-        <div className="p-2 flex flex-col gap-1">
+        <div className="min-h-0 overflow-y-auto p-2 flex flex-col gap-1">
           {children}
         </div>
       </div>

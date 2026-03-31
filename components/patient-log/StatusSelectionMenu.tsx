@@ -315,12 +315,17 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       position={position}
       onClose={onClose}
       width={isSettingsOpen ? 340 : 256}
+      maxHeight={isSettingsOpen ? 'min(78vh, calc(100vh - 24px))' : 'min(70vh, calc(100vh - 24px))'}
       headerActions={(
         <>
           {isSettingsOpen && (
             <button
               type="button"
-              onClick={addCustomStatusOption}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                addCustomStatusOption();
+              }}
               className="text-emerald-500 transition-colors hover:text-emerald-600 dark:hover:text-emerald-300"
               title="새 추가 사항 목록 추가"
             >
@@ -339,7 +344,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       )}
     >
       {isSettingsOpen ? (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 min-h-0">
           <div className="flex flex-col gap-2">
             <div className="px-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
               현재 목록

@@ -546,6 +546,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                 <input
                   ref={inlineInputRef}
                   data-inline-treatment-editing="true"
+                  data-direct-editing="true"
                   value={inlineInputValue}
                   onChange={(e) => setInlineInputValue(e.target.value)}
                   onKeyDown={handleInlineInputKeyDown}
