@@ -174,6 +174,10 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                       : 'border-transparent hover:border-brand-300 dark:hover:border-slate-600'
                 }`}
                 onClick={() => handleToggleExpand(preset.id)}
+                onDoubleClick={() => {
+                  if (!compactMode) return;
+                  onSelect(preset);
+                }}
               >
                 <div className="flex items-center justify-between cursor-pointer">
                   
