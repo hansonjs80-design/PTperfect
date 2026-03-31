@@ -12,7 +12,50 @@ import { normalizeUpperEnglishKeyInput } from '../../utils/keyboardLayout';
 type GridCellPos = { row: number; col: number };
 type GridSelection = { start: GridCellPos; end: GridCellPos } | null;
 
-const SELECTABLE_COLS = new Set([0, 1, 2, 3, 4, 5, 7, 8, 10]);
+const SELECTABLE_COLS = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 10]);
+
+const STATUS_TEXT_PAIRS = [
+  ['is_injection', '주사'],
+  ['is_fluid', '수액'],
+  ['is_manual', '도수'],
+  ['is_eswt', '충격파'],
+  ['is_traction', '견인'],
+  ['is_ion', '이온'],
+  ['is_exercise', '운동'],
+] as const satisfies ReadonlyArray<readonly [keyof PatientVisit, string]>;
+
+const buildStatusText = (visit: PatientVisit) => STATUS_TEXT_PAIRS
+  .filter(([key]) => !!visit[key])
+  .map(([, label]) => label)
+  .join(', ');
+
+const parseStatusText = (raw: string): Partial<PatientVisit> => {
+  const normalized = raw.trim();
+  const baseFlags = Object.fromEntries(
+    STATUS_TEXT_PAIRS.map(([key]) => [key, false])
+  ) as Partial<PatientVisit>;
+
+  if (!normalized) return baseFlags;
+
+  const tokens = normalized
+    .split(/[,\n/+\s]+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+
+  const matchedKeys = new Set<keyof PatientVisit>();
+  for (const token of tokens) {
+    const matched = STATUS_TEXT_PAIRS.find(([, label]) => label === token);
+    if (matched) {
+      matchedKeys.add(matched[0]);
+    }
+  }
+
+  STATUS_TEXT_PAIRS.forEach(([key]) => {
+    baseFlags[key] = matchedKeys.has(key);
+  });
+
+  return baseFlags;
+};
 
 const normalizeSelectionBounds = (selection: GridSelection) => {
   if (!selection) return null;
@@ -210,6 +253,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       case 3: return visit.gender || '';
       case 4: return visit.body_part || '';
       case 5: return visit.treatment_name || '';
+      case 6: return buildStatusText(visit);
       case 7: return visit.memo || '';
       case 8: return visit.special_note || '';
       case 10: return visit.author || '';
@@ -281,6 +325,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       case 7:
         onUpdate(visit.id, { memo: text }, true);
         return;
+      case 6: {
+        const nextFlags = parseStatusText(text);
+        const shouldSkipBedSync = getRowStatus(visit.id, visit.bed_id) !== 'active';
+        onUpdate(visit.id, nextFlags, shouldSkipBedSync);
+        return;
+      }
       case 8:
         onUpdate(visit.id, { special_note: text }, true);
         return;
@@ -344,6 +394,9 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
           break;
         case 5:
           updates.treatment_name = normalized;
+          break;
+        case 6:
+          Object.assign(updates, parseStatusText(normalized));
           break;
         case 7:
           updates.memo = normalized;

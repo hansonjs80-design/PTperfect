@@ -45,38 +45,32 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     return undefined;
   }, [menuPos]);
 
-  const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent, isKeyboard: boolean = false) => {
+  const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent | React.TouchEvent, isKeyboard: boolean = false) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (isKeyboard && cellRef.current) {
       const rect = cellRef.current.getBoundingClientRect();
       setMenuPos({ x: rect.left + rect.width / 2, y: rect.bottom });
+    } else if ('changedTouches' in e && e.changedTouches.length > 0) {
+      const touch = e.changedTouches[0];
+      setMenuPos({ x: touch.clientX, y: touch.clientY });
     } else {
       const mouseEvent = e as React.MouseEvent;
       setMenuPos({ x: mouseEvent.clientX, y: mouseEvent.clientY });
     }
   };
 
-  // Unified click handler: Desktop (Single Click), Mobile (Manual Double Tap)
-  const handleInteraction = (e: React.MouseEvent) => {
-    // 1. Desktop & Tablet (Width >= 768px) -> Single Click
-    if (window.innerWidth >= 768) {
-      executeInteraction(e);
-      return;
-    }
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    cellRef.current?.focus();
 
-    // 2. Mobile (Width < 768px) -> Manual Double Tap Detection
-    // Native onDoubleClick is unreliable on mobile due to zoom/delay/viewport handling
     const now = Date.now();
     const timeDiff = now - lastClickTimeRef.current;
 
     if (timeDiff < 350 && timeDiff > 0) {
-      // Double tap detected
       executeInteraction(e);
-      lastClickTimeRef.current = 0; // Reset
+      lastClickTimeRef.current = 0;
     } else {
-      // First tap
       lastClickTimeRef.current = now;
     }
   };
@@ -129,7 +123,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       return `더블탭하여 추가 사항 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`;
     }
-    return `클릭하여 추가 사항 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`;
+    return `더블클릭 또는 Enter로 추가 사항 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`;
   };
 
   return (
@@ -137,7 +131,13 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       <div
         ref={cellRef}
         className="w-[calc(100%-2px)] h-[calc(100%-2px)] m-px rounded-[1px] flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
-        onClick={handleInteraction}
+        onMouseDown={(e) => {
+          if (e.button !== 0) return;
+          cellRef.current?.focus();
+        }}
+        onClick={() => cellRef.current?.focus()}
+        onDoubleClick={executeInteraction}
+        onTouchEnd={handleTouchEnd}
         onKeyDown={handleKeyDown}
         tabIndex={0}
         data-grid-id={gridId}
