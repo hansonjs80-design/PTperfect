@@ -258,6 +258,17 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     });
   }, [activeBedIdsInLog, clearBed]);
 
+  const restoreGridFocusAfterModal = useCallback((target?: { row: number | null; col: number | null } | null) => {
+    const restoreRow = target?.row ?? selectionAnchor.row;
+    const restoreCol = target?.col ?? selectionAnchor.col;
+    if (restoreRow === null || restoreCol === null) return;
+
+    requestAnimationFrame(() => {
+      const host = document.querySelector(`[data-grid-id="${restoreRow}-${restoreCol}"]`) as HTMLElement | null;
+      host?.focus();
+    });
+  }, [selectionAnchor.row, selectionAnchor.col]);
+
   const handlePrintClick = () => {
     setPrintModalOpen(true);
   };
@@ -322,7 +333,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     }
   }, [visits, getRowStatus, clearBed, trackedDeleteVisit]);
 
-  const resetSearchModal = useCallback(() => {
+  const resetSearchModal = useCallback((restoreTarget?: { row: number | null; col: number | null } | null) => {
     setIsSearchModalOpen(false);
     setSearchName('');
     setSearchResults([]);
@@ -336,7 +347,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setSearchTargetContext(emptySearchTargetContext);
     searchTargetContextRef.current = emptySearchTargetContext;
     document.body.removeAttribute('data-prevent-autofocus');
-  }, [defaultImportFieldSelection]);
+    restoreGridFocusAfterModal(restoreTarget);
+  }, [defaultImportFieldSelection, restoreGridFocusAfterModal]);
 
   const resetMemoHistoryModal = useCallback(() => {
     setIsMemoHistoryModalOpen(false);
@@ -870,9 +882,11 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     }
 
     const latestVisits = visitsRef.current;
-    const selectedRow = selectionAnchor.row;
+    const targetContext = searchTargetContextRef.current;
+    const selectedRow = targetContext.row ?? selectionAnchor.row;
     const targetVisitByRow = selectedRow !== null ? latestVisits[selectedRow] : undefined;
-    const targetVisitById = selectedVisitIdForImport ? latestVisits.find((v) => v.id === selectedVisitIdForImport) : undefined;
+    const targetVisitId = targetContext.visitId || selectedVisitIdForImport;
+    const targetVisitById = targetVisitId ? latestVisits.find((v) => v.id === targetVisitId) : undefined;
     const targetVisit = targetVisitById || targetVisitByRow;
 
     if (targetVisit) {
@@ -881,8 +895,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       await trackedAddVisit({ bed_id: null, ...payload });
     }
 
-    resetSearchModal();
-  }, [trackedAddVisit, selectedResult, modalEdits, sanitizeImportedVisit, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, trackedUpdateVisitWithBedSync, normalizeImportedTreatmentName, importFieldSelection, pendingSearchInput, isSearchModalOpen]);
+    resetSearchModal({ row: selectedRow, col: targetContext.col ?? selectionAnchor.col });
+  }, [trackedAddVisit, selectedResult, modalEdits, sanitizeImportedVisit, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, selectionAnchor.col, visits, trackedUpdateVisitWithBedSync, normalizeImportedTreatmentName, importFieldSelection, pendingSearchInput, isSearchModalOpen]);
 
   useEffect(() => {
     if (!isSearchModalOpen) return;
@@ -1069,12 +1083,12 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         const rowGridClass = "grid grid-cols-[72px_72px_70px_62px_50px_minmax(160px,1fr)_120px_60px_110px_110px] min-w-[880px]";
 
         return (
-        <div data-modal-overlay="true" className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-3" onClick={resetSearchModal}>
+        <div data-modal-overlay="true" className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-3" onClick={() => resetSearchModal()}>
           <div className="w-full max-w-6xl bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-2xl max-h-[95vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-slate-700 shrink-0">
               <h3 className="text-sm font-black text-gray-800 dark:text-gray-100 flex items-center gap-2"><Search className="w-4 h-4 text-brand-500" /> 환자 검색 (표 뷰)</h3>
-              <button onClick={resetSearchModal} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"><X className="w-4 h-4" /></button>
+              <button onClick={() => resetSearchModal()} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"><X className="w-4 h-4" /></button>
             </div>
 
             {/* Search bar */}
@@ -1372,7 +1386,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                   ) : <span className="italic flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span>가져올 항목을 목록에서 선택해주세요.</span>}
                </div>
                <div className="flex items-center gap-2.5">
-                 <button onClick={resetSearchModal} className="px-4 py-2 text-sm font-bold text-gray-600 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg transition-colors shadow-sm">취소</button>
+                 <button onClick={() => resetSearchModal()} className="px-4 py-2 text-sm font-bold text-gray-600 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg transition-colors shadow-sm">취소</button>
                  <button onClick={(e) => { e.stopPropagation(); void handleImportToToday(); }} disabled={!selectedResult} className={`px-6 py-2 text-sm font-black rounded-lg shadow-md transition-all ${selectedResult ? 'bg-brand-600 hover:bg-brand-700 hover:shadow-lg text-white' : 'bg-gray-200 dark:bg-slate-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'}`}>
                    ✓ 선택 항목 적용
                  </button>
