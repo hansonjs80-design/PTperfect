@@ -378,6 +378,11 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         // 활성 행의 처방 변경(붙여넣기 포함)은 배드카드에도 즉시 반영
         // 단, 세트 배지명이 함께 들어와도 처방 목록 문자열만 반영한다.
         const normalizedTreatment = normalizeTreatmentPasteText(text);
+        if (normalizedTreatment === '') {
+          window.dispatchEvent(new CustomEvent('patient-log-clear-treatment-display', {
+            detail: { visitId: visit.id },
+          }));
+        }
         const isActiveRow = getRowStatus(visit.id, visit.bed_id) === 'active';
         const shouldSkipBedSync = isBedActivationDisabled || !isActiveRow || !visit.bed_id;
 

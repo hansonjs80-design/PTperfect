@@ -106,6 +106,26 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     setStickyTreatmentName('');
   }, [visit?.treatment_name, visit?.bed_id, rowStatus]);
 
+  useEffect(() => {
+    if (!visit) return;
+
+    const handleClearTreatmentDisplay = (event: Event) => {
+      const customEvent = event as CustomEvent<{ visitId?: string }>;
+      if (customEvent.detail?.visitId !== visit.id) return;
+
+      setOptimisticTreatmentName('');
+      setStickyTreatmentName('');
+      setDetachedBadgeValue(null);
+      setRenamedBadgeOverride(null);
+      stickyPresetBadgeRef.current = null;
+    };
+
+    window.addEventListener('patient-log-clear-treatment-display', handleClearTreatmentDisplay as EventListener);
+    return () => {
+      window.removeEventListener('patient-log-clear-treatment-display', handleClearTreatmentDisplay as EventListener);
+    };
+  }, [visit]);
+
 
   const handleAssign = async (newBedId: number) => {
     // Convert 0 (from "Unassign" button) to null for DB
