@@ -76,7 +76,11 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       if (e.key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
-        toggleSelection(activeIndex);
+        const activeOption = statusOptions[activeIndex];
+        const isAlreadySelected = activeOption ? !!visit?.[activeOption.key as keyof PatientVisit] : false;
+        if (!isAlreadySelected) {
+          toggleSelection(activeIndex);
+        }
         onClose();
         return;
       }
@@ -90,7 +94,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [activeIndex, onClose, statusOptions.length, toggleSelection]);
+  }, [activeIndex, onClose, statusOptions, toggleSelection, visit]);
 
   return (
     <ContextMenu
