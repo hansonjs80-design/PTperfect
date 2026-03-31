@@ -126,12 +126,19 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
         return (
           <button
             key={opt.key}
+            type="button"
             ref={(el) => {
               buttonRefs.current[idx] = el;
             }}
             onClick={() => {
               setActiveIndex(idx);
               toggleSelection(idx);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+              }
             }}
             onTouchStart={() => setActiveIndex(idx)}
             className={`flex items-center justify-between p-2 rounded-lg transition-colors text-xs font-bold w-full ${isActive
