@@ -34,6 +34,8 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const cellRef = useRef<HTMLDivElement>(null);
   const lastClickTimeRef = useRef<number>(0);
   const targetVisitIdRef = useRef<string | null>(visit?.id ?? null);
+  const pendingSnapshotRef = useRef<Partial<PatientVisit> | null>(null);
+  const createPromiseRef = useRef<Promise<string> | null>(null);
   const { handleGridKeyDown } = useGridNavigation(11);
 
   const STATUS_KEYS: Array<keyof PatientVisit> = [
@@ -51,6 +53,10 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       targetVisitIdRef.current = visit.id;
     }
   }, [visit?.id]);
+
+  useEffect(() => {
+    pendingSnapshotRef.current = menuVisitSnapshot;
+  }, [menuVisitSnapshot]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -119,11 +125,12 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     const currentVal = menuVisitSnapshot ? !!menuVisitSnapshot[key] : !!visit?.[key];
     const newVal = !currentVal;
     const targetVisitId = targetVisitIdRef.current;
-
-    setMenuVisitSnapshot((prev) => ({
-      ...(prev || {}),
+    const nextSnapshot = {
+      ...(pendingSnapshotRef.current || visit || {}),
       [key]: newVal,
-    }));
+    };
+
+    setMenuVisitSnapshot(nextSnapshot);
 
     if (targetVisitId) {
       // 활성 행은 배드 상태 아이콘과 연동, 그 외 행은 로그 전용
@@ -133,8 +140,20 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     }
 
     if (isDraft && onCreate) {
-      const createdId = await onCreate({ [key]: newVal });
+      if (!createPromiseRef.current) {
+        createPromiseRef.current = onCreate({ [key]: newVal });
+      }
+
+      const createdId = await createPromiseRef.current;
       targetVisitIdRef.current = createdId;
+      createPromiseRef.current = null;
+
+      const latestSnapshot = pendingSnapshotRef.current || nextSnapshot;
+      const snapshotUpdates = Object.fromEntries(
+        STATUS_KEYS.map((statusKey) => [statusKey, !!latestSnapshot[statusKey]])
+      ) as Partial<PatientVisit>;
+      const skipSync = disableBedSync || rowStatus !== 'active';
+      onUpdate(createdId, snapshotUpdates, skipSync);
     } else if (visit) {
       // 활성 행은 배드 상태 아이콘과 연동, 그 외 행은 로그 전용
       const skipSync = disableBedSync || rowStatus !== 'active';
@@ -236,6 +255,8 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
           onClose={() => {
             setMenuPos(null);
             setMenuVisitSnapshot(null);
+            pendingSnapshotRef.current = null;
+            createPromiseRef.current = null;
             targetVisitIdRef.current = visit?.id ?? null;
             setTimeout(() => cellRef.current?.focus(), 0);
           }}
