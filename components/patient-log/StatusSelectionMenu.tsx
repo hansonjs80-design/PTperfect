@@ -100,9 +100,8 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
             ref={(el) => {
               buttonRefs.current[idx] = el;
             }}
-            onClick={() => setActiveIndex(idx)}
+            onClick={() => applySelection(idx)}
             onTouchStart={() => setActiveIndex(idx)}
-            onDoubleClick={() => applySelection(idx)}
             className={`flex items-center justify-between p-2 rounded-lg transition-colors text-xs font-bold w-full ${isActive
                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                 : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
