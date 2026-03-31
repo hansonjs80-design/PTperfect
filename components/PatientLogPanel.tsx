@@ -866,6 +866,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     const onSearchModalKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
+      const isSearchKeywordInput = target?.getAttribute('data-search-modal-input') === 'true';
       const isTextInputLike = !!target && (
         tag === 'INPUT' ||
         tag === 'TEXTAREA' ||
@@ -902,7 +903,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       if (e.repeat || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return;
       if (!selectedResult) return;
 
-      if (isTextInputLike) return;
+      if (isTextInputLike && !isSearchKeywordInput) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -1057,6 +1058,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
               <div className="flex gap-2 max-w-2xl">
                 <input
                   autoFocus
+                  data-search-modal-input="true"
                   value={searchName}
                   onChange={(e) => setSearchName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSearchByName(); }}
