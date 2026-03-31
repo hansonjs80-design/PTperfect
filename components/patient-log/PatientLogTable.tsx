@@ -902,6 +902,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
               rowIndex={visits.length + index}
               isRowSelected={!!selection && Math.min(selection.start.row, selection.end.row) <= (visits.length + index) && (visits.length + index) <= Math.max(selection.start.row, selection.end.row)}
               isDraft={true}
+              onUpdate={onUpdate}
               onCreate={handleDraftCreate}
               onSelectLog={(id) => onSelectLog(id, null)}
               activeBedIds={activeBedIds}
