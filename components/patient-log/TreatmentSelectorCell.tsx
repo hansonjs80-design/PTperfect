@@ -101,6 +101,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const lastTouchTimeRef = useRef<number>(0);
   const emptyInputRef = useRef<HTMLInputElement>(null);
   const inlineInputRef = useRef<HTMLInputElement>(null);
+  const inlineCaretIndexRef = useRef<number | null>(null);
   const { handleGridKeyDown } = useGridNavigation(11);
 
   const stepParts = useMemo(() => value.split('/').map((part) => part.trim()).filter(Boolean), [value]);
@@ -200,6 +201,39 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    const pendingCaretIndex = inlineCaretIndexRef.current;
+
+    if (preferInlineTextEditing && !isReadOnly && (e.key === 'Backspace' || e.key === 'Delete') && pendingCaretIndex !== null) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const baseValue = isInlineEditing ? inlineInputValue : value;
+      if (e.key === 'Backspace') {
+        if (pendingCaretIndex <= 0) return;
+        const nextValue = baseValue.slice(0, pendingCaretIndex - 1) + baseValue.slice(pendingCaretIndex);
+        const nextCaret = pendingCaretIndex - 1;
+        setInlineInputValue(nextValue);
+        setIsInlineEditing(true);
+        inlineCaretIndexRef.current = nextCaret;
+        requestAnimationFrame(() => {
+          inlineInputRef.current?.focus();
+          inlineInputRef.current?.setSelectionRange(nextCaret, nextCaret);
+        });
+        return;
+      }
+
+      if (pendingCaretIndex >= baseValue.length) return;
+      const nextValue = baseValue.slice(0, pendingCaretIndex) + baseValue.slice(pendingCaretIndex + 1);
+      setInlineInputValue(nextValue);
+      setIsInlineEditing(true);
+      inlineCaretIndexRef.current = pendingCaretIndex;
+      requestAnimationFrame(() => {
+        inlineInputRef.current?.focus();
+        inlineInputRef.current?.setSelectionRange(pendingCaretIndex, pendingCaretIndex);
+      });
+      return;
+    }
+
     if ((e.key === 'Delete' || e.key === 'Backspace') && !isReadOnly) {
       e.preventDefault();
       e.stopPropagation();
@@ -226,8 +260,23 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         setIsInlineEditing(true);
         requestAnimationFrame(() => {
           inlineInputRef.current?.focus();
-          const end = inlineInputRef.current?.value.length ?? 0;
-          inlineInputRef.current?.setSelectionRange(end, end);
+          const caretIndex = inlineCaretIndexRef.current ?? (inlineInputRef.current?.value.length ?? 0);
+          inlineCaretIndexRef.current = caretIndex;
+          inlineInputRef.current?.setSelectionRange(caretIndex, caretIndex);
+        });
+        return;
+      }
+
+      if (pendingCaretIndex !== null) {
+        const baseValue = isInlineEditing ? inlineInputValue : value;
+        const nextValue = baseValue.slice(0, pendingCaretIndex) + e.key + baseValue.slice(pendingCaretIndex);
+        const nextCaret = pendingCaretIndex + 1;
+        setInlineInputValue(nextValue);
+        setIsInlineEditing(true);
+        inlineCaretIndexRef.current = nextCaret;
+        requestAnimationFrame(() => {
+          inlineInputRef.current?.focus();
+          inlineInputRef.current?.setSelectionRange(nextCaret, nextCaret);
         });
         return;
       }
@@ -238,6 +287,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       requestAnimationFrame(() => {
         inlineInputRef.current?.focus();
         const end = nextValue.length;
+        inlineCaretIndexRef.current = end;
         inlineInputRef.current?.setSelectionRange(end, end);
       });
       return;
@@ -304,6 +354,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (nextValue !== value.trim()) {
       onCommitText(nextValue);
     }
+    inlineCaretIndexRef.current = null;
     setIsInlineEditing(false);
   };
 
@@ -340,6 +391,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       const caretIndex = typeof clientX === 'number' && sourceEl
         ? getCaretIndexFromClick(value, sourceEl, clientX)
         : value.length;
+      inlineCaretIndexRef.current = caretIndex;
       inlineInputRef.current?.setSelectionRange(caretIndex, caretIndex);
     });
   };
@@ -357,6 +409,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       e.preventDefault();
       e.stopPropagation();
       setInlineInputValue(value);
+      inlineCaretIndexRef.current = null;
       setIsInlineEditing(false);
       requestAnimationFrame(() => cellRef.current?.focus());
       return;
@@ -487,6 +540,15 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   onChange={(e) => setInlineInputValue(e.target.value)}
                   onKeyDown={handleInlineInputKeyDown}
                   onBlur={commitInlineInputValue}
+                  onSelect={() => {
+                    inlineCaretIndexRef.current = inlineInputRef.current?.selectionStart ?? null;
+                  }}
+                  onKeyUp={() => {
+                    inlineCaretIndexRef.current = inlineInputRef.current?.selectionStart ?? null;
+                  }}
+                  onMouseUp={() => {
+                    inlineCaretIndexRef.current = inlineInputRef.current?.selectionStart ?? null;
+                  }}
                   onClick={(e) => e.stopPropagation()}
                   className="w-full bg-transparent outline-none border-none text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 placeholder:text-gray-400"
                   placeholder={placeholder}
