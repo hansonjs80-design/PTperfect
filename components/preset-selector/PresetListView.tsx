@@ -173,7 +173,10 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                       ? 'border-sky-400 ring-1 ring-sky-300/70 shadow-md'
                       : 'border-transparent hover:border-brand-300 dark:hover:border-slate-600'
                 }`}
-                onClick={() => handleToggleExpand(preset.id)}
+                onClick={() => {
+                  if (compactMode) return;
+                  handleToggleExpand(preset.id);
+                }}
                 onDoubleClick={() => {
                   if (!compactMode) return;
                   onSelect(preset);
@@ -233,7 +236,7 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                   </div>
                 </div>
 
-                {isExpanded && (
+                {!compactMode && isExpanded && (
                   <PresetInlineDetail 
                     initialPreset={preset} 
                     onStart={(updatedPreset) => onSelect(updatedPreset)} 
