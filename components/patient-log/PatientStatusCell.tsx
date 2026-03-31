@@ -14,6 +14,7 @@ interface PatientStatusCellProps {
   gridId?: string;
   rowIndex: number;
   colIndex: number;
+  disableBedSync?: boolean;
 }
 
 export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
@@ -24,7 +25,8 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   onCreate,
   gridId,
   rowIndex,
-  colIndex
+  colIndex,
+  disableBedSync = false
 }) => {
   const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null);
   const [selectedStatusKey, setSelectedStatusKey] = useState<keyof PatientVisit | null>(null);
@@ -101,12 +103,12 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       await onCreate({ [key]: newVal });
     } else if (visit) {
       // 활성 행은 배드 상태 아이콘과 연동, 그 외 행은 로그 전용
-      const skipSync = rowStatus !== 'active';
+      const skipSync = disableBedSync || rowStatus !== 'active';
       onUpdate(visit.id, { [key]: newVal }, skipSync);
     }
   };
 
-  const menuTitle = rowStatus === 'active' ? "추가 사항 변경 (배드 연동)" : "추가 사항 변경 (단순 기록)";
+  const menuTitle = disableBedSync || rowStatus !== 'active' ? "추가 사항 변경 (단순 기록)" : "추가 사항 변경 (배드 연동)";
 
   const hasActiveStatus = visit && (
     visit.is_injection ||
@@ -141,9 +143,9 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   // Helper for title (tooltip)
   const getTitle = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      return `더블탭하여 추가 사항 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`;
+      return `더블탭하여 추가 사항 변경 (${disableBedSync || rowStatus !== 'active' ? '로그만 수정' : '배드 연동'})`;
     }
-    return `더블클릭 또는 Enter로 추가 사항 변경 (${rowStatus === 'active' ? '배드 연동' : '로그만 수정'})`;
+    return `더블클릭 또는 Enter로 추가 사항 변경 (${disableBedSync || rowStatus !== 'active' ? '로그만 수정' : '배드 연동'})`;
   };
 
   return (

@@ -41,6 +41,7 @@ interface PatientLogRowProps {
   onClearBed?: () => void;
   onBulkAuthorUpdate?: (val: string) => void;
   showTimerColumn?: boolean;
+  isBedActivationDisabled?: boolean;
 }
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
@@ -68,7 +69,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   onPrevStep,
   onClearBed,
   onBulkAuthorUpdate,
-  showTimerColumn = false
+  showTimerColumn = false,
+  isBedActivationDisabled = false
 }) => {
   const { handleGridKeyDown } = useGridNavigation(11);
   const { activateVisitFromLog, togglePause, updateBedSteps, updateBedDuration, quickTreatments } = useTreatmentContext();
@@ -128,7 +130,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     if (isDraft && onCreate) {
       await onCreate(updates, 0);
     } else if (!isDraft && visit && onUpdate) {
-      onUpdate(visit.id, updates);
+      onUpdate(visit.id, updates, isBedActivationDisabled);
     }
   };
 
@@ -142,7 +144,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
     if (newBedId === 0) {
       if (!isDraft && visit && onUpdate) {
-        onUpdate(visit.id, { bed_id: null });
+        onUpdate(visit.id, { bed_id: null }, isBedActivationDisabled);
       }
       return;
     }
@@ -181,11 +183,11 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     if (!isDraft && visit && onUpdate) {
       const normalizedTreatment = val.trim();
       const isAssignmentMode = !!visit.bed_id && (!visit.treatment_name || visit.treatment_name.trim() === '');
-      const shouldSyncActiveBed = rowStatus === 'active' && !!visit.bed_id;
+      const shouldSyncActiveBed = !isBedActivationDisabled && rowStatus === 'active' && !!visit.bed_id;
       await Promise.resolve(onUpdate(visit.id, { treatment_name: normalizedTreatment }, !(isAssignmentMode || shouldSyncActiveBed)));
 
       // 활성 행 처방을 명시적으로 지우면 배드 카드/행도 즉시 비활성화한다.
-      if (normalizedTreatment === '' && rowStatus === 'active' && visit.bed_id) {
+      if (!isBedActivationDisabled && normalizedTreatment === '' && rowStatus === 'active' && visit.bed_id) {
         onClearBed?.();
       }
     }
@@ -205,13 +207,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     // 처방이 이미 있는 경우: 배드카드 설정 버튼과 동일한 "설정 및 수정" 창으로 진입
-    if (!isDraft && hasBed && hasTreatment && onEditActive) {
+    if (!isBedActivationDisabled && !isDraft && hasBed && hasTreatment && onEditActive) {
       onEditActive(bedId);
       return;
     }
 
     if (!isDraft && visit && onSelectLog) {
-      if (hasBed) {
+      if (hasBed && !isBedActivationDisabled) {
         onSelectLog(visit.id, bedId);
       } else {
         onSelectLog(visit.id, null);
@@ -340,7 +342,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
   const isNoBedAssigned = !visit?.bed_id;
   const hasTreatment = hasMeaningfulTreatmentName(visit?.treatment_name);
-  const isLogEditMode = !isDraft && !!visit?.bed_id && hasTreatment && rowStatus !== 'active';
+  const isLogEditMode = !isDraft && (isBedActivationDisabled || (!!visit?.bed_id && hasTreatment && rowStatus !== 'active'));
 
   let dotColorClass = 'bg-brand-500';
   if (timerStatus === 'warning') dotColorClass = 'bg-orange-500';
@@ -350,7 +352,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const currentPreset = bed?.customPreset || presets.find(p => p.id === bed?.currentPresetId);
   const currentStep = currentPreset?.steps[bed?.currentStepIndex || 0];
   const activeSteps = currentPreset?.steps || [];
-  const canInteractActiveSteps = !isDraft && rowStatus === 'active' && !!bed && activeSteps.length > 0;
+  const canInteractActiveSteps = !isDraft && !isBedActivationDisabled && rowStatus === 'active' && !!bed && activeSteps.length > 0;
 
   const commitActiveSteps = (steps: TreatmentStep[], preferredIndex?: number) => {
     if (!bed) return;
@@ -445,7 +447,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     : nonActiveDisplayValue;
 
   const displayedSteps = parseTreatmentString(treatmentDisplayValue, quickTreatments);
-  const canInteractInactiveSteps = !isDraft && rowStatus !== 'active' && displayedSteps.length > 0;
+  const canInteractInactiveSteps = !isDraft && (rowStatus !== 'active' || isBedActivationDisabled) && displayedSteps.length > 0;
   const canInteractTreatmentSteps = canInteractActiveSteps || canInteractInactiveSteps;
 
   const activeBasePreset = bed?.currentPresetId ? presets.find((p) => p.id === bed.currentPresetId) : undefined;
@@ -538,7 +540,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           className={isDraft ? "opacity-50 hover:opacity-100" : ""}
           activeBedIds={activeBedIds}
           isLogEditMode={isLogEditMode}
-          onQuickActivate={handleQuickActivate}
+          onQuickActivate={isBedActivationDisabled ? undefined : handleQuickActivate}
         />
         {rowStatus !== 'none' && (
           <div className="absolute top-1.5 right-1 pointer-events-none">
@@ -658,12 +660,12 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           onOpenTimerEdit={handleOpenTimerEdit}
           enableStepInteraction={canInteractTreatmentSteps}
           quickTreatments={quickTreatments}
-          onDeleteStep={rowStatus === 'active' ? handleDeleteActiveStep : handleDeleteInactiveStep}
-          onMoveStep={rowStatus === 'active' ? handleMoveActiveStep : handleMoveInactiveStep}
-          onSwapSteps={rowStatus === 'active' ? handleSwapActiveSteps : handleSwapInactiveSteps}
-          onReplaceStep={rowStatus === 'active' ? handleReplaceActiveStep : handleReplaceInactiveStep}
+          onDeleteStep={rowStatus === 'active' && !isBedActivationDisabled ? handleDeleteActiveStep : handleDeleteInactiveStep}
+          onMoveStep={rowStatus === 'active' && !isBedActivationDisabled ? handleMoveActiveStep : handleMoveInactiveStep}
+          onSwapSteps={rowStatus === 'active' && !isBedActivationDisabled ? handleSwapActiveSteps : handleSwapInactiveSteps}
+          onReplaceStep={rowStatus === 'active' && !isBedActivationDisabled ? handleReplaceActiveStep : handleReplaceInactiveStep}
           onOpenFullEditor={handleTreatmentSelectorOpen}
-          onAddStep={handleAddStepFromButton}
+          onAddStep={isBedActivationDisabled ? undefined : handleAddStepFromButton}
           isReadOnly={isTreatmentLockedByTimer}
         />
       </td>
@@ -676,6 +678,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           visit={visit}
           rowStatus={rowStatus}
           onUpdate={onUpdate || (() => { })}
+          disableBedSync={isBedActivationDisabled}
           isDraft={isDraft}
           onCreate={onCreate}
         />

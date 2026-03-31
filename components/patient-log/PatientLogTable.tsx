@@ -110,6 +110,7 @@ interface PatientLogTableProps {
   onNextStep?: (bedId: number) => void;
   onPrevStep?: (bedId: number) => void;
   onClearBed?: (bedId: number) => void;
+  isBedActivationDisabled?: boolean;
   onSelectionAnchorChange?: (rowIndex: number | null, colIndex: number | null) => void;
   cancelAutoFocusRef?: React.MutableRefObject<(() => void) | null>;
   draftRowKey?: number;
@@ -129,6 +130,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   onNextStep,
   onPrevStep,
   onClearBed,
+  isBedActivationDisabled = false,
   onSelectionAnchorChange,
   cancelAutoFocusRef,
   draftRowKey = 0
@@ -287,12 +289,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       case 0: {
         const trimmed = text.trim();
         if (!trimmed) {
-          onUpdate(visit.id, { bed_id: null }, false);
+          onUpdate(visit.id, { bed_id: null }, isBedActivationDisabled);
           return;
         }
         const parsed = Number(trimmed);
         if (!Number.isInteger(parsed) || parsed < 1 || parsed > 11) return;
-        onUpdate(visit.id, { bed_id: parsed }, false);
+        onUpdate(visit.id, { bed_id: parsed }, isBedActivationDisabled);
         return;
       }
       case 1:
@@ -312,12 +314,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         // 단, 세트 배지명이 함께 들어와도 처방 목록 문자열만 반영한다.
         const normalizedTreatment = normalizeTreatmentPasteText(text);
         const isActiveRow = getRowStatus(visit.id, visit.bed_id) === 'active';
-        const shouldSkipBedSync = !isActiveRow || !visit.bed_id;
+        const shouldSkipBedSync = isBedActivationDisabled || !isActiveRow || !visit.bed_id;
 
         onUpdate(visit.id, { treatment_name: normalizedTreatment }, shouldSkipBedSync);
 
         // 활성 행 처방을 비우면 배드 카드/행도 즉시 비활성화한다.
-        if (normalizedTreatment === '' && isActiveRow && visit.bed_id) {
+        if (!isBedActivationDisabled && normalizedTreatment === '' && isActiveRow && visit.bed_id) {
           onClearBed?.(visit.bed_id);
         }
         return;
@@ -327,7 +329,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         return;
       case 6: {
         const nextFlags = parseStatusText(text);
-        const shouldSkipBedSync = getRowStatus(visit.id, visit.bed_id) !== 'active';
+        const shouldSkipBedSync = isBedActivationDisabled || getRowStatus(visit.id, visit.bed_id) !== 'active';
         onUpdate(visit.id, nextFlags, shouldSkipBedSync);
         return;
       }
@@ -340,7 +342,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       default:
         return;
     }
-  }, [onUpdate, getRowStatus, normalizeTreatmentPasteText, onClearBed]);
+  }, [onUpdate, getRowStatus, normalizeTreatmentPasteText, onClearBed, isBedActivationDisabled]);
 
   const handleGridClipboardCopy = useCallback((shouldCut: boolean) => {
     const bounds = normalizeSelectionBounds(selection);
@@ -756,6 +758,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
                 onNextStep={handleNextStep}
                 onPrevStep={handlePrevStep}
                 onClearBed={handleClearBed}
+                isBedActivationDisabled={isBedActivationDisabled}
                 onBulkAuthorUpdate={handleBulkAuthorUpdate}
                 showTimerColumn={showTimerColumn}
               />
@@ -770,6 +773,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
               onCreate={handleDraftCreate}
               onSelectLog={(id) => onSelectLog(id, null)}
               activeBedIds={activeBedIds}
+              isBedActivationDisabled={isBedActivationDisabled}
               showTimerColumn={showTimerColumn}
             />
           ))}

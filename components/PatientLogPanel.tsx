@@ -42,6 +42,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const redoStackRef = useRef<PatientVisit[][]>([]);
   const MAX_UNDO_STACK = 250;
   const [authorOptions] = useLocalStorage<string[]>('physio-author-options', ['S', 'K', 'J']);
+  const [isBedActivationDisabled, setIsBedActivationDisabled] = useLocalStorage<boolean>('patient-log-bed-activation-disabled', false);
 
   const cloneVisits = useCallback((rows: PatientVisit[]) => rows.map((v) => ({ ...v })), []);
 
@@ -279,7 +280,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const handleCreateWithBedSync = useCallback(async (initialData: Partial<PatientVisit> = {}): Promise<string> => {
     const targetBedId = initialData.bed_id;
 
-    if (targetBedId) {
+    if (targetBedId && !isBedActivationDisabled) {
       const targetBed = beds.find(b => b.id === targetBedId);
       if (targetBed && targetBed.status === BedStatus.ACTIVE) {
         // Clear the active bed card (sets to IDLE)
@@ -297,7 +298,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setSelectedVisitIdForImport(createdId);
 
     return createdId;
-  }, [beds, trackedAddVisit, clearBed]);
+  }, [beds, trackedAddVisit, clearBed, isBedActivationDisabled]);
 
   // Handle Deletion with Bed Sync
   const handleDeleteVisit = useCallback((visitId: string) => {
@@ -918,6 +919,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
             onRedo={() => { void redoLogOnly(); }}
             canUndo={canUndoLog}
             canRedo={canRedoLog}
+            isBedActivationDisabled={isBedActivationDisabled}
+            onToggleBedActivationDisabled={() => setIsBedActivationDisabled((prev) => !prev)}
             onClearAllBeds={handleClearAllActiveBeds}
             canClearAllBeds={activeBedIdsInLog.length > 0}
           />
@@ -937,6 +940,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           onNextStep={nextStep}
           onPrevStep={prevStep}
           onClearBed={clearBed}
+          isBedActivationDisabled={isBedActivationDisabled}
           onSelectionAnchorChange={(row, col) => {
             if (isSearchModalOpen || isMemoHistoryModalOpen) return;
             setSelectionAnchor({ row, col });
