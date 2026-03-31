@@ -166,7 +166,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         title={getTitle()}
       >
         {hasActiveStatus ? (
-          <div className="w-full min-h-0 px-1.5 py-0.5 flex items-center justify-start">
+          <div className="w-full min-h-0 px-1.5 py-0 flex items-center justify-start">
             <div className="flex flex-wrap items-center justify-start gap-1 max-w-full">
               {activeStatusPills.map((item) => (
                 <span

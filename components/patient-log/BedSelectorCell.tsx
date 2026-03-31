@@ -343,12 +343,17 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
     <>
         <div 
             ref={cellRef}
+            onMouseDown={(e) => {
+                if (e.button !== 0) return;
+                cellRef.current?.focus();
+            }}
+            onClick={() => cellRef.current?.focus()}
             onDoubleClick={handleDoubleClick}
             onTouchEnd={handleTouchEnd}
             onKeyDown={handleContainerKeyDown}
             tabIndex={0}
             data-grid-id={gridId}
-            className={`w-[calc(100%-2px)] h-[calc(100%-2px)] m-px rounded-[1px] flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors group select-none outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 ${className}`}
+            className={`w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors group select-none outline-none focus:outline-none focus:z-10 focus:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] ${className}`}
             title={getTitle()}
         >
             {value ? (

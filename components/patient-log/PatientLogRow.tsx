@@ -323,7 +323,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
   // Row Styling Logic
   // Using transition-colors for smooth hover effect
-  let rowClasses = 'group transition-colors duration-150 border-b border-slate-200 dark:border-slate-700 h-[36px] ';
+  let rowClasses = 'group transition-colors duration-150 border-b border-slate-200 dark:border-slate-700 h-[32px] ';
 
   if (rowStatus === 'active') {
     // Active Row: Blue tint -> Darker Blue on Hover
@@ -718,7 +718,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td className={`${cellBorderClass} p-0 ${showTimerColumn ? "" : "hidden"}`}>
         <div
-          className="w-full h-full min-h-[36px] flex items-center justify-center px-1 text-[11px] sm:text-[12px] font-black tracking-tight"
+          className="w-full h-full min-h-[32px] flex items-center justify-center px-1 text-[11px] sm:text-[12px] font-black tracking-tight"
           data-grid-id={`${rowIndex}-9`}
           tabIndex={0}
           onKeyDown={(e) => {
@@ -770,7 +770,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       <td className={`${cellBorderClass} p-0 align-middle text-center min-w-[56px] w-[56px] max-w-[56px] xl:w-[68px] xl:max-w-[68px]`}>
-        <div className="relative w-full h-full min-h-[36px]">
+        <div className="relative w-full h-full min-h-[32px]">
           <AuthorSelectorCell
             gridId={`${rowIndex}-10`}
             rowIndex={rowIndex}
@@ -791,7 +791,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       </td>
 
       <td className="border-l border-slate-200 dark:border-slate-700 p-0 text-center w-[52px] min-w-[52px] max-w-[52px]">
-        <div className="relative w-full h-full min-h-[36px]">
+        <div className="relative w-full h-full min-h-[32px]">
           {!isDraft && visit && onDelete && (
             <div
               className="absolute inset-0 flex justify-center items-center px-[4px] outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px]"

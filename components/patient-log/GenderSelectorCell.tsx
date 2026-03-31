@@ -80,7 +80,7 @@ export const GenderSelectorCell: React.FC<GenderSelectorCellProps> = ({
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         onKeyDown={handleKeyDown}
-        className="w-full h-full min-h-[36px] flex items-center justify-center cursor-default outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
+        className="w-full h-full min-h-[32px] flex items-center justify-center cursor-default outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
         title="더블클릭하여 성별 선택"
       >
         <span className={`text-[12px] sm:text-[13px] font-black ${value ? 'text-slate-700 dark:text-slate-200' : 'text-gray-300 dark:text-gray-600'}`}>

@@ -219,7 +219,7 @@ export const TreatmentTextRenderer: React.FC<TreatmentTextRendererProps> = memo(
 
   return (
     <>
-      <div className="flex items-center flex-wrap gap-1 py-0.5">
+      <div className="flex items-center flex-wrap gap-1 py-0">
         {parts.map((part, i) => {
           const isCurrent = isActiveRow && i === activeStepIndex;
           const isSelected = canSelectStepChip && selectedStepIndex === i;

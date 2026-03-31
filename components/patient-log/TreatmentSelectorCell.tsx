@@ -323,13 +323,13 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         onKeyDown={handleKeyDown}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] min-h-[32px] relative rounded-[1px] outline-none focus:outline-none focus-within:outline-none focus:z-10 focus-within:z-10 focus:bg-sky-500/5 focus-within:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] focus-within:shadow-[inset_0_0_0_2px_rgb(14_165_233)]"
+        className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] min-h-[28px] relative rounded-[1px] outline-none focus:outline-none focus-within:outline-none focus:z-10 focus-within:z-10 focus:bg-sky-500/5 focus-within:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] focus-within:shadow-[inset_0_0_0_2px_rgb(14_165_233)]"
       >
         <div
           className={`flex items-center w-full h-full px-2 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30'} rounded-[1px]`}
           title={getTitle()}
         >
-          <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-[4px] py-0.5 gap-2">
+          <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-[4px] py-0 gap-1.5">
             {presetLabel && (
               <span 
                 onClick={(e) => {
@@ -348,7 +348,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                 {presetLabel}
               </span>
             )}
-            <div className={`text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[32px] ${(allowStepSelection || isEmptyTreatmentCell) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+            <div className={`text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[28px] ${(allowStepSelection || isEmptyTreatmentCell) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
               {isEmptyTreatmentCell && !isReadOnly ? (
                 <input
                   ref={emptyInputRef}

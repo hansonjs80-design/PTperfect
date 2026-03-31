@@ -310,7 +310,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
           onDoubleClick={handleDoubleClick}
           readOnly={!directEdit ? !directEdit : false}
           className={`
-            w-[calc(100%-2px)] h-[calc(100%-2px)] m-px px-2 py-1 flex items-center border-none outline-none rounded-[1px]
+            w-[calc(100%-2px)] h-[calc(100%-2px)] m-px px-2 py-0.5 flex items-center border-none outline-none rounded-[1px]
             ${mode === 'edit'
               ? 'bg-transparent text-center !text-gray-900 dark:!text-gray-100'
               : 'bg-transparent'}

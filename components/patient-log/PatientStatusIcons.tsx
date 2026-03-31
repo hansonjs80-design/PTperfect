@@ -15,7 +15,7 @@ export const PatientStatusIcons: React.FC<PatientStatusIconsProps> = ({ visit })
 
   return (
     // Changed: Removed pl-2, added justify-center and flex-wrap for column layout
-    <div className="flex items-center justify-center flex-wrap gap-1 w-full h-full select-none py-1">
+    <div className="flex items-center justify-center flex-wrap gap-1 w-full h-full select-none py-0.5">
       {visit.is_injection && (
         <div title="주사" className="flex">
           <Syringe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" strokeWidth={2.5} />
