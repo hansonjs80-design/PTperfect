@@ -147,6 +147,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 }) => {
   const [totalRows, setTotalRows] = useState(120);
   const [selection, setSelection] = useState<GridSelection>(null);
+  const [rowHeaderMenu, setRowHeaderMenu] = useState<{ row: number; x: number; y: number } | null>(null);
   const showTimerColumn = false;
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
   const isDraggingRef = useRef(false);
@@ -167,6 +168,55 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     start: { row, col: 0 },
     end: { row, col: 10 },
   }), []);
+
+  const getInsertCreatedAt = useCallback((insertIndex: number) => {
+    const prevVisit = visits[insertIndex - 1];
+    const nextVisit = visits[insertIndex];
+    const prevTime = prevVisit?.created_at ? new Date(prevVisit.created_at).getTime() : null;
+    const nextTime = nextVisit?.created_at ? new Date(nextVisit.created_at).getTime() : null;
+
+    if (prevTime !== null && nextTime !== null) {
+      const gap = nextTime - prevTime;
+      if (gap > 1) {
+        return new Date(prevTime + Math.floor(gap / 2)).toISOString();
+      }
+      return new Date(prevTime + 1).toISOString();
+    }
+
+    if (prevTime !== null) {
+      return new Date(prevTime + 1000).toISOString();
+    }
+
+    if (nextTime !== null) {
+      return new Date(nextTime - 1000).toISOString();
+    }
+
+    return new Date().toISOString();
+  }, [visits]);
+
+  const closeRowHeaderMenu = useCallback(() => {
+    setRowHeaderMenu(null);
+  }, []);
+
+  const handleInsertRow = useCallback(async (row: number, direction: 'above' | 'below') => {
+    const insertIndex = Math.max(0, Math.min(direction === 'above' ? row : row + 1, visits.length));
+    await onCreate({ created_at: getInsertCreatedAt(insertIndex) });
+    setSelection(buildWholeRowSelection(insertIndex));
+    onSelectionAnchorChange?.(insertIndex, 0);
+    closeRowHeaderMenu();
+  }, [visits.length, onCreate, getInsertCreatedAt, buildWholeRowSelection, onSelectionAnchorChange, closeRowHeaderMenu]);
+
+  const handleDeleteRow = useCallback((row: number) => {
+    const visit = visits[row];
+    if (visit) {
+      onDelete(visit.id);
+    } else {
+      setTotalRows((prev) => Math.max(visits.length, prev - 1));
+    }
+    setSelection(null);
+    onSelectionAnchorChange?.(null, null);
+    closeRowHeaderMenu();
+  }, [visits, onDelete, onSelectionAnchorChange, closeRowHeaderMenu]);
 
 
   // Expose cancel function to parent so search shortcuts can prevent auto-focus stealing
@@ -607,12 +657,24 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
     e.preventDefault();
 
+    const selectedCols: number[] = [];
+    for (let col = bounds.colMin; col <= bounds.colMax; col++) {
+      if (SELECTABLE_COLS.has(col)) selectedCols.push(col);
+    }
+
+    // 삭제 시 처방 목록(5열)을 배드 번호(0열)보다 먼저 비워야
+    // 활성 배드에 연결된 처방도 함께 정리된다.
+    selectedCols.sort((a, b) => {
+      if (a === 5 && b === 0) return -1;
+      if (a === 0 && b === 5) return 1;
+      return a - b;
+    });
+
     for (let row = bounds.rowMin; row <= bounds.rowMax; row++) {
       const visit = visits[row];
       if (!visit) continue;
 
-      for (let col = bounds.colMin; col <= bounds.colMax; col++) {
-        if (!SELECTABLE_COLS.has(col)) continue;
+      for (const col of selectedCols) {
         setVisitCellText(visit, col, '');
       }
     }
@@ -707,6 +769,14 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         if (!pos) return;
         setSelection({ start: pos, end: pos });
         onSelectionAnchorChange?.(pos.row, pos.col);
+      }}
+      onContextMenuCapture={(e) => {
+        const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
+        if (!rowHeaderPos) return;
+        e.preventDefault();
+        setSelection(buildWholeRowSelection(rowHeaderPos.row));
+        onSelectionAnchorChange?.(rowHeaderPos.row, 0);
+        setRowHeaderMenu({ row: rowHeaderPos.row, x: e.clientX, y: e.clientY });
       }}
       onMouseMoveCapture={(e) => {
         if (!isDraggingRef.current) return;
@@ -835,6 +905,39 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
           </tr>
         </tbody>
       </table>
+
+      {rowHeaderMenu && (
+        <div className="fixed inset-0 z-[9999]" onClick={closeRowHeaderMenu}>
+          <div
+            className="absolute min-w-[148px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl p-1.5"
+            style={{ top: rowHeaderMenu.y, left: rowHeaderMenu.x }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => void handleInsertRow(rowHeaderMenu.row, 'above')}
+              className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            >
+              위로 삽입
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleInsertRow(rowHeaderMenu.row, 'below')}
+              className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            >
+              아래로 삽입
+            </button>
+            <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
+            <button
+              type="button"
+              onClick={() => handleDeleteRow(rowHeaderMenu.row)}
+              className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              행 삭제
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
