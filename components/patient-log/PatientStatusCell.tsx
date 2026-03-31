@@ -32,7 +32,14 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const [selectedStatusKey, setSelectedStatusKey] = useState<keyof PatientVisit | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   const lastClickTimeRef = useRef<number>(0);
+  const targetVisitIdRef = useRef<string | null>(visit?.id ?? null);
   const { handleGridKeyDown } = useGridNavigation(11);
+
+  useEffect(() => {
+    if (visit?.id) {
+      targetVisitIdRef.current = visit.id;
+    }
+  }, [visit?.id]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -51,6 +58,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent | React.TouchEvent, isKeyboard: boolean = false) => {
     e.preventDefault();
     e.stopPropagation();
+    targetVisitIdRef.current = visit?.id ?? null;
 
     if (isKeyboard && cellRef.current) {
       const rect = cellRef.current.getBoundingClientRect();
@@ -98,9 +106,18 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const toggleStatus = async (key: keyof PatientVisit) => {
     const currentVal = visit ? !!visit[key] : false;
     const newVal = !currentVal;
+    const targetVisitId = targetVisitIdRef.current;
+
+    if (targetVisitId) {
+      // 활성 행은 배드 상태 아이콘과 연동, 그 외 행은 로그 전용
+      const skipSync = disableBedSync || rowStatus !== 'active';
+      onUpdate(targetVisitId, { [key]: newVal }, skipSync);
+      return;
+    }
 
     if (isDraft && onCreate) {
-      await onCreate({ [key]: newVal });
+      const createdId = await onCreate({ [key]: newVal });
+      targetVisitIdRef.current = createdId;
     } else if (visit) {
       // 활성 행은 배드 상태 아이콘과 연동, 그 외 행은 로그 전용
       const skipSync = disableBedSync || rowStatus !== 'active';
@@ -199,6 +216,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
           position={menuPos}
           onClose={() => {
             setMenuPos(null);
+            targetVisitIdRef.current = visit?.id ?? null;
             setTimeout(() => cellRef.current?.focus(), 0);
           }}
           onToggle={toggleStatus}
