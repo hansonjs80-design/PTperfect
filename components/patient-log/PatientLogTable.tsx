@@ -382,6 +382,13 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       if (!normalized) return;
 
       switch (col) {
+        case 0: {
+          if (!isBedActivationDisabled) break;
+          const parsed = Number(normalized);
+          if (!Number.isInteger(parsed) || parsed < 1 || parsed > 11) break;
+          updates.bed_id = parsed;
+          break;
+        }
         case 1:
           updates.chart_number = normalized;
           break;
@@ -415,7 +422,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     });
 
     return updates;
-  }, []);
+  }, [isBedActivationDisabled]);
 
   const handleGridPaste = useCallback(async (raw: string) => {
     if (!raw) return;
