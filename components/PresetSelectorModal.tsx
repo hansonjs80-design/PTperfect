@@ -88,6 +88,20 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
     }
   }, [isOpen, resolveInitialOptions, resolveInitialPreviewPreset]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    if (isOpen) {
+      document.body.dataset.presetSelectorOpen = 'true';
+      return () => {
+        delete document.body.dataset.presetSelectorOpen;
+      };
+    }
+
+    delete document.body.dataset.presetSelectorOpen;
+    return undefined;
+  }, [isOpen]);
+
   // Handle Quick Item Click (Single vs Multi logic)
   const handleQuickItemClick = useCallback((template: QuickTreatment) => {
     if (isMultiSelectMode) {
@@ -159,6 +173,7 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
 
   return (
     <div 
+      data-modal-overlay="true"
       className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/45 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >

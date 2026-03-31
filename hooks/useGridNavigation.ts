@@ -44,6 +44,13 @@ export const useGridNavigation = (totalCols: number) => {
     // Only handle navigation on Desktop/Tablet
     if (window.innerWidth < 768) return;
 
+    const isPresetSelectorOpen = document.body.dataset.presetSelectorOpen === 'true';
+    if (isPresetSelectorOpen && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Tab'].includes(e.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
     // Global Debounce check
     const now = Date.now();
     // Keep only a very small cooldown so held arrow keys still feel immediate.
