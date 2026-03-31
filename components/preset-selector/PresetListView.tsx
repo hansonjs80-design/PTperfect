@@ -59,7 +59,10 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
   useEffect(() => {
     const highlightedItem = itemRefs.current[highlightedIndex];
     highlightedItem?.scrollIntoView({ block: 'nearest' });
-  }, [highlightedIndex]);
+    if (compactMode) {
+      highlightedItem?.focus({ preventScroll: true });
+    }
+  }, [compactMode, highlightedIndex]);
 
   useEffect(() => {
     const handleWindowKeyDown = (e: KeyboardEvent) => {
@@ -166,6 +169,7 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                 ref={(el) => {
                   itemRefs.current[currentIndex] = el;
                 }}
+                tabIndex={compactMode ? 0 : -1}
                 className={`w-full px-3 py-2.5 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border transition-all ${
                   isExpanded 
                     ? 'border-brand-500 ring-1 ring-brand-500/20 shadow-md' 
@@ -181,6 +185,14 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                 onDoubleClick={() => {
                   if (!compactMode) return;
                   onSelect(preset);
+                }}
+                onKeyDown={(e) => {
+                  if (!compactMode) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onSelect(preset);
+                  }
                 }}
               >
                 <div className="flex items-center justify-between cursor-pointer">
