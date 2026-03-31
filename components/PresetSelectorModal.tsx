@@ -27,6 +27,7 @@ interface PresetSelectorModalProps {
     isIon?: boolean;
   };
   initialPreset?: Preset;
+  compactLogMode?: boolean;
 }
 
 export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
@@ -40,7 +41,8 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
   onClearLog,
   targetBedId,
   initialOptions,
-  initialPreset
+  initialPreset,
+  compactLogMode = false
 }) => {
   const defaultOptions = useMemo(() => ({
     isInjection: false,
@@ -159,6 +161,7 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
 
   const isTractionBed = targetBedId === 11;
   const isLogMode = targetBedId === 0;
+  const isCompactLogMode = isLogMode && compactLogMode;
 
   const getHeaderStyle = () => {
     if (isLogMode) return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200';
@@ -204,7 +207,7 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
                 
                 {/* Title Text */}
                 <h3 className="text-[22px] sm:text-[26px] font-extrabold leading-none tracking-tight">
-                    {previewPreset ? '설정 확인' : (isLogMode ? '처방 수정' : '치료 시작')}
+                    {previewPreset ? '설정 확인' : (isCompactLogMode ? '세트 처방 수정' : (isLogMode ? '처방 수정' : '치료 시작'))}
                 </h3>
             </div>
           </div>
@@ -218,17 +221,21 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
         </div>
         
         {/* Options Area (Visible on Portrait/Desktop, Hidden on Mobile Landscape) */}
-        <div className="landscape:hidden lg:landscape:block shrink-0">
-            <OptionToggles options={options} setOptions={setOptions} />
-        </div>
+        {!isCompactLogMode && (
+          <div className="landscape:hidden lg:landscape:block shrink-0">
+              <OptionToggles options={options} setOptions={setOptions} />
+          </div>
+        )}
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/60 dark:bg-slate-950 p-3 sm:p-4 relative">
           
           {/* Options Area (Visible ONLY on Mobile Landscape inside scroll) */}
-          <div className="hidden landscape:block lg:landscape:hidden mb-2">
-             <OptionToggles options={options} setOptions={setOptions} />
-          </div>
+          {!isCompactLogMode && (
+            <div className="hidden landscape:block lg:landscape:hidden mb-2">
+               <OptionToggles options={options} setOptions={setOptions} />
+            </div>
+          )}
 
           {previewPreset ? (
              <TreatmentPreview 
@@ -284,12 +291,20 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
                 {isLogMode ? '수정 완료' : '견인 치료 시작'}
               </button>
             </div>
+          ) : isCompactLogMode ? (
+            <div className="flex flex-col gap-4">
+              <PresetListView
+                presets={safePresets}
+                onSelect={handlePresetStart}
+                compactMode={true}
+              />
+            </div>
           ) : (
             // Standard Preset & Quick List
             <div className="flex flex-col gap-4 pb-20">
               <PresetListView 
                 presets={safePresets} 
-                onSelect={handlePresetStart} 
+                onSelect={handlePresetStart}
               />
               
               <div className="relative">

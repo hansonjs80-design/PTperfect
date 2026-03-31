@@ -147,7 +147,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 }) => {
   const [totalRows, setTotalRows] = useState(120);
   const [selection, setSelection] = useState<GridSelection>(null);
-  const [rowHeaderMenu, setRowHeaderMenu] = useState<{ row: number; x: number; y: number } | null>(null);
+  const [rowHeaderMenu, setRowHeaderMenu] = useState<{ row: number; rows: number[]; x: number; y: number } | null>(null);
   const showTimerColumn = false;
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
   const isDraggingRef = useRef(false);
@@ -174,6 +174,13 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     const bounds = normalizeSelectionBounds(selection);
     if (!bounds) return false;
     return bounds.rowMin === row && bounds.rowMax === row && bounds.colMin === 0 && bounds.colMax === 10;
+  }, [selection]);
+
+  const getSelectedWholeRows = useCallback(() => {
+    const bounds = normalizeSelectionBounds(selection);
+    if (!bounds) return [] as number[];
+    if (bounds.colMin !== 0 || bounds.colMax !== 10) return [] as number[];
+    return Array.from({ length: bounds.rowMax - bounds.rowMin + 1 }, (_, idx) => bounds.rowMin + idx);
   }, [selection]);
 
   const getInsertCreatedAt = useCallback((insertIndex: number) => {
@@ -220,6 +227,28 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     } else {
       setTotalRows((prev) => Math.max(visits.length, prev - 1));
     }
+    setSelection(null);
+    onSelectionAnchorChange?.(null, null);
+    closeRowHeaderMenu();
+  }, [visits, onDelete, onSelectionAnchorChange, closeRowHeaderMenu]);
+
+  const handleDeleteRows = useCallback((rows: number[]) => {
+    const uniqueRows = Array.from(new Set(rows)).sort((a, b) => b - a);
+    let draftRowsToRemove = 0;
+
+    uniqueRows.forEach((row) => {
+      const visit = visits[row];
+      if (visit) {
+        onDelete(visit.id);
+      } else {
+        draftRowsToRemove += 1;
+      }
+    });
+
+    if (draftRowsToRemove > 0) {
+      setTotalRows((prev) => Math.max(visits.length, prev - draftRowsToRemove));
+    }
+
     setSelection(null);
     onSelectionAnchorChange?.(null, null);
     closeRowHeaderMenu();
@@ -753,6 +782,15 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         lastPointerDownAtRef.current = Date.now();
         const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
         if (rowHeaderPos) {
+          if (e.button === 2) {
+            const selectedRows = getSelectedWholeRows();
+            if (!selectedRows.includes(rowHeaderPos.row)) {
+              setSelection(buildWholeRowSelection(rowHeaderPos.row));
+              onSelectionAnchorChange?.(rowHeaderPos.row, 0);
+            }
+            isDraggingRef.current = false;
+            return;
+          }
           if (isWholeRowSelected(rowHeaderPos.row)) {
             setSelection(null);
             onSelectionAnchorChange?.(null, null);
@@ -797,9 +835,13 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
         if (!rowHeaderPos) return;
         e.preventDefault();
-        setSelection(buildWholeRowSelection(rowHeaderPos.row));
-        onSelectionAnchorChange?.(rowHeaderPos.row, 0);
-        setRowHeaderMenu({ row: rowHeaderPos.row, x: e.clientX, y: e.clientY });
+        const selectedRows = getSelectedWholeRows();
+        const menuRows = selectedRows.includes(rowHeaderPos.row) ? selectedRows : [rowHeaderPos.row];
+        if (!selectedRows.includes(rowHeaderPos.row)) {
+          setSelection(buildWholeRowSelection(rowHeaderPos.row));
+          onSelectionAnchorChange?.(rowHeaderPos.row, 0);
+        }
+        setRowHeaderMenu({ row: rowHeaderPos.row, rows: menuRows, x: e.clientX, y: e.clientY });
       }}
       onMouseMoveCapture={(e) => {
         if (!isDraggingRef.current) return;
@@ -950,10 +992,10 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
             <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
             <button
               type="button"
-              onClick={() => handleDeleteRow(rowHeaderMenu.row)}
+              onClick={() => handleDeleteRows(rowHeaderMenu.rows)}
               className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             >
-              행 삭제
+              행 삭제{rowHeaderMenu.rows.length > 1 ? ` (${rowHeaderMenu.rows.length}개)` : ''}
             </button>
           </div>
         </div>

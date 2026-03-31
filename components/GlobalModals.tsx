@@ -5,6 +5,7 @@ import { usePatientLogContext } from '../contexts/PatientLogContext';
 import { findMatchingPreset } from '../utils/bedUtils';
 import { BedEditOverlay } from './BedEditOverlay';
 import { useModalActions } from '../hooks/useModalActions';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 // Lazy load heavy components
 const SettingsPanel = React.lazy(() => import('./SettingsPanel').then(module => ({ default: module.SettingsPanel })));
@@ -45,6 +46,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
     updateBedDuration,
     updatePresets
   } = useTreatmentContext();
+  const [isBedActivationDisabled] = useLocalStorage<boolean>('patient-log-bed-activation-disabled', true);
 
   const { visits } = usePatientLogContext();
 
@@ -195,6 +197,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
             targetBedId={targetBedIdForModal}
             initialOptions={modalInitialOptions}
             initialPreset={modalInitialPreset}
+            compactLogMode={isBedActivationDisabled}
           />
         </Suspense>
       )}

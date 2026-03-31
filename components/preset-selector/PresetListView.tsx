@@ -7,10 +7,11 @@ import { PresetInlineDetail } from './PresetInlineDetail';
 
 interface PresetListViewProps {
   presets: Preset[];
-  onSelect: (preset: Preset) => void; 
+  onSelect: (preset: Preset) => void;
+  compactMode?: boolean;
 }
 
-export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelect }) => {
+export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelect, compactMode = false }) => {
   const [filterStep, setFilterStep] = useState<'all' | number>('all');
   const [sortDir, setSortDir] = useState<'none' | 'asc' | 'desc'>('none');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -103,46 +104,47 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
 
   return (
     <div className="space-y-2">
-      {/* Header Controls */}
-      <div className="flex items-center justify-between px-1 mb-1">
-        <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-          <Filter className="w-3.5 h-3.5" />
-          세트 처방 선택
-        </h4>
+      {!compactMode && (
+        <div className="flex items-center justify-between px-1 mb-1">
+          <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5" />
+            세트 처방 선택
+          </h4>
 
-        <div className="flex items-center gap-2">
-          <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
-            {[
-              { label: 'ALL', val: 'all' },
-              { label: '2단계', val: 2 },
-              { label: '3단계', val: 3 }
-            ].map((opt) => (
-              <button 
-                key={String(opt.val)}
-                onClick={() => setFilterStep(opt.val as any)}
-                className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all ${
-                  filterStep === opt.val 
-                    ? 'bg-white dark:bg-slate-600 text-brand-600 dark:text-brand-400 shadow-sm' 
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
+              {[
+                { label: 'ALL', val: 'all' },
+                { label: '2단계', val: 2 },
+                { label: '3단계', val: 3 }
+              ].map((opt) => (
+                <button 
+                  key={String(opt.val)}
+                  onClick={() => setFilterStep(opt.val as any)}
+                  className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all ${
+                    filterStep === opt.val 
+                      ? 'bg-white dark:bg-slate-600 text-brand-600 dark:text-brand-400 shadow-sm' 
+                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={toggleSort}
+              className={`p-1.5 rounded-lg transition-colors flex items-center justify-center w-7 h-7 ${
+                sortDir !== 'none' 
+                  ? 'bg-brand-100 text-brand-600 dark:bg-brand-900/40 dark:text-brand-400' 
+                  : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+              }`}
+            >
+              <ArrowUpDown className="w-3.5 h-3.5" />
+            </button>
           </div>
-
-          <button 
-            onClick={toggleSort}
-            className={`p-1.5 rounded-lg transition-colors flex items-center justify-center w-7 h-7 ${
-              sortDir !== 'none' 
-                ? 'bg-brand-100 text-brand-600 dark:bg-brand-900/40 dark:text-brand-400' 
-                : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
-            }`}
-          >
-            <ArrowUpDown className="w-3.5 h-3.5" />
-          </button>
         </div>
-      </div>
+      )}
 
       {/* Preset List */}
       <div className="flex flex-col gap-2">
@@ -197,19 +199,23 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                     </div>
 
                     {/* Quick Start Button: Removed circle background, made triangle blue */}
-                    <button
-                      onClick={(e) => handleQuickStart(e, preset)}
-                      className="w-6 h-6 sm:w-7 sm:h-7 bg-transparent hover:scale-125 text-brand-600 dark:text-brand-400 flex items-center justify-center transition-all active:scale-90 shrink-0 ml-1 group/play"
-                      title="이 처방으로 즉시 시작"
-                    >
-                      <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current opacity-80 group-hover/play:opacity-100 transition-opacity ml-0.5" />
-                    </button>
+                    {!compactMode && (
+                      <button
+                        onClick={(e) => handleQuickStart(e, preset)}
+                        className="w-6 h-6 sm:w-7 sm:h-7 bg-transparent hover:scale-125 text-brand-600 dark:text-brand-400 flex items-center justify-center transition-all active:scale-90 shrink-0 ml-1 group/play"
+                        title="이 처방으로 즉시 시작"
+                      >
+                        <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current opacity-80 group-hover/play:opacity-100 transition-opacity ml-0.5" />
+                      </button>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 pl-2 border-l border-slate-100 dark:border-slate-700 ml-1">
-                    <span className="text-sm sm:text-lg font-black text-slate-600 dark:text-slate-300 tabular-nums">
-                      {totalMins}<span className="text-[10px] sm:text-xs font-bold ml-0.5">분</span>
-                    </span>
+                  <div className={`flex items-center gap-2 shrink-0 ${compactMode ? '' : 'pl-2 border-l border-slate-100 dark:border-slate-700 ml-1'}`}>
+                    {!compactMode && (
+                      <span className="text-sm sm:text-lg font-black text-slate-600 dark:text-slate-300 tabular-nums">
+                        {totalMins}<span className="text-[10px] sm:text-xs font-bold ml-0.5">분</span>
+                      </span>
+                    )}
 
                     <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-colors ${
                       isExpanded 
