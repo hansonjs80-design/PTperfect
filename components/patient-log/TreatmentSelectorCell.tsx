@@ -6,6 +6,7 @@ import { TreatmentTextRenderer } from './TreatmentTextRenderer';
 import { TreatmentControlButtons } from './TreatmentControlButtons';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { mapBgToTextClass } from '../../utils/styleUtils';
+import { generateTreatmentString } from '../../utils/bedUtils';
 
 interface TreatmentSelectorCellProps {
   visit?: PatientVisit;
@@ -92,11 +93,14 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null);
   const [isBadgeSelected, setIsBadgeSelected] = useState(false);
   const [badgeRenamePopup, setBadgeRenamePopup] = useState<{ x: number; y: number } | null>(null);
+  const [emptyInputValue, setEmptyInputValue] = useState('');
   const lastTouchTimeRef = useRef<number>(0);
+  const emptyInputRef = useRef<HTMLInputElement>(null);
   const { handleGridKeyDown } = useGridNavigation(11);
 
   const stepParts = useMemo(() => value.split('/').map((part) => part.trim()).filter(Boolean), [value]);
   const allowStepSelection = stepParts.length > 0;
+  const isEmptyTreatmentCell = value.trim() === '' && !presetLabel;
 
   useEffect(() => {
     if (selectedStepIndex === null) return;
@@ -111,7 +115,23 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }
   }, [presetLabel, isBadgeSelected]);
 
+  useEffect(() => {
+    if (!isEmptyTreatmentCell && emptyInputValue) {
+      setEmptyInputValue('');
+    }
+  }, [emptyInputValue, isEmptyTreatmentCell]);
+
   const isMobileOrTabletMode = () => window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches;
+
+  const findPresetByQuery = (query: string) => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return null;
+
+    const startsWithMatch = presets.find((preset) => preset.name.trim().toLowerCase().startsWith(normalized));
+    if (startsWithMatch) return startsWithMatch;
+
+    return presets.find((preset) => preset.name.trim().toLowerCase().includes(normalized)) || null;
+  };
 
 
   const handleMouseEnter = () => {
@@ -186,6 +206,37 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }
   };
 
+  const handleEmptyInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const query = emptyInputValue.trim();
+      if (!query) {
+        openSelector(e);
+        return;
+      }
+
+      const matchedPreset = findPresetByQuery(query);
+      if (!matchedPreset) return;
+
+      onCommitText(generateTreatmentString(matchedPreset.steps));
+      setEmptyInputValue('');
+      requestAnimationFrame(() => cellRef.current?.focus());
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      setEmptyInputValue('');
+      requestAnimationFrame(() => cellRef.current?.focus());
+      return;
+    }
+
+    handleGridKeyDown(e, rowIndex, colIndex, true, emptyInputRef.current);
+  };
+
   const handleStepButtonClick = (e: React.MouseEvent, type: 'prev' | 'next' | 'clear') => {
     e.stopPropagation();
     setHoverInfo(null);
@@ -247,16 +298,26 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         data-grid-id={gridId}
         onMouseDown={(e) => {
           if (e.button !== 0) return;
+          if (isEmptyTreatmentCell && !isReadOnly) {
+            requestAnimationFrame(() => emptyInputRef.current?.focus());
+            return;
+          }
           cellRef.current?.focus();
         }}
-        onClick={() => cellRef.current?.focus()}
+        onClick={() => {
+          if (isEmptyTreatmentCell && !isReadOnly) {
+            emptyInputRef.current?.focus();
+            return;
+          }
+          cellRef.current?.focus();
+        }}
         onDoubleClick={openSelector}
         onTouchEnd={handleTouchEnd}
         onContextMenu={(e) => e.preventDefault()}
         onKeyDown={handleKeyDown}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="w-full h-full min-h-[36px] relative outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
+        className="w-full h-full min-h-[36px] relative outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 focus-within:outline focus-within:outline-2 focus-within:outline-sky-400 focus-within:outline-offset-[-1px] focus-within:z-10"
       >
         <div
           className={`flex items-center w-full h-full px-2 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30'} rounded-sm`}
@@ -281,30 +342,42 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                 {presetLabel}
               </span>
             )}
-            <div className={`text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[32px] ${allowStepSelection ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-              <TreatmentTextRenderer
-                value={value}
-                placeholder={placeholder}
-                isActiveRow={rowStatus === 'active'}
-                activeStepIndex={activeStepIndex}
-                activeStepColor={activeStepColor}
-                activeStepBgColor={activeStepBgColor}
-                timerStatus={timerStatus}
-                remainingTime={remainingTime}
-                isPaused={isPaused}
-                onTogglePause={onTogglePause}
-                onOpenTimerEdit={onOpenTimerEdit}
-                interactiveStepEdit={enableStepInteraction}
-                allowStepSelection={allowStepSelection}
-                quickTreatments={quickTreatments}
-                onDeleteStep={onDeleteStep}
-                onMoveStep={onMoveStep}
-                onSwapSteps={onSwapSteps}
-                onReplaceStep={onReplaceStep}
-                onOpenFullEditor={onOpenFullEditor}
-                selectedStepIndex={selectedStepIndex}
-                onSelectedStepIndexChange={setSelectedStepIndex}
-              />
+            <div className={`text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[32px] ${(allowStepSelection || isEmptyTreatmentCell) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+              {isEmptyTreatmentCell && !isReadOnly ? (
+                <input
+                  ref={emptyInputRef}
+                  value={emptyInputValue}
+                  onChange={(e) => setEmptyInputValue(e.target.value)}
+                  onKeyDown={handleEmptyInputKeyDown}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full bg-transparent outline-none border-none text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 placeholder:text-gray-400"
+                  placeholder={placeholder}
+                />
+              ) : (
+                <TreatmentTextRenderer
+                  value={value}
+                  placeholder={placeholder}
+                  isActiveRow={rowStatus === 'active'}
+                  activeStepIndex={activeStepIndex}
+                  activeStepColor={activeStepColor}
+                  activeStepBgColor={activeStepBgColor}
+                  timerStatus={timerStatus}
+                  remainingTime={remainingTime}
+                  isPaused={isPaused}
+                  onTogglePause={onTogglePause}
+                  onOpenTimerEdit={onOpenTimerEdit}
+                  interactiveStepEdit={enableStepInteraction}
+                  allowStepSelection={allowStepSelection}
+                  quickTreatments={quickTreatments}
+                  onDeleteStep={onDeleteStep}
+                  onMoveStep={onMoveStep}
+                  onSwapSteps={onSwapSteps}
+                  onReplaceStep={onReplaceStep}
+                  onOpenFullEditor={onOpenFullEditor}
+                  selectedStepIndex={selectedStepIndex}
+                  onSelectedStepIndexChange={setSelectedStepIndex}
+                />
+              )}
             </div>
           </div>
 
