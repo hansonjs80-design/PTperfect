@@ -786,6 +786,24 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setDraftImport(sanitizeImportedVisit(merged));
   }, [sanitizeImportedVisit, modalEdits]);
 
+  useEffect(() => {
+    if (!isSearchModalOpen) return;
+    if (mappedResults.length === 0) {
+      setSelectedResult(null);
+      return;
+    }
+
+    if (!selectedResult || !mappedResults.some((item) => item.id === selectedResult.id)) {
+      selectResult(mappedResults[0]);
+    }
+  }, [isSearchModalOpen, mappedResults, selectedResult, selectResult]);
+
+  useEffect(() => {
+    if (!isSearchModalOpen || !selectedResult) return;
+    const row = document.querySelector(`[data-search-result-id="${selectedResult.id}"]`) as HTMLElement | null;
+    row?.scrollIntoView({ block: 'nearest' });
+  }, [isSearchModalOpen, selectedResult]);
+
   const handleImportToToday = useCallback(async (sourceVisitOverride?: PatientVisit) => {
     const baseSource = sourceVisitOverride || selectedResult;
     if (!baseSource) return;
@@ -846,17 +864,6 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     if (!isSearchModalOpen) return;
 
     const onSearchModalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        resetSearchModal();
-        return;
-      }
-
-      if (e.key !== 'Enter') return;
-      if (e.repeat || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return;
-      if (!selectedResult) return;
-
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
       const isTextInputLike = !!target && (
@@ -865,6 +872,35 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         tag === 'SELECT' ||
         target.isContentEditable
       );
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        resetSearchModal();
+        return;
+      }
+
+      if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !isTextInputLike) {
+        if (mappedResults.length === 0) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const currentIndex = selectedResult
+          ? mappedResults.findIndex((item) => item.id === selectedResult.id)
+          : -1;
+
+        const nextIndex = e.key === 'ArrowDown'
+          ? (currentIndex + 1 + mappedResults.length) % mappedResults.length
+          : (currentIndex - 1 + mappedResults.length) % mappedResults.length;
+
+        selectResult(mappedResults[nextIndex]);
+        return;
+      }
+
+      if (e.key !== 'Enter') return;
+      if (e.repeat || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (!selectedResult) return;
 
       if (isTextInputLike) return;
 
@@ -875,7 +911,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
     window.addEventListener('keydown', onSearchModalKeyDown, true);
     return () => window.removeEventListener('keydown', onSearchModalKeyDown, true);
-  }, [isSearchModalOpen, resetSearchModal, selectedResult, handleImportToToday]);
+  }, [isSearchModalOpen, resetSearchModal, selectedResult, handleImportToToday, mappedResults, selectResult]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -904,7 +940,22 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
   return (
     <>
-      <div ref={panelRootRef} className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-xl print:hidden">
+      <style>{`
+        [data-patient-log-root] input::selection,
+        [data-patient-log-root] textarea::selection,
+        [data-patient-log-root] [contenteditable="true"]::selection {
+          background: rgba(14, 165, 233, 0.55);
+          color: #ffffff;
+        }
+
+        [data-patient-log-root] input::-moz-selection,
+        [data-patient-log-root] textarea::-moz-selection,
+        [data-patient-log-root] [contenteditable="true"]::-moz-selection {
+          background: rgba(14, 165, 233, 0.55);
+          color: #ffffff;
+        }
+      `}</style>
+      <div ref={panelRootRef} data-patient-log-root="true" className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-xl print:hidden">
         
         {/* Header: Visible on all layouts so desktop also shows total/date controls */}
         <div className="shrink-0">
@@ -1091,6 +1142,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                       return (
                         <div
                           key={v.id}
+                          data-search-result-id={v.id}
                           tabIndex={0}
                           onClick={(e) => {
                             selectResult(v);
@@ -1112,7 +1164,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                             selectResult(v);
                             void handleImportToToday(v);
                           }}
-                          className={`${rowGridClass} border-b border-gray-100 dark:border-slate-700/50 last:border-0 cursor-pointer transition-colors hover:bg-brand-50/50 dark:hover:bg-brand-900/10 ${isSelected ? 'bg-brand-50 dark:bg-brand-900/40 ring-1 ring-inset ring-brand-400 dark:ring-brand-600' : ''}`}
+                          className={`${rowGridClass} border-b border-gray-100 dark:border-slate-700/50 last:border-0 cursor-pointer transition-colors hover:bg-brand-50/50 dark:hover:bg-brand-900/10 ${isSelected ? 'bg-brand-50 dark:bg-brand-900/40 ring-2 ring-inset ring-brand-500 dark:ring-brand-400 shadow-[inset_0_0_0_2px_rgba(59,130,246,0.9)]' : ''}`}
                         >
                           {/* 날짜 (Read Only) */}
                           <div className="px-2 py-2 flex items-center justify-center text-[11px] font-medium text-gray-500 dark:text-gray-400 border-r border-gray-100 dark:border-slate-700/50">
