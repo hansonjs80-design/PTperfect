@@ -105,6 +105,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }
   }, [selectedStepIndex, stepParts.length]);
 
+  useEffect(() => {
+    if (!presetLabel && isBadgeSelected) {
+      setIsBadgeSelected(false);
+    }
+  }, [presetLabel, isBadgeSelected]);
+
   const isMobileOrTabletMode = () => window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches;
 
 
@@ -166,6 +172,8 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         onDeletePresetBadge();
         setIsBadgeSelected(false);
       } else if (value.trim() !== '') {
+        onDeletePresetBadge?.();
+        setIsBadgeSelected(false);
         onCommitText('');
       }
       return;
@@ -237,7 +245,11 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         ref={cellRef}
         tabIndex={0}
         data-grid-id={gridId}
-        onClick={(e) => e.preventDefault()}
+        onMouseDown={(e) => {
+          if (e.button !== 0) return;
+          cellRef.current?.focus();
+        }}
+        onClick={() => cellRef.current?.focus()}
         onDoubleClick={openSelector}
         onTouchEnd={handleTouchEnd}
         onContextMenu={(e) => e.preventDefault()}
