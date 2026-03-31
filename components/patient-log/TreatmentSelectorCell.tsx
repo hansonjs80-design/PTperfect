@@ -417,6 +417,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       return;
     }
 
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      return;
+    }
+
     handleGridKeyDown(e, rowIndex, colIndex, true, inlineInputRef.current);
   };
 
