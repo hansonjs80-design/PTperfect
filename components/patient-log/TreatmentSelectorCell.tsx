@@ -307,14 +307,40 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     setIsInlineEditing(false);
   };
 
-  const startInlineEditing = () => {
+  const getCaretIndexFromClick = (text: string, sourceEl: HTMLElement, clientX: number) => {
+    if (!text) return 0;
+
+    const rect = sourceEl.getBoundingClientRect();
+    const computed = window.getComputedStyle(sourceEl);
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return text.length;
+
+    context.font = computed.font;
+    const localX = Math.max(0, clientX - rect.left);
+
+    for (let index = 0; index < text.length; index += 1) {
+      const leftWidth = context.measureText(text.slice(0, index)).width;
+      const rightWidth = context.measureText(text.slice(0, index + 1)).width;
+      const midpoint = leftWidth + (rightWidth - leftWidth) / 2;
+      if (localX <= midpoint) {
+        return index;
+      }
+    }
+
+    return text.length;
+  };
+
+  const startInlineEditing = (clientX?: number, sourceEl?: HTMLElement | null) => {
     if (!preferInlineTextEditing || isReadOnly) return;
     setInlineInputValue(value);
     setIsInlineEditing(true);
     requestAnimationFrame(() => {
       inlineInputRef.current?.focus();
-      const end = value.length;
-      inlineInputRef.current?.setSelectionRange(end, end);
+      const caretIndex = typeof clientX === 'number' && sourceEl
+        ? getCaretIndexFromClick(value, sourceEl, clientX)
+        : value.length;
+      inlineInputRef.current?.setSelectionRange(caretIndex, caretIndex);
     });
   };
 
@@ -471,7 +497,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
-                      startInlineEditing();
+                      startInlineEditing(e.clientX, e.currentTarget);
                     }}
                     onDoubleClick={(e) => e.stopPropagation()}
                     className="max-w-full bg-transparent outline-none border-none p-0 text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 whitespace-pre-wrap break-all"
