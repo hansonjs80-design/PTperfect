@@ -103,6 +103,8 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const inlineInputRef = useRef<HTMLInputElement>(null);
   const inlineCaretIndexRef = useRef<number | null>(null);
   const { handleGridKeyDown } = useGridNavigation(11);
+  const isInlineEditingTarget = (target: EventTarget | null) =>
+    target instanceof HTMLElement && !!target.closest('[data-inline-treatment-editing="true"]');
 
   const stepParts = useMemo(() => value.split('/').map((part) => part.trim()).filter(Boolean), [value]);
   const allowStepSelection = stepParts.length > 0;
@@ -479,15 +481,18 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         data-grid-id={gridId}
         onMouseDownCapture={(e) => {
           if (e.button !== 0) return;
+          if (isInlineEditingTarget(e.target)) return;
           if (!isEmptyTreatmentCell || isReadOnly) {
             cellRef.current?.focus();
           }
         }}
         onMouseDown={(e) => {
           if (e.button !== 0) return;
+          if (isInlineEditingTarget(e.target)) return;
           cellRef.current?.focus();
         }}
-        onClick={() => {
+        onClick={(e) => {
+          if (isInlineEditingTarget(e.target)) return;
           cellRef.current?.focus();
         }}
         onDoubleClick={openSelector}
@@ -536,6 +541,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                 isInlineEditing ? (
                 <input
                   ref={inlineInputRef}
+                  data-inline-treatment-editing="true"
                   value={inlineInputValue}
                   onChange={(e) => setInlineInputValue(e.target.value)}
                   onKeyDown={handleInlineInputKeyDown}
@@ -549,6 +555,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   onMouseUp={() => {
                     inlineCaretIndexRef.current = inlineInputRef.current?.selectionStart ?? null;
                   }}
+                  onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => e.stopPropagation()}
                   className="w-full bg-transparent outline-none border-none text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 placeholder:text-gray-400"
                   placeholder={placeholder}
@@ -556,9 +563,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                 ) : (
                   <button
                     type="button"
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
+                    data-inline-treatment-editing="true"
+                    onMouseDown={(e) => {
                       e.stopPropagation();
+                      e.preventDefault();
                       startInlineEditing(e.clientX, e.currentTarget);
                     }}
                     onDoubleClick={(e) => e.stopPropagation()}
