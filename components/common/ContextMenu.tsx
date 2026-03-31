@@ -10,6 +10,7 @@ interface ContextMenuProps {
   onClose: () => void;
   children: React.ReactNode;
   width?: number;
+  headerActions?: React.ReactNode;
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -17,7 +18,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   position,
   onClose,
   children,
-  width = 256 // w-64
+  width = 256, // w-64
+  headerActions
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   // Pre-compute initial position (estimated height ~150px)
@@ -58,12 +60,15 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           <span className="font-bold text-gray-800 dark:text-white text-xs truncate pr-2">
             {title}
           </span>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {headerActions}
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <div className="p-2 flex flex-col gap-1">
