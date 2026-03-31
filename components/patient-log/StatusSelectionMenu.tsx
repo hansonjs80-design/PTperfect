@@ -76,6 +76,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       if (e.key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
+        toggleSelection(activeIndex);
         onClose();
         return;
       }

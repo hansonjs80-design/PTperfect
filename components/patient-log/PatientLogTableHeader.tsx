@@ -57,6 +57,7 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
   return (
     <thead className="sticky top-0 bg-sky-100/95 dark:bg-slate-700/95 z-10 shadow-sm border-b-2 border-sky-200 dark:border-slate-500 backdrop-blur-md">
       <tr>
+        <th className="py-3.5 px-0 w-[34px] min-w-[34px] max-w-[34px] border-r border-slate-300 dark:border-slate-600 bg-slate-100/90 dark:bg-slate-800/90" />
         <th className={`${thBase} w-[30px] md:w-[40px] relative`}>
           NO
           {handle(0)}

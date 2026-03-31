@@ -11,6 +11,7 @@ import { normalizeUpperEnglishKeyInput } from '../../utils/keyboardLayout';
 
 type GridCellPos = { row: number; col: number };
 type GridSelection = { start: GridCellPos; end: GridCellPos } | null;
+type RowHeaderPos = { row: number };
 
 const SELECTABLE_COLS = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 10]);
 
@@ -74,6 +75,15 @@ const parseGridCellId = (el: HTMLElement | null): GridCellPos | null => {
   const [r, c] = id.split('-').map(Number);
   if (Number.isNaN(r) || Number.isNaN(c)) return null;
   return { row: r, col: c };
+};
+
+const parseRowHeaderId = (el: HTMLElement | null): RowHeaderPos | null => {
+  const rowHeader = el?.closest?.('[data-row-header-id]') as HTMLElement | null;
+  if (!rowHeader) return null;
+  const raw = rowHeader.getAttribute('data-row-header-id');
+  const row = raw ? Number(raw) : Number.NaN;
+  if (Number.isNaN(row)) return null;
+  return { row };
 };
 
 const findVisibleGridPos = (current: GridCellPos, direction: 'up' | 'down' | 'left' | 'right', totalRows: number): GridCellPos | null => {
@@ -152,6 +162,11 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const prevVisitsLengthRef = useRef(visits.length);
   const pendingAutoFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPointerDownAtRef = useRef(0);
+
+  const buildWholeRowSelection = useCallback((row: number): GridSelection => ({
+    start: { row, col: 0 },
+    end: { row, col: 10 },
+  }), []);
 
 
   // Expose cancel function to parent so search shortcuts can prevent auto-focus stealing
@@ -662,6 +677,13 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       onKeyDown={handleSelectionKeyDown}
       onMouseDownCapture={(e) => {
         lastPointerDownAtRef.current = Date.now();
+        const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
+        if (rowHeaderPos) {
+          setSelection(buildWholeRowSelection(rowHeaderPos.row));
+          onSelectionAnchorChange?.(rowHeaderPos.row, 0);
+          isDraggingRef.current = true;
+          return;
+        }
         const pos = parseGridCellId(e.target as HTMLElement);
         if (!pos) return;
         setSelection({ start: pos, end: pos });
@@ -669,6 +691,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         isDraggingRef.current = true;
       }}
       onClickCapture={(e) => {
+        const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
+        if (rowHeaderPos) {
+          setSelection(buildWholeRowSelection(rowHeaderPos.row));
+          onSelectionAnchorChange?.(rowHeaderPos.row, 0);
+          return;
+        }
         const pos = parseGridCellId(e.target as HTMLElement);
         if (!pos) return;
         setSelection({ start: pos, end: pos });
@@ -682,6 +710,11 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       }}
       onMouseMoveCapture={(e) => {
         if (!isDraggingRef.current) return;
+        const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
+        if (rowHeaderPos) {
+          setSelection((prev) => prev ? { ...prev, end: { row: rowHeaderPos.row, col: 10 } } : prev);
+          return;
+        }
         const pos = parseGridCellId(e.target as HTMLElement);
         if (!pos) return;
         setSelection((prev) => prev ? { ...prev, end: pos } : prev);
@@ -693,6 +726,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       <table ref={tableRef} className="w-max border-collapse table-fixed bg-white/90 dark:bg-slate-900">
         {columnWidths && (
           <colgroup>
+            <col style={{ width: '34px' }} />
             {columnWidths.map((w, i) => {
               if (!showTimerColumn && i === 8) return null;
               const normalizedWidth = (() => {
@@ -744,6 +778,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
               <PatientLogRow
                 key={visit.id}
                 rowIndex={index}
+                isRowSelected={!!selection && Math.min(selection.start.row, selection.end.row) <= index && index <= Math.max(selection.start.row, selection.end.row)}
                 visit={visit}
                 isDraft={false}
                 rowStatus={rowStatus}
@@ -776,6 +811,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
             <PatientLogRow
               key={`draft-${index}-${draftRowKey}`}
               rowIndex={visits.length + index}
+              isRowSelected={!!selection && Math.min(selection.start.row, selection.end.row) <= (visits.length + index) && (visits.length + index) <= Math.max(selection.start.row, selection.end.row)}
               isDraft={true}
               onCreate={handleDraftCreate}
               onSelectLog={(id) => onSelectLog(id, null)}
@@ -787,7 +823,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
           {/* +10행 추가 버튼 */}
           <tr>
-            <td colSpan={11} className="p-0 border-b border-gray-300 dark:border-slate-600">
+            <td colSpan={12} className="p-0 border-b border-gray-300 dark:border-slate-600">
               <button
                 onClick={() => setTotalRows(prev => prev + 10)}
                 className="w-full py-2.5 flex items-center justify-center gap-1.5 text-xs font-bold text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:text-brand-400 dark:hover:bg-brand-900/20 transition-colors"

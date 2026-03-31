@@ -17,6 +17,7 @@ import { findExactPresetByTreatmentString, formatTime, generateTreatmentString, 
 
 interface PatientLogRowProps {
   rowIndex: number;
+  isRowSelected?: boolean;
   visit?: PatientVisit;
   isDraft?: boolean;
   rowStatus?: 'active' | 'completed' | 'none';
@@ -46,6 +47,7 @@ interface PatientLogRowProps {
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   rowIndex,
+  isRowSelected = false,
   visit,
   isDraft = false,
   rowStatus = 'none',
@@ -349,6 +351,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   if (timerStatus === 'overtime') dotColorClass = 'bg-red-600 animate-pulse';
 
   const cellBorderClass = "border-r border-slate-300 dark:border-slate-600";
+  const rowHeaderClass = isRowSelected
+    ? 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-200'
+    : 'bg-slate-50 dark:bg-slate-800/70 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700/80';
   const currentPreset = bed?.customPreset || presets.find(p => p.id === bed?.currentPresetId);
   const currentStep = currentPreset?.steps[bed?.currentStepIndex || 0];
   const activeSteps = currentPreset?.steps || [];
@@ -526,6 +531,17 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   return (
     <>
       <tr className={rowClasses}>
+      <td className={`p-0 border-r border-slate-300 dark:border-slate-600 ${rowHeaderClass}`}>
+        <button
+          type="button"
+          data-row-header-id={rowIndex}
+          tabIndex={-1}
+          className="w-full h-full min-h-[32px] min-w-[34px] flex items-center justify-center text-[10px] font-black select-none transition-colors"
+          title="행 선택"
+        >
+          {rowIndex + 1}
+        </button>
+      </td>
       <td className={`${cellBorderClass} p-0 relative`}>
         <BedSelectorCell
           gridId={`${rowIndex}-0`}

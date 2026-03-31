@@ -232,7 +232,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         return;
       }
 
-      const nextValue = `${value}${e.key}`;
+      const nextValue = e.key;
       setInlineInputValue(nextValue);
       setIsInlineEditing(true);
       requestAnimationFrame(() => {
@@ -278,13 +278,31 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       return;
     }
 
+    const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
+    const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
+    const isPlainTypingKey = (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) || isIMEKey;
+    if (isPlainTypingKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      const nextValue = isIMEKey ? '' : e.key;
+      setEmptyInputValue(nextValue);
+      requestAnimationFrame(() => {
+        emptyInputRef.current?.focus();
+        const end = nextValue.length;
+        emptyInputRef.current?.setSelectionRange(end, end);
+      });
+      return;
+    }
+
     handleGridKeyDown(e, rowIndex, colIndex, true, emptyInputRef.current);
   };
 
   const commitInlineInputValue = () => {
     const normalized = inlineInputValue.trim();
-    if (normalized !== value.trim()) {
-      onCommitText(normalized);
+    const matchedPreset = findPresetByQuery(normalized);
+    const nextValue = matchedPreset ? generateTreatmentString(matchedPreset.steps) : normalized;
+    if (nextValue !== value.trim()) {
+      onCommitText(nextValue);
     }
     setIsInlineEditing(false);
   };
@@ -377,17 +395,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         }}
         onMouseDown={(e) => {
           if (e.button !== 0) return;
-          if (isEmptyTreatmentCell && !isReadOnly) {
-            requestAnimationFrame(() => emptyInputRef.current?.focus());
-            return;
-          }
           cellRef.current?.focus();
         }}
         onClick={() => {
-          if (isEmptyTreatmentCell && !isReadOnly) {
-            emptyInputRef.current?.focus();
-            return;
-          }
           cellRef.current?.focus();
         }}
         onDoubleClick={openSelector}
