@@ -35,6 +35,17 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
     return activeIdx >= 0 ? activeIdx : 0;
   }, [statusOptions, visit]);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
+  const [activeKeys, setActiveKeys] = useState<Set<keyof PatientVisit>>(new Set());
+
+  useEffect(() => {
+    const next = new Set<keyof PatientVisit>();
+    statusOptions.forEach((opt) => {
+      if (visit?.[opt.key as keyof PatientVisit]) {
+        next.add(opt.key as keyof PatientVisit);
+      }
+    });
+    setActiveKeys(next);
+  }, [statusOptions, visit]);
 
   useEffect(() => {
     setActiveIndex(initialIndex);
@@ -47,6 +58,13 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   const toggleSelection = useCallback((index: number) => {
     const option = statusOptions[index];
     if (!option) return;
+    setActiveKeys((prev) => {
+      const next = new Set(prev);
+      const key = option.key as keyof PatientVisit;
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
     onToggle(option.key as keyof PatientVisit);
   }, [statusOptions, onToggle]);
 
@@ -77,7 +95,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
         e.preventDefault();
         e.stopPropagation();
         const activeOption = statusOptions[activeIndex];
-        const isAlreadySelected = activeOption ? !!visit?.[activeOption.key as keyof PatientVisit] : false;
+        const isAlreadySelected = activeOption ? activeKeys.has(activeOption.key as keyof PatientVisit) : false;
         if (!isAlreadySelected) {
           toggleSelection(activeIndex);
         }
@@ -94,7 +112,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [activeIndex, onClose, statusOptions, toggleSelection, visit]);
+  }, [activeIndex, activeKeys, onClose, statusOptions, toggleSelection]);
 
   return (
     <ContextMenu
@@ -103,7 +121,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       onClose={onClose}
     >
       {statusOptions.map((opt, idx) => {
-        const isActive = visit ? !!visit[opt.key as keyof PatientVisit] : false;
+        const isActive = activeKeys.has(opt.key as keyof PatientVisit);
         const isFocusedOption = idx === activeIndex;
         return (
           <button
