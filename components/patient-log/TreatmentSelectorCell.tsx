@@ -47,6 +47,7 @@ interface TreatmentSelectorCellProps {
   onDeletePresetBadge?: () => void;
   presets?: Preset[];
   onRenamePresetBadge?: (newPreset: Preset) => void;
+  preferInlineTextEditing?: boolean;
 }
 
 export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
@@ -86,6 +87,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   onDeletePresetBadge,
   presets = [],
   onRenamePresetBadge,
+  preferInlineTextEditing = false,
 }) => {
   const cellRef = useRef<HTMLDivElement>(null);
   const [popupState, setPopupState] = useState<{ type: 'prev' | 'next' | 'clear'; x: number; y: number } | null>(null);
@@ -94,8 +96,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const [isBadgeSelected, setIsBadgeSelected] = useState(false);
   const [badgeRenamePopup, setBadgeRenamePopup] = useState<{ x: number; y: number } | null>(null);
   const [emptyInputValue, setEmptyInputValue] = useState('');
+  const [inlineInputValue, setInlineInputValue] = useState(value);
   const lastTouchTimeRef = useRef<number>(0);
   const emptyInputRef = useRef<HTMLInputElement>(null);
+  const inlineInputRef = useRef<HTMLInputElement>(null);
   const { handleGridKeyDown } = useGridNavigation(11);
 
   const stepParts = useMemo(() => value.split('/').map((part) => part.trim()).filter(Boolean), [value]);
@@ -120,6 +124,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       setEmptyInputValue('');
     }
   }, [emptyInputValue, isEmptyTreatmentCell]);
+
+  useEffect(() => {
+    setInlineInputValue(value);
+  }, [value]);
 
   const isMobileOrTabletMode = () => window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches;
 
@@ -237,6 +245,32 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     handleGridKeyDown(e, rowIndex, colIndex, true, emptyInputRef.current);
   };
 
+  const commitInlineInputValue = () => {
+    const normalized = inlineInputValue.trim();
+    if (normalized === value.trim()) return;
+    onCommitText(normalized);
+  };
+
+  const handleInlineInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      commitInlineInputValue();
+      requestAnimationFrame(() => cellRef.current?.focus());
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      setInlineInputValue(value);
+      requestAnimationFrame(() => cellRef.current?.focus());
+      return;
+    }
+
+    handleGridKeyDown(e, rowIndex, colIndex, true, inlineInputRef.current);
+  };
+
   const handleStepButtonClick = (e: React.MouseEvent, type: 'prev' | 'next' | 'clear') => {
     e.stopPropagation();
     setHoverInfo(null);
@@ -348,13 +382,24 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                 {presetLabel}
               </span>
             )}
-            <div className={`text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[28px] ${(allowStepSelection || isEmptyTreatmentCell) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+            <div className={`text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[28px] ${(allowStepSelection || isEmptyTreatmentCell || preferInlineTextEditing) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
               {isEmptyTreatmentCell && !isReadOnly ? (
                 <input
                   ref={emptyInputRef}
                   value={emptyInputValue}
                   onChange={(e) => setEmptyInputValue(e.target.value)}
                   onKeyDown={handleEmptyInputKeyDown}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full bg-transparent outline-none border-none text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 placeholder:text-gray-400"
+                  placeholder={placeholder}
+                />
+              ) : preferInlineTextEditing && !isReadOnly ? (
+                <input
+                  ref={inlineInputRef}
+                  value={inlineInputValue}
+                  onChange={(e) => setInlineInputValue(e.target.value)}
+                  onKeyDown={handleInlineInputKeyDown}
+                  onBlur={commitInlineInputValue}
                   onClick={(e) => e.stopPropagation()}
                   className="w-full bg-transparent outline-none border-none text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 placeholder:text-gray-400"
                   placeholder={placeholder}

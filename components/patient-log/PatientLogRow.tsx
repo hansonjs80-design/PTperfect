@@ -667,6 +667,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           onOpenFullEditor={handleTreatmentSelectorOpen}
           onAddStep={isBedActivationDisabled ? undefined : handleAddStepFromButton}
           isReadOnly={isTreatmentLockedByTimer}
+          preferInlineTextEditing={rowStatus === 'active' && !isBedActivationDisabled}
         />
       </td>
 
