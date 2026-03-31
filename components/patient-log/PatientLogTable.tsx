@@ -151,6 +151,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const showTimerColumn = false;
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
   const isDraggingRef = useRef(false);
+  const skipRowHeaderClickRef = useRef(false);
 
   // Column resize (desktop & tablet portrait)
   const tableRef = useRef<HTMLTableElement>(null);
@@ -168,6 +169,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     start: { row, col: 0 },
     end: { row, col: 10 },
   }), []);
+
+  const isWholeRowSelected = useCallback((row: number) => {
+    const bounds = normalizeSelectionBounds(selection);
+    if (!bounds) return false;
+    return bounds.rowMin === row && bounds.rowMax === row && bounds.colMin === 0 && bounds.colMax === 10;
+  }, [selection]);
 
   const getInsertCreatedAt = useCallback((insertIndex: number) => {
     const prevVisit = visits[insertIndex - 1];
@@ -746,6 +753,13 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         lastPointerDownAtRef.current = Date.now();
         const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
         if (rowHeaderPos) {
+          if (isWholeRowSelected(rowHeaderPos.row)) {
+            setSelection(null);
+            onSelectionAnchorChange?.(null, null);
+            skipRowHeaderClickRef.current = true;
+            isDraggingRef.current = false;
+            return;
+          }
           setSelection(buildWholeRowSelection(rowHeaderPos.row));
           onSelectionAnchorChange?.(rowHeaderPos.row, 0);
           isDraggingRef.current = true;
@@ -760,6 +774,10 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       onClickCapture={(e) => {
         const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
         if (rowHeaderPos) {
+          if (skipRowHeaderClickRef.current) {
+            skipRowHeaderClickRef.current = false;
+            return;
+          }
           setSelection(buildWholeRowSelection(rowHeaderPos.row));
           onSelectionAnchorChange?.(rowHeaderPos.row, 0);
           return;
