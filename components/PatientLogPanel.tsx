@@ -221,6 +221,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [memoPasteSelection, setMemoPasteSelection] = useState(defaultMemoPasteSelection);
   const [selectionAnchor, setSelectionAnchor] = useState<{ row: number | null; col: number | null }>({ row: null, col: null });
   const [selectedVisitIdForImport, setSelectedVisitIdForImport] = useState<string | null>(null);
+  const [searchTargetContext, setSearchTargetContext] = useState<{ row: number | null; col: number | null; visitId: string | null }>({ row: null, col: null, visitId: null });
   // Ref to cancel auto-focus in PatientLogTable when a search shortcut fires
   const cancelAutoFocusRef = useRef<(() => void) | null>(null);
   
@@ -330,6 +331,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setPendingSearchInput(null);
     setDraftRowKey(prev => prev + 1);
     setModalEdits({});
+    setSearchTargetContext({ row: null, col: null, visitId: null });
     document.body.removeAttribute('data-prevent-autofocus');
   }, [defaultImportFieldSelection]);
 
@@ -566,6 +568,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
            if (visit) {
                setSelectedVisitIdForImport(visit.id);
            }
+           setSearchTargetContext({ row: r, col: c, visitId: visit?.id || null });
 
            if (activeInputValue) {
                keyword = activeInputValue;
@@ -604,9 +607,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     if (!nextMemo) return false;
 
     const latestVisits = visitsRef.current;
-    const selectedRow = selectionAnchor.row;
-    const targetVisitByRow = selectedRow !== null ? latestVisits[selectedRow] : undefined;
-    const targetVisitById = selectedVisitIdForImport ? latestVisits.find((v) => v.id === selectedVisitIdForImport) : undefined;
+    const targetRow = searchTargetContext.row ?? selectionAnchor.row;
+    const targetVisitByRow = targetRow !== null ? latestVisits[targetRow] : undefined;
+    const targetVisitId = searchTargetContext.visitId ?? selectedVisitIdForImport;
+    const targetVisitById = targetVisitId ? latestVisits.find((v) => v.id === targetVisitId) : undefined;
     const targetVisit = targetVisitById || targetVisitByRow;
 
     if (!targetVisit) {
@@ -858,7 +862,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     }
 
     resetSearchModal();
-  }, [trackedAddVisit, selectedResult, modalEdits, sanitizeImportedVisit, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, trackedUpdateVisitWithBedSync, normalizeImportedTreatmentName, importFieldSelection, pendingSearchInput]);
+  }, [trackedAddVisit, selectedResult, modalEdits, sanitizeImportedVisit, resetSearchModal, selectedVisitIdForImport, selectionAnchor.row, visits, trackedUpdateVisitWithBedSync, normalizeImportedTreatmentName, importFieldSelection, pendingSearchInput, searchTargetContext]);
 
   useEffect(() => {
     if (!isSearchModalOpen) return;
