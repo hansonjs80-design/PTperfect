@@ -296,6 +296,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         ref={cellRef}
         tabIndex={0}
         data-grid-id={gridId}
+        onMouseDownCapture={(e) => {
+          if (e.button !== 0) return;
+          if (!isEmptyTreatmentCell || isReadOnly) {
+            cellRef.current?.focus();
+          }
+        }}
         onMouseDown={(e) => {
           if (e.button !== 0) return;
           if (isEmptyTreatmentCell && !isReadOnly) {
@@ -317,10 +323,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         onKeyDown={handleKeyDown}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="w-full h-full min-h-[36px] relative outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 focus-within:outline focus-within:outline-2 focus-within:outline-sky-400 focus-within:outline-offset-[-1px] focus-within:z-10"
+        className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] min-h-[32px] relative rounded-[1px] outline-none focus:outline-none focus-within:outline-none focus:z-10 focus-within:z-10 focus:bg-sky-500/5 focus-within:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] focus-within:shadow-[inset_0_0_0_2px_rgb(14_165_233)]"
       >
         <div
-          className={`flex items-center w-full h-full px-2 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30'} rounded-sm`}
+          className={`flex items-center w-full h-full px-2 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30'} rounded-[1px]`}
           title={getTitle()}
         >
           <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-[4px] py-0.5 gap-2">

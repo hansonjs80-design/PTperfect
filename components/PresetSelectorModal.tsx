@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, memo, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, memo, useCallback, useMemo } from 'react';
 import { X, Play, ChevronLeft, Eraser, Check, Clock, Edit3 } from 'lucide-react';
 import { Preset, TreatmentStep, QuickTreatment } from '../types';
 import { OptionToggles } from './preset-selector/OptionToggles';
@@ -42,48 +42,51 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
   initialOptions,
   initialPreset
 }) => {
-  const [tractionDuration, setTractionDuration] = useState(15);
-  const [previewPreset, setPreviewPreset] = useState<Preset | null>(null);
-  
-  // Multi-select state for Quick Treatments
-  const [selectedQuickItems, setSelectedQuickItems] = useState<QuickTreatment[]>([]);
-  // Default to true
-  const [isMultiSelectMode, setIsMultiSelectMode] = useState(true);
-
-  const [options, setOptions] = useState({
+  const defaultOptions = useMemo(() => ({
     isInjection: false,
     isManual: false,
     isESWT: false,
     isTraction: false,
     isFluid: false,
     isIon: false
-  });
+  }), []);
 
-  useEffect(() => {
+  const resolveInitialOptions = useCallback(() => {
+    if (!initialOptions) return defaultOptions;
+    return { ...initialOptions, isIon: !!initialOptions.isIon };
+  }, [defaultOptions, initialOptions]);
+
+  const resolveInitialPreviewPreset = useCallback(() => {
+    const isLogMode = targetBedId === 0;
+    if (!initialPreset || isLogMode) return null;
+
+    try {
+      return JSON.parse(JSON.stringify(initialPreset)) as Preset;
+    } catch (e) {
+      console.error('Failed to parse initialPreset', e);
+      return null;
+    }
+  }, [initialPreset, targetBedId]);
+
+  const [tractionDuration, setTractionDuration] = useState(15);
+  const [previewPreset, setPreviewPreset] = useState<Preset | null>(() => resolveInitialPreviewPreset());
+  
+  // Multi-select state for Quick Treatments
+  const [selectedQuickItems, setSelectedQuickItems] = useState<QuickTreatment[]>([]);
+  // Default to true
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(true);
+
+  const [options, setOptions] = useState(() => resolveInitialOptions());
+
+  useLayoutEffect(() => {
     if (isOpen) {
-      if (initialOptions) {
-        setOptions({ ...initialOptions, isIon: !!initialOptions.isIon });
-      } else {
-        setOptions({ isInjection: false, isManual: false, isESWT: false, isTraction: false, isFluid: false, isIon: false });
-      }
-      
-      const isLogMode = targetBedId === 0;
-      if (initialPreset && !isLogMode) {
-        // Deep copy to prevent mutating the original preset in context
-        try {
-            setPreviewPreset(JSON.parse(JSON.stringify(initialPreset)));
-        } catch (e) {
-            console.error("Failed to parse initialPreset", e);
-            setPreviewPreset(null);
-        }
-      } else {
-        setPreviewPreset(null);
-      }
+      setOptions(resolveInitialOptions());
+      setPreviewPreset(resolveInitialPreviewPreset());
       // Reset multi-select state on open (Default to ON)
       setSelectedQuickItems([]);
       setIsMultiSelectMode(true);
     }
-  }, [isOpen, initialOptions, initialPreset, targetBedId]);
+  }, [isOpen, resolveInitialOptions, resolveInitialPreviewPreset]);
 
   // Handle Quick Item Click (Single vs Multi logic)
   const handleQuickItemClick = useCallback((template: QuickTreatment) => {
@@ -160,7 +163,7 @@ export const PresetSelectorModal: React.FC<PresetSelectorModalProps> = memo(({
       onClick={onClose}
     >
       <div 
-        className="w-full sm:w-[560px] lg:w-[620px] max-h-[92vh] bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200/70 dark:border-slate-700 shadow-[0_20px_70px_rgba(15,23,42,0.28)] overflow-hidden flex flex-col transition-all"
+        className="w-full sm:w-[560px] lg:w-[620px] max-h-[92vh] bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200/70 dark:border-slate-700 shadow-[0_20px_70px_rgba(15,23,42,0.28)] overflow-hidden flex flex-col transition-colors"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
