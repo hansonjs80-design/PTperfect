@@ -1,6 +1,6 @@
 
 import React, { memo, useState, useRef, useEffect } from 'react';
-import { Trash2, Check, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { EditableCell } from './EditableCell';
 import { BedSelectorCell } from './BedSelectorCell';
 import { TreatmentSelectorCell } from './TreatmentSelectorCell';
@@ -76,22 +76,12 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 }) => {
   const { handleGridKeyDown } = useGridNavigation(11);
   const { activateVisitFromLog, togglePause, updateBedSteps, updateBedDuration, quickTreatments } = useTreatmentContext();
-  const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
   const [timerPopupPos, setTimerPopupPos] = useState<{ x: number; y: number } | null>(null);
   const [optimisticTreatmentName, setOptimisticTreatmentName] = useState<string | null>(null);
   const [stickyTreatmentName, setStickyTreatmentName] = useState<string>('');
   const [detachedBadgeValue, setDetachedBadgeValue] = useState<string | null>(null);
   const [renamedBadgeOverride, setRenamedBadgeOverride] = useState<Preset | null>(null);
   const stickyPresetBadgeRef = useRef<Preset | null>(null);
-  const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Clean up timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
-    };
-  }, []);
-
   useEffect(() => {
     if (optimisticTreatmentName === null) return;
 
@@ -279,48 +269,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     activateVisitFromLog(visit.id, forceRestart);
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (deleteStep === 'idle') {
-      setDeleteStep('confirm');
-      // Auto-revert after 3 seconds
-      deleteTimeoutRef.current = setTimeout(() => {
-        setDeleteStep('idle');
-      }, 3000);
-    } else {
-      if (!isDraft && visit && onDelete) {
-        onDelete(visit.id);
-      }
-      setDeleteStep('idle');
-      if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
-    }
-  };
-
-  const handleDeleteKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      // On keyboard enter, trigger same logic as click
-      if (deleteStep === 'idle') {
-        setDeleteStep('confirm');
-        deleteTimeoutRef.current = setTimeout(() => {
-          setDeleteStep('idle');
-        }, 3000);
-      } else {
-        if (!isDraft && visit && onDelete) {
-          onDelete(visit.id);
-        }
-        setDeleteStep('idle');
-      }
-    } else if (e.key === 'Escape') {
-      if (deleteStep === 'confirm') {
-        setDeleteStep('idle');
-        if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
-      }
-    } else {
-      handleGridKeyDown(e, rowIndex, 9);
-    }
   };
 
   // Row Styling Logic
@@ -807,32 +755,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         </div>
       </td>
 
-      <td className="border-l border-slate-300 dark:border-slate-600 p-0 text-center w-[52px] min-w-[52px] max-w-[52px]">
-        <div className="relative w-full h-full min-h-[32px]">
-          {!isDraft && visit && onDelete && (
-            <div
-              className="absolute inset-0 flex justify-center items-center px-[4px] outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px]"
-              tabIndex={0}
-              data-grid-id={`${rowIndex}-11`}
-              onKeyDown={handleDeleteKeyDown}
-            >
-              <button
-                onClick={handleDeleteClick}
-                className={`
-                  transition-all duration-200 active:scale-95 flex items-center justify-center
-                  ${deleteStep === 'idle'
-                    ? 'w-4 h-4 text-gray-300 hover:text-red-500 rounded-sm'
-                    : 'h-5 px-1.5 rounded bg-red-600 text-white text-[9px] font-black hover:bg-red-700'}
-                `}
-                title={deleteStep === 'idle' ? "삭제 (클릭하여 확인)" : "삭제 확정"}
-                tabIndex={-1}
-              >
-                {deleteStep === 'idle' ? <Trash2 className="w-4 h-4" /> : '삭제'}
-              </button>
-            </div>
-          )}
-        </div>
-      </td>
       </tr>
 
       {timerPopupPos && bed && (

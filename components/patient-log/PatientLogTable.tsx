@@ -799,12 +799,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
             <col style={{ width: '34px' }} />
             {columnWidths.map((w, i) => {
               if (!showTimerColumn && i === 8) return null;
-              const normalizedWidth = (() => {
-                if (i === 10) return 52; // 삭제는 항상 고정 폭
-                return w;
-              })();
               return (
-                <col key={i} style={{ width: `${normalizedWidth}px` }} />
+                <col key={i} style={{ width: `${w}px` }} />
               );
             })}
           </colgroup>
@@ -893,7 +889,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
           {/* +10행 추가 버튼 */}
           <tr>
-            <td colSpan={12} className="p-0 border-b border-gray-300 dark:border-slate-600">
+            <td colSpan={11} className="p-0 border-b border-gray-300 dark:border-slate-600">
               <button
                 onClick={() => setTotalRows(prev => prev + 10)}
                 className="w-full py-2.5 flex items-center justify-center gap-1.5 text-xs font-bold text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:text-brand-400 dark:hover:bg-brand-900/20 transition-colors"

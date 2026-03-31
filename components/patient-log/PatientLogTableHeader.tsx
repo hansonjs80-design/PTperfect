@@ -9,7 +9,7 @@ interface PatientLogTableHeaderProps {
 }
 
 const RESIZABLE_COLUMNS = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-const ALWAYS_VISIBLE_HANDLE_COLUMNS = new Set([10]);
+const ALWAYS_VISIBLE_HANDLE_COLUMNS = new Set<number>();
 
 const thBase =
   'py-3.5 px-1.5 text-xs md:text-sm font-extrabold text-slate-600 dark:text-slate-300 tracking-[0.02em] text-center border-r border-slate-300 dark:border-slate-600 last:border-r-0';
@@ -20,11 +20,6 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
   activeResizeColIndex = null,
   showTimerColumn = false,
 }) => {
-  const handleAuthorDeleteBoundaryStart = (clientX: number) => {
-    if (!onResizeStart) return;
-    onResizeStart(10, clientX);
-  };
-
   const handle = (colIndex: number, side: 'right' | 'left' = 'right') => {
     if (!onResizeStart || !RESIZABLE_COLUMNS.has(colIndex)) return null;
     return (
@@ -100,23 +95,6 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
         </th>
         <th className={`${thBase} relative`}>
           작성
-        </th>
-        <th className={`${thBase} border-l border-slate-300 dark:border-slate-600 w-[52px] min-w-[52px] max-w-[52px] relative`}>
-          <div
-            className="absolute top-0 left-0 -translate-x-1/2 w-[24px] h-full z-50 flex items-center justify-center cursor-col-resize touch-none group/resize"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              handleAuthorDeleteBoundaryStart(e.clientX);
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              handleAuthorDeleteBoundaryStart(e.touches[0].clientX);
-            }}
-            title="작성/삭제 너비 조정"
-          >
-            <div className={`w-[2.5px] h-[60%] rounded-full transition-all duration-150 ${activeResizeColIndex === 10 || isResizing ? (activeResizeColIndex === 10 ? 'bg-blue-500 h-[90%]' : 'bg-transparent') : 'bg-blue-300/60 group-hover/resize:bg-blue-400 group-hover/resize:h-[65%]'}`} />
-          </div>
-          삭제
         </th>
       </tr>
     </thead>
