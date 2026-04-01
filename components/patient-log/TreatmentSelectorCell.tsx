@@ -418,6 +418,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }
 
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.stopPropagation();
       return;
     }
 
