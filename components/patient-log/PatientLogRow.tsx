@@ -232,13 +232,15 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     setOptimisticTreatmentName(val);
     setStickyTreatmentName(normalizedTreatment);
 
+    if (normalizedTreatment) {
+      setDetachedBadgeValue(null);
+    }
+
     if (matchedPreset) {
       stickyPresetBadgeRef.current = matchedPreset;
-      setDetachedBadgeValue(null);
       setRenamedBadgeOverride(null);
     } else if (normalizedTreatment && fallbackPresetBadge) {
       stickyPresetBadgeRef.current = fallbackPresetBadge;
-      setDetachedBadgeValue(null);
     } else if (!normalizedTreatment) {
       stickyPresetBadgeRef.current = null;
       latestDisplayedPresetBadgeRef.current = null;
