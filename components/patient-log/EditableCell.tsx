@@ -42,6 +42,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const [localValue, setLocalValue] = useState(value === null ? '' : String(value));
   const inputRef = useRef<HTMLInputElement>(null);
   const isComposingRef = useRef(false);
+  const skipNextBlurCommitRef = useRef(false);
 
   const skipSyncRef = useRef(false);
   const navIntentRef = useRef<'down' | 'right' | 'left' | null>(null);
@@ -158,6 +159,12 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
 
     if (mode === 'edit') {
       setMode('view');
+    }
+
+    if (skipNextBlurCommitRef.current) {
+      skipNextBlurCommitRef.current = false;
+      navIntentRef.current = null;
+      return;
     }
 
     // 모달 여는 상황이 아니면 정상적으로 데이터 동기화(Commit)
@@ -301,6 +308,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
       if (previewSuggestion) {
         e.preventDefault();
         e.stopPropagation();
+        skipNextBlurCommitRef.current = true;
         setLocalValue(previewSuggestion);
         navIntentRef.current = null;
         commitValue(previewSuggestion);
