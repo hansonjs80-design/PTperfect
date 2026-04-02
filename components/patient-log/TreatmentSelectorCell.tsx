@@ -439,6 +439,31 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     });
   };
 
+  const beginInlineTyping = (nextValue: string) => {
+    flushSync(() => {
+      setInlineInputValue(nextValue);
+      setIsInlineEditing(true);
+    });
+    requestAnimationFrame(() => {
+      inlineInputRef.current?.focus();
+      const end = nextValue.length;
+      inlineCaretIndexRef.current = end;
+      inlineInputRef.current?.setSelectionRange(end, end);
+    });
+  };
+
+  const beginEmptyTyping = (nextValue: string) => {
+    flushSync(() => {
+      setIsEmptyEditing(true);
+      setEmptyInputValue(nextValue);
+    });
+    requestAnimationFrame(() => {
+      emptyInputRef.current?.focus();
+      const end = nextValue.length;
+      emptyInputRef.current?.setSelectionRange(end, end);
+    });
+  };
+
   const handleCompositionStartCapture = () => {
     if (isReadOnly) return;
 
@@ -474,29 +499,34 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (!composed) return;
 
     if (isEmptyTreatmentCell) {
-      flushSync(() => {
-        setIsEmptyEditing(true);
-        setEmptyInputValue(composed);
-      });
-      requestAnimationFrame(() => {
-        emptyInputRef.current?.focus();
-        const end = composed.length;
-        emptyInputRef.current?.setSelectionRange(end, end);
-      });
+      beginEmptyTyping(composed);
       return;
     }
 
     if (preferInlineTextEditing) {
-      flushSync(() => {
-        setInlineInputValue(composed);
-        setIsInlineEditing(true);
-      });
-      requestAnimationFrame(() => {
-        inlineInputRef.current?.focus();
-        const end = composed.length;
-        inlineCaretIndexRef.current = end;
-        inlineInputRef.current?.setSelectionRange(end, end);
-      });
+      beginInlineTyping(composed);
+    }
+  };
+
+  const handleBeforeInputCapture = (e: React.FormEvent<HTMLDivElement>) => {
+    if (isReadOnly || isInlineEditingTarget(e.target)) return;
+
+    const nativeEvent = e.nativeEvent as InputEvent;
+    const text = nativeEvent.data ?? '';
+    if (!text) return;
+
+    if (!nativeEvent.inputType.startsWith('insert')) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isEmptyTreatmentCell) {
+      beginEmptyTyping(text);
+      return;
+    }
+
+    if (preferInlineTextEditing && !isInlineEditing) {
+      beginInlineTyping(text);
     }
   };
 
@@ -606,6 +636,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         onTouchEnd={handleTouchEnd}
         onContextMenu={(e) => e.preventDefault()}
         onKeyDown={handleKeyDown}
+        onBeforeInputCapture={handleBeforeInputCapture}
         onCompositionStartCapture={handleCompositionStartCapture}
         onCompositionEndCapture={handleCompositionEndCapture}
         onMouseEnter={handleMouseEnter}
