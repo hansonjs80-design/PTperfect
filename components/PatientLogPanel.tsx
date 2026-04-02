@@ -46,7 +46,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [isBedActivationDisabled, setIsBedActivationDisabled] = useLocalStorage<boolean>('patient-log-bed-activation-disabled', true);
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
-  const [dbPatientDirectory, setDbPatientDirectory] = useState<Array<{ patient_name: string; chart_number?: string | null }>>([]);
+  const [dbPatientDirectory, setDbPatientDirectory] = useState<Array<{ patient_name: string; chart_number?: string | null; gender?: string | null }>>([]);
 
   const cloneVisits = useCallback((rows: PatientVisit[]) => rows.map((v) => ({ ...v })), []);
 
@@ -247,7 +247,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
       const { data, error } = await supabase
         .from('patient_visits')
-        .select('patient_name, chart_number, updated_at')
+        .select('patient_name, chart_number, gender, updated_at')
         .not('patient_name', 'is', null)
         .order('updated_at', { ascending: false })
         .limit(1000);
@@ -259,6 +259,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           .map((row) => ({
             patient_name: (row.patient_name || '').trim(),
             chart_number: (row.chart_number || '').trim(),
+            gender: ((row.gender || '').trim().toUpperCase() || undefined),
           }))
           .filter((row) => row.patient_name)
       );
@@ -278,26 +279,32 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     ])
   ), [dbPatientDirectory, visits]);
 
-  const patientNameChartNumberMap = useMemo(() => {
+  const patientNameAutofillMap = useMemo(() => {
     const grouped = new Map<string, Set<string>>();
 
     [...dbPatientDirectory, ...visits.map((visit) => ({
       patient_name: (visit.patient_name || '').trim(),
       chart_number: (visit.chart_number || '').trim(),
+      gender: ((visit.gender || '').trim().toUpperCase() || undefined),
     }))].forEach((row) => {
       const name = row.patient_name.trim();
       const chart = (row.chart_number || '').trim();
-      if (!name || !chart) return;
+      const gender = ((row.gender || '').trim().toUpperCase() || '');
+      if (!name) return;
       const key = name.toLocaleLowerCase();
       const set = grouped.get(key) || new Set<string>();
-      set.add(chart);
+      set.add(JSON.stringify({ chart_number: chart, gender }));
       grouped.set(key, set);
     });
 
-    const result: Record<string, string> = {};
-    grouped.forEach((charts, key) => {
-      if (charts.size === 1) {
-        result[key] = Array.from(charts)[0];
+    const result: Record<string, { chart_number?: string; gender?: string }> = {};
+    grouped.forEach((records, key) => {
+      if (records.size === 1) {
+        const only = JSON.parse(Array.from(records)[0]) as { chart_number?: string; gender?: string };
+        result[key] = {
+          chart_number: only.chart_number || undefined,
+          gender: only.gender || undefined,
+        };
       }
     });
     return result;
@@ -1091,7 +1098,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           beds={beds}
           presets={presets}
           patientNameSuggestions={patientNameSuggestions}
-          patientNameChartNumberMap={patientNameChartNumberMap}
+          patientNameAutofillMap={patientNameAutofillMap}
           getRowStatus={getRowStatus}
           onUpdate={trackedUpdateVisitWithBedSync}
           onDelete={handleDeleteVisit}

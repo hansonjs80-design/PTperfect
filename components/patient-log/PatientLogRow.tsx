@@ -48,7 +48,7 @@ interface PatientLogRowProps {
   isBedActivationDisabled?: boolean;
   statusOptions?: StatusOptionConfig[];
   patientNameSuggestions?: string[];
-  patientNameChartNumberMap?: Record<string, string>;
+  patientNameAutofillMap?: Record<string, { chart_number?: string; gender?: string }>;
 }
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
@@ -81,7 +81,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   isBedActivationDisabled = false,
   statusOptions = [],
   patientNameSuggestions = [],
-  patientNameChartNumberMap = {},
+  patientNameAutofillMap = {},
 }) => {
   const { handleGridKeyDown } = useGridNavigation(11);
   const { activateVisitFromLog, togglePause, updateBedSteps, updateBedDuration, quickTreatments } = useTreatmentContext();
@@ -198,19 +198,21 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const handleChange = async (field: keyof PatientVisit, value: string, _skipSync: boolean, colIndex: number, navDirection?: 'down' | 'right' | 'left') => {
     const normalizedValue = value.trim();
     const patientNameKey = field === 'patient_name' ? normalizedValue.toLocaleLowerCase() : '';
-    const matchedChartNumber = field === 'patient_name' ? patientNameChartNumberMap[patientNameKey] : undefined;
+    const matchedAutofill = field === 'patient_name' ? patientNameAutofillMap[patientNameKey] : undefined;
 
     if (isDraft && onCreate) {
       await onCreate({
         [field]: value,
-        ...(field === 'patient_name' && matchedChartNumber ? { chart_number: matchedChartNumber } : {}),
+        ...(field === 'patient_name' && matchedAutofill?.chart_number ? { chart_number: matchedAutofill.chart_number } : {}),
+        ...(field === 'patient_name' && matchedAutofill?.gender ? { gender: matchedAutofill.gender } : {}),
       }, colIndex, navDirection);
     } else if (!isDraft && visit && onUpdate) {
       // 배드번호/처방목록 외 환자로그 텍스트 셀은 항상 로그만 수정한다.
       // (활성 배드/타이머 상태에는 절대 영향 주지 않음)
       onUpdate(visit.id, {
         [field]: value,
-        ...(field === 'patient_name' && matchedChartNumber ? { chart_number: matchedChartNumber } : {}),
+        ...(field === 'patient_name' && matchedAutofill?.chart_number ? { chart_number: matchedAutofill.chart_number } : {}),
+        ...(field === 'patient_name' && matchedAutofill?.gender ? { gender: matchedAutofill.gender } : {}),
       }, true);
     }
   };

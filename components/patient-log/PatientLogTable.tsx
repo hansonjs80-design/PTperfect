@@ -148,7 +148,7 @@ interface PatientLogTableProps {
   cancelAutoFocusRef?: React.MutableRefObject<(() => void) | null>;
   draftRowKey?: number;
   patientNameSuggestions?: string[];
-  patientNameChartNumberMap?: Record<string, string>;
+  patientNameAutofillMap?: Record<string, { chart_number?: string; gender?: string }>;
 }
 
 export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
@@ -170,7 +170,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   cancelAutoFocusRef,
   draftRowKey = 0,
   patientNameSuggestions = [],
-  patientNameChartNumberMap = {}
+  patientNameAutofillMap = {}
 }) => {
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
@@ -1082,7 +1082,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
                 showTimerColumn={showTimerColumn}
                 statusOptions={normalizedStatusOptions}
                 patientNameSuggestions={patientNameSuggestions}
-                patientNameChartNumberMap={patientNameChartNumberMap}
+                patientNameAutofillMap={patientNameAutofillMap}
               />
             );
           })}
@@ -1101,7 +1101,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
               showTimerColumn={showTimerColumn}
               statusOptions={normalizedStatusOptions}
               patientNameSuggestions={patientNameSuggestions}
-              patientNameChartNumberMap={patientNameChartNumberMap}
+              patientNameAutofillMap={patientNameAutofillMap}
             />
           ))}
 
