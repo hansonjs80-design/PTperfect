@@ -14,6 +14,7 @@ import { TimerEditPopup } from '../bed-card/TimerEditPopup';
 import { normalizeUpperEnglishKeyInput } from '../../utils/keyboardLayout';
 import { useTreatmentContext } from '../../contexts/TreatmentContext';
 import { findExactPresetByTreatmentString, formatTime, generateTreatmentString, normalizeTreatmentString, parseTreatmentString } from '../../utils/bedUtils';
+import { type StatusOptionConfig } from './StatusSelectionMenu';
 
 interface PatientLogRowProps {
   rowIndex: number;
@@ -43,6 +44,7 @@ interface PatientLogRowProps {
   onBulkAuthorUpdate?: (val: string) => void;
   showTimerColumn?: boolean;
   isBedActivationDisabled?: boolean;
+  statusOptions?: StatusOptionConfig[];
 }
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
@@ -72,7 +74,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   onClearBed,
   onBulkAuthorUpdate,
   showTimerColumn = false,
-  isBedActivationDisabled = false
+  isBedActivationDisabled = false,
+  statusOptions = [],
 }) => {
   const { handleGridKeyDown } = useGridNavigation(11);
   const { activateVisitFromLog, togglePause, updateBedSteps, updateBedDuration, quickTreatments } = useTreatmentContext();
@@ -184,12 +187,46 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
   };
 
+  const buildStatusUpdatesFromTreatment = (treatmentText: string): Partial<PatientVisit> => {
+    const normalized = treatmentText.trim();
+    if (!normalized) return {};
+
+    const matchedOptions = statusOptions.filter((option) => normalized.includes(option.label));
+    if (matchedOptions.length === 0) return {};
+
+    const updates: Partial<PatientVisit> = {};
+    const nextCustomStatuses = [...(visit?.custom_statuses || [])];
+
+    matchedOptions.forEach((option) => {
+      if (option.kind === 'predefined' && option.key) {
+        updates[option.key] = true;
+        return;
+      }
+
+      if (option.kind === 'custom' && !nextCustomStatuses.some((status) => status.id === option.id)) {
+        nextCustomStatuses.push({
+          id: option.id,
+          label: option.label,
+          color: option.color,
+          order: option.order,
+        });
+      }
+    });
+
+    if (nextCustomStatuses.length > 0) {
+      updates.custom_statuses = nextCustomStatuses.sort((a, b) => a.order - b.order);
+    }
+
+    return updates;
+  };
+
   const handleTreatmentTextCommit = async (val: string) => {
     const normalizedTreatment = val.trim();
     const matchedPreset = normalizedTreatment
       ? (findExactPresetByTreatmentString(presets, normalizedTreatment, quickTreatments) || null)
       : null;
     const fallbackPresetBadge = latestDisplayedPresetBadgeRef.current ?? stickyPresetBadgeRef.current;
+    const statusUpdates = buildStatusUpdatesFromTreatment(normalizedTreatment);
 
     setOptimisticTreatmentName(val);
     setStickyTreatmentName(normalizedTreatment);
@@ -208,14 +245,14 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (isDraft && onCreate) {
-      await onCreate({ treatment_name: val }, 3);
+      await onCreate({ treatment_name: val, ...statusUpdates }, 3);
       return;
     }
 
     if (!isDraft && visit && onUpdate) {
       const isAssignmentMode = !!visit.bed_id && (!visit.treatment_name || visit.treatment_name.trim() === '');
       const shouldSyncActiveBed = !isBedActivationDisabled && rowStatus === 'active' && !!visit.bed_id;
-      await Promise.resolve(onUpdate(visit.id, { treatment_name: normalizedTreatment }, !(isAssignmentMode || shouldSyncActiveBed)));
+      await Promise.resolve(onUpdate(visit.id, { treatment_name: normalizedTreatment, ...statusUpdates }, !(isAssignmentMode || shouldSyncActiveBed)));
 
       // 활성 행 처방을 명시적으로 지우면 배드 카드/행도 즉시 비활성화한다.
       if (!isBedActivationDisabled && normalizedTreatment === '' && rowStatus === 'active' && visit.bed_id) {

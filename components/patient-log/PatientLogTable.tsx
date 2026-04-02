@@ -1076,6 +1076,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
                 isBedActivationDisabled={isBedActivationDisabled}
                 onBulkAuthorUpdate={handleBulkAuthorUpdate}
                 showTimerColumn={showTimerColumn}
+                statusOptions={normalizedStatusOptions}
               />
             );
           })}
@@ -1092,6 +1093,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
               activeBedIds={activeBedIds}
               isBedActivationDisabled={isBedActivationDisabled}
               showTimerColumn={showTimerColumn}
+              statusOptions={normalizedStatusOptions}
             />
           ))}
 
