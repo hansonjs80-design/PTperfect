@@ -354,6 +354,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         onKeyDown={handleKeyDown}
         tabIndex={0}
         data-grid-id={gridId}
+        data-status-pill-selected={selectedStatusKey ? 'true' : 'false'}
         title={getTitle()}
       >
         {hasActiveStatus ? (
