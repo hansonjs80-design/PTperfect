@@ -339,6 +339,31 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const handleEmptyInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isEmptyEditing) {
+      const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
+      const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
+      const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey;
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        openSelector(e);
+        return;
+      }
+
+      if (e.shiftKey && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if (isPlainTypingKey || isIMEKey) {
+        return;
+      }
+
+      handleGridKeyDown(e, rowIndex, colIndex, false, emptyInputRef.current);
+      return;
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
@@ -370,11 +395,11 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
 
     const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
-    const isPlainTypingKey = (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) || isIMEKey;
+    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey;
     if (isPlainTypingKey) {
       e.preventDefault();
       e.stopPropagation();
-      const nextValue = isIMEKey ? '' : e.key;
+      const nextValue = e.key;
       setIsEmptyEditing(true);
       setEmptyInputValue(nextValue);
       requestAnimationFrame(() => {
@@ -459,6 +484,15 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       emptyInputRef.current?.focus();
       const end = nextValue.length;
       emptyInputRef.current?.setSelectionRange(end, end);
+    });
+  };
+
+  const focusEmptySelection = () => {
+    requestAnimationFrame(() => {
+      const input = emptyInputRef.current;
+      if (!input) return;
+      input.focus();
+      input.setSelectionRange(0, 0);
     });
   };
 
@@ -670,6 +704,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         data-grid-id={gridId}
         onFocusCapture={(e) => {
           if (isInlineEditingTarget(e.target)) return;
+          if (isEmptyTreatmentCell && !isReadOnly) {
+            focusEmptySelection();
+            return;
+          }
           if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
             focusInlineSelection();
           }
@@ -677,6 +715,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         onMouseDownCapture={(e) => {
           if (e.button !== 0) return;
           if (isInlineEditingTarget(e.target)) return;
+          if (isEmptyTreatmentCell && !isReadOnly) {
+            focusEmptySelection();
+            return;
+          }
           if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
             focusInlineSelection();
             return;
@@ -688,6 +730,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         onMouseDown={(e) => {
           if (e.button !== 0) return;
           if (isInlineEditingTarget(e.target)) return;
+          if (isEmptyTreatmentCell && !isReadOnly) {
+            focusEmptySelection();
+            return;
+          }
           if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
             focusInlineSelection();
             return;
@@ -696,6 +742,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         }}
         onClick={(e) => {
           if (isInlineEditingTarget(e.target)) return;
+          if (isEmptyTreatmentCell && !isReadOnly) {
+            focusEmptySelection();
+            return;
+          }
           if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
             focusInlineSelection();
             return;
@@ -738,25 +788,36 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
             )}
             <div className={`text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[28px] ${(allowStepSelection || isEmptyTreatmentCell || preferInlineTextEditing) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
               {isEmptyTreatmentCell && !isReadOnly ? (
-                isEmptyEditing ? (
-                  <input
-                    ref={emptyInputRef}
-                    value={emptyInputValue}
-                    onChange={(e) => setEmptyInputValue(e.target.value)}
-                    onKeyDown={handleEmptyInputKeyDown}
-                    onBlur={() => {
-                      setIsEmptyEditing(false);
-                      setEmptyInputValue('');
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-full bg-transparent outline-none border-none text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 placeholder:text-gray-400"
-                    placeholder={placeholder}
-                  />
-                ) : (
-                  <span className="max-w-full bg-transparent p-0 text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-400 dark:text-slate-500 whitespace-pre-wrap break-all select-none">
-                    {placeholder || ''}
-                  </span>
-                )
+                <input
+                  ref={emptyInputRef}
+                  value={isEmptyEditing ? emptyInputValue : ''}
+                  onChange={(e) => {
+                    if (!isEmptyEditing) {
+                      setIsEmptyEditing(true);
+                    }
+                    setEmptyInputValue(e.target.value);
+                  }}
+                  onBeforeInput={(e) => {
+                    const nativeEvent = e.nativeEvent as InputEvent;
+                    if (!isEmptyEditing && !nativeEvent.isComposing && nativeEvent.inputType.startsWith('insert')) {
+                      setIsEmptyEditing(true);
+                    }
+                  }}
+                  onCompositionStart={() => {
+                    if (!isEmptyEditing) {
+                      setIsEmptyEditing(true);
+                    }
+                  }}
+                  onKeyDown={handleEmptyInputKeyDown}
+                  onBlur={() => {
+                    setIsEmptyEditing(false);
+                    setEmptyInputValue('');
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                  className={`w-full bg-transparent outline-none border-none text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 placeholder:text-gray-400 ${isEmptyEditing ? 'caret-auto cursor-text' : 'caret-transparent cursor-default select-none'}`}
+                  placeholder={placeholder}
+                />
               ) : preferInlineTextEditing && !isReadOnly ? (
                 <input
                   ref={inlineInputRef}
