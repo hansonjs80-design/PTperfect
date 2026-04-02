@@ -75,7 +75,7 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
         target.tagName === 'SELECT' ||
         target.isContentEditable
       );
-      if (isTextInputLike) return;
+      if (!compactMode && isTextInputLike) return;
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
