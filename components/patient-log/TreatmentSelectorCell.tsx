@@ -567,19 +567,11 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   placeholder={placeholder}
                 />
                 ) : (
-                  <button
-                    type="button"
-                    data-inline-treatment-editing="true"
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      startInlineEditing(e.clientX, e.currentTarget);
-                    }}
-                    onDoubleClick={(e) => e.stopPropagation()}
-                    className="max-w-full bg-transparent outline-none border-none p-0 text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 whitespace-pre-wrap break-all"
+                  <span
+                    className="max-w-full bg-transparent p-0 text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 whitespace-pre-wrap break-all select-none"
                   >
                     {value || placeholder}
-                  </button>
+                  </span>
                 )
               ) : (
                 <TreatmentTextRenderer
