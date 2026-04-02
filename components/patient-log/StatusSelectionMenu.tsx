@@ -75,54 +75,38 @@ export const STATUS_COLOR_OPTIONS: Record<StatusColorKey, StatusColorOption> = {
   },
 };
 
-const STATUS_MENU_ROW_STYLES: Record<StatusColorKey, { accent: string; surface: string; chip: string; chipText: string }> = {
+const STATUS_MENU_ROW_STYLES: Record<StatusColorKey, { accent: string; surface: string }> = {
   red: {
     accent: 'bg-red-500',
     surface: 'bg-red-50/75 text-slate-800 dark:bg-red-950/25 dark:text-slate-100',
-    chip: 'bg-red-500',
-    chipText: 'text-white',
   },
   sky: {
     accent: 'bg-sky-500',
     surface: 'bg-sky-50/75 text-slate-800 dark:bg-sky-950/25 dark:text-slate-100',
-    chip: 'bg-sky-500',
-    chipText: 'text-white',
   },
   violet: {
     accent: 'bg-violet-500',
     surface: 'bg-violet-50/75 text-slate-800 dark:bg-violet-950/25 dark:text-slate-100',
-    chip: 'bg-violet-500',
-    chipText: 'text-white',
   },
   blue: {
     accent: 'bg-blue-500',
     surface: 'bg-blue-50/75 text-slate-800 dark:bg-blue-950/25 dark:text-slate-100',
-    chip: 'bg-blue-500',
-    chipText: 'text-white',
   },
   orange: {
     accent: 'bg-orange-500',
     surface: 'bg-orange-50/75 text-slate-800 dark:bg-orange-950/25 dark:text-slate-100',
-    chip: 'bg-orange-500',
-    chipText: 'text-white',
   },
   emerald: {
     accent: 'bg-emerald-500',
     surface: 'bg-emerald-50/75 text-slate-800 dark:bg-emerald-950/25 dark:text-slate-100',
-    chip: 'bg-emerald-500',
-    chipText: 'text-white',
   },
   lime: {
     accent: 'bg-lime-500',
     surface: 'bg-lime-50/80 text-slate-800 dark:bg-lime-950/25 dark:text-slate-100',
-    chip: 'bg-lime-500',
-    chipText: 'text-slate-900',
   },
   pink: {
     accent: 'bg-pink-500',
     surface: 'bg-pink-50/75 text-slate-800 dark:bg-pink-950/25 dark:text-slate-100',
-    chip: 'bg-pink-500',
-    chipText: 'text-white',
   },
 };
 
@@ -551,7 +535,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                 }
               }}
               onTouchStart={() => setActiveIndex(idx)}
-              className={`group relative flex items-center justify-between gap-3 overflow-hidden rounded-xl border px-3 py-3 transition-all text-[13px] font-black w-full ${
+              className={`group relative flex items-center justify-between gap-3 overflow-hidden rounded-xl border px-3 py-2.5 transition-all text-[13px] font-black w-full ${
                 isActive
                   ? `${rowStyle.surface} border-slate-300/90 dark:border-slate-600 shadow-sm`
                   : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800/90'
@@ -562,10 +546,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                 <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${rowStyle.accent}`} />
                 <span className="truncate text-left leading-none">{opt.label}</span>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <span className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-black ${rowStyle.chip} ${rowStyle.chipText}`}>
-                  {opt.label}
-                </span>
+              <div className="flex shrink-0 items-center">
                 {isActive ? (
                   <Check className="h-4 w-4 text-slate-700 dark:text-slate-100" />
                 ) : (
