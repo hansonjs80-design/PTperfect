@@ -898,7 +898,24 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   onMouseUp={() => {
                     inlineCaretIndexRef.current = inlineInputRef.current?.selectionStart ?? null;
                   }}
-                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => {
+                    if (!isInlineEditing) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      startInlineEditing(e.clientX, e.currentTarget);
+                      return;
+                    }
+                    e.stopPropagation();
+                  }}
+                  onTouchStart={(e) => {
+                    if (!isInlineEditing) {
+                      const touch = e.touches[0];
+                      e.stopPropagation();
+                      startInlineEditing(touch?.clientX, e.currentTarget);
+                      return;
+                    }
+                    e.stopPropagation();
+                  }}
                   onClick={(e) => e.stopPropagation()}
                   className={`w-full bg-transparent outline-none border-none text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 placeholder:text-gray-400 ${isInlineEditing ? 'caret-auto cursor-text' : 'caret-transparent cursor-default select-none'}`}
                   placeholder={placeholder}
