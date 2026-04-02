@@ -107,6 +107,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const suppressNextSelectorOpenRef = useRef(false);
   const suppressInlineInteractionUntilRef = useRef(0);
   const inlineEnterStageRef = useRef(false);
+  const suppressNextInlineSelectionFocusRef = useRef(false);
   const { handleGridKeyDown } = useGridNavigation(11);
   const isInlineEditingTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && !!target.closest('[data-inline-treatment-editing="true"]');
@@ -447,6 +448,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
 
   const finalizeInlineEditing = () => {
     commitInlineInputValue();
+    suppressNextInlineSelectionFocusRef.current = true;
     requestAnimationFrame(() => {
       cellRef.current?.focus();
     });
@@ -739,14 +741,18 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         data-grid-id={gridId}
         onFocusCapture={(e) => {
           if (isInlineEditingTarget(e.target)) return;
-          if (isEmptyTreatmentCell && !isReadOnly) {
-            focusEmptySelection();
+        if (isEmptyTreatmentCell && !isReadOnly) {
+          focusEmptySelection();
+          return;
+        }
+        if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
+          if (suppressNextInlineSelectionFocusRef.current) {
+            suppressNextInlineSelectionFocusRef.current = false;
             return;
           }
-          if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
-            focusInlineSelection();
-          }
-        }}
+          focusInlineSelection();
+        }
+      }}
         onMouseDownCapture={(e) => {
           if (e.button !== 0) return;
           if (isInlineEditingTarget(e.target)) return;
