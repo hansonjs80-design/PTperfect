@@ -560,6 +560,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       }
 
       if (e.shiftKey && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
         return;
       }
 
