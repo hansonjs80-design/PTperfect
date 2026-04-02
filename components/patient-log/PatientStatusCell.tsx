@@ -256,6 +256,30 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     }
   }, [selectedStatusKey, activeStatusPills]);
 
+  useEffect(() => {
+    if (!selectedStatusKey) return;
+
+    const handleWindowDelete = (event: KeyboardEvent) => {
+      if (event.key !== 'Backspace' && event.key !== 'Delete') return;
+
+      const activeElement = document.activeElement as HTMLElement | null;
+      const cellElement = cellRef.current;
+      if (!cellElement) return;
+      if (activeElement && activeElement !== cellElement && !cellElement.contains(activeElement)) return;
+
+      const selectedOption = normalizedStatusOptions.find((option) => option.id === selectedStatusKey);
+      if (!selectedOption) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      void toggleStatus(selectedOption);
+      setSelectedStatusKey(null);
+    };
+
+    window.addEventListener('keydown', handleWindowDelete, true);
+    return () => window.removeEventListener('keydown', handleWindowDelete, true);
+  }, [selectedStatusKey, normalizedStatusOptions]);
+
   // Helper for title (tooltip)
   const getTitle = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -274,6 +298,11 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
           cellRef.current?.focus();
         }}
         onClick={() => cellRef.current?.focus()}
+        onBlur={(e) => {
+          const nextFocus = e.relatedTarget as Node | null;
+          if (nextFocus && cellRef.current?.contains(nextFocus)) return;
+          setSelectedStatusKey(null);
+        }}
         onDoubleClick={executeInteraction}
         onTouchEnd={handleTouchEnd}
         onKeyDownCapture={handleKeyDownCapture}
