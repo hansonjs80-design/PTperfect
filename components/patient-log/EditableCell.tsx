@@ -51,6 +51,16 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
 
   const { handleGridKeyDown } = useGridNavigation(11);
 
+  const restoreGridSelectionFocus = () => {
+    if (!gridId) return;
+
+    requestAnimationFrame(() => {
+      const cellElement = document.querySelector(`[data-grid-id="${gridId}"]`) as HTMLElement | null;
+      if (!cellElement) return;
+      cellElement.focus();
+    });
+  };
+
   const normalizeSuggestion = (text: string) => text.trim().normalize('NFD').toLocaleLowerCase();
 
   const findSuggestedValue = (rawValue: string) => {
@@ -320,6 +330,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
         commitValue(previewSuggestion);
         requestAnimationFrame(() => {
           inputRef.current?.blur();
+          restoreGridSelectionFocus();
         });
         return;
       }
