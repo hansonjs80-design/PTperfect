@@ -184,8 +184,23 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   };
 
   const handleTreatmentTextCommit = async (val: string) => {
+    const normalizedTreatment = val.trim();
+    const matchedPreset = normalizedTreatment
+      ? (findExactPresetByTreatmentString(presets, normalizedTreatment, quickTreatments) || null)
+      : null;
+
     setOptimisticTreatmentName(val);
-    setStickyTreatmentName(val.trim());
+    setStickyTreatmentName(normalizedTreatment);
+
+    if (matchedPreset) {
+      stickyPresetBadgeRef.current = matchedPreset;
+      setDetachedBadgeValue(null);
+      setRenamedBadgeOverride(null);
+    } else if (!normalizedTreatment) {
+      stickyPresetBadgeRef.current = null;
+      setDetachedBadgeValue(null);
+      setRenamedBadgeOverride(null);
+    }
 
     if (isDraft && onCreate) {
       await onCreate({ treatment_name: val }, 3);
@@ -193,7 +208,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (!isDraft && visit && onUpdate) {
-      const normalizedTreatment = val.trim();
       const isAssignmentMode = !!visit.bed_id && (!visit.treatment_name || visit.treatment_name.trim() === '');
       const shouldSyncActiveBed = !isBedActivationDisabled && rowStatus === 'active' && !!visit.bed_id;
       await Promise.resolve(onUpdate(visit.id, { treatment_name: normalizedTreatment }, !(isAssignmentMode || shouldSyncActiveBed)));
@@ -461,6 +475,10 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           };
         }
         return currentPreset;
+      }
+
+      if (stickyPresetBadgeRef.current) {
+        return stickyPresetBadgeRef.current;
       }
     }
 
