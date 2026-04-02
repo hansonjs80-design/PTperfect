@@ -78,35 +78,35 @@ export const STATUS_COLOR_OPTIONS: Record<StatusColorKey, StatusColorOption> = {
 const STATUS_MENU_ROW_STYLES: Record<StatusColorKey, { accent: string; surface: string }> = {
   red: {
     accent: 'bg-red-500',
-    surface: 'bg-red-50/75 text-slate-800 dark:bg-red-950/25 dark:text-slate-100',
+    surface: 'bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100',
   },
   sky: {
     accent: 'bg-sky-500',
-    surface: 'bg-sky-50/75 text-slate-800 dark:bg-sky-950/25 dark:text-slate-100',
+    surface: 'bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100',
   },
   violet: {
     accent: 'bg-violet-500',
-    surface: 'bg-violet-50/75 text-slate-800 dark:bg-violet-950/25 dark:text-slate-100',
+    surface: 'bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100',
   },
   blue: {
     accent: 'bg-blue-500',
-    surface: 'bg-blue-50/75 text-slate-800 dark:bg-blue-950/25 dark:text-slate-100',
+    surface: 'bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100',
   },
   orange: {
     accent: 'bg-orange-500',
-    surface: 'bg-orange-50/75 text-slate-800 dark:bg-orange-950/25 dark:text-slate-100',
+    surface: 'bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100',
   },
   emerald: {
     accent: 'bg-emerald-500',
-    surface: 'bg-emerald-50/75 text-slate-800 dark:bg-emerald-950/25 dark:text-slate-100',
+    surface: 'bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100',
   },
   lime: {
     accent: 'bg-lime-500',
-    surface: 'bg-lime-50/80 text-slate-800 dark:bg-lime-950/25 dark:text-slate-100',
+    surface: 'bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100',
   },
   pink: {
     accent: 'bg-pink-500',
-    surface: 'bg-pink-50/75 text-slate-800 dark:bg-pink-950/25 dark:text-slate-100',
+    surface: 'bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100',
   },
 };
 
@@ -535,14 +535,13 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                 }
               }}
               onTouchStart={() => setActiveIndex(idx)}
-              className={`group relative flex items-center justify-between gap-3 overflow-hidden rounded-xl border px-3 py-2.5 transition-all text-[13px] font-black w-full ${
+              className={`group flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-all text-[13px] font-black w-full ${
                 isActive
-                  ? `${rowStyle.surface} border-slate-300/90 dark:border-slate-600 shadow-sm`
+                  ? `${rowStyle.surface} border-slate-300/90 dark:border-slate-600`
                   : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800/90'
               } ${isFocusedOption ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
             >
-              <div className={`absolute inset-y-0 left-0 w-1.5 ${rowStyle.accent}`} />
-              <div className="flex min-w-0 items-center gap-2.5 pl-1">
+              <div className="flex min-w-0 items-center gap-2">
                 <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${rowStyle.accent}`} />
                 <span className="truncate text-left leading-none">{opt.label}</span>
               </div>
