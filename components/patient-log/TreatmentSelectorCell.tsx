@@ -402,23 +402,6 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       return;
     }
 
-    const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
-    const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
-    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey;
-    if (isPlainTypingKey) {
-      e.preventDefault();
-      e.stopPropagation();
-      const nextValue = e.key;
-      setIsEmptyEditing(true);
-      setEmptyInputValue(nextValue);
-      requestAnimationFrame(() => {
-        emptyInputRef.current?.focus();
-        const end = nextValue.length;
-        emptyInputRef.current?.setSelectionRange(end, end);
-      });
-      return;
-    }
-
     handleGridKeyDown(e, rowIndex, colIndex, true, emptyInputRef.current);
   };
 
