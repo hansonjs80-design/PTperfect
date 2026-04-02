@@ -467,6 +467,39 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }
   };
 
+  const handleCompositionEndCapture = (e: React.CompositionEvent<HTMLDivElement>) => {
+    if (isReadOnly || isInlineEditingTarget(e.target)) return;
+
+    const composed = e.data ?? '';
+    if (!composed) return;
+
+    if (isEmptyTreatmentCell) {
+      flushSync(() => {
+        setIsEmptyEditing(true);
+        setEmptyInputValue(composed);
+      });
+      requestAnimationFrame(() => {
+        emptyInputRef.current?.focus();
+        const end = composed.length;
+        emptyInputRef.current?.setSelectionRange(end, end);
+      });
+      return;
+    }
+
+    if (preferInlineTextEditing) {
+      flushSync(() => {
+        setInlineInputValue(composed);
+        setIsInlineEditing(true);
+      });
+      requestAnimationFrame(() => {
+        inlineInputRef.current?.focus();
+        const end = composed.length;
+        inlineCaretIndexRef.current = end;
+        inlineInputRef.current?.setSelectionRange(end, end);
+      });
+    }
+  };
+
   const handleInlineInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -574,6 +607,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         onContextMenu={(e) => e.preventDefault()}
         onKeyDown={handleKeyDown}
         onCompositionStartCapture={handleCompositionStartCapture}
+        onCompositionEndCapture={handleCompositionEndCapture}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] min-h-[28px] relative rounded-[1px] outline-none focus:outline-none focus-within:outline-none focus:z-10 focus-within:z-10 focus:bg-sky-500/5 focus-within:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] focus-within:shadow-[inset_0_0_0_2px_rgb(14_165_233)]"

@@ -591,6 +591,33 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     if (!input || input.tagName !== 'INPUT') return false;
     return input.dataset.directEditing === 'true';
   };
+
+  const clearSelectionContents = useCallback(() => {
+    const bounds = normalizeSelectionBounds(selection);
+    if (!bounds) return false;
+
+    const selectedCols: number[] = [];
+    for (let col = bounds.colMin; col <= bounds.colMax; col++) {
+      if (SELECTABLE_COLS.has(col)) selectedCols.push(col);
+    }
+
+    selectedCols.sort((a, b) => {
+      if (a === 5 && b === 0) return -1;
+      if (a === 0 && b === 5) return 1;
+      return a - b;
+    });
+
+    for (let row = bounds.rowMin; row <= bounds.rowMax; row++) {
+      const visit = visits[row];
+      if (!visit) continue;
+
+      for (const col of selectedCols) {
+        setVisitCellText(visit, col, '');
+      }
+    }
+
+    return true;
+  }, [selection, visits, setVisitCellText]);
   const handleCopy = useCallback(async (e: React.ClipboardEvent<HTMLDivElement>) => {
     const active = document.activeElement as HTMLInputElement | null;
     if (isActiveInputEditing(active)) return;
@@ -723,29 +750,26 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     if (!bounds) return;
 
     e.preventDefault();
+    clearSelectionContents();
+  }, [selection, totalRows, onSelectionAnchorChange, handleGridClipboardCopy, handleGridPaste, clearSelectionContents]);
 
-    const selectedCols: number[] = [];
-    for (let col = bounds.colMin; col <= bounds.colMax; col++) {
-      if (SELECTABLE_COLS.has(col)) selectedCols.push(col);
-    }
+  useEffect(() => {
+    const handleWindowDelete = (event: KeyboardEvent) => {
+      if (event.key !== 'Backspace' && event.key !== 'Delete') return;
 
-    // 삭제 시 처방 목록(5열)을 배드 번호(0열)보다 먼저 비워야
-    // 활성 배드에 연결된 처방도 함께 정리된다.
-    selectedCols.sort((a, b) => {
-      if (a === 5 && b === 0) return -1;
-      if (a === 0 && b === 5) return 1;
-      return a - b;
-    });
+      const active = document.activeElement as HTMLInputElement | null;
+      if (isActiveInputEditing(active)) return;
 
-    for (let row = bounds.rowMin; row <= bounds.rowMax; row++) {
-      const visit = visits[row];
-      if (!visit) continue;
+      const bounds = normalizeSelectionBounds(selection);
+      if (!bounds) return;
 
-      for (const col of selectedCols) {
-        setVisitCellText(visit, col, '');
-      }
-    }
-  }, [selection, visits, totalRows, setVisitCellText, onSelectionAnchorChange, handleGridClipboardCopy, handleGridPaste]);
+      event.preventDefault();
+      clearSelectionContents();
+    };
+
+    window.addEventListener('keydown', handleWindowDelete, true);
+    return () => window.removeEventListener('keydown', handleWindowDelete, true);
+  }, [selection, clearSelectionContents]);
 
   useEffect(() => {
     const bounds = normalizeSelectionBounds(selection);
