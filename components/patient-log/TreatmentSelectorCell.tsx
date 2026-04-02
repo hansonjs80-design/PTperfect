@@ -104,6 +104,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const inlineInputRef = useRef<HTMLInputElement>(null);
   const inlineCaretIndexRef = useRef<number | null>(null);
   const skipNextEmptyBlurCommitRef = useRef(false);
+  const suppressNextSelectorOpenRef = useRef(false);
   const { handleGridKeyDown } = useGridNavigation(11);
   const isInlineEditingTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && !!target.closest('[data-inline-treatment-editing="true"]');
@@ -170,6 +171,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const handleMouseLeave = () => setHoverInfo(null);
 
   const openSelector = (e: React.MouseEvent | React.KeyboardEvent) => {
+    if (suppressNextSelectorOpenRef.current) {
+      suppressNextSelectorOpenRef.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     e.stopPropagation();
     e.preventDefault();
     setHoverInfo(null);
@@ -333,6 +340,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }
 
     if (e.key === 'Enter') {
+      if (suppressNextSelectorOpenRef.current) {
+        suppressNextSelectorOpenRef.current = false;
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       openSelector(e);
     } else {
       handleGridKeyDown(e, rowIndex, colIndex);
@@ -413,9 +426,15 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const matchedPreset = findPresetByQuery(normalized);
     const nextValue = matchedPreset ? generateTreatmentString(matchedPreset.steps) : normalized;
     skipNextEmptyBlurCommitRef.current = true;
+    suppressNextSelectorOpenRef.current = !!matchedPreset;
     onCommitText(nextValue);
     setEmptyInputValue('');
     setIsEmptyEditing(false);
+    if (matchedPreset) {
+      requestAnimationFrame(() => {
+        suppressNextSelectorOpenRef.current = false;
+      });
+    }
   };
 
   const commitInlineInputValue = () => {
@@ -794,6 +813,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
             <div className={`text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[28px] ${(allowStepSelection || isEmptyTreatmentCell || preferInlineTextEditing) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
               {isEmptyTreatmentCell && !isReadOnly ? (
                 <input
+                  key="empty-treatment-input"
                   ref={emptyInputRef}
                   data-inline-treatment-editing="true"
                   data-direct-editing={isEmptyEditing ? 'true' : 'false'}
@@ -832,6 +852,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                 />
               ) : preferInlineTextEditing && !isReadOnly ? (
                 <input
+                  key="inline-treatment-input"
                   ref={inlineInputRef}
                   data-inline-treatment-editing="true"
                   data-direct-editing={isInlineEditing ? 'true' : 'false'}
