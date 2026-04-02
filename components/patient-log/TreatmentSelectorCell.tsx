@@ -543,6 +543,22 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
 
   const handleInlineInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!isInlineEditing) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        setInlineInputValue(value);
+        setIsInlineEditing(true);
+        requestAnimationFrame(() => {
+          const input = inlineInputRef.current;
+          if (!input) return;
+          input.focus();
+          const end = input.value.length;
+          inlineCaretIndexRef.current = end;
+          input.setSelectionRange(end, end);
+        });
+        return;
+      }
+
       if (e.shiftKey && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         return;
       }
@@ -568,7 +584,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       e.preventDefault();
       e.stopPropagation();
       commitInlineInputValue();
-      requestAnimationFrame(() => cellRef.current?.focus());
+      requestAnimationFrame(() => {
+        cellRef.current?.focus();
+        onOpenSelector();
+      });
       return;
     }
 

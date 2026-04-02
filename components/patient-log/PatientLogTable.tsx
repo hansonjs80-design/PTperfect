@@ -178,6 +178,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const isDraggingRef = useRef(false);
   const skipRowHeaderClickRef = useRef(false);
   const skipPointerSelectionCommitRef = useRef(false);
+  const skipFocusSelectionCommitRef = useRef(false);
 
   // Column resize (desktop & tablet portrait)
   const tableRef = useRef<HTMLTableElement>(null);
@@ -717,6 +718,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         setSelection({ start: nextPos, end: nextPos });
       }
       onSelectionAnchorChange?.(nextPos.row, nextPos.col);
+      skipFocusSelectionCommitRef.current = true;
       const host = document.querySelector(`[data-grid-id="${nextPos.row}-${nextPos.col}"]`) as HTMLElement | null;
       host?.focus();
       return;
@@ -914,6 +916,10 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         onSelectionAnchorChange?.(pos.row, pos.col);
       }}
       onFocusCapture={(e) => {
+        if (skipFocusSelectionCommitRef.current) {
+          skipFocusSelectionCommitRef.current = false;
+          return;
+        }
         if (skipPointerSelectionCommitRef.current) return;
         const pos = parseGridCellId(e.target as HTMLElement);
         if (!pos) return;
