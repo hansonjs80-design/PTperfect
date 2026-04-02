@@ -658,6 +658,38 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     void handleGridPaste(text);
   }, [handleGridPaste]);
 
+  const handleInlineSelectionKeyDownCapture = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const active = document.activeElement as HTMLInputElement | null;
+    if (!active || active.tagName !== 'INPUT') return;
+    if (active.dataset.inlineTreatmentEditing !== 'true' || active.dataset.directEditing === 'true') return;
+    if (!e.shiftKey) return;
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+
+    const bounds = normalizeSelectionBounds(selection);
+    const anchor = bounds ? { row: bounds.rowMin, col: bounds.colMin } : null;
+    const current = selection?.end ?? anchor ?? parseGridCellId(active);
+    if (!current) return;
+
+    const direction =
+      e.key === 'ArrowUp' ? 'up' :
+      e.key === 'ArrowDown' ? 'down' :
+      e.key === 'ArrowLeft' ? 'left' : 'right';
+    const nextPos = findVisibleGridPos(current, direction, totalRows);
+    if (!nextPos) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    if (selection) {
+      setSelection({ start: selection.start, end: nextPos });
+    } else {
+      setSelection({ start: current, end: nextPos });
+    }
+    onSelectionAnchorChange?.(nextPos.row, nextPos.col);
+    skipFocusSelectionCommitRef.current = true;
+    const host = document.querySelector(`[data-grid-id="${nextPos.row}-${nextPos.col}"]`) as HTMLElement | null;
+    host?.focus();
+  }, [selection, totalRows, onSelectionAnchorChange]);
+
 
 
   const handleSelectionKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -841,6 +873,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     <div
       className="flex-1 overflow-y-auto overflow-x-auto log-scrollbar bg-slate-50/60 dark:bg-slate-900"
       tabIndex={0}
+      onKeyDownCapture={handleInlineSelectionKeyDownCapture}
       onCopy={handleCopy}
       onCut={handleCut}
       onPaste={handlePaste}

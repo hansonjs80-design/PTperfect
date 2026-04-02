@@ -790,6 +790,8 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
               {isEmptyTreatmentCell && !isReadOnly ? (
                 <input
                   ref={emptyInputRef}
+                  data-inline-treatment-editing="true"
+                  data-direct-editing={isEmptyEditing ? 'true' : 'false'}
                   value={isEmptyEditing ? emptyInputValue : ''}
                   onChange={(e) => {
                     if (!isEmptyEditing) {
