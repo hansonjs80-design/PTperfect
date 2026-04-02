@@ -443,6 +443,13 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     setIsInlineEditing(false);
   };
 
+  const finalizeInlineEditing = () => {
+    commitInlineInputValue();
+    requestAnimationFrame(() => {
+      cellRef.current?.focus();
+    });
+  };
+
   const getCaretIndexFromClick = (text: string, sourceEl: HTMLElement, clientX: number) => {
     if (!text) return 0;
 
@@ -642,22 +649,14 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
-      setInlineInputValue(value);
-      inlineCaretIndexRef.current = null;
-      setIsInlineEditing(false);
-      requestAnimationFrame(() => {
-        cellRef.current?.focus();
-      });
+      finalizeInlineEditing();
       return;
     }
 
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
-      setInlineInputValue(value);
-      inlineCaretIndexRef.current = null;
-      setIsInlineEditing(false);
-      requestAnimationFrame(() => cellRef.current?.focus());
+      finalizeInlineEditing();
       return;
     }
 
