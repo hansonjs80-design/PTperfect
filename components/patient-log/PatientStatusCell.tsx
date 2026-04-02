@@ -34,6 +34,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const [selectedStatusKey, setSelectedStatusKey] = useState<string | null>(null);
   const [menuVisitSnapshot, setMenuVisitSnapshot] = useState<Partial<PatientVisit> | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
+  const selectedStatusKeyRef = useRef<string | null>(null);
   const lastClickTimeRef = useRef<number>(0);
   const targetVisitIdRef = useRef<string | null>(visit?.id ?? null);
   const pendingSnapshotRef = useRef<Partial<PatientVisit> | null>(null);
@@ -116,11 +117,11 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     if ((e.key === 'Backspace' || e.key === 'Delete') && selectedStatusKey) {
       e.preventDefault();
       e.stopPropagation();
-      const selectedOption = normalizedStatusOptions.find((option) => option.id === selectedStatusKey);
+      const selectedOption = findSelectedStatusOption(selectedStatusKeyRef.current || selectedStatusKey);
       if (selectedOption) {
         void toggleStatus(selectedOption);
       }
-      setSelectedStatusKey(null);
+      updateSelectedStatusKey(null);
       return;
     }
 
@@ -131,11 +132,11 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     if ((e.key === 'Backspace' || e.key === 'Delete') && selectedStatusKey) {
       e.preventDefault();
       e.stopPropagation();
-      const selectedOption = normalizedStatusOptions.find((option) => option.id === selectedStatusKey);
+      const selectedOption = findSelectedStatusOption(selectedStatusKeyRef.current || selectedStatusKey);
       if (selectedOption) {
         void toggleStatus(selectedOption);
       }
-      setSelectedStatusKey(null);
+      updateSelectedStatusKey(null);
     }
   };
 
@@ -248,11 +249,21 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
   const activeStatusPills = statusPills.filter((item) => item.active);
 
+  const findSelectedStatusOption = (statusKey: string | null) => {
+    if (!statusKey) return null;
+    return normalizedStatusOptions.find((option) => option.id === statusKey) || null;
+  };
+
+  const updateSelectedStatusKey = (nextKey: string | null) => {
+    selectedStatusKeyRef.current = nextKey;
+    setSelectedStatusKey(nextKey);
+  };
+
   useEffect(() => {
     if (!selectedStatusKey) return;
     const stillActive = activeStatusPills.some((item) => item.key === selectedStatusKey);
     if (!stillActive) {
-      setSelectedStatusKey(null);
+      updateSelectedStatusKey(null);
     }
   }, [selectedStatusKey, activeStatusPills]);
 
@@ -267,13 +278,13 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       if (!cellElement) return;
       if (activeElement && activeElement !== cellElement && !cellElement.contains(activeElement)) return;
 
-      const selectedOption = normalizedStatusOptions.find((option) => option.id === selectedStatusKey);
+      const selectedOption = findSelectedStatusOption(selectedStatusKeyRef.current || selectedStatusKey);
       if (!selectedOption) return;
 
       event.preventDefault();
       event.stopPropagation();
       void toggleStatus(selectedOption);
-      setSelectedStatusKey(null);
+      updateSelectedStatusKey(null);
     };
 
     window.addEventListener('keydown', handleWindowDelete, true);
@@ -301,7 +312,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         onBlur={(e) => {
           const nextFocus = e.relatedTarget as Node | null;
           if (nextFocus && cellRef.current?.contains(nextFocus)) return;
-          setSelectedStatusKey(null);
+          updateSelectedStatusKey(null);
         }}
         onDoubleClick={executeInteraction}
         onTouchEnd={handleTouchEnd}
@@ -316,7 +327,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
             <div className="flex flex-wrap items-center justify-start gap-1 max-w-full">
               {activeStatusPills.map((item) => (
                 <span
-                  key={item.label}
+                  key={item.key}
                   onMouseDown={(e) => {
                     e.stopPropagation();
                     cellRef.current?.focus();
@@ -324,7 +335,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                   onClick={(e) => {
                     e.stopPropagation();
                     cellRef.current?.focus();
-                    setSelectedStatusKey((prev) => prev === item.key ? null : item.key);
+                    updateSelectedStatusKey(selectedStatusKeyRef.current === item.key ? null : item.key);
                   }}
                   className={`px-1.5 py-0.5 rounded-md text-[13px] font-black ${item.bg} ${item.text} ${selectedStatusKey === item.key ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
                 >
