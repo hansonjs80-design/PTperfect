@@ -219,14 +219,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (isEmptyTreatmentCell && !isReadOnly) {
       const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
       const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
-      const isPlainTypingKey = (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) || isIMEKey;
+      const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey;
 
       if (isPlainTypingKey) {
-        const nextValue = isIMEKey ? '' : e.key;
-        if (!isIMEKey) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
+        const nextValue = e.key;
+        e.preventDefault();
+        e.stopPropagation();
         flushSync(() => {
           setIsEmptyEditing(true);
           setEmptyInputValue(nextValue);
@@ -523,6 +521,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (isReadOnly || isInlineEditingTarget(e.target)) return;
 
     const nativeEvent = e.nativeEvent as InputEvent;
+    if (nativeEvent.isComposing || nativeEvent.inputType.includes('Composition')) return;
     const text = nativeEvent.data ?? '';
     if (!text) return;
 
