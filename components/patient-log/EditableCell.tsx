@@ -63,27 +63,12 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     }) || null;
   };
 
-  const applySuggestionPreview = (rawValue: string, caretPos?: number | null) => {
+  const getPreviewSuggestion = () => {
     const input = inputRef.current;
-    const suggestion = findSuggestedValue(rawValue);
-
-    if (!input || !suggestion || caretPos === null || caretPos === undefined) {
-      setLocalValue(rawValue);
-      return;
-    }
-
-    if (caretPos < rawValue.length) {
-      setLocalValue(rawValue);
-      return;
-    }
-
-    setLocalValue(suggestion);
-    requestAnimationFrame(() => {
-      const liveInput = inputRef.current;
-      if (!liveInput) return;
-      liveInput.focus();
-      liveInput.setSelectionRange(rawValue.length, suggestion.length);
-    });
+    if (!input || !isDirectEditing) return null;
+    const caretPos = input.selectionStart ?? localValue.length;
+    if (caretPos < localValue.length) return null;
+    return findSuggestedValue(localValue);
   };
 
   useEffect(() => {
@@ -151,10 +136,6 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nextValue = forceUpperCase ? e.target.value.toUpperCase() : e.target.value;
-    if (suggestionOptions.length > 0 && !isComposingRef.current) {
-      applySuggestionPreview(nextValue, e.target.selectionStart);
-      return;
-    }
     setLocalValue(nextValue);
   };
 
@@ -165,10 +146,6 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const handleCompositionEnd = (e: React.CompositionEvent<HTMLInputElement>) => {
     isComposingRef.current = false;
     const nextValue = forceUpperCase ? e.currentTarget.value.toUpperCase() : e.currentTarget.value;
-    if (suggestionOptions.length > 0) {
-      applySuggestionPreview(nextValue, e.currentTarget.selectionStart);
-      return;
-    }
     setLocalValue(nextValue);
   };
 
@@ -319,6 +296,21 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
       return;
     }
 
+    if (e.key === 'Enter' && isDirectEditing && suggestionOptions.length > 0 && !e.nativeEvent.isComposing) {
+      const previewSuggestion = getPreviewSuggestion();
+      if (previewSuggestion) {
+        e.preventDefault();
+        e.stopPropagation();
+        setLocalValue(previewSuggestion);
+        navIntentRef.current = null;
+        commitValue(previewSuggestion);
+        requestAnimationFrame(() => {
+          inputRef.current?.blur();
+        });
+        return;
+      }
+    }
+
     if (suppressEnterNav) {
       if (e.nativeEvent.isComposing) return;
 
@@ -376,9 +368,27 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     'data-direct-editing': isDirectEditing ? 'true' : 'false',
   };
 
+  const previewSuggestion = suggestionOptions.length > 0 ? getPreviewSuggestion() : null;
+  const previewTail = previewSuggestion && previewSuggestion.length > localValue.length
+    ? previewSuggestion.slice(localValue.length)
+    : '';
+
   return (
     <>
       <div className="w-full h-full relative">
+        {isDirectEditing && previewTail && (
+          <div
+            aria-hidden="true"
+            className={`
+              pointer-events-none absolute inset-[1px] px-2 py-0.5 rounded-[1px]
+              flex items-center justify-center text-sm truncate
+              text-slate-400/70 dark:text-slate-500/70 ${className || ''}
+            `}
+          >
+            <span className="opacity-0">{localValue}</span>
+            <span>{previewTail}</span>
+          </div>
+        )}
         <input
           {...commonInputProps}
           autoFocus={mode === 'edit'}
