@@ -642,10 +642,11 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
-      commitInlineInputValue();
+      setInlineInputValue(value);
+      inlineCaretIndexRef.current = null;
+      setIsInlineEditing(false);
       requestAnimationFrame(() => {
         cellRef.current?.focus();
-        onOpenSelector();
       });
       return;
     }
