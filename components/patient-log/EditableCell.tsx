@@ -66,23 +66,13 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const previewSuggestion = suggestionOptions.length > 0 && isDirectEditing && !isComposingRef.current
     ? findSuggestedValue(localValue)
     : null;
-  const displayValue = previewSuggestion || localValue;
+  const previewTail = previewSuggestion && previewSuggestion.length > localValue.length
+    ? previewSuggestion.slice(localValue.length)
+    : '';
 
   useEffect(() => {
     setLocalValue(value === null ? '' : String(value));
   }, [value, rowIndex]);
-
-  useEffect(() => {
-    if (!isDirectEditing || !previewSuggestion) return;
-    const input = inputRef.current;
-    if (!input) return;
-
-    requestAnimationFrame(() => {
-      const liveInput = inputRef.current;
-      if (!liveInput || document.activeElement !== liveInput) return;
-      liveInput.setSelectionRange(localValue.length, previewSuggestion.length);
-    });
-  }, [isDirectEditing, localValue, previewSuggestion]);
 
   const commitValue = (nextValue: string, navDirection?: 'down' | 'right' | 'left') => {
     if (nextValue !== String(value || '') || navDirection) {
@@ -370,7 +360,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const commonInputProps = {
     ref: inputRef,
     type: type,
-    value: displayValue,
+    value: localValue,
     onChange: handleChange,
     onBlur: handleBlur,
     onKeyDown: handleKeyDown,
@@ -388,6 +378,23 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   return (
     <>
       <div className="w-full h-full relative">
+        {isDirectEditing && previewTail && (
+          <div
+            aria-hidden="true"
+            className={`
+              pointer-events-none absolute inset-[1px] px-2 py-0.5 rounded-[1px]
+              flex items-center justify-center overflow-hidden text-sm truncate
+              ${className || ''}
+            `}
+          >
+            <span className="truncate whitespace-nowrap text-gray-900 dark:text-gray-100">
+              {localValue}
+            </span>
+            <span className="truncate whitespace-nowrap text-slate-400 dark:text-slate-500">
+              {previewTail}
+            </span>
+          </div>
+        )}
         <input
           {...commonInputProps}
           autoFocus={mode === 'edit'}
@@ -399,7 +406,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
             ${mode === 'edit'
               ? 'bg-transparent text-center !text-gray-900 dark:!text-gray-100'
               : 'bg-transparent'}
-            ${suggestionOptions.length > 0 ? 'selection:bg-transparent selection:text-slate-400 dark:selection:text-slate-500' : ''}
+            ${isDirectEditing && previewTail ? 'text-transparent caret-gray-900 dark:caret-gray-100 selection:bg-transparent selection:text-transparent' : ''}
             ${(directEdit && mode !== 'edit') ? 'cursor-default select-none caret-transparent' : 'cursor-pointer'} hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-sm truncate
             ${mode === 'edit'
               ? 'focus:outline-none focus:ring-0 focus:bg-transparent dark:focus:bg-transparent'
