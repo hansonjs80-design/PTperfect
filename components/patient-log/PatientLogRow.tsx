@@ -82,6 +82,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const [detachedBadgeValue, setDetachedBadgeValue] = useState<string | null>(null);
   const [renamedBadgeOverride, setRenamedBadgeOverride] = useState<Preset | null>(null);
   const stickyPresetBadgeRef = useRef<Preset | null>(null);
+  const latestDisplayedPresetBadgeRef = useRef<Preset | null>(null);
   useEffect(() => {
     if (optimisticTreatmentName === null) return;
 
@@ -188,6 +189,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     const matchedPreset = normalizedTreatment
       ? (findExactPresetByTreatmentString(presets, normalizedTreatment, quickTreatments) || null)
       : null;
+    const fallbackPresetBadge = latestDisplayedPresetBadgeRef.current ?? stickyPresetBadgeRef.current;
 
     setOptimisticTreatmentName(val);
     setStickyTreatmentName(normalizedTreatment);
@@ -196,6 +198,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       stickyPresetBadgeRef.current = matchedPreset;
       setDetachedBadgeValue(null);
       setRenamedBadgeOverride(null);
+    } else if (normalizedTreatment && fallbackPresetBadge) {
+      stickyPresetBadgeRef.current = fallbackPresetBadge;
+      setDetachedBadgeValue(null);
     } else if (!normalizedTreatment) {
       stickyPresetBadgeRef.current = null;
       setDetachedBadgeValue(null);
@@ -492,6 +497,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   })();
 
   useEffect(() => {
+    latestDisplayedPresetBadgeRef.current = matchedPresetForDisplay ?? null;
     if (!matchedPresetForDisplay) return;
     stickyPresetBadgeRef.current = matchedPresetForDisplay;
   }, [matchedPresetForDisplay]);
