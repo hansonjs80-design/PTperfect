@@ -16,6 +16,8 @@ import { useTreatmentContext } from '../../contexts/TreatmentContext';
 import { findExactPresetByTreatmentString, formatTime, generateTreatmentString, normalizeTreatmentString, parseTreatmentString } from '../../utils/bedUtils';
 import { type StatusOptionConfig } from './StatusSelectionMenu';
 
+const persistedPresetBadgeByVisitId = new Map<string, Preset>();
+
 interface PatientLogRowProps {
   rowIndex: number;
   isRowSelected?: boolean;
@@ -86,6 +88,16 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const [renamedBadgeOverride, setRenamedBadgeOverride] = useState<Preset | null>(null);
   const stickyPresetBadgeRef = useRef<Preset | null>(null);
   const latestDisplayedPresetBadgeRef = useRef<Preset | null>(null);
+
+  useEffect(() => {
+    if (!visit?.id) return;
+    const persistedBadge = persistedPresetBadgeByVisitId.get(visit.id);
+    if (persistedBadge) {
+      stickyPresetBadgeRef.current = persistedBadge;
+      latestDisplayedPresetBadgeRef.current = persistedBadge;
+    }
+  }, [visit?.id]);
+
   useEffect(() => {
     if (optimisticTreatmentName === null) return;
 
@@ -123,6 +135,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       setRenamedBadgeOverride(null);
       stickyPresetBadgeRef.current = null;
       latestDisplayedPresetBadgeRef.current = null;
+      persistedPresetBadgeByVisitId.delete(visit.id);
     };
 
     window.addEventListener('patient-log-clear-treatment-display', handleClearTreatmentDisplay as EventListener);
@@ -238,12 +251,15 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
     if (matchedPreset) {
       stickyPresetBadgeRef.current = matchedPreset;
+      if (visit?.id) persistedPresetBadgeByVisitId.set(visit.id, matchedPreset);
       setRenamedBadgeOverride(null);
     } else if (normalizedTreatment && fallbackPresetBadge) {
       stickyPresetBadgeRef.current = fallbackPresetBadge;
+      if (visit?.id) persistedPresetBadgeByVisitId.set(visit.id, fallbackPresetBadge);
     } else if (!normalizedTreatment) {
       stickyPresetBadgeRef.current = null;
       latestDisplayedPresetBadgeRef.current = null;
+      if (visit?.id) persistedPresetBadgeByVisitId.delete(visit.id);
       setDetachedBadgeValue(null);
       setRenamedBadgeOverride(null);
     }
@@ -541,12 +557,14 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   useEffect(() => {
     if (!treatmentDisplayValue.trim()) {
       latestDisplayedPresetBadgeRef.current = null;
+      if (visit?.id) persistedPresetBadgeByVisitId.delete(visit.id);
       return;
     }
     if (!matchedPresetForDisplay) return;
     latestDisplayedPresetBadgeRef.current = matchedPresetForDisplay;
     stickyPresetBadgeRef.current = matchedPresetForDisplay;
-  }, [matchedPresetForDisplay, treatmentDisplayValue]);
+    if (visit?.id) persistedPresetBadgeByVisitId.set(visit.id, matchedPresetForDisplay);
+  }, [matchedPresetForDisplay, treatmentDisplayValue, visit?.id]);
 
   const handleOpenTimerEdit = (position: { x: number; y: number }) => {
     if (!bed) return;
