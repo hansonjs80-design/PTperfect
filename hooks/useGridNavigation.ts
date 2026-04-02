@@ -32,10 +32,6 @@ export const useGridNavigation = (totalCols: number) => {
     if (nextElement) {
       requestAnimationFrame(() => {
         nextElement.focus();
-        // If it's an input, select text
-        if (nextElement.tagName === 'INPUT') {
-          (nextElement as HTMLInputElement).select();
-        }
       });
     }
   }, [findNextFocusableElement]);

@@ -334,10 +334,6 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
           // If user focus is already on another grid cell, keep current user intent.
           if (!activeGridId || activeGridId === targetGridId) {
             targetEl.focus();
-            // If it's an input, select text
-            if (targetEl.tagName === 'INPUT') {
-              (targetEl as HTMLInputElement).select();
-            }
           }
         }
         focusTargetRef.current = null; // Reset
