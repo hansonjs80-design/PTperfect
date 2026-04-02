@@ -381,12 +381,14 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
             aria-hidden="true"
             className={`
               pointer-events-none absolute inset-[1px] px-2 py-0.5 rounded-[1px]
-              flex items-center justify-center text-sm truncate
+              flex items-center overflow-hidden text-sm
               text-slate-400/70 dark:text-slate-500/70 ${className || ''}
             `}
           >
-            <span className="opacity-0">{localValue}</span>
-            <span>{previewTail}</span>
+            <div className="w-full truncate whitespace-nowrap text-inherit text-center">
+              <span className="opacity-0">{localValue}</span>
+              <span>{previewTail}</span>
+            </div>
           </div>
         )}
         <input
