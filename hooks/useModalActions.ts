@@ -44,8 +44,13 @@ export const useModalActions = (
   const restoreSelectedGridFocus = useCallback(() => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
+        const targetGridId = document.body.dataset.patientLogModalReturnGridId;
+        const targetHost = targetGridId
+          ? document.querySelector(`[data-grid-id="${targetGridId}"]`) as HTMLElement | null
+          : null;
         const selectedHost = document.querySelector('[data-grid-id][data-grid-selection="true"]') as HTMLElement | null;
-        selectedHost?.focus();
+        (targetHost || selectedHost)?.focus();
+        delete document.body.dataset.patientLogModalReturnGridId;
       });
     });
   }, []);

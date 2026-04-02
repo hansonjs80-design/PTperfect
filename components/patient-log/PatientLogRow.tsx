@@ -208,6 +208,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const hasMeaningfulTreatmentName = (name?: string | null) => Boolean(name?.trim());
 
   const handleTreatmentSelectorOpen = async () => {
+    document.body.dataset.patientLogModalReturnGridId = `${rowIndex}-5`;
     const bedId = visit?.bed_id ?? null;
     const hasBed = typeof bedId === 'number';
     const hasTreatment = hasMeaningfulTreatmentName(visit?.treatment_name);
