@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, memo } from 'react';
+import { flushSync } from 'react-dom';
 import { Edit3, RefreshCw } from 'lucide-react';
 import { ContextMenu } from '../common/ContextMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
@@ -200,13 +201,25 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
       const isPrintableKey = e.key.length === 1 || isIMEKey;
 
       if (isPrintableKey) {
+        const nextValue = isIMEKey ? '' : (forceUpperCase ? e.key.toUpperCase() : e.key);
+        if (!isIMEKey) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         skipSyncRef.current = !syncOnDirectEdit;
         navIntentRef.current = null;
-        setMode('edit');
+        flushSync(() => {
+          setMode('edit');
+          if (!isIMEKey) {
+            setLocalValue(nextValue);
+          }
+        });
 
-        setTimeout(() => {
+        requestAnimationFrame(() => {
           inputRef.current?.focus();
-        }, 0);
+          const end = nextValue.length;
+          inputRef.current?.setSelectionRange(end, end);
+        });
         return;
       }
 
@@ -214,12 +227,14 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
         e.preventDefault();
         skipSyncRef.current = !syncOnDirectEdit;
         navIntentRef.current = null;
-        setMode('edit');
-        setLocalValue('');
-        setTimeout(() => {
+        flushSync(() => {
+          setMode('edit');
+          setLocalValue('');
+        });
+        requestAnimationFrame(() => {
           inputRef.current?.focus();
           inputRef.current?.setSelectionRange(0, 0);
-        }, 0);
+        });
         return;
       }
     }
