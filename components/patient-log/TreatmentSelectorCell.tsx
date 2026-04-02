@@ -381,8 +381,14 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
-      commitEmptyInputValue();
-      requestAnimationFrame(() => cellRef.current?.focus());
+      const matchedPreset = commitEmptyInputValue();
+      if (matchedPreset) {
+        window.setTimeout(() => {
+          cellRef.current?.focus();
+        }, 0);
+      } else {
+        requestAnimationFrame(() => cellRef.current?.focus());
+      }
       return;
     }
 
@@ -420,21 +426,23 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (!normalized) {
       setEmptyInputValue('');
       setIsEmptyEditing(false);
-      return;
+      return false;
     }
 
     const matchedPreset = findPresetByQuery(normalized);
     const nextValue = matchedPreset ? generateTreatmentString(matchedPreset.steps) : normalized;
     skipNextEmptyBlurCommitRef.current = true;
     suppressNextSelectorOpenRef.current = !!matchedPreset;
+    emptyInputRef.current?.blur();
     onCommitText(nextValue);
     setEmptyInputValue('');
     setIsEmptyEditing(false);
     if (matchedPreset) {
-      requestAnimationFrame(() => {
+      window.setTimeout(() => {
         suppressNextSelectorOpenRef.current = false;
-      });
+      }, 0);
     }
+    return !!matchedPreset;
   };
 
   const commitInlineInputValue = () => {
