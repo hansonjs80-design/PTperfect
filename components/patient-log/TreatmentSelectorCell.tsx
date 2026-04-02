@@ -106,6 +106,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const skipNextEmptyBlurCommitRef = useRef(false);
   const suppressNextSelectorOpenRef = useRef(false);
   const suppressInlineInteractionUntilRef = useRef(0);
+  const inlineEnterStageRef = useRef(false);
   const { handleGridKeyDown } = useGridNavigation(11);
   const isInlineEditingTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && !!target.closest('[data-inline-treatment-editing="true"]');
@@ -439,6 +440,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (nextValue !== value.trim()) {
       onCommitText(nextValue);
     }
+    inlineEnterStageRef.current = false;
     inlineCaretIndexRef.current = null;
     setIsInlineEditing(false);
   };
@@ -611,6 +613,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       if (e.key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
+        inlineEnterStageRef.current = true;
         setInlineInputValue(value);
         setIsInlineEditing(true);
         requestAnimationFrame(() => {
@@ -649,13 +652,20 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
+      const shouldOpenSelector = inlineEnterStageRef.current && inlineInputValue.trim() === value.trim();
       finalizeInlineEditing();
+      if (shouldOpenSelector) {
+        requestAnimationFrame(() => {
+          onOpenSelector();
+        });
+      }
       return;
     }
 
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
+      inlineEnterStageRef.current = false;
       finalizeInlineEditing();
       return;
     }
@@ -862,6 +872,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     if (Date.now() < suppressInlineInteractionUntilRef.current) {
                       return;
                     }
+                    inlineEnterStageRef.current = false;
                     if (!isInlineEditing) {
                       setIsInlineEditing(true);
                     }
@@ -874,6 +885,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     }
                     const nativeEvent = e.nativeEvent as InputEvent;
                     if (!isInlineEditing && nativeEvent.inputType.startsWith('insert')) {
+                      inlineEnterStageRef.current = false;
                       setInlineInputValue(value);
                       setIsInlineEditing(true);
                     }
@@ -882,6 +894,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     if (Date.now() < suppressInlineInteractionUntilRef.current) {
                       return;
                     }
+                    inlineEnterStageRef.current = false;
                     if (!isInlineEditing) {
                       setInlineInputValue(value);
                       setIsInlineEditing(true);
