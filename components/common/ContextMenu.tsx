@@ -49,7 +49,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     >
       <div
         ref={containerRef}
-        className="absolute bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150 origin-top-left flex flex-col"
+        className="absolute bg-white dark:bg-slate-800 rounded-2xl shadow-[0_18px_48px_rgba(15,23,42,0.22)] border border-slate-300 dark:border-slate-600 overflow-hidden animate-in zoom-in-95 duration-150 origin-top-left flex flex-col"
         style={{
           top: pos.y,
           left: pos.x,
@@ -59,22 +59,22 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         onClick={(e) => e.stopPropagation()}
         onDoubleClick={(e) => e.stopPropagation()}
       >
-        <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50 shrink-0">
-          <span className="font-bold text-gray-800 dark:text-white text-xs truncate pr-2">
+        <div className="px-4 py-3.5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-100/95 dark:bg-slate-900/80 shrink-0">
+          <span className="font-black text-slate-800 dark:text-white text-[13px] truncate pr-2 tracking-[0.01em]">
             {title}
           </span>
           <div className="flex items-center gap-1.5 shrink-0">
             {headerActions}
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div className="min-h-0 overflow-y-auto p-2 flex flex-col gap-1">
+        <div className="min-h-0 overflow-y-auto p-3 flex flex-col gap-2 bg-white dark:bg-slate-800">
           {children}
         </div>
       </div>

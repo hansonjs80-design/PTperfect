@@ -344,20 +344,21 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       )}
     >
       {isSettingsOpen ? (
-        <div className="flex flex-col gap-3 min-h-0">
+        <div className="flex flex-col gap-4 min-h-0">
           <div className="flex flex-col gap-2">
-            <div className="px-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+            <div className="px-1 text-[11px] font-black uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
               현재 목록
             </div>
             {visibleStatusOptions.length > 0 ? visibleStatusOptions.map((opt) => {
               const idx = orderedStatusOptions.findIndex((item) => item.id === opt.id);
+              const palette = STATUS_COLOR_OPTIONS[opt.color] || STATUS_COLOR_OPTIONS.pink;
               return (
-                <div key={opt.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-2">
+                <div key={opt.id} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/85 dark:bg-slate-900/60 p-3">
                   <div className="flex items-center gap-2">
                     <input
                       value={opt.label}
                       onChange={(e) => updateStatusOption(opt.id, (current) => ({ ...current, label: e.target.value }))}
-                      className="flex-1 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
+                      className="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-[13px] font-black text-slate-800 dark:text-slate-100 outline-none focus:border-sky-400"
                     />
                     <button
                       type="button"
@@ -378,7 +379,11 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                       <ChevronDown className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="mt-2 flex items-center gap-1">
+                  <div className="mt-2.5 flex items-center justify-between gap-2">
+                    <div className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-black ${palette.button} ${palette.buttonText} shadow-sm`}>
+                      {opt.label}
+                    </div>
+                    <div className="flex items-center gap-1">
                     {(Object.keys(STATUS_COLOR_OPTIONS) as StatusColorKey[]).map((colorKey) => {
                       const palette = STATUS_COLOR_OPTIONS[colorKey];
                       const isSelectedColor = opt.color === colorKey;
@@ -394,9 +399,10 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                         </button>
                       );
                     })}
+                    </div>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500">
+                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
                       현재 표시 중
                     </span>
                     <button
@@ -418,16 +424,18 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
           </div>
 
           <div className="flex flex-col gap-2">
-            <div className="px-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+            <div className="px-1 text-[11px] font-black uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
               추가 가능한 항목
             </div>
-            {hiddenStatusOptions.length > 0 ? hiddenStatusOptions.map((opt) => (
-              <div key={opt.id} className="rounded-lg border border-dashed border-emerald-200 bg-emerald-50/50 p-2 dark:border-emerald-800/60 dark:bg-emerald-950/20">
+            {hiddenStatusOptions.length > 0 ? hiddenStatusOptions.map((opt) => {
+              const palette = STATUS_COLOR_OPTIONS[opt.color] || STATUS_COLOR_OPTIONS.pink;
+              return (
+              <div key={opt.id} className="rounded-xl border border-dashed border-emerald-300 bg-emerald-50/70 p-3 dark:border-emerald-800/60 dark:bg-emerald-950/20">
                 <div className="flex items-center justify-between gap-2">
                   <input
                     value={opt.label}
                     onChange={(e) => updateStatusOption(opt.id, (current) => ({ ...current, label: e.target.value }))}
-                    className="flex-1 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
+                    className="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-[13px] font-black text-slate-800 dark:text-slate-100 outline-none focus:border-sky-400"
                   />
                   <button
                     type="button"
@@ -438,7 +446,11 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                     추가
                   </button>
                 </div>
-                <div className="mt-2 flex items-center gap-1">
+                <div className="mt-2.5 flex items-center justify-between gap-2">
+                  <div className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-black ${palette.button} ${palette.buttonText} shadow-sm`}>
+                    {opt.label}
+                  </div>
+                  <div className="flex items-center gap-1">
                   {(Object.keys(STATUS_COLOR_OPTIONS) as StatusColorKey[]).map((colorKey) => {
                     const palette = STATUS_COLOR_OPTIONS[colorKey];
                     const isSelectedColor = opt.color === colorKey;
@@ -454,9 +466,10 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                       </button>
                     );
                   })}
+                  </div>
                 </div>
               </div>
-            )) : (
+            )}) : (
               <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-slate-500">
                 더 추가할 수 있는 항목이 없습니다.
               </div>
@@ -486,16 +499,16 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                 }
               }}
               onTouchStart={() => setActiveIndex(idx)}
-              className={`flex items-center justify-between px-2.5 py-2 rounded-lg transition-all text-xs font-black w-full border ${
+              className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-[13px] font-black w-full border ${
                 isActive
                   ? `${palette.button} ${palette.buttonText} border-black/10 dark:border-white/10 shadow-sm`
-                  : `${palette.button} ${palette.buttonText} border-black/10 dark:border-white/10 opacity-35 hover:opacity-60`
+                  : `${palette.button} ${palette.buttonText} border-black/10 dark:border-white/10 opacity-55 hover:opacity-80`
               } ${isFocusedOption ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
             >
-              <span>{opt.label}</span>
+              <span className="truncate pr-3">{opt.label}</span>
               <div className="flex items-center gap-1.5">
                 {isActive && <Check className={`h-3.5 w-3.5 ${palette.buttonText}`} />}
-                <div className={`w-1.5 h-1.5 rounded-full bg-white/80 ${!isActive ? 'opacity-70' : ''}`} />
+                <div className={`w-2 h-2 rounded-full bg-white/90 ${!isActive ? 'opacity-70' : ''}`} />
               </div>
             </button>
           );
