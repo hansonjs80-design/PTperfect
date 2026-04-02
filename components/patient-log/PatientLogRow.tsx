@@ -122,6 +122,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       setDetachedBadgeValue(null);
       setRenamedBadgeOverride(null);
       stickyPresetBadgeRef.current = null;
+      latestDisplayedPresetBadgeRef.current = null;
     };
 
     window.addEventListener('patient-log-clear-treatment-display', handleClearTreatmentDisplay as EventListener);
@@ -240,6 +241,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       setDetachedBadgeValue(null);
     } else if (!normalizedTreatment) {
       stickyPresetBadgeRef.current = null;
+      latestDisplayedPresetBadgeRef.current = null;
       setDetachedBadgeValue(null);
       setRenamedBadgeOverride(null);
     }
@@ -535,10 +537,14 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   })();
 
   useEffect(() => {
-    latestDisplayedPresetBadgeRef.current = matchedPresetForDisplay ?? null;
+    if (!treatmentDisplayValue.trim()) {
+      latestDisplayedPresetBadgeRef.current = null;
+      return;
+    }
     if (!matchedPresetForDisplay) return;
+    latestDisplayedPresetBadgeRef.current = matchedPresetForDisplay;
     stickyPresetBadgeRef.current = matchedPresetForDisplay;
-  }, [matchedPresetForDisplay]);
+  }, [matchedPresetForDisplay, treatmentDisplayValue]);
 
   const handleOpenTimerEdit = (position: { x: number; y: number }) => {
     if (!bed) return;
