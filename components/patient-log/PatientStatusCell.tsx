@@ -127,6 +127,18 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     handleGridKeyDown(e, rowIndex, colIndex);
   };
 
+  const handleKeyDownCapture = (e: React.KeyboardEvent) => {
+    if ((e.key === 'Backspace' || e.key === 'Delete') && selectedStatusKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      const selectedOption = normalizedStatusOptions.find((option) => option.id === selectedStatusKey);
+      if (selectedOption) {
+        void toggleStatus(selectedOption);
+      }
+      setSelectedStatusKey(null);
+    }
+  };
+
   const toggleStatus = async (option: StatusOptionConfig) => {
     const targetVisitId = targetVisitIdRef.current;
     const baseSnapshot = pendingSnapshotRef.current || visit || {};
@@ -264,6 +276,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         onClick={() => cellRef.current?.focus()}
         onDoubleClick={executeInteraction}
         onTouchEnd={handleTouchEnd}
+        onKeyDownCapture={handleKeyDownCapture}
         onKeyDown={handleKeyDown}
         tabIndex={0}
         data-grid-id={gridId}
@@ -281,6 +294,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    cellRef.current?.focus();
                     setSelectedStatusKey((prev) => prev === item.key ? null : item.key);
                   }}
                   className={`px-1.5 py-0.5 rounded-md text-[13px] font-black ${item.bg} ${item.text} ${selectedStatusKey === item.key ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
