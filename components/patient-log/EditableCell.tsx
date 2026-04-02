@@ -63,7 +63,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
       return normalizeSuggestion(trimmed).startsWith(normalized);
     }) || null;
   };
-  const previewSuggestion = suggestionOptions.length > 0 && isDirectEditing && !isComposingRef.current
+  const previewSuggestion = suggestionOptions.length > 0 && isDirectEditing
     ? findSuggestedValue(localValue)
     : null;
   const previewTail = previewSuggestion && previewSuggestion.length > localValue.length
