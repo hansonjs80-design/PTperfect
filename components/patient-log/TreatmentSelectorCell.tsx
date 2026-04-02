@@ -105,6 +105,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const inlineCaretIndexRef = useRef<number | null>(null);
   const skipNextEmptyBlurCommitRef = useRef(false);
   const suppressNextSelectorOpenRef = useRef(false);
+  const suppressInlineInteractionUntilRef = useRef(0);
   const { handleGridKeyDown } = useGridNavigation(11);
   const isInlineEditingTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && !!target.closest('[data-inline-treatment-editing="true"]');
@@ -433,6 +434,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const nextValue = matchedPreset ? generateTreatmentString(matchedPreset.steps) : normalized;
     skipNextEmptyBlurCommitRef.current = true;
     suppressNextSelectorOpenRef.current = !!matchedPreset;
+    if (matchedPreset) {
+      suppressInlineInteractionUntilRef.current = Date.now() + 120;
+    }
     emptyInputRef.current?.blur();
     onCommitText(nextValue);
     setEmptyInputValue('');
@@ -607,6 +611,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const handleInlineInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (Date.now() < suppressInlineInteractionUntilRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
     if (!isInlineEditing) {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -866,12 +876,19 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   data-direct-editing={isInlineEditing ? 'true' : 'false'}
                   value={isInlineEditing ? inlineInputValue : value}
                   onChange={(e) => {
+                    if (Date.now() < suppressInlineInteractionUntilRef.current) {
+                      return;
+                    }
                     if (!isInlineEditing) {
                       setIsInlineEditing(true);
                     }
                     setInlineInputValue(e.target.value);
                   }}
                   onBeforeInput={(e) => {
+                    if (Date.now() < suppressInlineInteractionUntilRef.current) {
+                      e.preventDefault();
+                      return;
+                    }
                     const nativeEvent = e.nativeEvent as InputEvent;
                     if (!isInlineEditing && nativeEvent.inputType.startsWith('insert')) {
                       setInlineInputValue(value);
@@ -879,6 +896,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     }
                   }}
                   onCompositionStart={() => {
+                    if (Date.now() < suppressInlineInteractionUntilRef.current) {
+                      return;
+                    }
                     if (!isInlineEditing) {
                       setInlineInputValue(value);
                       setIsInlineEditing(true);
