@@ -486,13 +486,17 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
                 }
               }}
               onTouchStart={() => setActiveIndex(idx)}
-              className={`flex items-center justify-between p-2 rounded-lg transition-colors text-xs font-bold w-full ${isActive
-                  ? palette.menuActive
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-                } ${isFocusedOption ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
+              className={`flex items-center justify-between px-2.5 py-2 rounded-lg transition-all text-xs font-black w-full border ${
+                isActive
+                  ? `${palette.button} ${palette.buttonText} border-black/10 dark:border-white/10 shadow-sm`
+                  : `${palette.button} ${palette.buttonText} border-black/10 dark:border-white/10 opacity-35 hover:opacity-60`
+              } ${isFocusedOption ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
             >
               <span>{opt.label}</span>
-              {isActive && <div className={`w-1.5 h-1.5 rounded-full ${palette.dot}`} />}
+              <div className="flex items-center gap-1.5">
+                {isActive && <Check className={`h-3.5 w-3.5 ${palette.buttonText}`} />}
+                <div className={`w-1.5 h-1.5 rounded-full bg-white/80 ${!isActive ? 'opacity-70' : ''}`} />
+              </div>
             </button>
           );
         })
