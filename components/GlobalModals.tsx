@@ -1,5 +1,5 @@
 
-import React, { Suspense, useMemo, useEffect } from 'react';
+import React, { Suspense, useMemo, useEffect, useCallback } from 'react';
 import { useTreatmentContext } from '../contexts/TreatmentContext';
 import { usePatientLogContext } from '../contexts/PatientLogContext';
 import { findMatchingPreset } from '../utils/bedUtils';
@@ -173,6 +173,23 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
   const isSelectorOpen = selectingBedId !== null || selectingLogId !== null;
   const targetBedIdForModal = selectingBedId !== null ? selectingBedId : (selectingLogId ? 0 : null);
 
+  const restoreSelectedGridFocus = useCallback(() => {
+    requestAnimationFrame(() => {
+      const selectedHost = document.querySelector('[data-grid-id][data-grid-selection="true"]') as HTMLElement | null;
+      selectedHost?.focus();
+    });
+  }, []);
+
+  const closeSelectorModal = useCallback(() => {
+    setSelectingBedId(null);
+    setSelectingLogId(null);
+    setSelectingAppendMode(false);
+    if (window.history.state?.modalOpen) {
+      window.history.back();
+    }
+    restoreSelectedGridFocus();
+  }, [restoreSelectedGridFocus, setSelectingAppendMode, setSelectingBedId, setSelectingLogId]);
+
   return (
     <>
       {/* Selector Modal */}
@@ -180,14 +197,7 @@ export const GlobalModals: React.FC<GlobalModalsProps> = ({ isMenuOpen, onCloseM
         <Suspense fallback={null}>
           <PresetSelectorModal
             isOpen={isSelectorOpen}
-            onClose={() => {
-              setSelectingBedId(null);
-              setSelectingLogId(null);
-              // Safe back
-              if (window.history.state?.modalOpen) {
-                window.history.back();
-              }
-            }}
+            onClose={closeSelectorModal}
             presets={presets}
             onSelect={handleSelectPreset}
             onCustomStart={handleCustomStart}
