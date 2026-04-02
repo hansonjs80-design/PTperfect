@@ -50,7 +50,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
 
   const { handleGridKeyDown } = useGridNavigation(11);
 
-  const normalizeSuggestion = (text: string) => text.trim().toLocaleLowerCase();
+  const normalizeSuggestion = (text: string) => text.trim().normalize('NFD').toLocaleLowerCase();
 
   const findSuggestedValue = (rawValue: string) => {
     const normalized = normalizeSuggestion(rawValue);
