@@ -63,18 +63,26 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
       return normalizeSuggestion(trimmed).startsWith(normalized);
     }) || null;
   };
-
-  const getPreviewSuggestion = () => {
-    const input = inputRef.current;
-    if (!input || !isDirectEditing) return null;
-    const caretPos = input.selectionStart ?? localValue.length;
-    if (caretPos < localValue.length) return null;
-    return findSuggestedValue(localValue);
-  };
+  const previewSuggestion = suggestionOptions.length > 0 && isDirectEditing && !isComposingRef.current
+    ? findSuggestedValue(localValue)
+    : null;
+  const displayValue = previewSuggestion || localValue;
 
   useEffect(() => {
     setLocalValue(value === null ? '' : String(value));
   }, [value, rowIndex]);
+
+  useEffect(() => {
+    if (!isDirectEditing || !previewSuggestion) return;
+    const input = inputRef.current;
+    if (!input) return;
+
+    requestAnimationFrame(() => {
+      const liveInput = inputRef.current;
+      if (!liveInput || document.activeElement !== liveInput) return;
+      liveInput.setSelectionRange(localValue.length, previewSuggestion.length);
+    });
+  }, [isDirectEditing, localValue, previewSuggestion]);
 
   const commitValue = (nextValue: string, navDirection?: 'down' | 'right' | 'left') => {
     if (nextValue !== String(value || '') || navDirection) {
@@ -168,7 +176,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     }
 
     // 모달 여는 상황이 아니면 정상적으로 데이터 동기화(Commit)
-    const finalValue = inputRef.current ? inputRef.current.value : localValue;
+    const finalValue = localValue;
     commitValue(finalValue, navIntentRef.current || undefined);
     navIntentRef.current = null;
   };
@@ -180,7 +188,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
 
     const start = input.selectionStart ?? 0;
     const end = input.selectionEnd ?? 0;
-    const selected = start !== end ? input.value.slice(start, end) : input.value;
+    const selected = start !== end ? input.value.slice(start, end) : localValue;
 
     e.preventDefault();
     e.clipboardData.setData('text/plain', selected);
@@ -201,8 +209,9 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     const cutStart = start === end ? 0 : start;
     const cutEnd = start === end ? input.value.length : end;
 
-    const selected = input.value.slice(cutStart, cutEnd);
-    const next = `${input.value.slice(0, cutStart)}${input.value.slice(cutEnd)}`;
+    const baseValue = localValue;
+    const selected = baseValue.slice(cutStart, Math.min(cutEnd, baseValue.length));
+    const next = `${baseValue.slice(0, cutStart)}${baseValue.slice(Math.min(cutEnd, baseValue.length))}`;
 
     e.preventDefault();
     e.clipboardData.setData('text/plain', selected);
@@ -228,9 +237,10 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     e.preventDefault();
     const pasted = forceUpperCase ? pastedRaw.toUpperCase() : pastedRaw;
 
-    const start = input.selectionStart ?? input.value.length;
-    const end = input.selectionEnd ?? input.value.length;
-    const next = `${input.value.slice(0, start)}${pasted}${input.value.slice(end)}`;
+    const baseValue = localValue;
+    const start = input.selectionStart ?? baseValue.length;
+    const end = input.selectionEnd ?? baseValue.length;
+    const next = `${baseValue.slice(0, start)}${pasted}${baseValue.slice(Math.min(end, baseValue.length))}`;
 
     setLocalValue(next);
     commitValue(next);
@@ -304,7 +314,6 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     }
 
     if (e.key === 'Enter' && isDirectEditing && suggestionOptions.length > 0 && !e.nativeEvent.isComposing) {
-      const previewSuggestion = getPreviewSuggestion();
       if (previewSuggestion) {
         e.preventDefault();
         e.stopPropagation();
@@ -361,7 +370,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const commonInputProps = {
     ref: inputRef,
     type: type,
-    value: localValue,
+    value: displayValue,
     onChange: handleChange,
     onBlur: handleBlur,
     onKeyDown: handleKeyDown,
@@ -376,29 +385,9 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     'data-direct-editing': isDirectEditing ? 'true' : 'false',
   };
 
-  const previewSuggestion = suggestionOptions.length > 0 ? getPreviewSuggestion() : null;
-  const previewTail = previewSuggestion && previewSuggestion.length > localValue.length
-    ? previewSuggestion.slice(localValue.length)
-    : '';
-
   return (
     <>
       <div className="w-full h-full relative">
-        {isDirectEditing && previewTail && (
-          <div
-            aria-hidden="true"
-            className={`
-              pointer-events-none absolute inset-[1px] px-2 py-0.5 rounded-[1px]
-              flex items-center overflow-hidden text-sm
-              text-slate-400/70 dark:text-slate-500/70 ${className || ''}
-            `}
-          >
-            <div className="w-full truncate whitespace-nowrap text-inherit text-center">
-              <span className="opacity-0">{localValue}</span>
-              <span>{previewTail}</span>
-            </div>
-          </div>
-        )}
         <input
           {...commonInputProps}
           autoFocus={mode === 'edit'}
@@ -410,6 +399,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
             ${mode === 'edit'
               ? 'bg-transparent text-center !text-gray-900 dark:!text-gray-100'
               : 'bg-transparent'}
+            ${suggestionOptions.length > 0 ? 'selection:bg-transparent selection:text-slate-400 dark:selection:text-slate-500' : ''}
             ${(directEdit && mode !== 'edit') ? 'cursor-default select-none caret-transparent' : 'cursor-pointer'} hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-sm truncate
             ${mode === 'edit'
               ? 'focus:outline-none focus:ring-0 focus:bg-transparent dark:focus:bg-transparent'
