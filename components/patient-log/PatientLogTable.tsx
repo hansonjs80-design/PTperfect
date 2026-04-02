@@ -592,6 +592,11 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     return input.dataset.directEditing === 'true';
   };
 
+  const isInlineTreatmentSelectionInput = (input: HTMLInputElement | null) => {
+    if (!input || input.tagName !== 'INPUT') return false;
+    return input.dataset.inlineTreatmentEditing === 'true' && input.dataset.directEditing !== 'true';
+  };
+
   const clearSelectionContents = useCallback(() => {
     const bounds = normalizeSelectionBounds(selection);
     if (!bounds) return false;
@@ -719,6 +724,10 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
     const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
     if (isPlainTypingKey && anchor) {
+      if (isInlineTreatmentSelectionInput(active)) {
+        return;
+      }
+
       const host = document.querySelector(`[data-grid-id="${anchor.row}-${anchor.col}"]`) as HTMLElement | null;
       const inputTarget = host?.tagName === 'INPUT'
         ? host as HTMLInputElement

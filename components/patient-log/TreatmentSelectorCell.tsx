@@ -649,6 +649,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         ref={cellRef}
         tabIndex={0}
         data-grid-id={gridId}
+        onFocusCapture={(e) => {
+          if (isInlineEditingTarget(e.target)) return;
+          if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
+            focusInlineSelection();
+          }
+        }}
         onMouseDownCapture={(e) => {
           if (e.button !== 0) return;
           if (isInlineEditingTarget(e.target)) return;
