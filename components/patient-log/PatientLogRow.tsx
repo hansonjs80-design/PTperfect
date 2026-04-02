@@ -510,7 +510,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           {rowIndex + 1}
         </button>
       </td>
-      <td className={`${cellBorderClass} p-0 relative`}>
+      <td data-grid-cell-id={`${rowIndex}-0`} className={`${cellBorderClass} p-0 relative`}>
         <BedSelectorCell
           gridId={`${rowIndex}-0`}
           rowIndex={rowIndex}
@@ -536,7 +536,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         )}
       </td>
 
-      <td className={`${cellBorderClass} p-0`}>
+      <td data-grid-cell-id={`${rowIndex}-1`} className={`${cellBorderClass} p-0`}>
         <EditableCell
           gridId={`${rowIndex}-1`}
           rowIndex={rowIndex}
@@ -552,7 +552,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0`}>
+      <td data-grid-cell-id={`${rowIndex}-2`} className={`${cellBorderClass} p-0`}>
         <EditableCell
           gridId={`${rowIndex}-2`}
           rowIndex={rowIndex}
@@ -568,7 +568,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0`}>
+      <td data-grid-cell-id={`${rowIndex}-3`} className={`${cellBorderClass} p-0`}>
         <GenderSelectorCell
           gridId={`${rowIndex}-3`}
           rowIndex={rowIndex}
@@ -584,7 +584,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0`}>
+      <td data-grid-cell-id={`${rowIndex}-4`} className={`${cellBorderClass} p-0`}>
         <EditableCell
           gridId={`${rowIndex}-4`}
           rowIndex={rowIndex}
@@ -603,7 +603,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0 relative`}>
+      <td data-grid-cell-id={`${rowIndex}-5`} className={`${cellBorderClass} p-0 relative`}>
         <TreatmentSelectorCell
           gridId={`${rowIndex}-5`}
           rowIndex={rowIndex}
@@ -655,7 +655,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0`}>
+      <td data-grid-cell-id={`${rowIndex}-6`} className={`${cellBorderClass} p-0`}>
         <PatientStatusCell
           gridId={`${rowIndex}-6`}
           rowIndex={rowIndex}
@@ -669,7 +669,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0`}>
+      <td data-grid-cell-id={`${rowIndex}-7`} className={`${cellBorderClass} p-0`}>
         <EditableCell
           gridId={`${rowIndex}-7`}
           rowIndex={rowIndex}
@@ -685,7 +685,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0`}>
+      <td data-grid-cell-id={`${rowIndex}-8`} className={`${cellBorderClass} p-0`}>
         <EditableCell
           gridId={`${rowIndex}-8`}
           rowIndex={rowIndex}
@@ -701,7 +701,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         />
       </td>
 
-      <td className={`${cellBorderClass} p-0 ${showTimerColumn ? "" : "hidden"}`}>
+      <td data-grid-cell-id={`${rowIndex}-9`} className={`${cellBorderClass} p-0 ${showTimerColumn ? "" : "hidden"}`}>
         <div
           className="w-full h-full min-h-[32px] flex items-center justify-center px-1 text-[11px] sm:text-[12px] font-black tracking-tight"
           data-grid-id={`${rowIndex}-9`}
@@ -754,7 +754,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         </div>
       </td>
 
-      <td className="p-0 align-middle text-center min-w-[56px] w-[56px] max-w-[56px] xl:w-[68px] xl:max-w-[68px] border-r border-slate-300 dark:border-slate-600">
+      <td data-grid-cell-id={`${rowIndex}-10`} className="p-0 align-middle text-center min-w-[56px] w-[56px] max-w-[56px] xl:w-[68px] xl:max-w-[68px] border-r border-slate-300 dark:border-slate-600">
         <div className="relative w-full h-full min-h-[32px]">
           <AuthorSelectorCell
             gridId={`${rowIndex}-10`}

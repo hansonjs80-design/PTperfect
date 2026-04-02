@@ -92,8 +92,8 @@ const normalizeSelectionBounds = (selection: GridSelection) => {
 
 const parseGridCellId = (el: HTMLElement | null): GridCellPos | null => {
   const gridHost = el?.closest?.('[data-grid-id]') as HTMLElement | null;
-  if (!gridHost) return null;
-  const id = gridHost.getAttribute('data-grid-id');
+  const gridCell = el?.closest?.('[data-grid-cell-id]') as HTMLElement | null;
+  const id = gridHost?.getAttribute('data-grid-id') || gridCell?.getAttribute('data-grid-cell-id');
   if (!id) return null;
   const [r, c] = id.split('-').map(Number);
   if (Number.isNaN(r) || Number.isNaN(c)) return null;
@@ -693,7 +693,9 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         return;
       }
 
-      const current = anchor ?? parseGridCellId(document.activeElement as HTMLElement | null);
+      const current = e.shiftKey
+        ? (selection?.end ?? anchor ?? parseGridCellId(document.activeElement as HTMLElement | null))
+        : (anchor ?? parseGridCellId(document.activeElement as HTMLElement | null));
       if (!current) return;
 
       const direction =
@@ -704,7 +706,11 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       if (!nextPos) return;
 
       e.preventDefault();
-      setSelection({ start: nextPos, end: nextPos });
+      if (e.shiftKey && selection) {
+        setSelection({ start: selection.start, end: nextPos });
+      } else {
+        setSelection({ start: nextPos, end: nextPos });
+      }
       onSelectionAnchorChange?.(nextPos.row, nextPos.col);
       const host = document.querySelector(`[data-grid-id="${nextPos.row}-${nextPos.col}"]`) as HTMLElement | null;
       host?.focus();
