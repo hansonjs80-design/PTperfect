@@ -367,19 +367,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
-
-      const query = emptyInputValue.trim();
-      if (!query) {
-        openSelector(e);
-        return;
-      }
-
-      const matchedPreset = findPresetByQuery(query);
-      if (!matchedPreset) return;
-
-      onCommitText(generateTreatmentString(matchedPreset.steps));
-      setEmptyInputValue('');
-      setIsEmptyEditing(false);
+      commitEmptyInputValue();
       requestAnimationFrame(() => cellRef.current?.focus());
       return;
     }
@@ -411,6 +399,21 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }
 
     handleGridKeyDown(e, rowIndex, colIndex, true, emptyInputRef.current);
+  };
+
+  const commitEmptyInputValue = () => {
+    const normalized = emptyInputValue.trim();
+    if (!normalized) {
+      setEmptyInputValue('');
+      setIsEmptyEditing(false);
+      return;
+    }
+
+    const matchedPreset = findPresetByQuery(normalized);
+    const nextValue = matchedPreset ? generateTreatmentString(matchedPreset.steps) : normalized;
+    onCommitText(nextValue);
+    setEmptyInputValue('');
+    setIsEmptyEditing(false);
   };
 
   const commitInlineInputValue = () => {
@@ -812,8 +815,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   }}
                   onKeyDown={handleEmptyInputKeyDown}
                   onBlur={() => {
-                    setIsEmptyEditing(false);
-                    setEmptyInputValue('');
+                    commitEmptyInputValue();
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => e.stopPropagation()}
