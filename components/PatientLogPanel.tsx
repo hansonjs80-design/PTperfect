@@ -280,7 +280,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   ), [dbPatientDirectory, visits]);
 
   const patientNameAutofillMap = useMemo(() => {
-    const grouped = new Map<string, Set<string>>();
+    const grouped = new Map<string, { chartNumbers: Set<string>; gendersByChart: Map<string, Set<string>> }>();
 
     [...dbPatientDirectory, ...visits.map((visit) => ({
       patient_name: (visit.patient_name || '').trim(),
@@ -290,20 +290,24 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       const name = row.patient_name.trim();
       const chart = (row.chart_number || '').trim();
       const gender = ((row.gender || '').trim().toUpperCase() || '');
-      if (!name) return;
+      if (!name || !chart) return;
       const key = name.toLocaleLowerCase();
-      const set = grouped.get(key) || new Set<string>();
-      set.add(JSON.stringify({ chart_number: chart, gender }));
-      grouped.set(key, set);
+      const entry = grouped.get(key) || { chartNumbers: new Set<string>(), gendersByChart: new Map<string, Set<string>>() };
+      entry.chartNumbers.add(chart);
+      const genderSet = entry.gendersByChart.get(chart) || new Set<string>();
+      if (gender) genderSet.add(gender);
+      entry.gendersByChart.set(chart, genderSet);
+      grouped.set(key, entry);
     });
 
     const result: Record<string, { chart_number?: string; gender?: string }> = {};
-    grouped.forEach((records, key) => {
-      if (records.size === 1) {
-        const only = JSON.parse(Array.from(records)[0]) as { chart_number?: string; gender?: string };
+    grouped.forEach((entry, key) => {
+      if (entry.chartNumbers.size === 1) {
+        const onlyChart = Array.from(entry.chartNumbers)[0];
+        const genderSet = entry.gendersByChart.get(onlyChart) || new Set<string>();
         result[key] = {
-          chart_number: only.chart_number || undefined,
-          gender: only.gender || undefined,
+          chart_number: onlyChart || undefined,
+          gender: genderSet.size === 1 ? Array.from(genderSet)[0] || undefined : undefined,
         };
       }
     });
