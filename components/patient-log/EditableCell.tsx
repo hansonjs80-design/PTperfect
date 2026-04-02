@@ -43,6 +43,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const inputRef = useRef<HTMLInputElement>(null);
   const isComposingRef = useRef(false);
   const skipNextBlurCommitRef = useRef(false);
+  const shouldReplaceOnCompositionRef = useRef(false);
 
   const skipSyncRef = useRef(false);
   const navIntentRef = useRef<'down' | 'right' | 'left' | null>(null);
@@ -140,6 +141,13 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
 
   const handleCompositionStart = () => {
     isComposingRef.current = true;
+    if (shouldReplaceOnCompositionRef.current) {
+      shouldReplaceOnCompositionRef.current = false;
+      setLocalValue('');
+      requestAnimationFrame(() => {
+        inputRef.current?.setSelectionRange(0, 0);
+      });
+    }
   };
 
   const handleCompositionEnd = (e: React.CompositionEvent<HTMLInputElement>) => {
@@ -251,11 +259,10 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
         }
         skipSyncRef.current = !syncOnDirectEdit;
         navIntentRef.current = null;
+        shouldReplaceOnCompositionRef.current = isIMEKey;
         flushSync(() => {
           setMode('edit');
-          if (!isIMEKey) {
-            setLocalValue(nextValue);
-          }
+          setLocalValue(nextValue);
         });
 
         requestAnimationFrame(() => {
