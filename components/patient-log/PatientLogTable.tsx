@@ -177,6 +177,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
   const isDraggingRef = useRef(false);
   const skipRowHeaderClickRef = useRef(false);
+  const skipPointerSelectionCommitRef = useRef(false);
 
   // Column resize (desktop & tablet portrait)
   const tableRef = useRef<HTMLTableElement>(null);
@@ -807,6 +808,17 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         lastPointerDownAtRef.current = Date.now();
         const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
         if (rowHeaderPos) {
+          if (e.shiftKey && selection) {
+            const anchorRow = selection.start.row;
+            setSelection({
+              start: { row: anchorRow, col: 0 },
+              end: { row: rowHeaderPos.row, col: 10 },
+            });
+            onSelectionAnchorChange?.(anchorRow, 0);
+            skipPointerSelectionCommitRef.current = true;
+            isDraggingRef.current = false;
+            return;
+          }
           if (e.button === 2) {
             const selectedRows = getSelectedWholeRows();
             if (!selectedRows.includes(rowHeaderPos.row)) {
@@ -830,11 +842,23 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         }
         const pos = parseGridCellId(e.target as HTMLElement);
         if (!pos) return;
+        if (e.shiftKey && selection) {
+          const anchor = selection.start;
+          setSelection({ start: anchor, end: pos });
+          onSelectionAnchorChange?.(anchor.row, anchor.col);
+          skipPointerSelectionCommitRef.current = true;
+          isDraggingRef.current = false;
+          return;
+        }
         setSelection({ start: pos, end: pos });
         onSelectionAnchorChange?.(pos.row, pos.col);
         isDraggingRef.current = true;
       }}
       onClickCapture={(e) => {
+        if (skipPointerSelectionCommitRef.current) {
+          skipPointerSelectionCommitRef.current = false;
+          return;
+        }
         const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
         if (rowHeaderPos) {
           if (skipRowHeaderClickRef.current) {
@@ -851,6 +875,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         onSelectionAnchorChange?.(pos.row, pos.col);
       }}
       onFocusCapture={(e) => {
+        if (skipPointerSelectionCommitRef.current) return;
         const pos = parseGridCellId(e.target as HTMLElement);
         if (!pos) return;
         setSelection({ start: pos, end: pos });
@@ -888,7 +913,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
           <colgroup>
             <col style={{ width: '34px' }} />
             {columnWidths.map((w, i) => {
-              if (!showTimerColumn && i === 8) return null;
+              if (!showTimerColumn && i === 9) return null;
               return (
                 <col key={i} style={{ width: `${w}px` }} />
               );

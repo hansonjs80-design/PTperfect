@@ -6,13 +6,10 @@ const MIN_COL_WIDTH_BY_INDEX: Record<number, number> = {
   9: 82, // 타이머
   6: 70, // 상태
   10: 30, // 작성
-  11: 52, // 삭제
 };
-const MAX_COL_WIDTH_BY_INDEX: Record<number, number> = {
-  11: 52, // 삭제 컬럼은 고정 폭 유지(작성 영역 침범 방지)
-};
+const MAX_COL_WIDTH_BY_INDEX: Record<number, number> = {};
 export const FLEX_COL_INDEX = -1; // 강제 채움 비활성화: 컬럼 리사이즈는 실제 너비를 유지
-const STORAGE_KEY = 'physio-column-widths-v9';
+const STORAGE_KEY = 'physio-column-widths-v10';
 
 const getMinWidthByIndex = (index: number) => {
   if (index === 7 && typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
@@ -128,11 +125,13 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
     if (!tableRef.current) return null;
     const ths = tableRef.current.querySelectorAll('thead th');
     if (ths.length === 0) return null;
-    return Array.from(ths).map((th, index) => {
+    return Array.from(ths)
+      .slice(1)
+      .map((th, index) => {
       const hidden = window.getComputedStyle(th).display === 'none';
       if (hidden) return 0;
       return clampWidthByIndex(th.getBoundingClientRect().width, index);
-    });
+      });
   }, [tableRef]);
 
 
