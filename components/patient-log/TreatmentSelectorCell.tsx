@@ -213,6 +213,8 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (isInlineEditingTarget(e.target)) return;
 
     const pendingCaretIndex = inlineCaretIndexRef.current;
+    const selectedGridHosts = document.querySelectorAll('[data-grid-id][data-grid-selection="true"]');
+    const isMultiCellSelection = selectedGridHosts.length > 1;
 
     if (isEmptyTreatmentCell && !isReadOnly) {
       const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
@@ -269,7 +271,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       return;
     }
 
-    if ((e.key === 'Delete' || e.key === 'Backspace') && !isReadOnly) {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && !isReadOnly && !isMultiCellSelection) {
       e.preventDefault();
       e.stopPropagation();
       if (isBadgeSelected && onDeletePresetBadge) {
