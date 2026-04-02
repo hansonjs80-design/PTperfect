@@ -90,6 +90,10 @@ export const useGridNavigation = (totalCols: number) => {
 
     // Arrow Navigation
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      if (e.shiftKey) {
+        return;
+      }
+
       const isStatusMenuOpen = document.body.dataset.patientStatusMenuOpen === 'true';
       if (isStatusMenuOpen && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
         e.preventDefault();

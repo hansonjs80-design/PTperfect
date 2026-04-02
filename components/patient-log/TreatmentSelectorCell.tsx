@@ -464,6 +464,17 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     });
   };
 
+  const focusInlineSelection = () => {
+    requestAnimationFrame(() => {
+      const input = inlineInputRef.current;
+      if (!input) return;
+      input.focus();
+      const end = input.value.length;
+      inlineCaretIndexRef.current = end;
+      input.setSelectionRange(end, end);
+    });
+  };
+
   const handleCompositionStartCapture = () => {
     if (isReadOnly) return;
 
@@ -531,6 +542,28 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const handleInlineInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isInlineEditing) {
+      if (e.shiftKey && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        return;
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const selectedGridHosts = document.querySelectorAll('[data-grid-id][data-grid-selection="true"]');
+        const isMultiCellSelection = selectedGridHosts.length > 1;
+        if (isMultiCellSelection) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        onDeletePresetBadge?.();
+        setIsBadgeSelected(false);
+        onCommitText('');
+        return;
+      }
+
+      handleGridKeyDown(e, rowIndex, colIndex, false, inlineInputRef.current);
+      return;
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
@@ -619,6 +652,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         onMouseDownCapture={(e) => {
           if (e.button !== 0) return;
           if (isInlineEditingTarget(e.target)) return;
+          if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
+            focusInlineSelection();
+            return;
+          }
           if (!isEmptyTreatmentCell || isReadOnly) {
             cellRef.current?.focus();
           }
@@ -626,10 +663,18 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         onMouseDown={(e) => {
           if (e.button !== 0) return;
           if (isInlineEditingTarget(e.target)) return;
+          if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
+            focusInlineSelection();
+            return;
+          }
           cellRef.current?.focus();
         }}
         onClick={(e) => {
           if (isInlineEditingTarget(e.target)) return;
+          if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
+            focusInlineSelection();
+            return;
+          }
           cellRef.current?.focus();
         }}
         onDoubleClick={openSelector}
@@ -688,13 +733,30 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   </span>
                 )
               ) : preferInlineTextEditing && !isReadOnly ? (
-                isInlineEditing ? (
                 <input
                   ref={inlineInputRef}
                   data-inline-treatment-editing="true"
-                  data-direct-editing="true"
-                  value={inlineInputValue}
-                  onChange={(e) => setInlineInputValue(e.target.value)}
+                  data-direct-editing={isInlineEditing ? 'true' : 'false'}
+                  value={isInlineEditing ? inlineInputValue : value}
+                  onChange={(e) => {
+                    if (!isInlineEditing) {
+                      setIsInlineEditing(true);
+                    }
+                    setInlineInputValue(e.target.value);
+                  }}
+                  onBeforeInput={(e) => {
+                    const nativeEvent = e.nativeEvent as InputEvent;
+                    if (!isInlineEditing && nativeEvent.inputType.startsWith('insert')) {
+                      setInlineInputValue(value);
+                      setIsInlineEditing(true);
+                    }
+                  }}
+                  onCompositionStart={() => {
+                    if (!isInlineEditing) {
+                      setInlineInputValue(value);
+                      setIsInlineEditing(true);
+                    }
+                  }}
                   onKeyDown={handleInlineInputKeyDown}
                   onBlur={commitInlineInputValue}
                   onSelect={() => {
@@ -708,28 +770,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-full bg-transparent outline-none border-none text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 placeholder:text-gray-400"
+                  className={`w-full bg-transparent outline-none border-none text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 placeholder:text-gray-400 ${isInlineEditing ? 'caret-auto cursor-text' : 'caret-transparent cursor-default select-none'}`}
                   placeholder={placeholder}
                 />
-                ) : (
-                  <span
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      startInlineEditing(e.clientX, e.currentTarget);
-                    }}
-                    onTouchEnd={(e) => {
-                      e.stopPropagation();
-                      const touch = e.changedTouches[0];
-                      startInlineEditing(touch?.clientX, e.currentTarget);
-                    }}
-                    className="max-w-full bg-transparent p-0 text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 whitespace-pre-wrap break-all select-none cursor-text"
-                  >
-                    {value || placeholder}
-                  </span>
-                )
               ) : (
                 <TreatmentTextRenderer
                   value={value}
