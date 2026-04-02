@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import { Check, X } from 'lucide-react';
 import { PatientVisit, Preset } from '../../types';
 import { TreatmentTextRenderer } from './TreatmentTextRenderer';
@@ -210,6 +210,8 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (isInlineEditingTarget(e.target)) return;
+
     const pendingCaretIndex = inlineCaretIndexRef.current;
 
     if (isEmptyTreatmentCell && !isReadOnly) {
@@ -218,11 +220,15 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       const isPlainTypingKey = (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) || isIMEKey;
 
       if (isPlainTypingKey) {
-        e.preventDefault();
-        e.stopPropagation();
         const nextValue = isIMEKey ? '' : e.key;
-        setIsEmptyEditing(true);
-        setEmptyInputValue(nextValue);
+        if (!isIMEKey) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        flushSync(() => {
+          setIsEmptyEditing(true);
+          setEmptyInputValue(nextValue);
+        });
         requestAnimationFrame(() => {
           emptyInputRef.current?.focus();
           const end = nextValue.length;
@@ -282,11 +288,11 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const isPlainTypingKey = (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) || isIMEKey;
 
     if (preferInlineTextEditing && !isReadOnly && isPlainTypingKey) {
-      e.preventDefault();
-      e.stopPropagation();
-
       if (isIMEKey) {
-        setIsInlineEditing(true);
+        flushSync(() => {
+          setInlineInputValue(value);
+          setIsInlineEditing(true);
+        });
         requestAnimationFrame(() => {
           inlineInputRef.current?.focus();
           const caretIndex = inlineCaretIndexRef.current ?? (inlineInputRef.current?.value.length ?? 0);
@@ -295,6 +301,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         });
         return;
       }
+
+      e.preventDefault();
+      e.stopPropagation();
 
       if (pendingCaretIndex !== null) {
         const baseValue = isInlineEditing ? inlineInputValue : value;
