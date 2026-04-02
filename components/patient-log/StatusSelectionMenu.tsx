@@ -324,11 +324,6 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       if (e.key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
-        const activeOption = visibleStatusOptions[activeIndex];
-        const isAlreadySelected = activeOption ? activeKeys.has(activeOption.id) : false;
-        if (!isAlreadySelected) {
-          toggleSelection(activeIndex);
-        }
         onClose();
         return;
       }
