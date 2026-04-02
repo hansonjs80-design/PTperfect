@@ -108,6 +108,51 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     }
   };
 
+  const deleteStatusByKey = async (statusKey: string) => {
+    const targetVisitId = targetVisitIdRef.current;
+    const baseSnapshot = pendingSnapshotRef.current || visit || {};
+    const currentCustomStatuses = [...(baseSnapshot.custom_statuses || [])] as PatientCustomStatus[];
+    const nextSnapshot = { ...baseSnapshot } as Partial<PatientVisit>;
+
+    const predefinedOption = normalizedStatusOptions.find((option) => option.id === statusKey && option.kind === 'predefined' && option.key);
+    if (predefinedOption?.key) {
+      nextSnapshot[predefinedOption.key] = false;
+    } else {
+      nextSnapshot.custom_statuses = currentCustomStatuses
+        .filter((status) => status.id !== statusKey)
+        .sort((a, b) => a.order - b.order);
+    }
+
+    const snapshotUpdates = Object.fromEntries(
+      STATUS_KEYS.map((statusKeyItem) => [statusKeyItem, !!nextSnapshot[statusKeyItem]])
+    ) as Partial<PatientVisit> & { custom_statuses?: PatientCustomStatus[] };
+    snapshotUpdates.custom_statuses = [...(nextSnapshot.custom_statuses || [])];
+    const skipSync = disableBedSync || rowStatus !== 'active';
+
+    setMenuVisitSnapshot(nextSnapshot);
+
+    if (targetVisitId) {
+      onUpdate(targetVisitId, snapshotUpdates, skipSync);
+      return;
+    }
+
+    if (isDraft && onCreate) {
+      if (!createPromiseRef.current) {
+        createPromiseRef.current = onCreate(snapshotUpdates);
+      }
+
+      const createdId = await createPromiseRef.current;
+      targetVisitIdRef.current = createdId;
+      createPromiseRef.current = null;
+      onUpdate(createdId, snapshotUpdates, skipSync);
+      return;
+    }
+
+    if (visit) {
+      onUpdate(visit.id, snapshotUpdates, skipSync);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       executeInteraction(e, true);
@@ -117,10 +162,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     if ((e.key === 'Backspace' || e.key === 'Delete') && selectedStatusKey) {
       e.preventDefault();
       e.stopPropagation();
-      const selectedOption = findSelectedStatusOption(selectedStatusKeyRef.current || selectedStatusKey);
-      if (selectedOption) {
-        void toggleStatus(selectedOption);
-      }
+      void deleteStatusByKey(selectedStatusKeyRef.current || selectedStatusKey);
       updateSelectedStatusKey(null);
       return;
     }
@@ -132,10 +174,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     if ((e.key === 'Backspace' || e.key === 'Delete') && selectedStatusKey) {
       e.preventDefault();
       e.stopPropagation();
-      const selectedOption = findSelectedStatusOption(selectedStatusKeyRef.current || selectedStatusKey);
-      if (selectedOption) {
-        void toggleStatus(selectedOption);
-      }
+      void deleteStatusByKey(selectedStatusKeyRef.current || selectedStatusKey);
       updateSelectedStatusKey(null);
     }
   };
@@ -249,11 +288,6 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
   const activeStatusPills = statusPills.filter((item) => item.active);
 
-  const findSelectedStatusOption = (statusKey: string | null) => {
-    if (!statusKey) return null;
-    return normalizedStatusOptions.find((option) => option.id === statusKey) || null;
-  };
-
   const updateSelectedStatusKey = (nextKey: string | null) => {
     selectedStatusKeyRef.current = nextKey;
     setSelectedStatusKey(nextKey);
@@ -278,12 +312,12 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       if (!cellElement) return;
       if (activeElement && activeElement !== cellElement && !cellElement.contains(activeElement)) return;
 
-      const selectedOption = findSelectedStatusOption(selectedStatusKeyRef.current || selectedStatusKey);
-      if (!selectedOption) return;
+      const selectedKey = selectedStatusKeyRef.current || selectedStatusKey;
+      if (!selectedKey) return;
 
       event.preventDefault();
       event.stopPropagation();
-      void toggleStatus(selectedOption);
+      void deleteStatusByKey(selectedKey);
       updateSelectedStatusKey(null);
     };
 
