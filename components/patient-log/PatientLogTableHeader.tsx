@@ -12,7 +12,7 @@ const RESIZABLE_COLUMNS = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 const ALWAYS_VISIBLE_HANDLE_COLUMNS = new Set<number>();
 
 const thBase =
-  'py-3.5 px-1.5 text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 tracking-[0.02em] text-center border-r border-slate-400 dark:border-slate-500 last:border-r-0';
+  'py-3.5 px-1.5 text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 tracking-[0.02em] text-center border-r border-slate-400 dark:border-slate-500';
 
 export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
   onResizeStart,

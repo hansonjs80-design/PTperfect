@@ -320,8 +320,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
   const cellBorderClass = "border-r border-slate-300 dark:border-slate-600";
   const rowHeaderClass = isRowSelected
-    ? 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-200'
-    : 'bg-slate-50 dark:bg-slate-800/70 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700/80';
+    ? 'bg-sky-200 dark:bg-sky-900/45 text-sky-800 dark:text-sky-100'
+    : 'bg-slate-200/90 dark:bg-slate-800/85 text-slate-500 dark:text-slate-400 hover:bg-slate-300/90 dark:hover:bg-slate-700/90';
   const currentPreset = bed?.customPreset || presets.find(p => p.id === bed?.currentPresetId);
   const currentStep = currentPreset?.steps[bed?.currentStepIndex || 0];
   const activeSteps = currentPreset?.steps || [];
@@ -754,7 +754,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         </div>
       </td>
 
-      <td className="p-0 align-middle text-center min-w-[56px] w-[56px] max-w-[56px] xl:w-[68px] xl:max-w-[68px]">
+      <td className="p-0 align-middle text-center min-w-[56px] w-[56px] max-w-[56px] xl:w-[68px] xl:max-w-[68px] border-r border-slate-300 dark:border-slate-600">
         <div className="relative w-full h-full min-h-[32px]">
           <AuthorSelectorCell
             gridId={`${rowIndex}-10`}
