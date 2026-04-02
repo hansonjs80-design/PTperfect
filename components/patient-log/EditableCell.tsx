@@ -104,6 +104,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     if (directEdit) {
       e.stopPropagation();
       e.preventDefault();
+      const clickedCaret = e.currentTarget.selectionStart ?? e.currentTarget.value.length;
       skipSyncRef.current = !syncOnDirectEdit;
       setMode('edit');
       setTimeout(() => {
@@ -111,8 +112,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
         if (!input) return;
 
         input.focus();
-        const end = input.value.length;
-        input.setSelectionRange(end, end);
+        input.setSelectionRange(clickedCaret, clickedCaret);
       }, 0);
       return;
     }
