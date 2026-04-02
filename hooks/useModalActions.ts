@@ -41,6 +41,15 @@ export const useModalActions = (
     return updates;
   }, [selectingBedId]);
 
+  const restoreSelectedGridFocus = useCallback(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const selectedHost = document.querySelector('[data-grid-id][data-grid-selection="true"]') as HTMLElement | null;
+        selectedHost?.focus();
+      });
+    });
+  }, []);
+
   const closeModal = useCallback(() => {
     // 1. Reset UI State immediately
     setSelectingLogId(null);
@@ -53,7 +62,8 @@ export const useModalActions = (
     if (window.history.state?.modalOpen) {
         window.history.back();
     }
-  }, [setSelectingLogId, setSelectingBedId, setSelectingAppendMode]);
+    restoreSelectedGridFocus();
+  }, [restoreSelectedGridFocus, setSelectingLogId, setSelectingBedId, setSelectingAppendMode]);
 
   const handleSelectPreset = useCallback((bedId: number, presetId: string, options: any) => {
     if (selectingLogId) {
