@@ -103,6 +103,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const emptyInputRef = useRef<HTMLInputElement>(null);
   const inlineInputRef = useRef<HTMLInputElement>(null);
   const inlineCaretIndexRef = useRef<number | null>(null);
+  const skipNextEmptyBlurCommitRef = useRef(false);
   const { handleGridKeyDown } = useGridNavigation(11);
   const isInlineEditingTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && !!target.closest('[data-inline-treatment-editing="true"]');
@@ -411,6 +412,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
 
     const matchedPreset = findPresetByQuery(normalized);
     const nextValue = matchedPreset ? generateTreatmentString(matchedPreset.steps) : normalized;
+    skipNextEmptyBlurCommitRef.current = true;
     onCommitText(nextValue);
     setEmptyInputValue('');
     setIsEmptyEditing(false);
@@ -815,6 +817,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   }}
                   onKeyDown={handleEmptyInputKeyDown}
                   onBlur={() => {
+                    if (skipNextEmptyBlurCommitRef.current) {
+                      skipNextEmptyBlurCommitRef.current = false;
+                      setIsEmptyEditing(false);
+                      setEmptyInputValue('');
+                      return;
+                    }
                     commitEmptyInputValue();
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
