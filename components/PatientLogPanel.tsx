@@ -46,6 +46,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [isBedActivationDisabled, setIsBedActivationDisabled] = useLocalStorage<boolean>('patient-log-bed-activation-disabled', true);
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
+  const [dbPatientNameSuggestions, setDbPatientNameSuggestions] = useState<string[]>([]);
 
   const cloneVisits = useCallback((rows: PatientVisit[]) => rows.map((v) => ({ ...v })), []);
 
@@ -237,6 +238,46 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   // Performance Optimization: 
   // Extract status logic to prevent re-rendering on every timer tick.
   const { getRowStatus } = useLogStatusLogic(beds, visits);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPatientNameSuggestions = async () => {
+      if (!isOnlineMode() || !supabase) return;
+
+      const { data, error } = await supabase
+        .from('patient_visits')
+        .select('patient_name, updated_at')
+        .not('patient_name', 'is', null)
+        .order('updated_at', { ascending: false })
+        .limit(1000);
+
+      if (cancelled || error || !data) return;
+
+      const uniqueNames = Array.from(
+        new Set(
+          data
+            .map((row) => (row.patient_name || '').trim())
+            .filter(Boolean)
+        )
+      );
+
+      setDbPatientNameSuggestions(uniqueNames);
+    };
+
+    void loadPatientNameSuggestions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const patientNameSuggestions = useMemo(() => Array.from(
+    new Set([
+      ...visits.map((visit) => (visit.patient_name || '').trim()).filter(Boolean),
+      ...dbPatientNameSuggestions,
+    ])
+  ), [dbPatientNameSuggestions, visits]);
 
 
   const activeBedIdsInLog = useMemo(() => {
@@ -1025,6 +1066,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           visits={visits}
           beds={beds}
           presets={presets}
+          patientNameSuggestions={patientNameSuggestions}
           getRowStatus={getRowStatus}
           onUpdate={trackedUpdateVisitWithBedSync}
           onDelete={handleDeleteVisit}

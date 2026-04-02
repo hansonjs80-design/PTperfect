@@ -18,6 +18,7 @@ interface EditableCellProps {
   rowIndex: number;
   colIndex: number;
   suppressEnterNav?: boolean;
+  suggestionOptions?: string[];
 }
 
 export const EditableCell: React.FC<EditableCellProps> = memo(({
@@ -33,18 +34,57 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   gridId,
   rowIndex,
   colIndex,
-  suppressEnterNav = false
+  suppressEnterNav = false,
+  suggestionOptions = []
 }) => {
   const [mode, setMode] = useState<'view' | 'menu' | 'edit'>('view');
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [localValue, setLocalValue] = useState(value === null ? '' : String(value));
   const inputRef = useRef<HTMLInputElement>(null);
+  const isComposingRef = useRef(false);
 
   const skipSyncRef = useRef(false);
   const navIntentRef = useRef<'down' | 'right' | 'left' | null>(null);
   const isDirectEditing = directEdit && mode === 'edit';
 
   const { handleGridKeyDown } = useGridNavigation(11);
+
+  const normalizeSuggestion = (text: string) => text.trim().toLocaleLowerCase();
+
+  const findSuggestedValue = (rawValue: string) => {
+    const normalized = normalizeSuggestion(rawValue);
+    if (!normalized) return null;
+
+    return suggestionOptions.find((option) => {
+      const trimmed = option.trim();
+      if (!trimmed) return false;
+      if (trimmed === rawValue) return false;
+      return normalizeSuggestion(trimmed).startsWith(normalized);
+    }) || null;
+  };
+
+  const applySuggestionPreview = (rawValue: string, caretPos?: number | null) => {
+    const input = inputRef.current;
+    const suggestion = findSuggestedValue(rawValue);
+
+    if (!input || !suggestion || caretPos === null || caretPos === undefined) {
+      setLocalValue(rawValue);
+      return;
+    }
+
+    if (caretPos < rawValue.length) {
+      setLocalValue(rawValue);
+      return;
+    }
+
+    setLocalValue(suggestion);
+    requestAnimationFrame(() => {
+      const liveInput = inputRef.current;
+      if (!liveInput) return;
+      liveInput.focus();
+      liveInput.setSelectionRange(rawValue.length, suggestion.length);
+    });
+  };
 
   useEffect(() => {
     setLocalValue(value === null ? '' : String(value));
@@ -110,7 +150,26 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalValue(forceUpperCase ? e.target.value.toUpperCase() : e.target.value);
+    const nextValue = forceUpperCase ? e.target.value.toUpperCase() : e.target.value;
+    if (suggestionOptions.length > 0 && !isComposingRef.current) {
+      applySuggestionPreview(nextValue, e.target.selectionStart);
+      return;
+    }
+    setLocalValue(nextValue);
+  };
+
+  const handleCompositionStart = () => {
+    isComposingRef.current = true;
+  };
+
+  const handleCompositionEnd = (e: React.CompositionEvent<HTMLInputElement>) => {
+    isComposingRef.current = false;
+    const nextValue = forceUpperCase ? e.currentTarget.value.toUpperCase() : e.currentTarget.value;
+    if (suggestionOptions.length > 0) {
+      applySuggestionPreview(nextValue, e.currentTarget.selectionStart);
+      return;
+    }
+    setLocalValue(nextValue);
   };
 
   const handleBlur = () => {
@@ -310,6 +369,8 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     onCopy: handleCopy,
     onCut: handleCut,
     onPaste: handlePaste,
+    onCompositionStart: handleCompositionStart,
+    onCompositionEnd: handleCompositionEnd,
     'data-grid-id': gridId,
     placeholder: placeholder,
     'data-direct-editing': isDirectEditing ? 'true' : 'false',

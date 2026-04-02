@@ -47,6 +47,7 @@ interface PatientLogRowProps {
   showTimerColumn?: boolean;
   isBedActivationDisabled?: boolean;
   statusOptions?: StatusOptionConfig[];
+  patientNameSuggestions?: string[];
 }
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
@@ -78,6 +79,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   showTimerColumn = false,
   isBedActivationDisabled = false,
   statusOptions = [],
+  patientNameSuggestions = [],
 }) => {
   const { handleGridKeyDown } = useGridNavigation(11);
   const { activateVisitFromLog, togglePause, updateBedSteps, updateBedDuration, quickTreatments } = useTreatmentContext();
@@ -654,6 +656,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           directEdit={true}
           syncOnDirectEdit={false}
           suppressEnterNav={isDraft}
+          suggestionOptions={patientNameSuggestions}
         />
       </td>
 
