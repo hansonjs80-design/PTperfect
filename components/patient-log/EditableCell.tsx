@@ -328,19 +328,17 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     if (previewSuggestion && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       e.stopPropagation();
-
-      if (e.key === 'ArrowUp') {
-        navIntentRef.current = null;
-        handleGridKeyDown(e, rowIndex, colIndex, true, inputRef.current);
-      } else {
-        navIntentRef.current =
-          e.key === 'ArrowDown'
-            ? 'down'
-            : e.key === 'ArrowLeft'
-              ? 'left'
-              : 'right';
-        inputRef.current?.blur();
+      const input = inputRef.current;
+      if (input) {
+        if (e.key === 'ArrowLeft') {
+          input.setSelectionRange(0, 0);
+        } else {
+          const end = localValue.length;
+          input.setSelectionRange(end, end);
+        }
       }
+      navIntentRef.current = null;
+      handleGridKeyDown(e, rowIndex, colIndex, true, inputRef.current);
       return;
     }
 
