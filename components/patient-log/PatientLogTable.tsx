@@ -179,6 +179,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const skipRowHeaderClickRef = useRef(false);
   const skipPointerSelectionCommitRef = useRef(false);
   const skipFocusSelectionCommitRef = useRef(false);
+  const focusSkipResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Column resize (desktop & tablet portrait)
   const tableRef = useRef<HTMLTableElement>(null);
@@ -348,7 +349,25 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       if (pendingAutoFocusTimerRef.current) {
         clearTimeout(pendingAutoFocusTimerRef.current);
       }
+      if (focusSkipResetTimerRef.current) {
+        clearTimeout(focusSkipResetTimerRef.current);
+      }
     };
+  }, []);
+
+  const focusHostWithoutResettingSelection = useCallback((pos: GridCellPos) => {
+    skipFocusSelectionCommitRef.current = true;
+    if (focusSkipResetTimerRef.current) {
+      clearTimeout(focusSkipResetTimerRef.current);
+    }
+
+    const host = document.querySelector(`[data-grid-id="${pos.row}-${pos.col}"]`) as HTMLElement | null;
+    host?.focus();
+
+    focusSkipResetTimerRef.current = setTimeout(() => {
+      skipFocusSelectionCommitRef.current = false;
+      focusSkipResetTimerRef.current = null;
+    }, 0);
   }, []);
 
   const handleDraftCreate = async (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => {
@@ -685,10 +704,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       setSelection({ start: current, end: nextPos });
     }
     onSelectionAnchorChange?.(nextPos.row, nextPos.col);
-    skipFocusSelectionCommitRef.current = true;
-    const host = document.querySelector(`[data-grid-id="${nextPos.row}-${nextPos.col}"]`) as HTMLElement | null;
-    host?.focus();
-  }, [selection, totalRows, onSelectionAnchorChange]);
+    focusHostWithoutResettingSelection(nextPos);
+  }, [selection, totalRows, onSelectionAnchorChange, focusHostWithoutResettingSelection]);
 
 
 
@@ -750,9 +767,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         setSelection({ start: nextPos, end: nextPos });
       }
       onSelectionAnchorChange?.(nextPos.row, nextPos.col);
-      skipFocusSelectionCommitRef.current = true;
-      const host = document.querySelector(`[data-grid-id="${nextPos.row}-${nextPos.col}"]`) as HTMLElement | null;
-      host?.focus();
+      focusHostWithoutResettingSelection(nextPos);
       return;
     }
 
@@ -950,7 +965,6 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       }}
       onFocusCapture={(e) => {
         if (skipFocusSelectionCommitRef.current) {
-          skipFocusSelectionCommitRef.current = false;
           return;
         }
         if (skipPointerSelectionCommitRef.current) return;
