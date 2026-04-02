@@ -49,6 +49,8 @@ interface PatientLogRowProps {
   statusOptions?: StatusOptionConfig[];
   patientNameSuggestions?: string[];
   patientNameAutofillMap?: Record<string, { chart_number?: string; gender?: string }>;
+  memoSuggestions?: string[];
+  specialNoteSuggestions?: string[];
 }
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
@@ -82,6 +84,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   statusOptions = [],
   patientNameSuggestions = [],
   patientNameAutofillMap = {},
+  memoSuggestions = [],
+  specialNoteSuggestions = [],
 }) => {
   const { handleGridKeyDown } = useGridNavigation(11);
   const { activateVisitFromLog, togglePause, updateBedSteps, updateBedDuration, quickTreatments } = useTreatmentContext();
@@ -788,6 +792,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           directEdit={true}
           syncOnDirectEdit={false}
           suppressEnterNav={isDraft}
+          suggestionOptions={memoSuggestions}
         />
       </td>
 
@@ -804,6 +809,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           directEdit={true}
           syncOnDirectEdit={false}
           suppressEnterNav={isDraft}
+          suggestionOptions={specialNoteSuggestions}
         />
       </td>
 

@@ -46,7 +46,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [isBedActivationDisabled, setIsBedActivationDisabled] = useLocalStorage<boolean>('patient-log-bed-activation-disabled', true);
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
-  const [dbPatientDirectory, setDbPatientDirectory] = useState<Array<{ patient_name: string; chart_number?: string | null; gender?: string | null }>>([]);
+  const [dbPatientDirectory, setDbPatientDirectory] = useState<Array<{ patient_name: string; chart_number?: string | null; gender?: string | null; memo?: string | null; special_note?: string | null }>>([]);
 
   const cloneVisits = useCallback((rows: PatientVisit[]) => rows.map((v) => ({ ...v })), []);
 
@@ -247,7 +247,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
       const { data, error } = await supabase
         .from('patient_visits')
-        .select('patient_name, chart_number, gender, updated_at')
+        .select('patient_name, chart_number, gender, memo, special_note, updated_at')
         .not('patient_name', 'is', null)
         .order('updated_at', { ascending: false })
         .limit(1000);
@@ -260,6 +260,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
             patient_name: (row.patient_name || '').trim(),
             chart_number: (row.chart_number || '').trim(),
             gender: ((row.gender || '').trim().toUpperCase() || undefined),
+            memo: (row.memo || '').trim(),
+            special_note: (row.special_note || '').trim(),
           }))
           .filter((row) => row.patient_name)
       );
@@ -313,6 +315,20 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     });
     return result;
   }, [dbPatientDirectory, visits]);
+
+  const memoSuggestions = useMemo(() => Array.from(
+    new Set([
+      ...visits.map((visit) => (visit.memo || '').trim()).filter(Boolean),
+      ...dbPatientDirectory.map((row) => (row.memo || '').trim()).filter(Boolean),
+    ])
+  ), [dbPatientDirectory, visits]);
+
+  const specialNoteSuggestions = useMemo(() => Array.from(
+    new Set([
+      ...visits.map((visit) => (visit.special_note || '').trim()).filter(Boolean),
+      ...dbPatientDirectory.map((row) => (row.special_note || '').trim()).filter(Boolean),
+    ])
+  ), [dbPatientDirectory, visits]);
 
 
   const activeBedIdsInLog = useMemo(() => {
@@ -1103,6 +1119,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           presets={presets}
           patientNameSuggestions={patientNameSuggestions}
           patientNameAutofillMap={patientNameAutofillMap}
+          memoSuggestions={memoSuggestions}
+          specialNoteSuggestions={specialNoteSuggestions}
           getRowStatus={getRowStatus}
           onUpdate={trackedUpdateVisitWithBedSync}
           onDelete={handleDeleteVisit}
