@@ -568,7 +568,19 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                 />
                 ) : (
                   <span
-                    className="max-w-full bg-transparent p-0 text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 whitespace-pre-wrap break-all select-none"
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startInlineEditing(e.clientX, e.currentTarget);
+                    }}
+                    onTouchEnd={(e) => {
+                      e.stopPropagation();
+                      const touch = e.changedTouches[0];
+                      startInlineEditing(touch?.clientX, e.currentTarget);
+                    }}
+                    className="max-w-full bg-transparent p-0 text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left text-slate-900 dark:text-slate-100 whitespace-pre-wrap break-all select-none cursor-text"
                   >
                     {value || placeholder}
                   </span>
