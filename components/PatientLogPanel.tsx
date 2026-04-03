@@ -48,6 +48,30 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
   const [dbPatientDirectory, setDbPatientDirectory] = useState<Array<{ patient_name: string; chart_number?: string | null; gender?: string | null; memo?: string | null; special_note?: string | null }>>([]);
 
+  const hasMeaningfulVisitContent = useCallback((visit: PatientVisit | undefined) => {
+    if (!visit) return false;
+
+    return Boolean(
+      visit.bed_id !== null ||
+      visit.chart_number?.trim() ||
+      visit.patient_name?.trim() ||
+      visit.gender?.trim() ||
+      visit.body_part?.trim() ||
+      visit.treatment_name?.trim() ||
+      visit.memo?.trim() ||
+      visit.special_note?.trim() ||
+      visit.author?.trim() ||
+      visit.is_injection ||
+      visit.is_fluid ||
+      visit.is_manual ||
+      visit.is_eswt ||
+      visit.is_traction ||
+      visit.is_ion ||
+      visit.is_exercise ||
+      visit.custom_statuses?.length
+    );
+  }, []);
+
   const cloneVisits = useCallback((rows: PatientVisit[]) => rows.map((v) => ({ ...v })), []);
 
   const syncSnapshotToDb = useCallback(async (snapshot: PatientVisit[]) => {
@@ -108,6 +132,31 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     pushUndoSnapshot();
     await deleteVisit(visitId);
   }, [deleteVisit, pushUndoSnapshot]);
+
+  const moveRowsToBottomLocal = useCallback((rows: number[]) => {
+    setVisits((prev) => {
+      const uniqueRows = Array.from(new Set(rows))
+        .filter((row) => row >= 0 && row < prev.length)
+        .sort((a, b) => a - b);
+      if (uniqueRows.length === 0) return prev;
+
+      const selectedSet = new Set(uniqueRows);
+      const selectedVisits = prev.filter((_, index) => selectedSet.has(index));
+      const remainingVisits = prev.filter((_, index) => !selectedSet.has(index));
+      let lastMeaningfulIndex = -1;
+      for (let index = remainingVisits.length - 1; index >= 0; index -= 1) {
+        if (hasMeaningfulVisitContent(remainingVisits[index])) {
+          lastMeaningfulIndex = index;
+          break;
+        }
+      }
+
+      const insertIndex = Math.max(0, lastMeaningfulIndex + 1);
+      const next = [...remainingVisits];
+      next.splice(insertIndex, 0, ...selectedVisits);
+      return next;
+    });
+  }, [hasMeaningfulVisitContent, setVisits]);
 
   const undoLogOnly = useCallback(async () => {
     if (isApplyingUndoRedoRef.current) return;
@@ -1139,6 +1188,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
               setSelectedVisitIdForImport(visits[row].id);
             }
           }}
+          onMoveRowsToBottomLocal={moveRowsToBottomLocal}
           cancelAutoFocusRef={cancelAutoFocusRef}
         />
 

@@ -175,6 +175,7 @@ interface PatientLogTableProps {
   patientNameAutofillMap?: Record<string, { chart_number?: string; gender?: string }>;
   memoSuggestions?: string[];
   specialNoteSuggestions?: string[];
+  onMoveRowsToBottomLocal?: (rows: number[]) => void;
 }
 
 export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
@@ -198,7 +199,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   patientNameSuggestions = [],
   patientNameAutofillMap = {},
   memoSuggestions = [],
-  specialNoteSuggestions = []
+  specialNoteSuggestions = [],
+  onMoveRowsToBottomLocal
 }) => {
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
@@ -349,6 +351,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     }
 
     const bottomRow = Math.max(0, insertIndex);
+    onMoveRowsToBottomLocal?.(uniqueRows);
     setSelection({
       start: { row: bottomRow, col: 0 },
       end: { row: bottomRow + uniqueRows.length - 1, col: 10 },
@@ -364,7 +367,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       if (!visit) return;
       void Promise.resolve(onUpdate(visit.id, { created_at: new Date(timestamps[index]).toISOString() }, true));
     });
-  }, [visits, onUpdate, onSelectionAnchorChange]);
+  }, [visits, onUpdate, onSelectionAnchorChange, onMoveRowsToBottomLocal]);
 
 
   // Expose cancel function to parent so search shortcuts can prevent auto-focus stealing
