@@ -10,6 +10,8 @@ const POLL_INTERVAL = 5000;
 /** DB 쓰기 디바운스 (ms) */
 const DB_WRITE_DEBOUNCE = 300;
 const RETRYABLE_OPTIONAL_COLUMNS = ['special_note', 'is_injection_completed', 'is_ion', 'is_exercise', 'gender', 'chart_number', 'custom_statuses'] as const;
+const VISIT_CACHE_VERSION = 'v2';
+const VISIT_CACHE_PREFIX = `physio-visits-${VISIT_CACHE_VERSION}-`;
 
 // Helper to get Local Date String (YYYY-MM-DD)
 const getLocalDateString = () => {
@@ -30,7 +32,20 @@ export const usePatientLog = () => {
   const dbWriteTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const pendingUpdates = useRef<Map<string, Partial<PatientVisit>>>(new Map());
 
-  const getStorageKey = (date: string) => `physio-visits-${date}`;
+  const getStorageKey = (date: string) => `${VISIT_CACHE_PREFIX}${date}`;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      Object.keys(window.localStorage).forEach((key) => {
+        if (key.startsWith('physio-visits-') && !key.startsWith(VISIT_CACHE_PREFIX)) {
+          window.localStorage.removeItem(key);
+        }
+      });
+    } catch (error) {
+      console.warn('Failed to clean old patient log caches', error);
+    }
+  }, []);
 
   const saveToLocalCache = (date: string, data: PatientVisit[]) => {
     try {

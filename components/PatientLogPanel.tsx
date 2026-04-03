@@ -12,6 +12,8 @@ import { findExactPresetByTreatmentString, generateTreatmentString, parseTreatme
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, STATUS_OPTIONS_STORAGE_KEY, type StatusOptionConfig } from './patient-log/StatusSelectionMenu';
 
+const VISIT_CACHE_PREFIX = 'physio-visits-v2-';
+
 const PrintPreviewModal = React.lazy(() => import('./modals/PrintPreviewModal').then(module => ({ default: module.PrintPreviewModal })));
 
 interface PatientLogPanelProps {
@@ -580,7 +582,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         return;
       }
 
-      const keys = Object.keys(window.localStorage).filter((k) => k.startsWith('physio-visits-') && k !== `physio-visits-${currentDate}`);
+      const keys = Object.keys(window.localStorage).filter((k) => k.startsWith(VISIT_CACHE_PREFIX) && k !== `${VISIT_CACHE_PREFIX}${currentDate}`);
       const merged: PatientVisit[] = [];
       keys.forEach((k) => {
         try {
