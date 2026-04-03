@@ -1025,6 +1025,23 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     });
   }, [selection, visits.length, totalRows]);
 
+  useEffect(() => {
+    const handleForceSelection = (event: Event) => {
+      const customEvent = event as CustomEvent<{ row?: number; col?: number }>;
+      const row = customEvent.detail?.row;
+      const col = customEvent.detail?.col;
+      if (typeof row !== 'number' || typeof col !== 'number') return;
+
+      setSelection({ start: { row, col }, end: { row, col } });
+      onSelectionAnchorChange?.(row, col);
+    };
+
+    window.addEventListener('patient-log-force-selection', handleForceSelection as EventListener);
+    return () => {
+      window.removeEventListener('patient-log-force-selection', handleForceSelection as EventListener);
+    };
+  }, [onSelectionAnchorChange]);
+
   return (
     <div
       className="flex-1 overflow-y-auto overflow-x-auto log-scrollbar bg-slate-50/60 dark:bg-slate-900"
