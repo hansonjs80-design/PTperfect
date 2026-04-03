@@ -254,18 +254,30 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     return updates;
   };
 
+  const findPresetByLeadingToken = (treatmentText: string) => {
+    const normalized = treatmentText.trim().toLowerCase();
+    if (!normalized) return null;
+
+    const leadingToken = normalized.match(/^[^(\[/\/,+\-\s]+/)?.[0] || normalized;
+    return presets.find((preset) => {
+      const presetName = preset.name.trim().toLowerCase();
+      return presetName.startsWith(leadingToken);
+    }) || null;
+  };
+
   const handleTreatmentTextCommit = async (val: string) => {
     const normalizedTreatment = val.trim();
     const matchedPreset = normalizedTreatment
-      ? (findExactPresetByTreatmentString(presets, normalizedTreatment, quickTreatments) || null)
+      ? (findExactPresetByTreatmentString(presets, normalizedTreatment, quickTreatments) || findPresetByLeadingToken(normalizedTreatment) || null)
       : null;
+    const committedTreatment = matchedPreset ? generateTreatmentString(matchedPreset.steps) : normalizedTreatment;
     const fallbackPresetBadge = latestDisplayedPresetBadgeRef.current ?? stickyPresetBadgeRef.current;
-    const statusUpdates = buildStatusUpdatesFromTreatment(normalizedTreatment);
+    const statusUpdates = buildStatusUpdatesFromTreatment(committedTreatment);
 
-    setOptimisticTreatmentName(val);
-    setStickyTreatmentName(normalizedTreatment);
+    setOptimisticTreatmentName(committedTreatment);
+    setStickyTreatmentName(committedTreatment);
 
-    if (normalizedTreatment) {
+    if (committedTreatment) {
       setDetachedBadgeValue(null);
     }
 
@@ -273,10 +285,10 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       stickyPresetBadgeRef.current = matchedPreset;
       if (visit?.id) persistedPresetBadgeByVisitId.set(visit.id, matchedPreset);
       setRenamedBadgeOverride(null);
-    } else if (normalizedTreatment && fallbackPresetBadge) {
+    } else if (committedTreatment && fallbackPresetBadge) {
       stickyPresetBadgeRef.current = fallbackPresetBadge;
       if (visit?.id) persistedPresetBadgeByVisitId.set(visit.id, fallbackPresetBadge);
-    } else if (!normalizedTreatment) {
+    } else if (!committedTreatment) {
       stickyPresetBadgeRef.current = null;
       latestDisplayedPresetBadgeRef.current = null;
       if (visit?.id) persistedPresetBadgeByVisitId.delete(visit.id);
@@ -285,17 +297,17 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (isDraft && onCreate) {
-      await onCreate({ treatment_name: val, ...statusUpdates }, 3);
+      await onCreate({ treatment_name: committedTreatment, ...statusUpdates }, 3);
       return;
     }
 
     if (!isDraft && visit && onUpdate) {
       const isAssignmentMode = !!visit.bed_id && (!visit.treatment_name || visit.treatment_name.trim() === '');
       const shouldSyncActiveBed = !isBedActivationDisabled && rowStatus === 'active' && !!visit.bed_id;
-      await Promise.resolve(onUpdate(visit.id, { treatment_name: normalizedTreatment, ...statusUpdates }, !(isAssignmentMode || shouldSyncActiveBed)));
+      await Promise.resolve(onUpdate(visit.id, { treatment_name: committedTreatment, ...statusUpdates }, !(isAssignmentMode || shouldSyncActiveBed)));
 
       // 활성 행 처방을 명시적으로 지우면 배드 카드/행도 즉시 비활성화한다.
-      if (!isBedActivationDisabled && normalizedTreatment === '' && rowStatus === 'active' && visit.bed_id) {
+      if (!isBedActivationDisabled && committedTreatment === '' && rowStatus === 'active' && visit.bed_id) {
         onClearBed?.();
       }
     }
