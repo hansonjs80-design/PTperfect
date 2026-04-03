@@ -108,6 +108,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const suppressInlineInteractionUntilRef = useRef(0);
   const inlineEnterStageRef = useRef(false);
   const suppressNextInlineSelectionFocusRef = useRef(false);
+  const autoPresetAppliedAtRef = useRef(0);
   const { handleGridKeyDown } = useGridNavigation(11);
   const isInlineEditingTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && !!target.closest('[data-inline-treatment-editing="true"]');
@@ -166,6 +167,8 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
 
     return presets.find((preset) => preset.name.trim().toLowerCase().includes(leadingToken)) || null;
   };
+
+  const shouldAutoApplyPresetFromText = (text: string) => /[(/)]/.test(text);
 
 
   const handleMouseEnter = () => {
@@ -449,6 +452,46 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     inlineCaretIndexRef.current = null;
     setIsInlineEditing(false);
   };
+
+  useEffect(() => {
+    if (!isEmptyEditing) return;
+    if (!shouldAutoApplyPresetFromText(emptyInputValue)) return;
+
+    const matchedPreset = findPresetByQuery(emptyInputValue);
+    if (!matchedPreset) return;
+
+    const nextValue = generateTreatmentString(matchedPreset.steps);
+    autoPresetAppliedAtRef.current = Date.now();
+    skipNextEmptyBlurCommitRef.current = true;
+    suppressNextSelectorOpenRef.current = true;
+    onCommitText(nextValue);
+    setEmptyInputValue('');
+    setIsEmptyEditing(false);
+    requestAnimationFrame(() => {
+      cellRef.current?.focus();
+    });
+  }, [emptyInputValue, isEmptyEditing]);
+
+  useEffect(() => {
+    if (!isInlineEditing) return;
+    if (!shouldAutoApplyPresetFromText(inlineInputValue)) return;
+
+    const matchedPreset = findPresetByQuery(inlineInputValue);
+    if (!matchedPreset) return;
+
+    const nextValue = generateTreatmentString(matchedPreset.steps);
+    autoPresetAppliedAtRef.current = Date.now();
+    suppressNextSelectorOpenRef.current = true;
+    onCommitText(nextValue);
+    inlineEnterStageRef.current = false;
+    inlineCaretIndexRef.current = null;
+    setInlineInputValue(nextValue);
+    setIsInlineEditing(false);
+    suppressNextInlineSelectionFocusRef.current = true;
+    requestAnimationFrame(() => {
+      cellRef.current?.focus();
+    });
+  }, [inlineInputValue, isInlineEditing]);
 
   const finalizeInlineEditing = () => {
     commitInlineInputValue();
