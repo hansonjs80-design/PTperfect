@@ -129,6 +129,30 @@ const findVisibleGridPos = (current: GridCellPos, direction: 'up' | 'down' | 'le
   return null;
 };
 
+const hasMeaningfulVisitContent = (visit: PatientVisit | undefined) => {
+  if (!visit) return false;
+
+  return Boolean(
+    visit.bed_id !== null ||
+    visit.chart_number?.trim() ||
+    visit.patient_name?.trim() ||
+    visit.gender?.trim() ||
+    visit.body_part?.trim() ||
+    visit.treatment_name?.trim() ||
+    visit.memo?.trim() ||
+    visit.special_note?.trim() ||
+    visit.author?.trim() ||
+    visit.is_injection ||
+    visit.is_fluid ||
+    visit.is_manual ||
+    visit.is_eswt ||
+    visit.is_traction ||
+    visit.is_ion ||
+    visit.is_exercise ||
+    visit.custom_statuses?.length
+  );
+};
+
 interface PatientLogTableProps {
   visits: PatientVisit[];
   beds: BedState[];
@@ -290,28 +314,55 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     closeRowHeaderMenu();
   }, [visits, onDelete, onSelectionAnchorChange, closeRowHeaderMenu]);
 
-  const handleMoveRowsToBottom = useCallback(async (rows: number[]) => {
+  const handleMoveRowsToBottom = useCallback((rows: number[]) => {
     const uniqueRows = Array.from(new Set(rows))
       .filter((row) => row >= 0 && row < visits.length)
       .sort((a, b) => a - b);
     if (uniqueRows.length === 0) return;
 
-    const baseTime = Date.now();
-    await Promise.all(uniqueRows.map((row, index) => {
-      const visit = visits[row];
-      if (!visit) return Promise.resolve();
-      return Promise.resolve(onUpdate(visit.id, { created_at: new Date(baseTime + index).toISOString() }, true));
-    }));
+    const selectedRowSet = new Set(uniqueRows);
+    const remainingVisits = visits.filter((_, index) => !selectedRowSet.has(index));
+    const lastMeaningfulIndex = (() => {
+      for (let index = remainingVisits.length - 1; index >= 0; index -= 1) {
+        if (hasMeaningfulVisitContent(remainingVisits[index])) return index;
+      }
+      return -1;
+    })();
+    const insertIndex = Math.max(0, lastMeaningfulIndex + 1);
+    const prevVisit = remainingVisits[insertIndex - 1];
+    const nextVisit = remainingVisits[insertIndex];
+    const prevTime = prevVisit?.created_at ? new Date(prevVisit.created_at).getTime() : null;
+    const nextTime = nextVisit?.created_at ? new Date(nextVisit.created_at).getTime() : null;
 
-    const bottomRow = Math.max(0, visits.length - uniqueRows.length);
+    let timestamps: number[];
+    if (prevTime !== null && nextTime !== null && nextTime - prevTime > uniqueRows.length) {
+      timestamps = uniqueRows.map((_, index) => prevTime + index + 1);
+    } else if (prevTime !== null && nextTime !== null) {
+      timestamps = uniqueRows.map((_, index) => nextTime - uniqueRows.length + index);
+    } else if (prevTime !== null) {
+      timestamps = uniqueRows.map((_, index) => prevTime + index + 1);
+    } else if (nextTime !== null) {
+      timestamps = uniqueRows.map((_, index) => nextTime - uniqueRows.length + index);
+    } else {
+      const baseTime = Date.now();
+      timestamps = uniqueRows.map((_, index) => baseTime + index);
+    }
+
+    const bottomRow = Math.max(0, insertIndex);
     setSelection({
       start: { row: bottomRow, col: 0 },
-      end: { row: visits.length - 1, col: 10 },
+      end: { row: bottomRow + uniqueRows.length - 1, col: 10 },
     });
     onSelectionAnchorChange?.(bottomRow, 0);
     requestAnimationFrame(() => {
-      const host = document.querySelector(`[data-grid-id="${visits.length - 1}-0"]`) as HTMLElement | null;
+      const host = document.querySelector(`[data-grid-id="${bottomRow}-0"]`) as HTMLElement | null;
       host?.focus();
+    });
+
+    uniqueRows.forEach((row, index) => {
+      const visit = visits[row];
+      if (!visit) return;
+      void Promise.resolve(onUpdate(visit.id, { created_at: new Date(timestamps[index]).toISOString() }, true));
     });
   }, [visits, onUpdate, onSelectionAnchorChange]);
 
