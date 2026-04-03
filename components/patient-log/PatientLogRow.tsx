@@ -49,6 +49,7 @@ interface PatientLogRowProps {
   statusOptions?: StatusOptionConfig[];
   patientNameSuggestions?: string[];
   patientNameAutofillMap?: Record<string, { chart_number?: string; gender?: string }>;
+  bodyPartSuggestions?: string[];
   memoSuggestions?: string[];
   specialNoteSuggestions?: string[];
 }
@@ -84,6 +85,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   statusOptions = [],
   patientNameSuggestions = [],
   patientNameAutofillMap = {},
+  bodyPartSuggestions = [],
   memoSuggestions = [],
   specialNoteSuggestions = [],
 }) => {
@@ -681,6 +683,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           directEdit={true}
           syncOnDirectEdit={false}
           suppressEnterNav={isDraft}
+          suggestionOptions={bodyPartSuggestions}
         />
       </td>
 
