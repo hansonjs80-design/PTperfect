@@ -157,10 +157,14 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const normalized = query.trim().toLowerCase();
     if (!normalized) return null;
 
-    const startsWithMatch = presets.find((preset) => preset.name.trim().toLowerCase().startsWith(normalized));
+    const leadingToken = normalized.match(/^[^(\[/\/,+\-\s]+/)?.[0] || normalized;
+    const startsWithMatch = presets.find((preset) => preset.name.trim().toLowerCase().startsWith(leadingToken));
     if (startsWithMatch) return startsWithMatch;
 
-    return presets.find((preset) => preset.name.trim().toLowerCase().includes(normalized)) || null;
+    const directStartsWithMatch = presets.find((preset) => preset.name.trim().toLowerCase().startsWith(normalized));
+    if (directStartsWithMatch) return directStartsWithMatch;
+
+    return presets.find((preset) => preset.name.trim().toLowerCase().includes(leadingToken)) || null;
   };
 
 
