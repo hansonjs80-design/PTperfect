@@ -565,6 +565,11 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     // 사용자가 우클릭으로 배지 이름을 명시적으로 변경한 경우 최우선 적용
     if (renamedBadgeOverride) return renamedBadgeOverride;
 
+    // 처방 문자열이 같은 다른 세트가 있어도, 사용자가 마지막으로 선택한 세트 배지를 우선 유지한다.
+    if (normalized && stickyPresetBadgeRef.current) {
+      return stickyPresetBadgeRef.current;
+    }
+
     const presetMatchedFromDisplay = normalized
       ? (findExactPresetByTreatmentString(presets, normalized, quickTreatments) || null)
       : null;
@@ -572,11 +577,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     if (rowStatus === 'active') {
       // 세트 처방이 변경되면(특히 플레이 직후 동기화 지연 구간) 문자열 기준 세트명을 우선 반영한다.
       if (presetMatchedFromDisplay) return presetMatchedFromDisplay;
-
-      // 사용자가 세트 처방 문자열을 일부 수정한 경우에도 마지막 세트 배지는 유지한다.
-      if (normalized && stickyPresetBadgeRef.current) {
-        return stickyPresetBadgeRef.current;
-      }
 
       if (currentPreset) {
         if (isActivePresetModified && activeBasePreset) {
@@ -589,12 +589,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
         }
         return currentPreset;
       }
-    }
-
-    // 비활성/완료 행에서는 처방이 수정·삭제되어도 마지막 세트 배지를 유지한다.
-    // 다른 세트 처방 문자열로 정확히 바뀐 경우에만 새 세트명으로 교체한다.
-    if (!presetMatchedFromDisplay && stickyPresetBadgeRef.current) {
-      return stickyPresetBadgeRef.current;
     }
 
     return presetMatchedFromDisplay;
