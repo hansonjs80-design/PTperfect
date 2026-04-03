@@ -290,6 +290,31 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     closeRowHeaderMenu();
   }, [visits, onDelete, onSelectionAnchorChange, closeRowHeaderMenu]);
 
+  const handleMoveRowsToBottom = useCallback(async (rows: number[]) => {
+    const uniqueRows = Array.from(new Set(rows))
+      .filter((row) => row >= 0 && row < visits.length)
+      .sort((a, b) => a - b);
+    if (uniqueRows.length === 0) return;
+
+    const baseTime = Date.now();
+    await Promise.all(uniqueRows.map((row, index) => {
+      const visit = visits[row];
+      if (!visit) return Promise.resolve();
+      return Promise.resolve(onUpdate(visit.id, { created_at: new Date(baseTime + index).toISOString() }, true));
+    }));
+
+    const bottomRow = Math.max(0, visits.length - uniqueRows.length);
+    setSelection({
+      start: { row: bottomRow, col: 0 },
+      end: { row: visits.length - 1, col: 10 },
+    });
+    onSelectionAnchorChange?.(bottomRow, 0);
+    requestAnimationFrame(() => {
+      const host = document.querySelector(`[data-grid-id="${visits.length - 1}-0"]`) as HTMLElement | null;
+      host?.focus();
+    });
+  }, [visits, onUpdate, onSelectionAnchorChange]);
+
 
   // Expose cancel function to parent so search shortcuts can prevent auto-focus stealing
   useEffect(() => {
@@ -741,6 +766,13 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       return;
     }
 
+    const selectedWholeRows = getSelectedWholeRows();
+    if (isShortcut && e.key === 'ArrowDown' && selectedWholeRows.length > 0) {
+      e.preventDefault();
+      void handleMoveRowsToBottom(selectedWholeRows);
+      return;
+    }
+
     const bounds = normalizeSelectionBounds(selection);
     const anchor = bounds ? { row: bounds.rowMin, col: bounds.colMin } : null;
     const isStatusMenuOpen = document.body.dataset.patientStatusMenuOpen === 'true';
@@ -821,7 +853,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
     e.preventDefault();
     clearSelectionContents();
-  }, [selection, totalRows, onSelectionAnchorChange, handleGridClipboardCopy, handleGridPaste, clearSelectionContents]);
+  }, [selection, totalRows, onSelectionAnchorChange, handleGridClipboardCopy, handleGridPaste, clearSelectionContents, getSelectedWholeRows, handleMoveRowsToBottom]);
 
   useEffect(() => {
     const handleWindowDelete = (event: KeyboardEvent) => {
