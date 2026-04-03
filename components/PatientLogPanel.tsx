@@ -135,6 +135,39 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     await deleteVisit(visitId);
   }, [deleteVisit, pushUndoSnapshot]);
 
+  const trackedBulkUpdateVisitWithBedSync = useCallback((patches: Array<{ id: string; updates: Partial<PatientVisit>; skipBedSync?: boolean; clearBedId?: number | null }>) => {
+    if (patches.length === 0) return;
+
+    pushUndoSnapshot();
+
+    const mergedPatches = new Map<string, { updates: Partial<PatientVisit>; skipBedSync: boolean; clearBedId?: number | null }>();
+    patches.forEach((patch) => {
+      const existing = mergedPatches.get(patch.id);
+      mergedPatches.set(patch.id, {
+        updates: { ...(existing?.updates || {}), ...patch.updates },
+        skipBedSync: (existing?.skipBedSync ?? true) && (patch.skipBedSync ?? true),
+        clearBedId: patch.clearBedId ?? existing?.clearBedId ?? null,
+      });
+    });
+
+    setVisits((prev) => prev.map((visit) => {
+      const patch = mergedPatches.get(visit.id);
+      return patch ? { ...visit, ...patch.updates } : visit;
+    }));
+
+    mergedPatches.forEach((patch, id) => {
+      if (typeof patch.updates.treatment_name === 'string' && patch.updates.treatment_name === '') {
+        window.dispatchEvent(new CustomEvent('patient-log-clear-treatment-display', {
+          detail: { visitId: id },
+        }));
+      }
+      void updateVisitWithBedSync(id, patch.updates, patch.skipBedSync);
+      if (patch.clearBedId) {
+        clearBed(patch.clearBedId);
+      }
+    });
+  }, [pushUndoSnapshot, setVisits, updateVisitWithBedSync, clearBed]);
+
   const moveRowsToBottomLocal = useCallback((rows: number[]) => {
     setVisits((prev) => {
       const uniqueRows = Array.from(new Set(rows))
@@ -1191,6 +1224,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
             }
           }}
           onMoveRowsToBottomLocal={moveRowsToBottomLocal}
+          onBulkUpdate={trackedBulkUpdateVisitWithBedSync}
           cancelAutoFocusRef={cancelAutoFocusRef}
         />
 

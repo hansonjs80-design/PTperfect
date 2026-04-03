@@ -176,6 +176,7 @@ interface PatientLogTableProps {
   memoSuggestions?: string[];
   specialNoteSuggestions?: string[];
   onMoveRowsToBottomLocal?: (rows: number[]) => void;
+  onBulkUpdate?: (patches: Array<{ id: string; updates: Partial<PatientVisit>; skipBedSync?: boolean; clearBedId?: number | null }>) => void;
 }
 
 export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
@@ -200,7 +201,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   patientNameAutofillMap = {},
   memoSuggestions = [],
   specialNoteSuggestions = [],
-  onMoveRowsToBottomLocal
+  onMoveRowsToBottomLocal,
+  onBulkUpdate
 }) => {
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
@@ -514,76 +516,74 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     return trimmed;
   }, [presets]);
 
-  const setVisitCellText = useCallback((visit: PatientVisit, col: number, text: string) => {
+  const buildVisitCellPatch = useCallback((visit: PatientVisit, col: number, text: string) => {
     switch (col) {
       case 0: {
         const trimmed = text.trim();
         if (!trimmed) {
-          onUpdate(visit.id, { bed_id: null }, isBedActivationDisabled);
-          return;
+          return { id: visit.id, updates: { bed_id: null }, skipBedSync: isBedActivationDisabled, clearBedId: null };
         }
         const parsed = Number(trimmed);
-        if (!Number.isInteger(parsed) || parsed < 1 || parsed > 11) return;
-        onUpdate(visit.id, { bed_id: parsed }, isBedActivationDisabled);
-        return;
+        if (!Number.isInteger(parsed) || parsed < 1 || parsed > 11) return null;
+        return { id: visit.id, updates: { bed_id: parsed }, skipBedSync: isBedActivationDisabled, clearBedId: null };
       }
       case 1:
-        onUpdate(visit.id, { chart_number: text }, true);
-        return;
+        return { id: visit.id, updates: { chart_number: text }, skipBedSync: true, clearBedId: null };
       case 2:
-        onUpdate(visit.id, { patient_name: text }, true);
-        return;
+        return { id: visit.id, updates: { patient_name: text }, skipBedSync: true, clearBedId: null };
       case 3:
-        onUpdate(visit.id, { gender: text.toUpperCase().slice(0, 1) }, true);
-        return;
+        return { id: visit.id, updates: { gender: text.toUpperCase().slice(0, 1) }, skipBedSync: true, clearBedId: null };
       case 4:
-        onUpdate(visit.id, { body_part: text }, true);
-        return;
+        return { id: visit.id, updates: { body_part: text }, skipBedSync: true, clearBedId: null };
       case 5: {
-        // 활성 행의 처방 변경(붙여넣기 포함)은 배드카드에도 즉시 반영
-        // 단, 세트 배지명이 함께 들어와도 처방 목록 문자열만 반영한다.
         const normalizedTreatment = normalizeTreatmentPasteText(text);
-        if (normalizedTreatment === '') {
-          window.dispatchEvent(new CustomEvent('patient-log-clear-treatment-display', {
-            detail: { visitId: visit.id },
-          }));
-        }
         const isActiveRow = getRowStatus(visit.id, visit.bed_id) === 'active';
         const shouldSkipBedSync = isBedActivationDisabled || !isActiveRow || !visit.bed_id;
-
-        onUpdate(visit.id, { treatment_name: normalizedTreatment }, shouldSkipBedSync);
-
-        // 활성 행 처방을 비우면 배드 카드/행도 즉시 비활성화한다.
-        if (!isBedActivationDisabled && normalizedTreatment === '' && isActiveRow && visit.bed_id) {
-          onClearBed?.(visit.bed_id);
-        }
-        return;
+        return {
+          id: visit.id,
+          updates: { treatment_name: normalizedTreatment },
+          skipBedSync: shouldSkipBedSync,
+          clearBedId: !isBedActivationDisabled && normalizedTreatment === '' && isActiveRow && visit.bed_id ? visit.bed_id : null,
+        };
       }
       case 7:
-        onUpdate(visit.id, { memo: text }, true);
-        return;
+        return { id: visit.id, updates: { memo: text }, skipBedSync: true, clearBedId: null };
       case 6: {
         const nextFlags = parseStatusText(text, normalizedStatusOptions);
         const shouldSkipBedSync = isBedActivationDisabled || getRowStatus(visit.id, visit.bed_id) !== 'active';
-        onUpdate(visit.id, nextFlags, shouldSkipBedSync);
-        return;
+        return { id: visit.id, updates: nextFlags, skipBedSync: shouldSkipBedSync, clearBedId: null };
       }
       case 8:
-        onUpdate(visit.id, { special_note: text }, true);
-        return;
+        return { id: visit.id, updates: { special_note: text }, skipBedSync: true, clearBedId: null };
       case 10:
-        onUpdate(visit.id, { author: normalizeUpperEnglishKeyInput(text).slice(0, 4) }, true);
-        return;
+        return { id: visit.id, updates: { author: normalizeUpperEnglishKeyInput(text).slice(0, 4) }, skipBedSync: true, clearBedId: null };
       default:
-        return;
+        return null;
     }
-  }, [onUpdate, getRowStatus, normalizeTreatmentPasteText, onClearBed, isBedActivationDisabled, normalizedStatusOptions]);
+  }, [getRowStatus, normalizeTreatmentPasteText, isBedActivationDisabled, normalizedStatusOptions]);
+
+  const setVisitCellText = useCallback((visit: PatientVisit, col: number, text: string) => {
+    const patch = buildVisitCellPatch(visit, col, text);
+    if (!patch) return;
+
+    if (typeof patch.updates.treatment_name === 'string' && patch.updates.treatment_name === '') {
+      window.dispatchEvent(new CustomEvent('patient-log-clear-treatment-display', {
+        detail: { visitId: visit.id },
+      }));
+    }
+
+    onUpdate(patch.id, patch.updates, patch.skipBedSync);
+    if (patch.clearBedId) {
+      onClearBed?.(patch.clearBedId);
+    }
+  }, [buildVisitCellPatch, onUpdate, onClearBed]);
 
   const handleGridClipboardCopy = useCallback((shouldCut: boolean) => {
     const bounds = normalizeSelectionBounds(selection);
     if (!bounds) return '';
 
     const rows: string[] = [];
+    const cutPatches: Array<{ id: string; updates: Partial<PatientVisit>; skipBedSync?: boolean; clearBedId?: number | null }> = [];
     for (let row = bounds.rowMin; row <= bounds.rowMax; row++) {
       const visit = visits[row];
       const cols: string[] = [];
@@ -597,14 +597,31 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         cols.push(val);
 
         if (shouldCut) {
-          setVisitCellText(visit, col, '');
+          const patch = buildVisitCellPatch(visit, col, '');
+          if (patch) cutPatches.push(patch);
         }
       }
       rows.push(cols.join('\t'));
     }
 
+    if (shouldCut && cutPatches.length > 0) {
+      if (onBulkUpdate) {
+        onBulkUpdate(cutPatches);
+      } else {
+        cutPatches.forEach((patch) => {
+          if (typeof patch.updates.treatment_name === 'string' && patch.updates.treatment_name === '') {
+            window.dispatchEvent(new CustomEvent('patient-log-clear-treatment-display', {
+              detail: { visitId: patch.id },
+            }));
+          }
+          onUpdate(patch.id, patch.updates, patch.skipBedSync);
+          if (patch.clearBedId) onClearBed?.(patch.clearBedId);
+        });
+      }
+    }
+
     return rows.join('\n');
-  }, [selection, visits, getVisitCellText, setVisitCellText]);
+  }, [selection, visits, getVisitCellText, buildVisitCellPatch, onBulkUpdate, onUpdate, onClearBed]);
 
   const buildDraftUpdatesForPasteRow = useCallback((line: string[], anchorCol: number) => {
     const updates: Partial<PatientVisit> = {};
@@ -668,6 +685,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     const parsedRows = raw.replace(/\r/g, '').split('\n').filter((line) => line.length > 0).map((line) => line.split('\t'));
     if (parsedRows.length === 0) return;
 
+    const pendingPatches: Array<{ id: string; updates: Partial<PatientVisit>; skipBedSync?: boolean; clearBedId?: number | null }> = [];
+
     for (const [rIdx, line] of parsedRows.entries()) {
       const row = anchor.row + rIdx;
       const visit = visits[row];
@@ -684,10 +703,27 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       line.forEach((cellText, cIdx) => {
         const col = anchor.col + cIdx;
         if (!SELECTABLE_COLS.has(col)) return;
-        setVisitCellText(visit, col, cellText);
+        const patch = buildVisitCellPatch(visit, col, cellText);
+        if (patch) pendingPatches.push(patch);
       });
     }
-  }, [selection, visits, setVisitCellText, buildDraftUpdatesForPasteRow, onCreate]);
+
+    if (pendingPatches.length > 0) {
+      if (onBulkUpdate) {
+        onBulkUpdate(pendingPatches);
+      } else {
+        pendingPatches.forEach((patch) => {
+          if (typeof patch.updates.treatment_name === 'string' && patch.updates.treatment_name === '') {
+            window.dispatchEvent(new CustomEvent('patient-log-clear-treatment-display', {
+              detail: { visitId: patch.id },
+            }));
+          }
+          onUpdate(patch.id, patch.updates, patch.skipBedSync);
+          if (patch.clearBedId) onClearBed?.(patch.clearBedId);
+        });
+      }
+    }
+  }, [selection, visits, buildVisitCellPatch, buildDraftUpdatesForPasteRow, onCreate, onBulkUpdate, onUpdate, onClearBed]);
 
 
   const isActiveInputEditing = (input: HTMLInputElement | null) => {
@@ -715,17 +751,28 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       return a - b;
     });
 
+    const clearPatches: Array<{ id: string; updates: Partial<PatientVisit>; skipBedSync?: boolean; clearBedId?: number | null }> = [];
     for (let row = bounds.rowMin; row <= bounds.rowMax; row++) {
       const visit = visits[row];
       if (!visit) continue;
 
       for (const col of selectedCols) {
-        setVisitCellText(visit, col, '');
+        const patch = buildVisitCellPatch(visit, col, '');
+        if (!patch) continue;
+        if (onBulkUpdate) {
+          clearPatches.push(patch);
+        } else {
+          setVisitCellText(visit, col, '');
+        }
       }
     }
 
+    if (onBulkUpdate && clearPatches.length > 0) {
+      onBulkUpdate(clearPatches);
+    }
+
     return true;
-  }, [selection, visits, setVisitCellText]);
+  }, [selection, visits, buildVisitCellPatch, onBulkUpdate, setVisitCellText]);
   const handleCopy = useCallback(async (e: React.ClipboardEvent<HTMLDivElement>) => {
     const active = document.activeElement as HTMLInputElement | null;
     if (isActiveInputEditing(active)) return;
