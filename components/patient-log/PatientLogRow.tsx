@@ -146,9 +146,23 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       persistedPresetBadgeByVisitId.delete(visit.id);
     };
 
+    const handlePresetBadgeSelected = (event: Event) => {
+      const customEvent = event as CustomEvent<{ visitId?: string; preset?: Preset }>;
+      if (customEvent.detail?.visitId !== visit.id || !customEvent.detail.preset) return;
+
+      const selectedPreset = customEvent.detail.preset;
+      stickyPresetBadgeRef.current = selectedPreset;
+      latestDisplayedPresetBadgeRef.current = selectedPreset;
+      persistedPresetBadgeByVisitId.set(visit.id, selectedPreset);
+      setDetachedBadgeValue(null);
+      setRenamedBadgeOverride(null);
+    };
+
     window.addEventListener('patient-log-clear-treatment-display', handleClearTreatmentDisplay as EventListener);
+    window.addEventListener('patient-log-preset-badge-selected', handlePresetBadgeSelected as EventListener);
     return () => {
       window.removeEventListener('patient-log-clear-treatment-display', handleClearTreatmentDisplay as EventListener);
+      window.removeEventListener('patient-log-preset-badge-selected', handlePresetBadgeSelected as EventListener);
     };
   }, [visit]);
 

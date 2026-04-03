@@ -74,6 +74,9 @@ export const useModalActions = (
     if (selectingLogId) {
       const preset = presets.find(p => p.id === presetId);
       if (preset) {
+        window.dispatchEvent(new CustomEvent('patient-log-preset-badge-selected', {
+          detail: { visitId: selectingLogId, preset }
+        }));
         const updates = withRuntimeBedId({
             treatment_name: generateTreatmentString(preset.steps),
             ...mapOptionsToFlags(options)
@@ -91,6 +94,16 @@ export const useModalActions = (
 
   const handleCustomStart = useCallback((bedId: number, name: string, steps: TreatmentStep[], options: any) => {
     if (selectingLogId) {
+       window.dispatchEvent(new CustomEvent('patient-log-preset-badge-selected', {
+         detail: {
+           visitId: selectingLogId,
+           preset: {
+             id: `custom-${selectingLogId}`,
+             name,
+             steps,
+           }
+         }
+       }));
        const updates = withRuntimeBedId({
          treatment_name: generateTreatmentString(steps),
          ...mapOptionsToFlags(options)
