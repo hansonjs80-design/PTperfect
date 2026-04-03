@@ -302,6 +302,20 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   }, [selectedStatusKey, activeStatusPills]);
 
   useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    if (selectedStatusKey) {
+      document.body.dataset.statusPillSelected = 'true';
+      return () => {
+        delete document.body.dataset.statusPillSelected;
+      };
+    }
+
+    delete document.body.dataset.statusPillSelected;
+    return undefined;
+  }, [selectedStatusKey]);
+
+  useEffect(() => {
     if (!selectedStatusKey) return;
 
     const handleWindowDelete = (event: KeyboardEvent) => {

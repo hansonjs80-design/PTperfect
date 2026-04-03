@@ -815,6 +815,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     }
 
     if (e.key !== 'Backspace' && e.key !== 'Delete') return;
+    if (document.body.dataset.statusPillSelected === 'true') return;
     if ((document.activeElement as HTMLElement | null)?.dataset.statusPillSelected === 'true') return;
     if (!bounds) return;
 
@@ -828,6 +829,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
       const active = document.activeElement as HTMLInputElement | null;
       if (isActiveInputEditing(active)) return;
+      if (document.body.dataset.statusPillSelected === 'true') return;
       if ((active as HTMLElement | null)?.dataset.statusPillSelected === 'true') return;
 
       const bounds = normalizeSelectionBounds(selection);
