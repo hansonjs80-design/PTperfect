@@ -683,7 +683,6 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           directEdit={true}
           syncOnDirectEdit={false}
           suppressEnterNav={isDraft}
-          suggestionOptions={bodyPartSuggestions}
         />
       </td>
 
@@ -736,6 +735,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           directEdit={true}
           syncOnDirectEdit={false}
           suppressEnterNav={isDraft}
+          suggestionOptions={bodyPartSuggestions}
         />
       </td>
 

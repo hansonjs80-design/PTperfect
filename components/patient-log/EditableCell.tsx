@@ -336,6 +336,14 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
       }
     }
 
+    if (e.key === 'Enter' && isDirectEditing && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      e.stopPropagation();
+      navIntentRef.current = null;
+      inputRef.current?.blur();
+      return;
+    }
+
     if (previewSuggestion && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       e.stopPropagation();
