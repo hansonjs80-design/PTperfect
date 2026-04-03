@@ -525,6 +525,21 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     return text.length;
   };
 
+  const isPointWithinRenderedText = (text: string, sourceEl: HTMLElement, clientX: number) => {
+    if (!text.trim()) return false;
+
+    const rect = sourceEl.getBoundingClientRect();
+    const computed = window.getComputedStyle(sourceEl);
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return true;
+
+    context.font = computed.font;
+    const localX = Math.max(0, clientX - rect.left);
+    const textWidth = context.measureText(text).width;
+    return localX <= textWidth + 4;
+  };
+
   const startInlineEditing = (clientX?: number, sourceEl?: HTMLElement | null) => {
     if (!preferInlineTextEditing || isReadOnly) return;
     setInlineInputValue(value);
@@ -788,18 +803,17 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         data-grid-id={gridId}
         onFocusCapture={(e) => {
           if (isInlineEditingTarget(e.target)) return;
-        if (isEmptyTreatmentCell && !isReadOnly) {
-          focusEmptySelection();
-          return;
-        }
-        if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
-          if (suppressNextInlineSelectionFocusRef.current) {
-            suppressNextInlineSelectionFocusRef.current = false;
+          if (isEmptyTreatmentCell && !isReadOnly) {
+            focusEmptySelection();
             return;
           }
-          focusInlineSelection();
-        }
-      }}
+          if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
+            if (suppressNextInlineSelectionFocusRef.current) {
+              suppressNextInlineSelectionFocusRef.current = false;
+            }
+            inlineCaretIndexRef.current = null;
+          }
+        }}
         onMouseDownCapture={(e) => {
           if (e.button !== 0) return;
           if (isInlineEditingTarget(e.target)) return;
@@ -808,7 +822,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
             return;
           }
           if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
-            focusInlineSelection();
+            cellRef.current?.focus();
             return;
           }
           if (!isEmptyTreatmentCell || isReadOnly) {
@@ -823,7 +837,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
             return;
           }
           if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
-            focusInlineSelection();
+            cellRef.current?.focus();
             return;
           }
           cellRef.current?.focus();
@@ -835,7 +849,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
             return;
           }
           if (preferInlineTextEditing && !isEmptyTreatmentCell && !isReadOnly) {
-            focusInlineSelection();
+            cellRef.current?.focus();
             return;
           }
           cellRef.current?.focus();
@@ -966,6 +980,13 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   }}
                   onMouseDown={(e) => {
                     if (!isInlineEditing) {
+                      if (!isPointWithinRenderedText(value, e.currentTarget, e.clientX)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        inlineCaretIndexRef.current = null;
+                        cellRef.current?.focus();
+                        return;
+                      }
                       e.preventDefault();
                       e.stopPropagation();
                       startInlineEditing(e.clientX, e.currentTarget);
@@ -976,6 +997,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   onTouchStart={(e) => {
                     if (!isInlineEditing) {
                       const touch = e.touches[0];
+                      if (touch && !isPointWithinRenderedText(value, e.currentTarget, touch.clientX)) {
+                        e.stopPropagation();
+                        inlineCaretIndexRef.current = null;
+                        cellRef.current?.focus();
+                        return;
+                      }
                       e.stopPropagation();
                       startInlineEditing(touch?.clientX, e.currentTarget);
                       return;
