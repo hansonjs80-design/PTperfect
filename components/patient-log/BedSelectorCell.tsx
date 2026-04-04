@@ -38,6 +38,7 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
   colIndex,
   onQuickActivate
 }) => {
+  const [displayValueOverride, setDisplayValueOverride] = useState<string | null>(null);
   const [mode, setMode] = useState<'view' | 'menu' | 'edit_log' | 'edit_assign' | 'select_target'>('view');
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [activeConfirmPos, setActiveConfirmPos] = useState<{x: number, y: number} | null>(null);
@@ -66,6 +67,10 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
       if (numberBufferTimerRef.current) clearTimeout(numberBufferTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    setDisplayValueOverride(null);
+  }, [value]);
 
   useLayoutEffect(() => {
     if (mode === 'select_target' && gridRef.current) {
@@ -165,8 +170,9 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
         next = e.key;
       }
       numberBufferRef.current = next;
+      setDisplayValueOverride(next);
 
-      if (next.length >= 2) {
+      if (next.length >= 2 || Number(next) > 1) {
         applyBufferedBedNumber(next);
         numberBufferRef.current = '';
         return;
@@ -175,8 +181,17 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
       numberBufferTimerRef.current = setTimeout(() => {
         applyBufferedBedNumber(numberBufferRef.current);
         numberBufferRef.current = '';
-      }, 550);
+      }, 180);
       return;
+    }
+
+    if (mode === 'view' && numberBufferRef.current && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key)) {
+      if (numberBufferTimerRef.current) {
+        clearTimeout(numberBufferTimerRef.current);
+        numberBufferTimerRef.current = null;
+      }
+      applyBufferedBedNumber(numberBufferRef.current);
+      numberBufferRef.current = '';
     }
 
     if (e.key === 'Enter') {
@@ -238,6 +253,8 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
   const applyBufferedBedNumber = useCallback((raw: string) => {
     const parsed = Number(raw);
     if (!Number.isInteger(parsed) || parsed < 1 || parsed > 11) return;
+
+    setDisplayValueOverride(String(parsed));
 
     if (cellRef.current) {
       const rect = cellRef.current.getBoundingClientRect();
@@ -356,9 +373,9 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
             className={`w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors group select-none outline-none focus:outline-none focus:z-10 focus:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] ${className}`}
             title={getTitle()}
         >
-            {value ? (
-                <span className={`text-lg sm:text-xl xl:text-base font-black group-hover:scale-110 transition-transform ${value === 11 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>
-                {value === 11 ? 'T' : value}
+            {(displayValueOverride || value) ? (
+                <span className={`text-lg sm:text-xl xl:text-base font-black group-hover:scale-110 transition-transform ${(displayValueOverride || value) === '11' || value === 11 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                {(displayValueOverride || value) === '11' || value === 11 ? 'T' : (displayValueOverride || value)}
                 </span>
             ) : (
                 <span className="text-gray-300 dark:text-gray-600 text-sm xl:text-[12px] font-bold">-</span>
