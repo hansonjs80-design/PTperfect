@@ -116,6 +116,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const isEditingInputTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && !!target.closest('input[data-inline-treatment-editing="true"]');
 
+  const normalizePresetMatchText = (text: string) => text.trim().normalize('NFC').toLowerCase();
+  const normalizePresetMatchTextDecomposed = (text: string) => text.trim().normalize('NFD').toLowerCase();
+
   const announceMatchedPreset = (preset: Preset | null) => {
     if (!visit?.id || !preset) return;
     window.dispatchEvent(new CustomEvent('patient-log-preset-badge-selected', {
@@ -165,17 +168,25 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const isMobileOrTabletMode = () => window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches;
 
   const findPresetByQuery = (query: string) => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = normalizePresetMatchText(query);
     if (!normalized) return null;
 
     const leadingToken = normalized.split(/[()[\]\/,+\-\s]+/).find(Boolean) || normalized;
+    const leadingTokenDecomposed = normalizePresetMatchTextDecomposed(leadingToken);
     const startsWithMatch = presets.find((preset) => preset.name.trim().toLowerCase().startsWith(leadingToken));
     if (startsWithMatch) return startsWithMatch;
 
-    const directStartsWithMatch = presets.find((preset) => preset.name.trim().toLowerCase().startsWith(normalized));
+    const decomposedStartsWithMatch = presets.find((preset) => normalizePresetMatchTextDecomposed(preset.name).startsWith(leadingTokenDecomposed));
+    if (decomposedStartsWithMatch) return decomposedStartsWithMatch;
+
+    const directStartsWithMatch = presets.find((preset) => normalizePresetMatchText(preset.name).startsWith(normalized));
     if (directStartsWithMatch) return directStartsWithMatch;
 
-    return presets.find((preset) => preset.name.trim().toLowerCase().includes(leadingToken)) || null;
+    return presets.find((preset) => {
+      const presetName = normalizePresetMatchText(preset.name);
+      const presetNameDecomposed = normalizePresetMatchTextDecomposed(preset.name);
+      return presetName.includes(leadingToken) || presetNameDecomposed.includes(leadingTokenDecomposed);
+    }) || null;
   };
 
   const shouldAutoApplyPresetFromText = (text: string) => /[(/)]/.test(text);
@@ -414,6 +425,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }
 
     if (e.key === 'Enter') {
+      if (e.nativeEvent.isComposing) {
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       const matchedPreset = commitEmptyInputValue();
