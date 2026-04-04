@@ -207,6 +207,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
   const pendingEnterIndexRef = useRef<number | null>(null);
+  const didInitActiveIndexRef = useRef(false);
 
   useEffect(() => {
     const next = new Set<string>();
@@ -230,12 +231,17 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
   useEffect(() => {
     if (isSettingsOpen) return;
-    pendingEnterIndexRef.current = initialIndex;
+    if (!didInitActiveIndexRef.current) {
+      setActiveIndex(initialIndex);
+      didInitActiveIndexRef.current = true;
+    }
+    pendingEnterIndexRef.current = activeIndex;
   }, [initialIndex, isSettingsOpen, visibleStatusOptions.length]);
 
   useEffect(() => {
     if (isSettingsOpen) return;
     buttonRefs.current[activeIndex]?.focus();
+    pendingEnterIndexRef.current = activeIndex;
   }, [activeIndex, isSettingsOpen]);
 
   const toggleSelection = useCallback((index: number) => {
