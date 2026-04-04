@@ -1288,7 +1288,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
           {Array.from({ length: Math.max(0, totalRows - visits.length) }).map((_, index) => (
             <PatientLogRow
-              key={`draft-${index}-${draftRowKey}`}
+              key={`draft-${visits.length + index}-${draftRowKey}`}
               rowIndex={visits.length + index}
               isRowSelected={!!selection && Math.min(selection.start.row, selection.end.row) <= (visits.length + index) && (visits.length + index) <= Math.max(selection.start.row, selection.end.row)}
               isDraft={true}
