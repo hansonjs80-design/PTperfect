@@ -282,6 +282,9 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   const resetTypeahead = useCallback(() => {
     pendingTypeaheadOptionIdRef.current = null;
     setTypeaheadQuery('');
+    if (hiddenInputRef.current) {
+      hiddenInputRef.current.value = '';
+    }
     if (typeaheadTimerRef.current) {
       clearTimeout(typeaheadTimerRef.current);
       typeaheadTimerRef.current = null;
@@ -598,7 +601,6 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
         <div className="relative flex flex-col gap-1.5">
           <input
             ref={hiddenInputRef}
-            value={typeaheadQuery}
             onFocus={(e) => {
               const length = e.currentTarget.value.length;
               e.currentTarget.setSelectionRange(length, length);
@@ -634,6 +636,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck={false}
+            defaultValue=""
             aria-hidden="true"
           />
         {visibleStatusOptions.map((opt, idx) => {
