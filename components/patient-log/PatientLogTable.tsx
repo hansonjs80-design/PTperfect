@@ -1229,8 +1229,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         />
         <tbody>
           {visits.map((visit, index) => {
-            const rowStatus = getRowStatus(visit.id, visit.bed_id);
-            const bed = visit.bed_id ? beds.find(b => b.id === visit.bed_id) : undefined;
+            const rowStatus = isBedActivationDisabled ? 'none' : getRowStatus(visit.id, visit.bed_id);
+            const bed = !isBedActivationDisabled && visit.bed_id ? beds.find(b => b.id === visit.bed_id) : undefined;
 
             const {
               activeStepColorClass,
