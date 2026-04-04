@@ -126,6 +126,13 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }));
   };
 
+  const pinCurrentSelection = () => {
+    if (typeof rowIndex !== 'number' || typeof colIndex !== 'number') return;
+    window.dispatchEvent(new CustomEvent('patient-log-force-selection', {
+      detail: { row: rowIndex, col: colIndex }
+    }));
+  };
+
   const stepParts = useMemo(() => value.split('/').map((part) => part.trim()).filter(Boolean), [value]);
   const allowStepSelection = stepParts.length > 0;
   const isEmptyTreatmentCell = value.trim() === '' && !presetLabel;
@@ -431,6 +438,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       e.preventDefault();
       e.stopPropagation();
       const matchedPreset = commitEmptyInputValue();
+      pinCurrentSelection();
       if (matchedPreset) {
         window.setTimeout(() => {
           cellRef.current?.focus();
@@ -510,6 +518,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     suppressNextSelectorOpenRef.current = true;
     announceMatchedPreset(matchedPreset);
     onCommitText(nextValue);
+    pinCurrentSelection();
     setEmptyInputValue('');
     setIsEmptyEditing(false);
     requestAnimationFrame(() => {

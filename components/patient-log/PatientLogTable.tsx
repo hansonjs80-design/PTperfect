@@ -466,6 +466,9 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       } else if (navDirection === 'right') {
         // Horizontal Right: Stay on the same row (newly created), go to next column
         focusTargetRef.current = { rowOffset: 0, colIndex: colIndex + 1 };
+      } else if (colIndex === 5 && typeof updates.treatment_name === 'string' && updates.treatment_name.trim() !== '') {
+        // 처방목록 셀에서 엔터로 세트 자동적용 시에는 현재 생성된 행에 선택을 유지한다.
+        focusTargetRef.current = { rowOffset: 0, colIndex };
       } else {
         // Vertical (or default): Jump to the new draft row below
         focusTargetRef.current = { rowOffset: 1, colIndex: colIndex };
