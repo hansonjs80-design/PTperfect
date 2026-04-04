@@ -230,6 +230,11 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
   useEffect(() => {
     if (isSettingsOpen) return;
+    pendingEnterIndexRef.current = initialIndex;
+  }, [initialIndex, isSettingsOpen, visibleStatusOptions.length]);
+
+  useEffect(() => {
+    if (isSettingsOpen) return;
     buttonRefs.current[activeIndex]?.focus();
   }, [activeIndex, isSettingsOpen]);
 
