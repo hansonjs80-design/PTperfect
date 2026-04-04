@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { normalizeUpperEnglishKeyInput } from '../../utils/keyboardLayout';
@@ -22,8 +22,20 @@ export const GenderSelectorCell: React.FC<GenderSelectorCellProps> = ({
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const cellRef = useRef<HTMLDivElement>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const { handleGridKeyDown } = useGridNavigation(11);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const selectedIndex = Math.max(0, OPTIONS.findIndex((opt) => opt === value));
+    setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+
+    requestAnimationFrame(() => {
+      optionRefs.current[selectedIndex >= 0 ? selectedIndex : 0]?.focus();
+    });
+  }, [menuOpen, value]);
 
   const closeMenu = () => {
     setMenuOpen(false);
@@ -33,6 +45,13 @@ export const GenderSelectorCell: React.FC<GenderSelectorCellProps> = ({
   const openMenu = (x: number, y: number) => {
     setMenuPos({ x, y });
     setMenuOpen(true);
+  };
+
+  const commitHighlightedOption = (index: number) => {
+    const opt = OPTIONS[index];
+    if (!opt) return;
+    onSelect(value === opt ? '' : opt);
+    closeMenu();
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -51,6 +70,8 @@ export const GenderSelectorCell: React.FC<GenderSelectorCellProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
       const rect = cellRef.current?.getBoundingClientRect();
       openMenu(rect ? rect.left + rect.width / 2 : 0, rect ? rect.bottom : 0);
       return;
@@ -69,6 +90,39 @@ export const GenderSelectorCell: React.FC<GenderSelectorCellProps> = ({
     }
 
     handleGridKeyDown(e, rowIndex, colIndex);
+  };
+
+  const handleMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      e.stopPropagation();
+      const nextIndex = (highlightedIndex + 1) % OPTIONS.length;
+      setHighlightedIndex(nextIndex);
+      optionRefs.current[nextIndex]?.focus();
+      return;
+    }
+
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      e.stopPropagation();
+      const nextIndex = (highlightedIndex - 1 + OPTIONS.length) % OPTIONS.length;
+      setHighlightedIndex(nextIndex);
+      optionRefs.current[nextIndex]?.focus();
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      commitHighlightedOption(highlightedIndex);
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      closeMenu();
+    }
   };
 
   return (
@@ -94,18 +148,23 @@ export const GenderSelectorCell: React.FC<GenderSelectorCellProps> = ({
             className="absolute bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-xl p-2 flex gap-1.5"
             style={{ top: menuPos.y + 4, left: menuPos.x - 42 }}
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={handleMenuKeyDown}
           >
-            {OPTIONS.map((opt) => (
+            {OPTIONS.map((opt, index) => (
               <button
                 key={opt}
+                ref={(node) => {
+                  optionRefs.current[index] = node;
+                }}
                 type="button"
                 onClick={() => {
-                  onSelect(value === opt ? '' : opt);
-                  closeMenu();
+                  setHighlightedIndex(index);
+                  commitHighlightedOption(index);
                 }}
+                onFocus={() => setHighlightedIndex(index)}
                 className={`min-w-[34px] h-[30px] px-2 rounded-lg text-xs font-black border transition-colors ${value === opt
                   ? 'bg-brand-600 text-white border-brand-600'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-brand-400'}`}
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-brand-400'} ${highlightedIndex === index ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
               >
                 {opt}
               </button>

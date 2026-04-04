@@ -32,10 +32,12 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
   const [menuClickPos, setMenuClickPos] = useState({ x: 0, y: 0 });
   const [isEditMode, setIsEditMode] = useLocalStorage<boolean>('physio-author-edit-mode', false);
   const [newOption, setNewOption] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
 
   const cellRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const newInputRef = useRef<HTMLInputElement>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const lastClickTimeRef = useRef<number>(0);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
 
@@ -59,6 +61,16 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
       setDropdownPos(refined);
     }
   }, [menuOpen, menuClickPos, isEditMode, authorOptions.length]);
+
+  useEffect(() => {
+    if (!menuOpen || isEditMode) return;
+    const selectedIndex = Math.max(0, authorOptions.findIndex((opt) => opt === value));
+    setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+
+    requestAnimationFrame(() => {
+      optionRefs.current[selectedIndex >= 0 ? selectedIndex : 0]?.focus();
+    });
+  }, [menuOpen, isEditMode, authorOptions, value]);
 
   const openMenu = (e: React.MouseEvent | React.KeyboardEvent | React.TouchEvent, isKeyboard = false) => {
     e.preventDefault();
@@ -93,6 +105,8 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
       openMenu(e, true);
       return;
     }
@@ -115,6 +129,42 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
     const newVal = value === option ? '' : option;
     onSelect(newVal);
     closeMenu();
+  };
+
+  const handleMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (isEditMode) return;
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      e.stopPropagation();
+      const nextIndex = (highlightedIndex + 1) % authorOptions.length;
+      setHighlightedIndex(nextIndex);
+      optionRefs.current[nextIndex]?.focus();
+      return;
+    }
+
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      e.stopPropagation();
+      const nextIndex = (highlightedIndex - 1 + authorOptions.length) % authorOptions.length;
+      setHighlightedIndex(nextIndex);
+      optionRefs.current[nextIndex]?.focus();
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      const option = authorOptions[highlightedIndex];
+      if (option) handleOptionSelect(option);
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      closeMenu();
+    }
   };
 
   const handleAddOption = () => {
@@ -171,6 +221,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
               width: 180
             }}
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={handleMenuKeyDown}
           >
             {/* Header */}
             <div className="px-3 py-2.5 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50 shrink-0">
@@ -197,16 +248,20 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
                 <>
                   {/* Selection Mode */}
                   <div className="flex flex-wrap gap-1.5 justify-center py-1">
-                    {authorOptions.map((opt) => (
+                    {authorOptions.map((opt, index) => (
                       <button
                         key={opt}
+                        ref={(node) => {
+                          optionRefs.current[index] = node;
+                        }}
                         onClick={() => handleOptionSelect(opt)}
+                        onFocus={() => setHighlightedIndex(index)}
                         className={`
                           min-w-[36px] h-[36px] px-2 rounded-lg text-sm font-black transition-all duration-150 active:scale-95
                           ${value === opt
                             ? 'bg-brand-600 text-white shadow-md ring-2 ring-brand-300 dark:ring-brand-700'
                             : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-600'
-                          }
+                          } ${highlightedIndex === index ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}
                         `}
                       >
                         {opt}
