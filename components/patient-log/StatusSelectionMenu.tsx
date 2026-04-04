@@ -350,6 +350,28 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
       if (visibleStatusOptions.length === 0) return;
 
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        e.stopPropagation();
+        setActiveIndex((prev) => (prev + 1) % visibleStatusOptions.length);
+        return;
+      }
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        e.stopPropagation();
+        setActiveIndex((prev) => (prev - 1 + visibleStatusOptions.length) % visibleStatusOptions.length);
+        return;
+      }
+
+      if (e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
+        resetTypeahead();
+        toggleSelection(activeIndex);
+        return;
+      }
+
       const isPlainPrintableKey = e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey;
       if (isPlainPrintableKey) {
         e.preventDefault();
@@ -375,28 +397,6 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
         typeaheadTimerRef.current = setTimeout(() => {
           resetTypeahead();
         }, 900);
-        return;
-      }
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        e.stopPropagation();
-        setActiveIndex((prev) => (prev + 1) % visibleStatusOptions.length);
-        return;
-      }
-
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        e.stopPropagation();
-        setActiveIndex((prev) => (prev - 1 + visibleStatusOptions.length) % visibleStatusOptions.length);
-        return;
-      }
-
-      if (e.key === ' ') {
-        e.preventDefault();
-        e.stopPropagation();
-        resetTypeahead();
-        toggleSelection(activeIndex);
         return;
       }
 
