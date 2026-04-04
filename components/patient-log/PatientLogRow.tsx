@@ -128,14 +128,35 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const stickyPresetBadgeRef = useRef<Preset | null>(null);
   const latestDisplayedPresetBadgeRef = useRef<Preset | null>(null);
 
+  const resolvePresetAppearance = (preset: Preset | null | undefined): Preset | null => {
+    if (!preset) return null;
+
+    const matchedCurrentPreset = (preset.id && presets.find((item) => item.id === preset.id))
+      || presets.find((item) => item.name === preset.name)
+      || null;
+
+    if (!matchedCurrentPreset) {
+      return preset;
+    }
+
+    return {
+      ...preset,
+      ...matchedCurrentPreset,
+      steps: matchedCurrentPreset.steps?.length ? matchedCurrentPreset.steps : preset.steps,
+      color: matchedCurrentPreset.color || preset.color,
+      textColor: matchedCurrentPreset.textColor || preset.textColor,
+    };
+  };
+
   useEffect(() => {
     if (!visit?.id) return;
     const persistedBadge = persistedPresetBadgeByVisitId.get(visit.id);
     if (persistedBadge) {
-      stickyPresetBadgeRef.current = persistedBadge;
-      latestDisplayedPresetBadgeRef.current = persistedBadge;
+      const resolvedPersistedBadge = resolvePresetAppearance(persistedBadge);
+      stickyPresetBadgeRef.current = resolvedPersistedBadge;
+      latestDisplayedPresetBadgeRef.current = resolvedPersistedBadge;
     }
-  }, [visit?.id]);
+  }, [visit?.id, presets]);
 
   useEffect(() => {
     if (optimisticTreatmentName === null) return;
@@ -614,11 +635,11 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     if (detachedBadgeValue === normalized) return null;
 
     // 사용자가 우클릭으로 배지 이름을 명시적으로 변경한 경우 최우선 적용
-    if (renamedBadgeOverride) return renamedBadgeOverride;
+    if (renamedBadgeOverride) return resolvePresetAppearance(renamedBadgeOverride);
 
     // 처방 문자열이 같은 다른 세트가 있어도, 사용자가 마지막으로 선택한 세트 배지를 우선 유지한다.
     if (normalized && stickyPresetBadgeRef.current) {
-      return stickyPresetBadgeRef.current;
+      return resolvePresetAppearance(stickyPresetBadgeRef.current);
     }
 
     const presetMatchedFromDisplay = normalized
@@ -627,7 +648,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
     if (rowStatus === 'active') {
       // 세트 처방이 변경되면(특히 플레이 직후 동기화 지연 구간) 문자열 기준 세트명을 우선 반영한다.
-      if (presetMatchedFromDisplay) return presetMatchedFromDisplay;
+      if (presetMatchedFromDisplay) return resolvePresetAppearance(presetMatchedFromDisplay);
 
       if (currentPreset) {
         if (isActivePresetModified && activeBasePreset) {
@@ -638,11 +659,11 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
             textColor: activeBasePreset.textColor || currentPreset.textColor,
           };
         }
-        return currentPreset;
+        return resolvePresetAppearance(currentPreset);
       }
     }
 
-    return presetMatchedFromDisplay;
+    return resolvePresetAppearance(presetMatchedFromDisplay);
   })();
 
   useEffect(() => {
