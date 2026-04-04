@@ -388,7 +388,22 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         return;
       }
 
-      if (isPlainTypingKey || isIMEKey) {
+      if (isPlainTypingKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        beginEmptyTyping(e.key);
+        return;
+      }
+
+      if (isIMEKey) {
+        e.stopPropagation();
+        flushSync(() => {
+          setIsEmptyEditing(true);
+          setEmptyInputValue('');
+        });
+        requestAnimationFrame(() => {
+          emptyInputRef.current?.focus();
+        });
         return;
       }
 
@@ -423,7 +438,8 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const commitEmptyInputValue = () => {
-    const normalized = emptyInputValue.trim();
+    const rawValue = emptyInputRef.current?.value ?? emptyInputValue;
+    const normalized = rawValue.trim();
     if (!normalized) {
       setEmptyInputValue('');
       setIsEmptyEditing(false);
@@ -451,13 +467,15 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const commitInlineInputValue = () => {
-    const normalized = inlineInputValue.trim();
+    const rawValue = inlineInputRef.current?.value ?? inlineInputValue;
+    const normalized = rawValue.trim();
     const matchedPreset = findPresetByQuery(normalized);
     const nextValue = matchedPreset ? generateTreatmentString(matchedPreset.steps) : normalized;
     if (nextValue !== value.trim()) {
       announceMatchedPreset(matchedPreset);
       onCommitText(nextValue);
     }
+    setInlineInputValue(nextValue);
     inlineEnterStageRef.current = false;
     inlineCaretIndexRef.current = null;
     setIsInlineEditing(false);
