@@ -43,6 +43,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const inputRef = useRef<HTMLInputElement>(null);
   const isComposingRef = useRef(false);
   const skipNextBlurCommitRef = useRef(false);
+  const restoreSelectionAfterBlurRef = useRef(false);
   const shouldReplaceOnCompositionRef = useRef(false);
 
   const skipSyncRef = useRef(false);
@@ -180,6 +181,10 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     if (skipNextBlurCommitRef.current) {
       skipNextBlurCommitRef.current = false;
       navIntentRef.current = null;
+      if (restoreSelectionAfterBlurRef.current) {
+        restoreSelectionAfterBlurRef.current = false;
+        restoreGridSelectionFocus();
+      }
       return;
     }
 
@@ -325,12 +330,12 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
         e.preventDefault();
         e.stopPropagation();
         skipNextBlurCommitRef.current = true;
+        restoreSelectionAfterBlurRef.current = true;
         setLocalValue(previewSuggestion);
         navIntentRef.current = null;
         commitValue(previewSuggestion);
         requestAnimationFrame(() => {
           inputRef.current?.blur();
-          restoreGridSelectionFocus();
         });
         return;
       }
