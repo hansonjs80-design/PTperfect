@@ -456,6 +456,33 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     });
   }, [activeBedIdsInLog, clearBed]);
 
+  const handleToggleBedActivationDisabled = useCallback(() => {
+    if (isBedActivationDisabled) {
+      setIsBedActivationDisabled(false);
+      return;
+    }
+
+    const visitsWithBeds = visits.filter((visit) => visit.bed_id !== null);
+    if (visitsWithBeds.length > 0) {
+      trackedBulkUpdateVisitWithBedSync(
+        visitsWithBeds.map((visit) => ({
+          id: visit.id,
+          updates: { bed_id: null },
+          skipBedSync: true,
+          clearBedId: visit.bed_id,
+        }))
+      );
+    }
+
+    beds.forEach((bed) => {
+      if (bed.status !== BedStatus.IDLE) {
+        clearBed(bed.id);
+      }
+    });
+
+    setIsBedActivationDisabled(true);
+  }, [beds, clearBed, isBedActivationDisabled, setIsBedActivationDisabled, trackedBulkUpdateVisitWithBedSync, visits]);
+
   const restoreGridFocusAfterModal = useCallback((target?: { row: number | null; col: number | null } | null) => {
     const restoreRow = target?.row ?? selectionAnchor.row;
     const restoreCol = target?.col ?? selectionAnchor.col;
@@ -1210,7 +1237,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
             canUndo={canUndoLog}
             canRedo={canRedoLog}
             isBedActivationDisabled={isBedActivationDisabled}
-            onToggleBedActivationDisabled={() => setIsBedActivationDisabled((prev) => !prev)}
+            onToggleBedActivationDisabled={handleToggleBedActivationDisabled}
             onClearAllBeds={handleClearAllActiveBeds}
             canClearAllBeds={activeBedIdsInLog.length > 0}
           />
