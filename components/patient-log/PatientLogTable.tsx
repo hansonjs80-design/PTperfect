@@ -210,6 +210,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
   const [totalRows, setTotalRows] = useState(120);
   const [selection, setSelection] = useState<GridSelection>(null);
+  const [clipboardSelection, setClipboardSelection] = useState<{ selection: GridSelection; mode: 'copy' | 'cut' } | null>(null);
   const [rowHeaderMenu, setRowHeaderMenu] = useState<{ row: number; rows: number[]; x: number; y: number } | null>(null);
   const showTimerColumn = false;
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
@@ -785,7 +786,10 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     e.preventDefault();
     e.clipboardData.setData('text/plain', text);
     try { await navigator.clipboard?.writeText(text); } catch { /* noop */ }
-  }, [handleGridClipboardCopy]);
+    if (selection) {
+      setClipboardSelection({ selection, mode: 'copy' });
+    }
+  }, [handleGridClipboardCopy, selection]);
 
   const handleCut = useCallback(async (e: React.ClipboardEvent<HTMLDivElement>) => {
     const active = document.activeElement as HTMLInputElement | null;
@@ -797,7 +801,10 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     e.preventDefault();
     e.clipboardData.setData('text/plain', text);
     try { await navigator.clipboard?.writeText(text); } catch { /* noop */ }
-  }, [handleGridClipboardCopy]);
+    if (selection) {
+      setClipboardSelection({ selection, mode: 'cut' });
+    }
+  }, [handleGridClipboardCopy, selection]);
 
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
     const active = document.activeElement as HTMLInputElement | null;
@@ -806,6 +813,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     const text = e.clipboardData.getData('text/plain');
     if (!text) return;
     e.preventDefault();
+    setClipboardSelection(null);
     void handleGridPaste(text);
   }, [handleGridPaste]);
 
@@ -853,11 +861,15 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       if (!text) return;
       e.preventDefault();
       void navigator.clipboard?.writeText(text).catch(() => {});
+      if (selection) {
+        setClipboardSelection({ selection, mode: keyLower === 'x' ? 'cut' : 'copy' });
+      }
       return;
     }
 
     if (isShortcut && keyLower === 'v') {
       e.preventDefault();
+      setClipboardSelection(null);
       void (async () => {
         try {
           const text = await navigator.clipboard?.readText();
@@ -989,9 +1001,20 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       }
     }
 
-    const previouslyHighlightedHosts = Array.from(document.querySelectorAll('[data-grid-id][data-grid-selection="true"]')) as HTMLElement[];
+    const clipboardBounds = normalizeSelectionBounds(clipboardSelection?.selection ?? null);
+    const copied = new Set<string>();
+    if (clipboardBounds) {
+      for (let row = clipboardBounds.rowMin; row <= clipboardBounds.rowMax; row++) {
+        for (let col = clipboardBounds.colMin; col <= clipboardBounds.colMax; col++) {
+          copied.add(`${row}-${col}`);
+        }
+      }
+    }
+
+    const previouslyHighlightedHosts = Array.from(document.querySelectorAll('[data-grid-id][data-grid-selection="true"], [data-grid-id][data-grid-clipboard="true"]')) as HTMLElement[];
     previouslyHighlightedHosts.forEach((host) => {
       host.removeAttribute('data-grid-selection');
+      host.removeAttribute('data-grid-clipboard');
       host.style.boxShadow = '';
       host.style.outline = '';
       host.style.outlineOffset = '';
@@ -999,9 +1022,10 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       host.style.borderRadius = '';
     });
 
-    const previouslyHighlightedCells = Array.from(document.querySelectorAll('td[data-grid-selection="true"]')) as HTMLElement[];
+    const previouslyHighlightedCells = Array.from(document.querySelectorAll('td[data-grid-selection="true"], td[data-grid-clipboard="true"]')) as HTMLElement[];
     previouslyHighlightedCells.forEach((cell) => {
       cell.removeAttribute('data-grid-selection');
+      cell.removeAttribute('data-grid-clipboard');
       cell.style.boxShadow = '';
       cell.style.outline = '';
       cell.style.outlineOffset = '';
@@ -1025,7 +1049,23 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       cell.style.backgroundColor = 'rgba(14, 165, 233, 0.08)';
       cell.style.borderRadius = '0';
     });
-  }, [selection, visits.length, totalRows]);
+
+    copied.forEach((id) => {
+      const host = document.querySelector(`[data-grid-id="${id}"]`) as HTMLElement | null;
+      if (!host) return;
+      const cell = host.closest('td') as HTMLElement | null;
+      if (!cell) return;
+
+      host.setAttribute('data-grid-clipboard', 'true');
+      cell.setAttribute('data-grid-clipboard', 'true');
+
+      if (!selected.has(id)) {
+        cell.style.backgroundColor = 'rgba(14, 165, 233, 0.06)';
+      }
+      cell.style.outline = '1.5px dashed rgb(14 165 233 / 0.95)';
+      cell.style.outlineOffset = '-2px';
+    });
+  }, [selection, clipboardSelection, visits.length, totalRows]);
 
   useEffect(() => {
     const handleForceSelection = (event: Event) => {
