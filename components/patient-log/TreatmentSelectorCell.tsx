@@ -113,6 +113,8 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const { handleGridKeyDown } = useGridNavigation(11);
   const isInlineEditingTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && !!target.closest('[data-inline-treatment-editing="true"]');
+  const isEditingInputTarget = (target: EventTarget | null) =>
+    target instanceof HTMLElement && !!target.closest('input[data-inline-treatment-editing="true"]');
 
   const announceMatchedPreset = (preset: Preset | null) => {
     if (!visit?.id || !preset) return;
@@ -629,8 +631,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     });
   };
 
-  const handleCompositionStartCapture = () => {
+  const handleCompositionStartCapture = (e: React.CompositionEvent<HTMLDivElement>) => {
     if (isReadOnly) return;
+    if (isEditingInputTarget(e.target)) return;
 
     if (isEmptyTreatmentCell) {
       flushSync(() => {
@@ -658,7 +661,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const handleCompositionEndCapture = (e: React.CompositionEvent<HTMLDivElement>) => {
-    if (isReadOnly || isInlineEditingTarget(e.target)) return;
+    if (isReadOnly || isEditingInputTarget(e.target)) return;
 
     const composed = e.data ?? '';
     if (!composed) return;
@@ -674,7 +677,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const handleBeforeInputCapture = (e: React.FormEvent<HTMLDivElement>) => {
-    if (isReadOnly || isInlineEditingTarget(e.target)) return;
+    if (isReadOnly || isEditingInputTarget(e.target)) return;
 
     const nativeEvent = e.nativeEvent as InputEvent;
     if (nativeEvent.isComposing || nativeEvent.inputType.includes('Composition')) return;
