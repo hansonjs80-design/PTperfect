@@ -17,6 +17,35 @@ import { findExactPresetByTreatmentString, formatTime, generateTreatmentString, 
 import { type StatusOptionConfig } from './StatusSelectionMenu';
 
 const persistedPresetBadgeByVisitId = new Map<string, Preset>();
+const PRESET_BADGE_STORAGE_KEY = 'patient-log-preset-badges-v1';
+
+const loadPersistedPresetBadges = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = window.localStorage.getItem(PRESET_BADGE_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as Record<string, Preset>;
+    Object.entries(parsed).forEach(([visitId, preset]) => {
+      if (visitId && preset?.name) {
+        persistedPresetBadgeByVisitId.set(visitId, preset);
+      }
+    });
+  } catch {
+    // ignore storage read failures
+  }
+};
+
+const syncPersistedPresetBadges = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    const next = Object.fromEntries(persistedPresetBadgeByVisitId.entries());
+    window.localStorage.setItem(PRESET_BADGE_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // ignore storage write failures
+  }
+};
+
+loadPersistedPresetBadges();
 
 interface PatientLogRowProps {
   rowIndex: number;
@@ -146,6 +175,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       stickyPresetBadgeRef.current = null;
       latestDisplayedPresetBadgeRef.current = null;
       persistedPresetBadgeByVisitId.delete(visit.id);
+      syncPersistedPresetBadges();
     };
 
     const handlePresetBadgeSelected = (event: Event) => {
@@ -156,6 +186,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       stickyPresetBadgeRef.current = selectedPreset;
       latestDisplayedPresetBadgeRef.current = selectedPreset;
       persistedPresetBadgeByVisitId.set(visit.id, selectedPreset);
+      syncPersistedPresetBadges();
       setDetachedBadgeValue(null);
       setRenamedBadgeOverride(null);
     };
@@ -298,16 +329,31 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (matchedPreset) {
-      stickyPresetBadgeRef.current = matchedPreset;
-      if (visit?.id) persistedPresetBadgeByVisitId.set(visit.id, matchedPreset);
+      const stickyPreset = stickyPresetBadgeRef.current;
+      const nextPreset = stickyPreset && generateTreatmentString(stickyPreset.steps).trim() === committedTreatment
+        ? stickyPreset
+        : matchedPreset;
+      stickyPresetBadgeRef.current = nextPreset;
+      latestDisplayedPresetBadgeRef.current = nextPreset;
+      if (visit?.id) {
+        persistedPresetBadgeByVisitId.set(visit.id, nextPreset);
+        syncPersistedPresetBadges();
+      }
       setRenamedBadgeOverride(null);
     } else if (committedTreatment && fallbackPresetBadge) {
       stickyPresetBadgeRef.current = fallbackPresetBadge;
-      if (visit?.id) persistedPresetBadgeByVisitId.set(visit.id, fallbackPresetBadge);
+      latestDisplayedPresetBadgeRef.current = fallbackPresetBadge;
+      if (visit?.id) {
+        persistedPresetBadgeByVisitId.set(visit.id, fallbackPresetBadge);
+        syncPersistedPresetBadges();
+      }
     } else if (!committedTreatment) {
       stickyPresetBadgeRef.current = null;
       latestDisplayedPresetBadgeRef.current = null;
-      if (visit?.id) persistedPresetBadgeByVisitId.delete(visit.id);
+      if (visit?.id) {
+        persistedPresetBadgeByVisitId.delete(visit.id);
+        syncPersistedPresetBadges();
+      }
       setDetachedBadgeValue(null);
       setRenamedBadgeOverride(null);
     }
@@ -602,13 +648,19 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   useEffect(() => {
     if (!treatmentDisplayValue.trim()) {
       latestDisplayedPresetBadgeRef.current = null;
-      if (visit?.id) persistedPresetBadgeByVisitId.delete(visit.id);
+      if (visit?.id) {
+        persistedPresetBadgeByVisitId.delete(visit.id);
+        syncPersistedPresetBadges();
+      }
       return;
     }
     if (!matchedPresetForDisplay) return;
     latestDisplayedPresetBadgeRef.current = matchedPresetForDisplay;
     stickyPresetBadgeRef.current = matchedPresetForDisplay;
-    if (visit?.id) persistedPresetBadgeByVisitId.set(visit.id, matchedPresetForDisplay);
+    if (visit?.id) {
+      persistedPresetBadgeByVisitId.set(visit.id, matchedPresetForDisplay);
+      syncPersistedPresetBadges();
+    }
   }, [matchedPresetForDisplay, treatmentDisplayValue, visit?.id]);
 
   const handleOpenTimerEdit = (position: { x: number; y: number }) => {
