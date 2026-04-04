@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { ChevronLeft, ChevronRight, CalendarCheck, Printer, X, Undo2, Redo2, Trash2, PowerOff } from 'lucide-react';
 
 interface PatientLogHeaderProps {
@@ -35,6 +35,8 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
   isBedActivationDisabled = false,
   onToggleBedActivationDisabled,
 }) => {
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
   const handleTodayClick = () => {
     const now = new Date();
     const offset = now.getTimezoneOffset() * 60000;
@@ -45,6 +47,21 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
   const handleUndoRedo = (type: 'undo' | 'redo') => {
     if (type === 'undo') onUndo?.();
     else onRedo?.();
+  };
+
+  const openDatePicker = () => {
+    const input = dateInputRef.current;
+    if (!input) return;
+
+    try {
+      const pickerInput = input as HTMLInputElement & { showPicker?: () => void };
+      pickerInput.showPicker?.();
+    } catch {
+      // ignore and fallback below
+    }
+
+    input.focus();
+    input.click();
   };
 
   // 공통 버튼 스타일 정의
@@ -121,11 +138,15 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
           </button>
           
           {/* Date Display */}
-          <div className="relative flex items-center justify-center h-7 sm:h-9 px-1.5 sm:px-2 group cursor-pointer">
+          <div
+            className="relative flex items-center justify-center h-7 sm:h-9 px-1.5 sm:px-2 group cursor-pointer"
+            onClick={openDatePicker}
+          >
             <span className="text-xs sm:text-base font-black text-slate-800 dark:text-slate-100 tabular-nums tracking-tight whitespace-nowrap">
               {currentDate}
             </span>
             <input 
+              ref={dateInputRef}
               type="date" 
               value={currentDate}
               onChange={(e) => onDateSelect(e.target.value)}
