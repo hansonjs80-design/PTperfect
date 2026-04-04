@@ -275,6 +275,8 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   useEffect(() => {
     if (isSettingsOpen) return;
     hiddenInputRef.current?.focus();
+    const length = hiddenInputRef.current?.value.length ?? 0;
+    hiddenInputRef.current?.setSelectionRange(length, length);
   }, [isSettingsOpen]);
 
   const resetTypeahead = useCallback(() => {
@@ -597,6 +599,10 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
           <input
             ref={hiddenInputRef}
             value={typeaheadQuery}
+            onFocus={(e) => {
+              const length = e.currentTarget.value.length;
+              e.currentTarget.setSelectionRange(length, length);
+            }}
             onChange={(e) => {
               const nextQuery = e.target.value;
               setTypeaheadQuery(nextQuery);
@@ -617,7 +623,11 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
             }}
             onBlur={() => {
               if (!isSettingsOpen) {
-                setTimeout(() => hiddenInputRef.current?.focus(), 0);
+                setTimeout(() => {
+                  hiddenInputRef.current?.focus();
+                  const length = hiddenInputRef.current?.value.length ?? 0;
+                  hiddenInputRef.current?.setSelectionRange(length, length);
+                }, 0);
               }
             }}
             className="pointer-events-none absolute left-0 top-0 h-0 w-0 opacity-0"

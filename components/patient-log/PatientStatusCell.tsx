@@ -461,6 +461,10 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         <input
           ref={hiddenInputRef}
           value={typeaheadValue}
+          onFocus={(e) => {
+            const length = e.currentTarget.value.length;
+            e.currentTarget.setSelectionRange(length, length);
+          }}
           onChange={(e) => {
             updateTypeaheadMatch(e.target.value);
           }}
@@ -489,6 +493,8 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
               setTimeout(() => {
                 if (document.activeElement !== cellRef.current) {
                   hiddenInputRef.current?.focus();
+                  const length = hiddenInputRef.current?.value.length ?? 0;
+                  hiddenInputRef.current?.setSelectionRange(length, length);
                 }
               }, 0);
             }
