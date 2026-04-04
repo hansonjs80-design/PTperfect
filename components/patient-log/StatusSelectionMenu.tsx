@@ -138,42 +138,6 @@ export const DEFAULT_STATUS_OPTIONS: StatusOptionConfig[] = [
   { id: 'is_exercise', kind: 'predefined', key: 'is_exercise', label: '운동', visible: true, order: 6, color: 'lime' },
 ];
 
-const HANGUL_SYLLABLE_BASE = 0xac00;
-const HANGUL_SYLLABLE_LAST = 0xd7a3;
-const HANGUL_CHOSEONG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
-
-const normalizeStatusMatchText = (value: string) =>
-  value
-    .normalize('NFC')
-    .replace(/\s+/g, '')
-    .toLocaleLowerCase();
-
-const getChoseongText = (value: string) =>
-  Array.from(value.normalize('NFC')).map((char) => {
-    const code = char.charCodeAt(0);
-    if (code >= HANGUL_SYLLABLE_BASE && code <= HANGUL_SYLLABLE_LAST) {
-      return HANGUL_CHOSEONG[Math.floor((code - HANGUL_SYLLABLE_BASE) / 588)] || char;
-    }
-    return char;
-  }).join('');
-
-export const findStatusOptionMatch = (query: string, options: StatusOptionConfig[]) => {
-  const normalizedQuery = normalizeStatusMatchText(query);
-  if (!normalizedQuery) return null;
-
-  const exactPrefixMatch = options.find((option) =>
-    normalizeStatusMatchText(option.label).startsWith(normalizedQuery)
-  );
-  if (exactPrefixMatch) return exactPrefixMatch;
-
-  const chosungQuery = normalizeStatusMatchText(getChoseongText(query));
-  if (!chosungQuery) return null;
-
-  return options.find((option) =>
-    normalizeStatusMatchText(getChoseongText(option.label)).startsWith(chosungQuery)
-  ) || null;
-};
-
 const sortStatusOptions = (options: StatusOptionConfig[]) => [...options].sort((a, b) => a.order - b.order);
 const DEFAULT_STATUS_OPTION_MAP = new Map(DEFAULT_STATUS_OPTIONS.map((option) => [option.id, option] as const));
 const PREDEFINED_STATUS_ID_SET = new Set(DEFAULT_STATUS_OPTIONS.map((option) => option.id));
@@ -232,7 +196,6 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   const visibleStatusOptions = useMemo(() => orderedStatusOptions.filter((opt) => opt.visible), [orderedStatusOptions]);
   const hiddenStatusOptions = useMemo(() => orderedStatusOptions.filter((opt) => !opt.visible), [orderedStatusOptions]);
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const hiddenInputRef = useRef<HTMLInputElement>(null);
   const initialIndex = useMemo(() => {
     const activeIdx = visibleStatusOptions.findIndex((opt) => {
       if (!visit) return false;
@@ -243,10 +206,6 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   }, [visibleStatusOptions, visit]);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
-  const hiddenInputComposingRef = useRef(false);
-  const [typeaheadQuery, setTypeaheadQuery] = useState('');
-  const typeaheadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingTypeaheadOptionIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const next = new Set<string>();
@@ -270,27 +229,17 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
   useEffect(() => {
     if (isSettingsOpen) return;
-    hiddenInputRef.current?.focus();
-    const length = hiddenInputRef.current?.value.length ?? 0;
-    hiddenInputRef.current?.setSelectionRange(length, length);
-  }, [isSettingsOpen]);
+    setActiveIndex(initialIndex);
+  }, [initialIndex, isSettingsOpen]);
 
-  const resetTypeahead = useCallback(() => {
-    pendingTypeaheadOptionIdRef.current = null;
-    setTypeaheadQuery('');
-    if (hiddenInputRef.current) {
-      hiddenInputRef.current.value = '';
-    }
-    if (typeaheadTimerRef.current) {
-      clearTimeout(typeaheadTimerRef.current);
-      typeaheadTimerRef.current = null;
-    }
-  }, []);
+  useEffect(() => {
+    if (isSettingsOpen) return;
+    buttonRefs.current[activeIndex]?.focus();
+  }, [activeIndex, isSettingsOpen]);
 
   const toggleSelection = useCallback((index: number) => {
     const option = visibleStatusOptions[index];
     if (!option) return;
-    pendingTypeaheadOptionIdRef.current = null;
     setActiveKeys((prev) => {
       const next = new Set(prev);
       if (next.has(option.id)) next.delete(option.id);
@@ -368,27 +317,13 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       if (e.key === ' ') {
         e.preventDefault();
         e.stopPropagation();
-        resetTypeahead();
         toggleSelection(activeIndex);
         return;
       }
 
       if (e.key === 'Enter') {
-        if (hiddenInputComposingRef.current) {
-          return;
-        }
         e.preventDefault();
         e.stopPropagation();
-        const rawQuery = hiddenInputRef.current?.value ?? typeaheadQuery;
-        const matchedByQuery = findStatusOptionMatch(rawQuery, visibleStatusOptions);
-        const pendingId = pendingTypeaheadOptionIdRef.current || matchedByQuery?.id || null;
-        if (pendingId) {
-          const pendingIndex = visibleStatusOptions.findIndex((option) => option.id === pendingId);
-          if (pendingIndex >= 0 && !activeKeys.has(pendingId)) {
-            toggleSelection(pendingIndex);
-          }
-        }
-        resetTypeahead();
         onClose();
         return;
       }
@@ -396,40 +331,13 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
-        resetTypeahead();
         onClose();
-        return;
-      }
-
-      if (e.key === 'Backspace' && typeaheadQuery) {
-        e.preventDefault();
-        e.stopPropagation();
-        const nextQuery = typeaheadQuery.slice(0, -1);
-        if (!nextQuery) {
-          resetTypeahead();
-          return;
-        }
-        setTypeaheadQuery(nextQuery);
-        const matched = findStatusOptionMatch(nextQuery, visibleStatusOptions);
-        if (matched) {
-          const matchedIndex = visibleStatusOptions.findIndex((option) => option.id === matched.id);
-          if (matchedIndex >= 0) {
-            setActiveIndex(matchedIndex);
-            pendingTypeaheadOptionIdRef.current = matched.id;
-          }
-        } else {
-          pendingTypeaheadOptionIdRef.current = null;
-        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [activeIndex, activeKeys, isSettingsOpen, onClose, resetTypeahead, toggleSelection, visibleStatusOptions]);
-
-  useEffect(() => () => {
-    if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
-  }, []);
+  }, [activeIndex, activeKeys, isSettingsOpen, onClose, toggleSelection, visibleStatusOptions]);
 
   return (
     <ContextMenu
@@ -599,66 +507,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
           </div>
         </div>
       ) : visibleStatusOptions.length > 0 ? (
-        <div className="relative flex flex-col gap-1.5">
-          <input
-            ref={hiddenInputRef}
-            onFocus={(e) => {
-              const length = e.currentTarget.value.length;
-              e.currentTarget.setSelectionRange(length, length);
-            }}
-            onChange={(e) => {
-              const nextQuery = e.target.value;
-              setTypeaheadQuery(nextQuery);
-              const matched = findStatusOptionMatch(nextQuery, visibleStatusOptions);
-              if (matched) {
-                const matchedIndex = visibleStatusOptions.findIndex((option) => option.id === matched.id);
-                if (matchedIndex >= 0) {
-                  setActiveIndex(matchedIndex);
-                  pendingTypeaheadOptionIdRef.current = matched.id;
-                }
-              } else {
-                pendingTypeaheadOptionIdRef.current = null;
-              }
-              if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
-              typeaheadTimerRef.current = setTimeout(() => {
-                resetTypeahead();
-              }, 900);
-            }}
-            onCompositionStart={() => {
-              hiddenInputComposingRef.current = true;
-            }}
-            onCompositionEnd={(e) => {
-              hiddenInputComposingRef.current = false;
-              const nextQuery = e.currentTarget.value;
-              setTypeaheadQuery(nextQuery);
-              const matched = findStatusOptionMatch(nextQuery, visibleStatusOptions);
-              if (matched) {
-                const matchedIndex = visibleStatusOptions.findIndex((option) => option.id === matched.id);
-                if (matchedIndex >= 0) {
-                  setActiveIndex(matchedIndex);
-                  pendingTypeaheadOptionIdRef.current = matched.id;
-                }
-              } else {
-                pendingTypeaheadOptionIdRef.current = null;
-              }
-            }}
-            onBlur={() => {
-              if (!isSettingsOpen) {
-                setTimeout(() => {
-                  hiddenInputRef.current?.focus();
-                  const length = hiddenInputRef.current?.value.length ?? 0;
-                  hiddenInputRef.current?.setSelectionRange(length, length);
-                }, 0);
-              }
-            }}
-            className="pointer-events-none absolute left-0 top-0 h-0 w-0 opacity-0"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck={false}
-            defaultValue=""
-            aria-hidden="true"
-          />
-        {visibleStatusOptions.map((opt, idx) => {
+        visibleStatusOptions.map((opt, idx) => {
           const isActive = activeKeys.has(opt.id);
           const isFocusedOption = idx === activeIndex;
           const palette = STATUS_COLOR_OPTIONS[opt.color] || STATUS_COLOR_OPTIONS[DEFAULT_STATUS_OPTION_MAP.get(opt.id)?.color || 'sky'];
@@ -670,12 +519,8 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
               ref={(el) => {
                 buttonRefs.current[idx] = el;
               }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-              }}
               onClick={() => {
                 setActiveIndex(idx);
-                hiddenInputRef.current?.focus();
                 toggleSelection(idx);
               }}
               onKeyDown={(e) => {
@@ -704,8 +549,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
               </div>
             </button>
           );
-        })}
-        </div>
+        })
       ) : (
         <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 p-4 text-center text-xs font-bold text-slate-400 dark:text-slate-500">
           표시할 추가 사항이 없습니다. 톱니 버튼에서 항목을 추가하세요.

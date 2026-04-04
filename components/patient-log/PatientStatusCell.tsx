@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef, memo } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { PatientCustomStatus, PatientVisit } from '../../types';
-import { DEFAULT_STATUS_OPTIONS, findStatusOptionMatch, normalizeStatusOptions, STATUS_COLOR_OPTIONS, STATUS_OPTIONS_STORAGE_KEY, StatusOptionConfig, StatusSelectionMenu } from './StatusSelectionMenu';
+import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, STATUS_OPTIONS_STORAGE_KEY, StatusOptionConfig, StatusSelectionMenu } from './StatusSelectionMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 
@@ -33,20 +33,14 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null);
   const [selectedStatusKey, setSelectedStatusKey] = useState<string | null>(null);
   const [menuVisitSnapshot, setMenuVisitSnapshot] = useState<Partial<PatientVisit> | null>(null);
-  const [typeaheadValue, setTypeaheadValue] = useState('');
   const cellRef = useRef<HTMLDivElement>(null);
-  const hiddenInputRef = useRef<HTMLInputElement>(null);
   const selectedStatusKeyRef = useRef<string | null>(null);
   const lastClickTimeRef = useRef<number>(0);
   const targetVisitIdRef = useRef<string | null>(visit?.id ?? null);
   const pendingSnapshotRef = useRef<Partial<PatientVisit> | null>(null);
   const createPromiseRef = useRef<Promise<string> | null>(null);
-  const typeaheadQueryRef = useRef('');
-  const typeaheadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hiddenInputComposingRef = useRef(false);
   const { handleGridKeyDown } = useGridNavigation(11);
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
-  const visibleStatusOptions = normalizedStatusOptions.filter((option) => option.visible);
 
   const STATUS_KEYS: Array<keyof PatientVisit> = [
     'is_injection',
@@ -81,44 +75,6 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     delete document.body.dataset.patientStatusMenuOpen;
     return undefined;
   }, [menuPos]);
-
-  const resetTypeahead = () => {
-    typeaheadQueryRef.current = '';
-    setTypeaheadValue('');
-    if (hiddenInputRef.current) {
-      hiddenInputRef.current.value = '';
-    }
-    if (typeaheadTimerRef.current) {
-      clearTimeout(typeaheadTimerRef.current);
-      typeaheadTimerRef.current = null;
-    }
-  };
-
-  const queueTypeaheadReset = () => {
-    if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
-    typeaheadTimerRef.current = setTimeout(() => {
-      typeaheadQueryRef.current = '';
-      setTypeaheadValue('');
-      typeaheadTimerRef.current = null;
-    }, 900);
-  };
-
-  const focusHiddenInput = () => {
-    if (menuPos) return;
-    hiddenInputRef.current?.focus();
-    const length = hiddenInputRef.current?.value.length ?? 0;
-    hiddenInputRef.current?.setSelectionRange(length, length);
-  };
-
-  const updateTypeaheadMatch = (nextValue: string) => {
-    typeaheadQueryRef.current = nextValue;
-    setTypeaheadValue(nextValue);
-    if (nextValue) {
-      queueTypeaheadReset();
-    } else {
-      resetTypeahead();
-    }
-  };
 
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent | React.TouchEvent, isKeyboard: boolean = false) => {
     e.preventDefault();
@@ -198,43 +154,8 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    const isPlainPrintableKey = e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey;
-
-    if (!menuPos && isPlainPrintableKey) {
-      focusHiddenInput();
-      return;
-    }
-
     if (e.key === 'Enter') {
-      if (!menuPos) {
-        if (hiddenInputComposingRef.current) {
-          return;
-        }
-        const rawQuery = hiddenInputRef.current?.value ?? typeaheadQueryRef.current;
-        const matched = findStatusOptionMatch(rawQuery, visibleStatusOptions);
-        if (matched) {
-          e.preventDefault();
-          e.stopPropagation();
-          resetTypeahead();
-          void toggleStatus(matched);
-          return;
-        }
-      }
-
-      resetTypeahead();
       executeInteraction(e, true);
-      return;
-    }
-
-    if (!menuPos && e.key === 'Backspace' && typeaheadQueryRef.current) {
-      e.preventDefault();
-      e.stopPropagation();
-      typeaheadQueryRef.current = typeaheadQueryRef.current.slice(0, -1);
-      if (!typeaheadQueryRef.current) {
-        resetTypeahead();
-      } else {
-        queueTypeaheadReset();
-      }
       return;
     }
 
@@ -418,10 +339,6 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     return () => window.removeEventListener('keydown', handleWindowDelete, true);
   }, [selectedStatusKey, normalizedStatusOptions]);
 
-  useEffect(() => () => {
-    if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
-  }, []);
-
   // Helper for title (tooltip)
   const getTitle = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -434,25 +351,15 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     <>
       <div
         ref={cellRef}
-        className="relative w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 focus-within:outline focus-within:outline-2 focus-within:outline-sky-400 focus-within:outline-offset-[-1px] focus-within:z-10"
+        className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
         onMouseDown={(e) => {
           if (e.button !== 0) return;
           cellRef.current?.focus();
-          focusHiddenInput();
         }}
-        onClick={() => {
-          cellRef.current?.focus();
-          focusHiddenInput();
-        }}
-        onFocus={() => {
-          if (!menuPos) {
-            focusHiddenInput();
-          }
-        }}
+        onClick={() => cellRef.current?.focus()}
         onBlur={(e) => {
           const nextFocus = e.relatedTarget as Node | null;
           if (nextFocus && cellRef.current?.contains(nextFocus)) return;
-          resetTypeahead();
           updateSelectedStatusKey(null);
         }}
         onDoubleClick={executeInteraction}
@@ -464,57 +371,6 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         data-status-pill-selected={selectedStatusKey ? 'true' : 'false'}
         title={getTitle()}
       >
-        <input
-          ref={hiddenInputRef}
-          onFocus={(e) => {
-            const length = e.currentTarget.value.length;
-            e.currentTarget.setSelectionRange(length, length);
-          }}
-          onChange={(e) => {
-            updateTypeaheadMatch(e.target.value);
-          }}
-          onCompositionStart={() => {
-            hiddenInputComposingRef.current = true;
-          }}
-          onCompositionEnd={(e) => {
-            hiddenInputComposingRef.current = false;
-            updateTypeaheadMatch(e.currentTarget.value);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              const matched = findStatusOptionMatch(typeaheadQueryRef.current, visibleStatusOptions);
-              if (matched) {
-                e.preventDefault();
-                e.stopPropagation();
-                resetTypeahead();
-                void toggleStatus(matched);
-                return;
-              }
-            }
-
-            if ((e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') && !menuPos) {
-              resetTypeahead();
-              handleGridKeyDown(e, rowIndex, colIndex, true, hiddenInputRef.current);
-            }
-          }}
-          onBlur={() => {
-            if (!menuPos && document.activeElement !== cellRef.current) {
-              setTimeout(() => {
-                if (document.activeElement !== cellRef.current) {
-                  hiddenInputRef.current?.focus();
-                  const length = hiddenInputRef.current?.value.length ?? 0;
-                  hiddenInputRef.current?.setSelectionRange(length, length);
-                }
-              }, 0);
-            }
-          }}
-          className="pointer-events-none absolute left-0 top-0 h-0 w-0 opacity-0"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          defaultValue=""
-          aria-hidden="true"
-        />
         {hasActiveStatus ? (
           <div className="w-full min-h-0 px-1.5 py-0 flex items-center justify-start">
             <div className="flex flex-wrap items-center justify-start gap-1 max-w-full">
@@ -538,15 +394,9 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
             </div>
           </div>
         ) : (
-          typeaheadValue ? (
-            <div className="w-full px-1.5 text-[13px] font-black text-slate-700 dark:text-slate-200 truncate">
-              {typeaheadValue}
-            </div>
-          ) : (
-            <div className="opacity-0 group-hover:opacity-50 transition-opacity">
-              <MoreHorizontal className="w-4 h-4 text-gray-400" />
-            </div>
-          )
+          <div className="opacity-0 group-hover:opacity-50 transition-opacity">
+            <MoreHorizontal className="w-4 h-4 text-gray-400" />
+          </div>
         )}
       </div>
 
@@ -560,7 +410,6 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
             pendingSnapshotRef.current = null;
             createPromiseRef.current = null;
             targetVisitIdRef.current = visit?.id ?? null;
-            resetTypeahead();
             setTimeout(() => cellRef.current?.focus(), 0);
           }}
           onToggle={toggleStatus}
