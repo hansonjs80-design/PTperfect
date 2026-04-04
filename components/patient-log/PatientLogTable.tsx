@@ -425,7 +425,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
           }
         }
         focusTargetRef.current = null; // Reset
-      }, 50);
+      }, 0);
     }
     prevVisitsLengthRef.current = visits.length;
   }, [visits.length]);
@@ -458,7 +458,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     }, 0);
   }, []);
 
-  const handleDraftCreate = async (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => {
+  const handleDraftCreate = async (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left' | 'up') => {
     if (colIndex !== undefined) {
       if (navDirection === 'left') {
         // Horizontal Left: Stay on the same row (newly created), go to previous column
@@ -466,6 +466,9 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       } else if (navDirection === 'right') {
         // Horizontal Right: Stay on the same row (newly created), go to next column
         focusTargetRef.current = { rowOffset: 0, colIndex: colIndex + 1 };
+      } else if (navDirection === 'up') {
+        // Explicit upward navigation should land on the previous existing row.
+        focusTargetRef.current = { rowOffset: -1, colIndex };
       } else if (navDirection === 'down') {
         // Explicit vertical navigation only when the editor asked for it.
         focusTargetRef.current = { rowOffset: 1, colIndex };

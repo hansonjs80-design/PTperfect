@@ -6,7 +6,7 @@ import { useGridNavigation } from '../../hooks/useGridNavigation';
 
 interface EditableCellProps {
   value: string | number | null;
-  onCommit: (val: string, skipSync: boolean, navDirection?: 'down' | 'right' | 'left') => void;
+  onCommit: (val: string, skipSync: boolean, navDirection?: 'down' | 'right' | 'left' | 'up') => void;
   type?: 'text' | 'number';
   placeholder?: string;
   className?: string;
@@ -47,7 +47,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const shouldReplaceOnCompositionRef = useRef(false);
 
   const skipSyncRef = useRef(false);
-  const navIntentRef = useRef<'down' | 'right' | 'left' | null>(null);
+  const navIntentRef = useRef<'down' | 'right' | 'left' | 'up' | null>(null);
   const isDirectEditing = directEdit && mode === 'edit';
 
   const { handleGridKeyDown } = useGridNavigation(11);
@@ -86,7 +86,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     setLocalValue(value === null ? '' : String(value));
   }, [value, rowIndex]);
 
-  const commitValue = (nextValue: string, navDirection?: 'down' | 'right' | 'left') => {
+  const commitValue = (nextValue: string, navDirection?: 'down' | 'right' | 'left' | 'up') => {
     if (nextValue !== String(value || '') || navDirection) {
       onCommit(nextValue, skipSyncRef.current, navDirection);
     }
@@ -376,6 +376,14 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
         e.preventDefault();
         e.stopPropagation();
         navIntentRef.current = 'down';
+        inputRef.current?.blur();
+        return;
+      }
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        e.stopPropagation();
+        navIntentRef.current = 'up';
         inputRef.current?.blur();
         return;
       }

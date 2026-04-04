@@ -55,7 +55,7 @@ interface PatientLogRowProps {
   rowStatus?: 'active' | 'completed' | 'none';
   onUpdate?: (id: string, updates: Partial<PatientVisit>, skipBedSync?: boolean) => void | Promise<void>;
   onDelete?: (id: string) => void;
-  onCreate?: (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left') => Promise<string>;
+  onCreate?: (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left' | 'up') => Promise<string>;
   onSelectLog?: (id: string, bedId?: number | null, options?: { append?: boolean }) => void;
   onMovePatient?: (visitId: string, currentBedId: number, newBedId: number) => void;
   onEditActive?: (bedId: number) => void;
@@ -267,7 +267,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
   };
 
-  const handleChange = async (field: keyof PatientVisit, value: string, _skipSync: boolean, colIndex: number, navDirection?: 'down' | 'right' | 'left') => {
+  const handleChange = async (field: keyof PatientVisit, value: string, _skipSync: boolean, colIndex: number, navDirection?: 'down' | 'right' | 'left' | 'up') => {
     const normalizedValue = value.trim();
     const patientNameKey = field === 'patient_name' ? normalizedValue.toLocaleLowerCase() : '';
     const matchedAutofill = field === 'patient_name' ? patientNameAutofillMap[patientNameKey] : undefined;
