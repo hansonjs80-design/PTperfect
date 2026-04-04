@@ -38,7 +38,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     quickTreatments
   } = useTreatmentContext();
   
-  const { visits, setVisits, currentDate, setCurrentDate, changeDate, addVisit, deleteVisit } = usePatientLogContext();
+  const { visits, setVisits, currentDate, setCurrentDate, changeDate, addVisit, updateVisit, deleteVisit } = usePatientLogContext();
   const panelRootRef = useRef<HTMLDivElement>(null);
   const isApplyingUndoRedoRef = useRef(false);
   const undoStackRef = useRef<PatientVisit[][]>([]);
@@ -125,8 +125,12 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setVisits((prev) => prev.map((visit) => (
       visit.id === id ? { ...visit, ...updates } : visit
     )));
+    if (skipBedSync) {
+      await updateVisit(id, updates);
+      return;
+    }
     await updateVisitWithBedSync(id, updates, skipBedSync);
-  }, [pushUndoSnapshot, setVisits, updateVisitWithBedSync]);
+  }, [pushUndoSnapshot, setVisits, updateVisit, updateVisitWithBedSync]);
 
   const trackedAddVisit = useCallback(async (initialData: Partial<PatientVisit> = {}): Promise<string> => {
     pushUndoSnapshot();
@@ -164,12 +168,16 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           detail: { visitId: id },
         }));
       }
-      void updateVisitWithBedSync(id, patch.updates, patch.skipBedSync);
+      if (patch.skipBedSync) {
+        void updateVisit(id, patch.updates);
+      } else {
+        void updateVisitWithBedSync(id, patch.updates, patch.skipBedSync);
+      }
       if (patch.clearBedId) {
         clearBed(patch.clearBedId);
       }
     });
-  }, [pushUndoSnapshot, setVisits, updateVisitWithBedSync, clearBed]);
+  }, [pushUndoSnapshot, setVisits, updateVisit, updateVisitWithBedSync, clearBed]);
 
   const moveRowsToBottomLocal = useCallback((rows: number[]) => {
     setVisits((prev) => {
