@@ -104,12 +104,10 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   };
 
   const focusHiddenInput = () => {
-    requestAnimationFrame(() => {
-      if (menuPos) return;
-      hiddenInputRef.current?.focus();
-      const length = hiddenInputRef.current?.value.length ?? 0;
-      hiddenInputRef.current?.setSelectionRange(length, length);
-    });
+    if (menuPos) return;
+    hiddenInputRef.current?.focus();
+    const length = hiddenInputRef.current?.value.length ?? 0;
+    hiddenInputRef.current?.setSelectionRange(length, length);
   };
 
   const updateTypeaheadMatch = (nextValue: string) => {

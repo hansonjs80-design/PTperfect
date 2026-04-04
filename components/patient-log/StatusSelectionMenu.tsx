@@ -270,11 +270,6 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
   useEffect(() => {
     if (isSettingsOpen) return;
-    setActiveIndex(initialIndex);
-  }, [initialIndex, isSettingsOpen]);
-
-  useEffect(() => {
-    if (isSettingsOpen) return;
     hiddenInputRef.current?.focus();
     const length = hiddenInputRef.current?.value.length ?? 0;
     hiddenInputRef.current?.setSelectionRange(length, length);
