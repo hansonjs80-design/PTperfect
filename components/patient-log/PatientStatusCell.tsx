@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef, memo } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { PatientCustomStatus, PatientVisit } from '../../types';
-import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, STATUS_OPTIONS_STORAGE_KEY, StatusOptionConfig, StatusSelectionMenu } from './StatusSelectionMenu';
+import { DEFAULT_STATUS_OPTIONS, findStatusOptionMatch, normalizeStatusOptions, STATUS_COLOR_OPTIONS, STATUS_OPTIONS_STORAGE_KEY, StatusOptionConfig, StatusSelectionMenu } from './StatusSelectionMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 
@@ -39,8 +39,11 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const targetVisitIdRef = useRef<string | null>(visit?.id ?? null);
   const pendingSnapshotRef = useRef<Partial<PatientVisit> | null>(null);
   const createPromiseRef = useRef<Promise<string> | null>(null);
+  const typeaheadQueryRef = useRef('');
+  const typeaheadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { handleGridKeyDown } = useGridNavigation(11);
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
+  const visibleStatusOptions = normalizedStatusOptions.filter((option) => option.visible);
 
   const STATUS_KEYS: Array<keyof PatientVisit> = [
     'is_injection',
@@ -75,6 +78,22 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     delete document.body.dataset.patientStatusMenuOpen;
     return undefined;
   }, [menuPos]);
+
+  const resetTypeahead = () => {
+    typeaheadQueryRef.current = '';
+    if (typeaheadTimerRef.current) {
+      clearTimeout(typeaheadTimerRef.current);
+      typeaheadTimerRef.current = null;
+    }
+  };
+
+  const queueTypeaheadReset = () => {
+    if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
+    typeaheadTimerRef.current = setTimeout(() => {
+      typeaheadQueryRef.current = '';
+      typeaheadTimerRef.current = null;
+    }, 900);
+  };
 
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent | React.TouchEvent, isKeyboard: boolean = false) => {
     e.preventDefault();
@@ -154,8 +173,46 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    const isPlainPrintableKey = e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey;
+
+    if (!menuPos && isPlainPrintableKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      const appended = `${typeaheadQueryRef.current}${e.key}`;
+      const nextQuery = findStatusOptionMatch(appended, visibleStatusOptions)
+        ? appended
+        : (findStatusOptionMatch(e.key, visibleStatusOptions) ? e.key : '');
+      typeaheadQueryRef.current = nextQuery;
+      queueTypeaheadReset();
+      return;
+    }
+
     if (e.key === 'Enter') {
+      if (!menuPos) {
+        const matched = findStatusOptionMatch(typeaheadQueryRef.current, visibleStatusOptions);
+        if (matched) {
+          e.preventDefault();
+          e.stopPropagation();
+          resetTypeahead();
+          void toggleStatus(matched);
+          return;
+        }
+      }
+
+      resetTypeahead();
       executeInteraction(e, true);
+      return;
+    }
+
+    if (!menuPos && e.key === 'Backspace' && typeaheadQueryRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      typeaheadQueryRef.current = typeaheadQueryRef.current.slice(0, -1);
+      if (!typeaheadQueryRef.current) {
+        resetTypeahead();
+      } else {
+        queueTypeaheadReset();
+      }
       return;
     }
 
@@ -339,6 +396,10 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     return () => window.removeEventListener('keydown', handleWindowDelete, true);
   }, [selectedStatusKey, normalizedStatusOptions]);
 
+  useEffect(() => () => {
+    if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
+  }, []);
+
   // Helper for title (tooltip)
   const getTitle = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -360,6 +421,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         onBlur={(e) => {
           const nextFocus = e.relatedTarget as Node | null;
           if (nextFocus && cellRef.current?.contains(nextFocus)) return;
+          resetTypeahead();
           updateSelectedStatusKey(null);
         }}
         onDoubleClick={executeInteraction}
@@ -410,6 +472,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
             pendingSnapshotRef.current = null;
             createPromiseRef.current = null;
             targetVisitIdRef.current = visit?.id ?? null;
+            resetTypeahead();
             setTimeout(() => cellRef.current?.focus(), 0);
           }}
           onToggle={toggleStatus}

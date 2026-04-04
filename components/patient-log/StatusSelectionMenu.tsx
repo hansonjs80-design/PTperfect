@@ -138,6 +138,42 @@ export const DEFAULT_STATUS_OPTIONS: StatusOptionConfig[] = [
   { id: 'is_exercise', kind: 'predefined', key: 'is_exercise', label: '운동', visible: true, order: 6, color: 'lime' },
 ];
 
+const HANGUL_SYLLABLE_BASE = 0xac00;
+const HANGUL_SYLLABLE_LAST = 0xd7a3;
+const HANGUL_CHOSEONG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+
+const normalizeStatusMatchText = (value: string) =>
+  value
+    .normalize('NFC')
+    .replace(/\s+/g, '')
+    .toLocaleLowerCase();
+
+const getChoseongText = (value: string) =>
+  Array.from(value.normalize('NFC')).map((char) => {
+    const code = char.charCodeAt(0);
+    if (code >= HANGUL_SYLLABLE_BASE && code <= HANGUL_SYLLABLE_LAST) {
+      return HANGUL_CHOSEONG[Math.floor((code - HANGUL_SYLLABLE_BASE) / 588)] || char;
+    }
+    return char;
+  }).join('');
+
+export const findStatusOptionMatch = (query: string, options: StatusOptionConfig[]) => {
+  const normalizedQuery = normalizeStatusMatchText(query);
+  if (!normalizedQuery) return null;
+
+  const exactPrefixMatch = options.find((option) =>
+    normalizeStatusMatchText(option.label).startsWith(normalizedQuery)
+  );
+  if (exactPrefixMatch) return exactPrefixMatch;
+
+  const chosungQuery = normalizeStatusMatchText(getChoseongText(query));
+  if (!chosungQuery) return null;
+
+  return options.find((option) =>
+    normalizeStatusMatchText(getChoseongText(option.label)).startsWith(chosungQuery)
+  ) || null;
+};
+
 const sortStatusOptions = (options: StatusOptionConfig[]) => [...options].sort((a, b) => a.order - b.order);
 const DEFAULT_STATUS_OPTION_MAP = new Map(DEFAULT_STATUS_OPTIONS.map((option) => [option.id, option] as const));
 const PREDEFINED_STATUS_ID_SET = new Set(DEFAULT_STATUS_OPTIONS.map((option) => option.id));
@@ -206,6 +242,9 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   }, [visibleStatusOptions, visit]);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
+  const [typeaheadQuery, setTypeaheadQuery] = useState('');
+  const typeaheadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingTypeaheadOptionIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const next = new Set<string>();
@@ -237,9 +276,19 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
     buttonRefs.current[activeIndex]?.focus();
   }, [activeIndex, isSettingsOpen]);
 
+  const resetTypeahead = useCallback(() => {
+    pendingTypeaheadOptionIdRef.current = null;
+    setTypeaheadQuery('');
+    if (typeaheadTimerRef.current) {
+      clearTimeout(typeaheadTimerRef.current);
+      typeaheadTimerRef.current = null;
+    }
+  }, []);
+
   const toggleSelection = useCallback((index: number) => {
     const option = visibleStatusOptions[index];
     if (!option) return;
+    pendingTypeaheadOptionIdRef.current = null;
     setActiveKeys((prev) => {
       const next = new Set(prev);
       if (next.has(option.id)) next.delete(option.id);
@@ -300,6 +349,34 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
       if (visibleStatusOptions.length === 0) return;
 
+      const isPlainPrintableKey = e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey;
+      if (isPlainPrintableKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        const appended = `${typeaheadQuery}${e.key}`;
+        const nextQuery = findStatusOptionMatch(appended, visibleStatusOptions)
+          ? appended
+          : (findStatusOptionMatch(e.key, visibleStatusOptions) ? e.key : '');
+        if (!nextQuery) {
+          resetTypeahead();
+          return;
+        }
+        setTypeaheadQuery(nextQuery);
+        const matched = findStatusOptionMatch(nextQuery, visibleStatusOptions);
+        if (matched) {
+          const matchedIndex = visibleStatusOptions.findIndex((option) => option.id === matched.id);
+          if (matchedIndex >= 0) {
+            setActiveIndex(matchedIndex);
+            pendingTypeaheadOptionIdRef.current = matched.id;
+          }
+        }
+        if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
+        typeaheadTimerRef.current = setTimeout(() => {
+          resetTypeahead();
+        }, 900);
+        return;
+      }
+
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         e.stopPropagation();
@@ -317,6 +394,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       if (e.key === ' ') {
         e.preventDefault();
         e.stopPropagation();
+        resetTypeahead();
         toggleSelection(activeIndex);
         return;
       }
@@ -324,6 +402,14 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       if (e.key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
+        const pendingId = pendingTypeaheadOptionIdRef.current;
+        if (pendingId) {
+          const pendingIndex = visibleStatusOptions.findIndex((option) => option.id === pendingId);
+          if (pendingIndex >= 0 && !activeKeys.has(pendingId)) {
+            toggleSelection(pendingIndex);
+          }
+        }
+        resetTypeahead();
         onClose();
         return;
       }
@@ -331,13 +417,40 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
+        resetTypeahead();
         onClose();
+        return;
+      }
+
+      if (e.key === 'Backspace' && typeaheadQuery) {
+        e.preventDefault();
+        e.stopPropagation();
+        const nextQuery = typeaheadQuery.slice(0, -1);
+        if (!nextQuery) {
+          resetTypeahead();
+          return;
+        }
+        setTypeaheadQuery(nextQuery);
+        const matched = findStatusOptionMatch(nextQuery, visibleStatusOptions);
+        if (matched) {
+          const matchedIndex = visibleStatusOptions.findIndex((option) => option.id === matched.id);
+          if (matchedIndex >= 0) {
+            setActiveIndex(matchedIndex);
+            pendingTypeaheadOptionIdRef.current = matched.id;
+          }
+        } else {
+          pendingTypeaheadOptionIdRef.current = null;
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [activeIndex, activeKeys, isSettingsOpen, onClose, toggleSelection, visibleStatusOptions]);
+  }, [activeIndex, activeKeys, isSettingsOpen, onClose, resetTypeahead, toggleSelection, typeaheadQuery, visibleStatusOptions]);
+
+  useEffect(() => () => {
+    if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
+  }, []);
 
   return (
     <ContextMenu
