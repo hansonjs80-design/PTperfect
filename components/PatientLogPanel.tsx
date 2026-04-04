@@ -1222,7 +1222,6 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           presets={presets}
           patientNameSuggestions={patientNameSuggestions}
           patientNameAutofillMap={patientNameAutofillMap}
-          bodyPartSuggestions={bodyPartSuggestions}
           memoSuggestions={memoSuggestions}
           specialNoteSuggestions={specialNoteSuggestions}
           getRowStatus={getRowStatus}
