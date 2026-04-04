@@ -34,6 +34,12 @@ export const PresetListItem: React.FC<PresetListItemProps> = ({
     return Math.floor(totalSeconds / 60);
   };
 
+  const presetBadgeStyle = {
+    backgroundColor: preset.color || '#4f46e5',
+    color: preset.textColor || '#ffffff',
+    borderColor: preset.textColor ? `${preset.textColor}33` : 'rgba(15, 23, 42, 0.08)',
+  };
+
   return (
     <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 hover:border-brand-300 dark:hover:border-slate-500 transition-all group animate-in slide-in-from-bottom-1">
       {/* 1. 순서 및 번호 조정 영역 */}
@@ -69,7 +75,11 @@ export const PresetListItem: React.FC<PresetListItemProps> = ({
             
             {/* Row 1 (Mobile): Name & Metadata - Justified between */}
             <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0 w-full sm:w-auto">
-                <span className="font-black text-slate-800 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors truncate text-sm sm:text-base">
+                <span
+                  className="inline-flex max-w-full items-center rounded-md border px-2.5 py-1 text-sm sm:text-base font-black shadow-sm truncate"
+                  style={presetBadgeStyle}
+                  title={`${preset.name} 세트 버튼 미리보기`}
+                >
                   {preset.name}
                 </span>
                 
