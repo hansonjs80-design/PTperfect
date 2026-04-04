@@ -44,6 +44,7 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
   const [activeConfirmPos, setActiveConfirmPos] = useState<{x: number, y: number} | null>(null);
   const [gridPos, setGridPos] = useState<{top: number, left: number} | null>(null);
   const [quickStartConfirmPos, setQuickStartConfirmPos] = useState<{x: number, y: number} | null>(null);
+  const [highlightedBedId, setHighlightedBedId] = useState<number>(value ?? 0);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -80,6 +81,18 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
       setGridPos(refined);
     }
   }, [mode, menuPos]);
+
+  useEffect(() => {
+    if (mode !== 'select_target') return;
+    const initialBedId = value ?? 0;
+    setHighlightedBedId(initialBedId);
+    requestAnimationFrame(() => {
+      const target = gridRef.current?.querySelector<HTMLButtonElement>(`button[data-bed-id="${initialBedId}"]`)
+        || gridRef.current?.querySelector<HTMLButtonElement>('button[tabindex="0"]')
+        || gridRef.current?.querySelector<HTMLButtonElement>('button');
+      target?.focus();
+    });
+  }, [mode, value]);
 
   const getSmartPosition = (pos: {x: number, y: number}, w: number = 160, h: number = 80) => {
       if (!pos) return { top: 0, left: 0 };
@@ -250,6 +263,62 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
     setTimeout(() => cellRef.current?.focus(), 0);
   };
 
+  const handleSelectorKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (mode !== 'select_target') return;
+
+    const bedNumbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    const currentIndex = Math.max(0, bedNumbers.indexOf(highlightedBedId));
+
+    const focusBed = (bedId: number) => {
+      setHighlightedBedId(bedId);
+      requestAnimationFrame(() => {
+        gridRef.current?.querySelector<HTMLButtonElement>(`button[data-bed-id="${bedId}"]`)?.focus();
+      });
+    };
+
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      e.stopPropagation();
+      focusBed(bedNumbers[Math.min(currentIndex + 1, bedNumbers.length - 1)]);
+      return;
+    }
+
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      e.stopPropagation();
+      focusBed(bedNumbers[Math.max(currentIndex - 1, 0)]);
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      e.stopPropagation();
+      focusBed(bedNumbers[Math.min(currentIndex + 4, bedNumbers.length - 1)]);
+      return;
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      e.stopPropagation();
+      focusBed(bedNumbers[Math.max(currentIndex - 4, 0)]);
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      handleGridSelect(highlightedBedId);
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      setMode('view');
+      setTimeout(() => cellRef.current?.focus(), 0);
+    }
+  };
+
   const applyBufferedBedNumber = useCallback((raw: string) => {
     const parsed = Number(raw);
     if (!Number.isInteger(parsed) || parsed < 1 || parsed > 11) return;
@@ -289,6 +358,7 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
                     className="absolute bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col w-[230px]"
                     style={{ top: gridPos?.top ?? 0, left: gridPos?.left ?? 0 }}
                     onClick={(e) => e.stopPropagation()}
+                    onKeyDown={handleSelectorKeyDown}
                 >
                     <div className="px-3 py-2.5 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center gap-2 bg-gray-50 dark:bg-slate-900/50 shrink-0">
                         <div className="flex items-center gap-2 min-w-0">
@@ -307,7 +377,7 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
                         <button onClick={() => setMode('view')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"><X className="w-4 h-4" /></button>
                     </div>
                     <div className="p-1">
-                        <BedSelectionGrid currentValue={value} activeBedIds={activeBedIds} onSelect={handleGridSelect} disableHighlight={isLogEditMode} />
+                        <BedSelectionGrid currentValue={value} activeBedIds={activeBedIds} onSelect={handleGridSelect} disableHighlight={isLogEditMode} highlightedBedId={highlightedBedId} onHighlightChange={setHighlightedBedId} />
                     </div>
                 </div>
             </div>, document.body

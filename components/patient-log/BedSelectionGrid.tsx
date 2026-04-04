@@ -6,13 +6,17 @@ interface BedSelectionGridProps {
   activeBedIds: number[];
   onSelect: (bedId: number) => void;
   disableHighlight?: boolean;
+  highlightedBedId?: number | null;
+  onHighlightChange?: (bedId: number) => void;
 }
 
 export const BedSelectionGrid: React.FC<BedSelectionGridProps> = ({
   currentValue,
   activeBedIds,
   onSelect,
-  disableHighlight = false
+  disableHighlight = false,
+  highlightedBedId = null,
+  onHighlightChange
 }) => {
   // 0 represents "Unassigned" (Clear Bed)
   const bedNumbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
@@ -24,6 +28,7 @@ export const BedSelectionGrid: React.FC<BedSelectionGridProps> = ({
         // 0 (Unassigned) is never "Active" in terms of occupancy
         const isActive = num !== 0 && !disableHighlight && activeBedIds.includes(num);
         const isSelected = (currentValue === null && num === 0) || currentValue === num;
+        const isHighlighted = highlightedBedId === num;
         
         // Style Logic:
         // 1. Selected: Blue
@@ -46,12 +51,20 @@ export const BedSelectionGrid: React.FC<BedSelectionGridProps> = ({
             }
         }
 
+        if (isHighlighted) {
+          btnClass += " ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800";
+        }
+
         return (
           <button
             key={num}
+            type="button"
+            data-bed-id={num}
             onClick={() => onSelect(num)}
+            onFocus={() => onHighlightChange?.(num)}
             className={btnClass}
             disabled={isSelected}
+            tabIndex={isHighlighted ? 0 : -1}
             title={
                 num === 0 ? "배드 배정 해제 (미지정)" :
                 isActive ? "현재 사용 중인 배드" : 
