@@ -55,7 +55,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const restoreGridSelectionFocus = () => {
     if (!gridId) return;
 
-    requestAnimationFrame(() => {
+    queueMicrotask(() => {
       const cellElement = document.querySelector(`[data-grid-id="${gridId}"]`) as HTMLElement | null;
       if (!cellElement) return;
       cellElement.focus();
@@ -338,9 +338,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
         setLocalValue(previewSuggestion);
         navIntentRef.current = null;
         commitValue(previewSuggestion);
-        requestAnimationFrame(() => {
-          inputRef.current?.blur();
-        });
+        inputRef.current?.blur();
         return;
       }
     }
