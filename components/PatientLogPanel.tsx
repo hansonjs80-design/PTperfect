@@ -122,8 +122,11 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
   const trackedUpdateVisitWithBedSync = useCallback(async (id: string, updates: Partial<PatientVisit>, skipBedSync: boolean = false) => {
     pushUndoSnapshot();
+    setVisits((prev) => prev.map((visit) => (
+      visit.id === id ? { ...visit, ...updates } : visit
+    )));
     await updateVisitWithBedSync(id, updates, skipBedSync);
-  }, [pushUndoSnapshot]);
+  }, [pushUndoSnapshot, setVisits, updateVisitWithBedSync]);
 
   const trackedAddVisit = useCallback(async (initialData: Partial<PatientVisit> = {}): Promise<string> => {
     pushUndoSnapshot();
