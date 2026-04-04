@@ -145,6 +145,21 @@ const PREDEFINED_STATUS_ID_SET = new Set(DEFAULT_STATUS_OPTIONS.map((option) => 
 const isStatusColorKey = (value: unknown): value is StatusColorKey =>
   typeof value === 'string' && value in STATUS_COLOR_OPTIONS;
 
+const areStatusOptionsEqual = (left: StatusOptionConfig[], right: StatusOptionConfig[]) => {
+  if (left.length !== right.length) return false;
+  return left.every((option, index) => {
+    const other = right[index];
+    return !!other &&
+      option.id === other.id &&
+      option.kind === other.kind &&
+      option.key === other.key &&
+      option.label === other.label &&
+      option.visible === other.visible &&
+      option.order === other.order &&
+      option.color === other.color;
+  });
+};
+
 export const normalizeStatusOptions = (options: StatusOptionConfig[]) =>
   [
     ...DEFAULT_STATUS_OPTIONS.map((defaultOption) => {
@@ -208,6 +223,11 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
   const pendingEnterIndexRef = useRef<number | null>(null);
   const didInitActiveIndexRef = useRef(false);
+
+  useEffect(() => {
+    if (areStatusOptionsEqual(statusOptions, normalizedStatusOptions)) return;
+    setStatusOptions(normalizedStatusOptions);
+  }, [normalizedStatusOptions, setStatusOptions, statusOptions]);
 
   useEffect(() => {
     const next = new Set<string>();

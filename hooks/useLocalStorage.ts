@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 
 const LOCAL_STORAGE_CHANGE_EVENT = 'physio-local-storage-change';
+const LOCAL_STORAGE_BACKUP_SUFFIX = '__backup';
 
 interface LocalStorageChangeDetail<T> {
   key: string;
@@ -9,6 +10,8 @@ interface LocalStorageChangeDetail<T> {
 }
 
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
+  const backupKey = `${key}${LOCAL_STORAGE_BACKUP_SUFFIX}`;
+
   // Get from local storage then parse stored json or return initialValue
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === 'undefined') {
@@ -16,7 +19,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     }
 
     try {
-      const item = window.localStorage.getItem(key);
+      const item = window.localStorage.getItem(key) ?? window.localStorage.getItem(backupKey);
       if (!item || item === "undefined" || item === "null" || item.trim() === "") {
         return initialValue;
       }
@@ -31,13 +34,14 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     if (typeof window === 'undefined') return;
 
     const syncFromStorage = (raw: string | null) => {
-      if (!raw || raw === 'undefined' || raw === 'null' || raw.trim() === '') {
+      const nextRaw = raw ?? window.localStorage.getItem(backupKey);
+      if (!nextRaw || nextRaw === 'undefined' || nextRaw === 'null' || nextRaw.trim() === '') {
         setStoredValue(initialValue);
         return;
       }
 
       try {
-        setStoredValue(JSON.parse(raw) as T);
+        setStoredValue(JSON.parse(nextRaw) as T);
       } catch (error) {
         console.warn(`Error syncing localStorage key “${key}”:`, error);
       }
@@ -71,6 +75,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
         if (typeof window !== 'undefined') {
           try {
             window.localStorage.setItem(key, JSON.stringify(valueToStore));
+            window.localStorage.setItem(backupKey, JSON.stringify(valueToStore));
             window.dispatchEvent(new CustomEvent<LocalStorageChangeDetail<T>>(LOCAL_STORAGE_CHANGE_EVENT, {
               detail: { key, value: valueToStore }
             }));
@@ -84,7 +89,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     } catch (error) {
       console.warn(`Error setting localStorage key “${key}”:`, error);
     }
-  }, [key]);
+  }, [backupKey, key]);
 
   return [storedValue, setValue];
 }
