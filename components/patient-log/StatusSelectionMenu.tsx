@@ -232,6 +232,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   const visibleStatusOptions = useMemo(() => orderedStatusOptions.filter((opt) => opt.visible), [orderedStatusOptions]);
   const hiddenStatusOptions = useMemo(() => orderedStatusOptions.filter((opt) => !opt.visible), [orderedStatusOptions]);
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
   const initialIndex = useMemo(() => {
     const activeIdx = visibleStatusOptions.findIndex((opt) => {
       if (!visit) return false;
@@ -273,7 +274,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
   useEffect(() => {
     if (isSettingsOpen) return;
-    buttonRefs.current[activeIndex]?.focus();
+    hiddenInputRef.current?.focus();
   }, [activeIndex, isSettingsOpen]);
 
   const resetTypeahead = useCallback(() => {
@@ -620,7 +621,40 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
           </div>
         </div>
       ) : visibleStatusOptions.length > 0 ? (
-        visibleStatusOptions.map((opt, idx) => {
+        <div className="relative flex flex-col gap-1.5">
+          <input
+            ref={hiddenInputRef}
+            value={typeaheadQuery}
+            onChange={(e) => {
+              const nextQuery = e.target.value;
+              setTypeaheadQuery(nextQuery);
+              const matched = findStatusOptionMatch(nextQuery, visibleStatusOptions);
+              if (matched) {
+                const matchedIndex = visibleStatusOptions.findIndex((option) => option.id === matched.id);
+                if (matchedIndex >= 0) {
+                  setActiveIndex(matchedIndex);
+                  pendingTypeaheadOptionIdRef.current = matched.id;
+                }
+              } else {
+                pendingTypeaheadOptionIdRef.current = null;
+              }
+              if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
+              typeaheadTimerRef.current = setTimeout(() => {
+                resetTypeahead();
+              }, 900);
+            }}
+            onBlur={() => {
+              if (!isSettingsOpen) {
+                setTimeout(() => hiddenInputRef.current?.focus(), 0);
+              }
+            }}
+            className="pointer-events-none absolute left-0 top-0 h-0 w-0 opacity-0"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            aria-hidden="true"
+          />
+        {visibleStatusOptions.map((opt, idx) => {
           const isActive = activeKeys.has(opt.id);
           const isFocusedOption = idx === activeIndex;
           const palette = STATUS_COLOR_OPTIONS[opt.color] || STATUS_COLOR_OPTIONS[DEFAULT_STATUS_OPTION_MAP.get(opt.id)?.color || 'sky'];
@@ -632,8 +666,12 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
               ref={(el) => {
                 buttonRefs.current[idx] = el;
               }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+              }}
               onClick={() => {
                 setActiveIndex(idx);
+                hiddenInputRef.current?.focus();
                 toggleSelection(idx);
               }}
               onKeyDown={(e) => {
@@ -662,7 +700,8 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
               </div>
             </button>
           );
-        })
+        })}
+        </div>
       ) : (
         <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 p-4 text-center text-xs font-bold text-slate-400 dark:text-slate-500">
           표시할 추가 사항이 없습니다. 톱니 버튼에서 항목을 추가하세요.

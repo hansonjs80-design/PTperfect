@@ -33,7 +33,9 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null);
   const [selectedStatusKey, setSelectedStatusKey] = useState<string | null>(null);
   const [menuVisitSnapshot, setMenuVisitSnapshot] = useState<Partial<PatientVisit> | null>(null);
+  const [typeaheadValue, setTypeaheadValue] = useState('');
   const cellRef = useRef<HTMLDivElement>(null);
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
   const selectedStatusKeyRef = useRef<string | null>(null);
   const lastClickTimeRef = useRef<number>(0);
   const targetVisitIdRef = useRef<string | null>(visit?.id ?? null);
@@ -81,6 +83,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
   const resetTypeahead = () => {
     typeaheadQueryRef.current = '';
+    setTypeaheadValue('');
     if (typeaheadTimerRef.current) {
       clearTimeout(typeaheadTimerRef.current);
       typeaheadTimerRef.current = null;
@@ -91,8 +94,17 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
     typeaheadTimerRef.current = setTimeout(() => {
       typeaheadQueryRef.current = '';
+      setTypeaheadValue('');
       typeaheadTimerRef.current = null;
     }, 900);
+  };
+
+  const focusHiddenInput = () => {
+    requestAnimationFrame(() => {
+      hiddenInputRef.current?.focus();
+      const length = hiddenInputRef.current?.value.length ?? 0;
+      hiddenInputRef.current?.setSelectionRange(length, length);
+    });
   };
 
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent | React.TouchEvent, isKeyboard: boolean = false) => {
@@ -176,14 +188,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     const isPlainPrintableKey = e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey;
 
     if (!menuPos && isPlainPrintableKey) {
-      e.preventDefault();
-      e.stopPropagation();
-      const appended = `${typeaheadQueryRef.current}${e.key}`;
-      const nextQuery = findStatusOptionMatch(appended, visibleStatusOptions)
-        ? appended
-        : (findStatusOptionMatch(e.key, visibleStatusOptions) ? e.key : '');
-      typeaheadQueryRef.current = nextQuery;
-      queueTypeaheadReset();
+      focusHiddenInput();
       return;
     }
 
@@ -412,12 +417,16 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     <>
       <div
         ref={cellRef}
-        className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
+        className="relative w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 focus-within:outline focus-within:outline-2 focus-within:outline-sky-400 focus-within:outline-offset-[-1px] focus-within:z-10"
         onMouseDown={(e) => {
           if (e.button !== 0) return;
           cellRef.current?.focus();
+          focusHiddenInput();
         }}
-        onClick={() => cellRef.current?.focus()}
+        onClick={() => {
+          cellRef.current?.focus();
+          focusHiddenInput();
+        }}
         onBlur={(e) => {
           const nextFocus = e.relatedTarget as Node | null;
           if (nextFocus && cellRef.current?.contains(nextFocus)) return;
@@ -433,6 +442,51 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         data-status-pill-selected={selectedStatusKey ? 'true' : 'false'}
         title={getTitle()}
       >
+        <input
+          ref={hiddenInputRef}
+          value={typeaheadValue}
+          onChange={(e) => {
+            const nextValue = e.target.value;
+            typeaheadQueryRef.current = nextValue;
+            setTypeaheadValue(nextValue);
+            if (nextValue) {
+              queueTypeaheadReset();
+            } else {
+              resetTypeahead();
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              const matched = findStatusOptionMatch(typeaheadQueryRef.current, visibleStatusOptions);
+              if (matched) {
+                e.preventDefault();
+                e.stopPropagation();
+                resetTypeahead();
+                void toggleStatus(matched);
+                return;
+              }
+            }
+
+            if ((e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') && !menuPos) {
+              resetTypeahead();
+              handleGridKeyDown(e, rowIndex, colIndex, true, hiddenInputRef.current);
+            }
+          }}
+          onBlur={() => {
+            if (!menuPos && document.activeElement !== cellRef.current) {
+              setTimeout(() => {
+                if (document.activeElement !== cellRef.current) {
+                  hiddenInputRef.current?.focus();
+                }
+              }, 0);
+            }
+          }}
+          className="pointer-events-none absolute left-0 top-0 h-0 w-0 opacity-0"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          aria-hidden="true"
+        />
         {hasActiveStatus ? (
           <div className="w-full min-h-0 px-1.5 py-0 flex items-center justify-start">
             <div className="flex flex-wrap items-center justify-start gap-1 max-w-full">
@@ -456,9 +510,15 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
             </div>
           </div>
         ) : (
-          <div className="opacity-0 group-hover:opacity-50 transition-opacity">
-            <MoreHorizontal className="w-4 h-4 text-gray-400" />
-          </div>
+          typeaheadValue ? (
+            <div className="w-full px-1.5 text-[13px] font-black text-slate-700 dark:text-slate-200 truncate">
+              {typeaheadValue}
+            </div>
+          ) : (
+            <div className="opacity-0 group-hover:opacity-50 transition-opacity">
+              <MoreHorizontal className="w-4 h-4 text-gray-400" />
+            </div>
+          )
         )}
       </div>
 
