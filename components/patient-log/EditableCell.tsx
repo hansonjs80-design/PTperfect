@@ -192,6 +192,10 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     const finalValue = localValue;
     commitValue(finalValue, navIntentRef.current || undefined);
     navIntentRef.current = null;
+    if (restoreSelectionAfterBlurRef.current) {
+      restoreSelectionAfterBlurRef.current = false;
+      restoreGridSelectionFocus();
+    }
   };
 
   const handleCopy = async (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -345,6 +349,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
       e.preventDefault();
       e.stopPropagation();
       navIntentRef.current = null;
+      restoreSelectionAfterBlurRef.current = true;
       inputRef.current?.blur();
       return;
     }
