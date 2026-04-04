@@ -104,33 +104,9 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
     // Pre-compute grid position for select_target mode (estimated 230x180)
     const preGridPos = computePopupPosition(clickPos, 230, 180, { preferAbove: true, centerOnClick: true, gap: 10 });
 
-    if (isLogEditMode) {
-        setGridPos(preGridPos);
-        setMode('select_target');
-        return;
-    }
-    if (!value) {
-        setGridPos(preGridPos);
-        setMode('select_target');
-        return;
-    }
-    if (!hasTreatment) {
-        setGridPos(preGridPos);
-        setMode('select_target');
-        return;
-    }
-    if (rowStatus === 'active') {
-        if (window.innerWidth >= 768) {
-            setActiveConfirmPos(clickPos);
-        } else {
-            // Mobile uses native confirm for better UX in this specific dangerous action
-            if (window.confirm("방번호를 변경하시겠습니까?")) {
-                setMode('select_target');
-            }
-        }
-        return;
-    }
     setMode('menu');
+    setGridPos(preGridPos);
+    setMode('select_target');
   };
 
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent, isKeyboard: boolean = false) => {

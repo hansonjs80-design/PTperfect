@@ -63,7 +63,6 @@ export const BedSelectionGrid: React.FC<BedSelectionGridProps> = ({
             onClick={() => onSelect(num)}
             onFocus={() => onHighlightChange?.(num)}
             className={btnClass}
-            disabled={isSelected}
             tabIndex={isHighlighted ? 0 : -1}
             title={
                 num === 0 ? "배드 배정 해제 (미지정)" :
