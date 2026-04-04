@@ -43,6 +43,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const createPromiseRef = useRef<Promise<string> | null>(null);
   const typeaheadQueryRef = useRef('');
   const typeaheadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hiddenInputComposingRef = useRef(false);
   const { handleGridKeyDown } = useGridNavigation(11);
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
   const visibleStatusOptions = normalizedStatusOptions.filter((option) => option.visible);
@@ -208,7 +209,11 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
     if (e.key === 'Enter') {
       if (!menuPos) {
-        const matched = findStatusOptionMatch(typeaheadQueryRef.current, visibleStatusOptions);
+        if (hiddenInputComposingRef.current) {
+          return;
+        }
+        const rawQuery = hiddenInputRef.current?.value ?? typeaheadQueryRef.current;
+        const matched = findStatusOptionMatch(rawQuery, visibleStatusOptions);
         if (matched) {
           e.preventDefault();
           e.stopPropagation();
@@ -470,7 +475,11 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
           onChange={(e) => {
             updateTypeaheadMatch(e.target.value);
           }}
+          onCompositionStart={() => {
+            hiddenInputComposingRef.current = true;
+          }}
           onCompositionEnd={(e) => {
+            hiddenInputComposingRef.current = false;
             updateTypeaheadMatch(e.currentTarget.value);
           }}
           onKeyDown={(e) => {

@@ -243,6 +243,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   }, [visibleStatusOptions, visit]);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
+  const hiddenInputComposingRef = useRef(false);
   const [typeaheadQuery, setTypeaheadQuery] = useState('');
   const typeaheadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingTypeaheadOptionIdRef = useRef<string | null>(null);
@@ -378,9 +379,14 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       }
 
       if (e.key === 'Enter') {
+        if (hiddenInputComposingRef.current) {
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
-        const pendingId = pendingTypeaheadOptionIdRef.current;
+        const rawQuery = hiddenInputRef.current?.value ?? typeaheadQuery;
+        const matchedByQuery = findStatusOptionMatch(rawQuery, visibleStatusOptions);
+        const pendingId = pendingTypeaheadOptionIdRef.current || matchedByQuery?.id || null;
         if (pendingId) {
           const pendingIndex = visibleStatusOptions.findIndex((option) => option.id === pendingId);
           if (pendingIndex >= 0 && !activeKeys.has(pendingId)) {
@@ -622,6 +628,24 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
               typeaheadTimerRef.current = setTimeout(() => {
                 resetTypeahead();
               }, 900);
+            }}
+            onCompositionStart={() => {
+              hiddenInputComposingRef.current = true;
+            }}
+            onCompositionEnd={(e) => {
+              hiddenInputComposingRef.current = false;
+              const nextQuery = e.currentTarget.value;
+              setTypeaheadQuery(nextQuery);
+              const matched = findStatusOptionMatch(nextQuery, visibleStatusOptions);
+              if (matched) {
+                const matchedIndex = visibleStatusOptions.findIndex((option) => option.id === matched.id);
+                if (matchedIndex >= 0) {
+                  setActiveIndex(matchedIndex);
+                  pendingTypeaheadOptionIdRef.current = matched.id;
+                }
+              } else {
+                pendingTypeaheadOptionIdRef.current = null;
+              }
             }}
             onBlur={() => {
               if (!isSettingsOpen) {
