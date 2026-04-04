@@ -206,6 +206,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   }, [visibleStatusOptions, visit]);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
+  const pendingEnterIndexRef = useRef<number | null>(null);
 
   useEffect(() => {
     const next = new Set<string>();
@@ -229,17 +230,13 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
   useEffect(() => {
     if (isSettingsOpen) return;
-    setActiveIndex(initialIndex);
-  }, [initialIndex, isSettingsOpen]);
-
-  useEffect(() => {
-    if (isSettingsOpen) return;
     buttonRefs.current[activeIndex]?.focus();
   }, [activeIndex, isSettingsOpen]);
 
   const toggleSelection = useCallback((index: number) => {
     const option = visibleStatusOptions[index];
     if (!option) return;
+    pendingEnterIndexRef.current = null;
     setActiveKeys((prev) => {
       const next = new Set(prev);
       if (next.has(option.id)) next.delete(option.id);
@@ -303,14 +300,22 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         e.stopPropagation();
-        setActiveIndex((prev) => (prev + 1) % visibleStatusOptions.length);
+        setActiveIndex((prev) => {
+          const next = (prev + 1) % visibleStatusOptions.length;
+          pendingEnterIndexRef.current = next;
+          return next;
+        });
         return;
       }
 
       if (e.key === 'ArrowUp') {
         e.preventDefault();
         e.stopPropagation();
-        setActiveIndex((prev) => (prev - 1 + visibleStatusOptions.length) % visibleStatusOptions.length);
+        setActiveIndex((prev) => {
+          const next = (prev - 1 + visibleStatusOptions.length) % visibleStatusOptions.length;
+          pendingEnterIndexRef.current = next;
+          return next;
+        });
         return;
       }
 
@@ -324,6 +329,13 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       if (e.key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
+        const pendingIndex = pendingEnterIndexRef.current;
+        if (pendingIndex !== null) {
+          const option = visibleStatusOptions[pendingIndex];
+          if (option && !activeKeys.has(option.id)) {
+            toggleSelection(pendingIndex);
+          }
+        }
         onClose();
         return;
       }
@@ -521,6 +533,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
               }}
               onClick={() => {
                 setActiveIndex(idx);
+                pendingEnterIndexRef.current = idx;
                 toggleSelection(idx);
               }}
               onKeyDown={(e) => {
