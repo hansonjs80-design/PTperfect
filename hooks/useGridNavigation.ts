@@ -30,9 +30,7 @@ export const useGridNavigation = (totalCols: number) => {
     const nextElement = findNextFocusableElement(currentRow, currentCol, direction);
     
     if (nextElement) {
-      requestAnimationFrame(() => {
-        nextElement.focus();
-      });
+      nextElement.focus();
     }
   }, [findNextFocusableElement]);
 
