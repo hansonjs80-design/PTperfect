@@ -274,7 +274,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     const normalized = treatmentText.trim().toLowerCase();
     if (!normalized) return null;
 
-    const leadingToken = normalized.match(/^[^(\[/\/,+\-\s]+/)?.[0] || normalized;
+    const leadingToken = normalized.split(/[()[\]\/,+\-\s]+/).find(Boolean) || normalized;
     return presets.find((preset) => {
       const presetName = preset.name.trim().toLowerCase();
       return presetName.startsWith(leadingToken);

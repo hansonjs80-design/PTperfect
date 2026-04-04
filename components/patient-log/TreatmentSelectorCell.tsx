@@ -51,6 +51,7 @@ interface TreatmentSelectorCellProps {
 }
 
 export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
+  visit,
   value,
   placeholder,
   rowStatus = 'none',
@@ -113,6 +114,13 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const isInlineEditingTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && !!target.closest('[data-inline-treatment-editing="true"]');
 
+  const announceMatchedPreset = (preset: Preset | null) => {
+    if (!visit?.id || !preset) return;
+    window.dispatchEvent(new CustomEvent('patient-log-preset-badge-selected', {
+      detail: { visitId: visit.id, preset }
+    }));
+  };
+
   const stepParts = useMemo(() => value.split('/').map((part) => part.trim()).filter(Boolean), [value]);
   const allowStepSelection = stepParts.length > 0;
   const isEmptyTreatmentCell = value.trim() === '' && !presetLabel;
@@ -158,7 +166,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const normalized = query.trim().toLowerCase();
     if (!normalized) return null;
 
-    const leadingToken = normalized.match(/^[^(\[/\/,+\-\s]+/)?.[0] || normalized;
+    const leadingToken = normalized.split(/[()[\]\/,+\-\s]+/).find(Boolean) || normalized;
     const startsWithMatch = presets.find((preset) => preset.name.trim().toLowerCase().startsWith(leadingToken));
     if (startsWithMatch) return startsWithMatch;
 
@@ -427,6 +435,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     skipNextEmptyBlurCommitRef.current = true;
     suppressNextSelectorOpenRef.current = !!matchedPreset;
     if (matchedPreset) {
+      announceMatchedPreset(matchedPreset);
       suppressInlineInteractionUntilRef.current = Date.now() + 120;
     }
     emptyInputRef.current?.blur();
@@ -446,6 +455,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const matchedPreset = findPresetByQuery(normalized);
     const nextValue = matchedPreset ? generateTreatmentString(matchedPreset.steps) : normalized;
     if (nextValue !== value.trim()) {
+      announceMatchedPreset(matchedPreset);
       onCommitText(nextValue);
     }
     inlineEnterStageRef.current = false;
@@ -464,6 +474,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     autoPresetAppliedAtRef.current = Date.now();
     skipNextEmptyBlurCommitRef.current = true;
     suppressNextSelectorOpenRef.current = true;
+    announceMatchedPreset(matchedPreset);
     onCommitText(nextValue);
     setEmptyInputValue('');
     setIsEmptyEditing(false);
@@ -482,6 +493,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const nextValue = generateTreatmentString(matchedPreset.steps);
     autoPresetAppliedAtRef.current = Date.now();
     suppressNextSelectorOpenRef.current = true;
+    announceMatchedPreset(matchedPreset);
     onCommitText(nextValue);
     inlineEnterStageRef.current = false;
     inlineCaretIndexRef.current = null;
