@@ -101,10 +101,21 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
   const focusHiddenInput = () => {
     requestAnimationFrame(() => {
+      if (menuPos) return;
       hiddenInputRef.current?.focus();
       const length = hiddenInputRef.current?.value.length ?? 0;
       hiddenInputRef.current?.setSelectionRange(length, length);
     });
+  };
+
+  const updateTypeaheadMatch = (nextValue: string) => {
+    typeaheadQueryRef.current = nextValue;
+    setTypeaheadValue(nextValue);
+    if (nextValue) {
+      queueTypeaheadReset();
+    } else {
+      resetTypeahead();
+    }
   };
 
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent | React.TouchEvent, isKeyboard: boolean = false) => {
@@ -427,6 +438,11 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
           cellRef.current?.focus();
           focusHiddenInput();
         }}
+        onFocus={() => {
+          if (!menuPos) {
+            focusHiddenInput();
+          }
+        }}
         onBlur={(e) => {
           const nextFocus = e.relatedTarget as Node | null;
           if (nextFocus && cellRef.current?.contains(nextFocus)) return;
@@ -446,14 +462,10 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
           ref={hiddenInputRef}
           value={typeaheadValue}
           onChange={(e) => {
-            const nextValue = e.target.value;
-            typeaheadQueryRef.current = nextValue;
-            setTypeaheadValue(nextValue);
-            if (nextValue) {
-              queueTypeaheadReset();
-            } else {
-              resetTypeahead();
-            }
+            updateTypeaheadMatch(e.target.value);
+          }}
+          onCompositionEnd={(e) => {
+            updateTypeaheadMatch(e.currentTarget.value);
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {

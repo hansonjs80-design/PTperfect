@@ -275,7 +275,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   useEffect(() => {
     if (isSettingsOpen) return;
     hiddenInputRef.current?.focus();
-  }, [activeIndex, isSettingsOpen]);
+  }, [isSettingsOpen]);
 
   const resetTypeahead = useCallback(() => {
     pendingTypeaheadOptionIdRef.current = null;
@@ -372,34 +372,6 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
         return;
       }
 
-      const isPlainPrintableKey = e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey;
-      if (isPlainPrintableKey) {
-        e.preventDefault();
-        e.stopPropagation();
-        const appended = `${typeaheadQuery}${e.key}`;
-        const nextQuery = findStatusOptionMatch(appended, visibleStatusOptions)
-          ? appended
-          : (findStatusOptionMatch(e.key, visibleStatusOptions) ? e.key : '');
-        if (!nextQuery) {
-          resetTypeahead();
-          return;
-        }
-        setTypeaheadQuery(nextQuery);
-        const matched = findStatusOptionMatch(nextQuery, visibleStatusOptions);
-        if (matched) {
-          const matchedIndex = visibleStatusOptions.findIndex((option) => option.id === matched.id);
-          if (matchedIndex >= 0) {
-            setActiveIndex(matchedIndex);
-            pendingTypeaheadOptionIdRef.current = matched.id;
-          }
-        }
-        if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
-        typeaheadTimerRef.current = setTimeout(() => {
-          resetTypeahead();
-        }, 900);
-        return;
-      }
-
       if (e.key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
@@ -447,7 +419,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [activeIndex, activeKeys, isSettingsOpen, onClose, resetTypeahead, toggleSelection, typeaheadQuery, visibleStatusOptions]);
+  }, [activeIndex, activeKeys, isSettingsOpen, onClose, resetTypeahead, toggleSelection, visibleStatusOptions]);
 
   useEffect(() => () => {
     if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current);
