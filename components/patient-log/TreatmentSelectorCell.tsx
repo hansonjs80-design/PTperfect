@@ -106,6 +106,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const inlineInputRef = useRef<HTMLInputElement>(null);
   const inlineCaretIndexRef = useRef<number | null>(null);
   const skipNextEmptyBlurCommitRef = useRef(false);
+  const skipNextEmptyBlurUnmountRef = useRef(false);
   const suppressNextSelectorOpenRef = useRef(false);
   const suppressInlineInteractionUntilRef = useRef(0);
   const inlineEnterStageRef = useRef(false);
@@ -493,6 +494,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (!normalized) {
       setEmptyInputValue('');
       emptyInputLiveValueRef.current = '';
+      skipNextEmptyBlurUnmountRef.current = true;
       setIsEmptyEditing(false);
       return false;
     }
@@ -500,16 +502,16 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const matchedPreset = findPresetByQuery(normalized);
     const nextValue = matchedPreset ? generateTreatmentString(matchedPreset.steps) : normalized;
     skipNextEmptyBlurCommitRef.current = true;
+    skipNextEmptyBlurUnmountRef.current = true;
     suppressNextSelectorOpenRef.current = !!matchedPreset;
     if (matchedPreset) {
       announceMatchedPreset(matchedPreset);
       suppressInlineInteractionUntilRef.current = Date.now() + 120;
     }
-    emptyInputRef.current?.blur();
-    onCommitText(nextValue);
     setEmptyInputValue('');
     emptyInputLiveValueRef.current = '';
     setIsEmptyEditing(false);
+    onCommitText(nextValue);
     if (matchedPreset) {
       window.setTimeout(() => {
         suppressNextSelectorOpenRef.current = false;
@@ -543,12 +545,14 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     const nextValue = generateTreatmentString(matchedPreset.steps);
     autoPresetAppliedAtRef.current = Date.now();
     skipNextEmptyBlurCommitRef.current = true;
+    skipNextEmptyBlurUnmountRef.current = true;
     suppressNextSelectorOpenRef.current = true;
     announceMatchedPreset(matchedPreset);
+    setEmptyInputValue('');
+    emptyInputLiveValueRef.current = '';
+    setIsEmptyEditing(false);
     onCommitText(nextValue);
     pinCurrentSelection();
-    setEmptyInputValue('');
-    setIsEmptyEditing(false);
     requestAnimationFrame(() => {
       cellRef.current?.focus();
     });
@@ -651,6 +655,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const beginEmptyTyping = (nextValue: string) => {
+    skipNextEmptyBlurCommitRef.current = false;
+    skipNextEmptyBlurUnmountRef.current = false;
+    pendingEmptyEnterCommitRef.current = false;
     flushSync(() => {
       setIsEmptyEditing(true);
       setEmptyInputValue(nextValue);
@@ -1008,6 +1015,14 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     }, 0);
                   }}
                   onBlur={() => {
+                    if (skipNextEmptyBlurUnmountRef.current) {
+                      skipNextEmptyBlurUnmountRef.current = false;
+                      skipNextEmptyBlurCommitRef.current = false;
+                      setIsEmptyEditing(false);
+                      setEmptyInputValue('');
+                      emptyInputLiveValueRef.current = '';
+                      return;
+                    }
                     if (skipNextEmptyBlurCommitRef.current) {
                       skipNextEmptyBlurCommitRef.current = false;
                       setIsEmptyEditing(false);
