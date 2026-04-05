@@ -102,6 +102,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const [isInlineEditing, setIsInlineEditing] = useState(false);
   const lastTouchTimeRef = useRef<number>(0);
   const emptyInputRef = useRef<HTMLInputElement>(null);
+  const emptyInputLiveValueRef = useRef('');
   const inlineInputRef = useRef<HTMLInputElement>(null);
   const inlineCaretIndexRef = useRef<number | null>(null);
   const skipNextEmptyBlurCommitRef = useRef(false);
@@ -154,6 +155,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   useEffect(() => {
     if (!isEmptyTreatmentCell && emptyInputValue) {
       setEmptyInputValue('');
+      emptyInputLiveValueRef.current = '';
     }
   }, [emptyInputValue, isEmptyTreatmentCell]);
 
@@ -479,10 +481,11 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   };
 
   const commitEmptyInputValue = () => {
-    const rawValue = emptyInputRef.current?.value ?? emptyInputValue;
+    const rawValue = emptyInputRef.current?.value ?? emptyInputLiveValueRef.current ?? emptyInputValue;
     const normalized = rawValue.trim();
     if (!normalized) {
       setEmptyInputValue('');
+      emptyInputLiveValueRef.current = '';
       setIsEmptyEditing(false);
       return false;
     }
@@ -498,6 +501,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     emptyInputRef.current?.blur();
     onCommitText(nextValue);
     setEmptyInputValue('');
+    emptyInputLiveValueRef.current = '';
     setIsEmptyEditing(false);
     if (matchedPreset) {
       window.setTimeout(() => {
@@ -643,6 +647,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     flushSync(() => {
       setIsEmptyEditing(true);
       setEmptyInputValue(nextValue);
+      emptyInputLiveValueRef.current = nextValue;
     });
     requestAnimationFrame(() => {
       emptyInputRef.current?.focus();
@@ -973,6 +978,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     if (!isEmptyEditing) {
                       setIsEmptyEditing(true);
                     }
+                    emptyInputLiveValueRef.current = e.target.value;
                     setEmptyInputValue(e.target.value);
                   }}
                   onBeforeInput={(e) => {
@@ -998,6 +1004,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                       skipNextEmptyBlurCommitRef.current = false;
                       setIsEmptyEditing(false);
                       setEmptyInputValue('');
+                      emptyInputLiveValueRef.current = '';
                       return;
                     }
                     commitEmptyInputValue();
