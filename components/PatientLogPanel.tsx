@@ -13,6 +13,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, STATUS_OPTIONS_STORAGE_KEY, type StatusOptionConfig } from './patient-log/StatusSelectionMenu';
 
 const VISIT_CACHE_PREFIX = 'physio-visits-v2-';
+const PATIENT_EXTRA_CAUTION_STORAGE_KEY = 'patient-log-extra-cautions-v1';
 
 const PrintPreviewModal = React.lazy(() => import('./modals/PrintPreviewModal').then(module => ({ default: module.PrintPreviewModal })));
 
@@ -47,6 +48,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [authorOptions] = useLocalStorage<string[]>('physio-author-options', ['S', 'K', 'J']);
   const [isBedActivationDisabled, setIsBedActivationDisabled] = useLocalStorage<boolean>('patient-log-bed-activation-disabled', true);
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
+  const [patientExtraCautions, setPatientExtraCautions] = useLocalStorage<Record<string, string>>(PATIENT_EXTRA_CAUTION_STORAGE_KEY, {});
   const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
   const [dbPatientDirectory, setDbPatientDirectory] = useState<Array<{ patient_name: string; chart_number?: string | null; gender?: string | null; body_part?: string | null; memo?: string | null; special_note?: string | null }>>([]);
 
@@ -438,8 +440,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     return visits[selectionAnchor.row] || null;
   }, [selectionAnchor.row, visits]);
 
-  const selectedSideNote = useMemo(() => {
-    if (selectionAnchor.col !== 2) return null;
+  const selectedPatientPanelData = useMemo(() => {
+    if (selectionAnchor.col !== 1 && selectionAnchor.col !== 2) return null;
     const selectedVisit = selectedVisitForSideNote;
     if (!selectedVisit) return null;
 
@@ -450,26 +452,57 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     const normalizedName = patientName.toLocaleLowerCase();
     const normalizedChart = chartNumber.toLocaleLowerCase();
 
-    const matchedVisitNote = [...visits]
-      .reverse()
-      .find((visit) =>
-        (visit.patient_name || '').trim().toLocaleLowerCase() === normalizedName &&
-        (visit.chart_number || '').trim().toLocaleLowerCase() === normalizedChart &&
-        (visit.special_note || '').trim()
-      );
-
-    if (matchedVisitNote?.special_note?.trim()) {
-      return matchedVisitNote.special_note.trim();
-    }
-
-    const matchedDbNote = dbPatientDirectory.find((row) =>
-      row.patient_name.trim().toLocaleLowerCase() === normalizedName &&
-      (row.chart_number || '').trim().toLocaleLowerCase() === normalizedChart &&
-      (row.special_note || '').trim()
+    const matchingVisits = [...visits].filter((visit) =>
+      (visit.patient_name || '').trim().toLocaleLowerCase() === normalizedName &&
+      (visit.chart_number || '').trim().toLocaleLowerCase() === normalizedChart
     );
 
-    return matchedDbNote?.special_note?.trim() || null;
-  }, [dbPatientDirectory, selectionAnchor.col, selectedVisitForSideNote, visits]);
+    const latestMatchingVisit = [...matchingVisits]
+      .sort((a, b) => (b.updated_at || b.visit_date || '').localeCompare(a.updated_at || a.visit_date || ''))[0];
+
+    const matchedDbRow = dbPatientDirectory.find((row) =>
+      row.patient_name.trim().toLocaleLowerCase() === normalizedName &&
+      (row.chart_number || '').trim().toLocaleLowerCase() === normalizedChart
+    );
+
+    const patientKey = `${normalizedName}::${normalizedChart}`;
+    return {
+      key: patientKey,
+      patientName,
+      chartNumber,
+      memo: (latestMatchingVisit?.memo || matchedDbRow?.memo || '').trim(),
+      specialNote: (latestMatchingVisit?.special_note || matchedDbRow?.special_note || '').trim(),
+      extraCaution: (patientExtraCautions[patientKey] || '').trim(),
+      selectedVisitId: selectedVisit.id,
+    };
+  }, [dbPatientDirectory, patientExtraCautions, selectedVisitForSideNote, selectionAnchor.col, visits]);
+
+  const [sidePanelMemo, setSidePanelMemo] = useState('');
+  const [sidePanelSpecialNote, setSidePanelSpecialNote] = useState('');
+  const [sidePanelExtraCaution, setSidePanelExtraCaution] = useState('');
+
+  useEffect(() => {
+    setSidePanelMemo(selectedPatientPanelData?.memo || '');
+    setSidePanelSpecialNote(selectedPatientPanelData?.specialNote || '');
+    setSidePanelExtraCaution(selectedPatientPanelData?.extraCaution || '');
+  }, [selectedPatientPanelData]);
+
+  const commitSidePanelField = useCallback(async (field: 'memo' | 'special_note', value: string) => {
+    if (!selectedPatientPanelData?.selectedVisitId) return;
+    const trimmed = value.trim();
+    await trackedUpdateVisitWithBedSync(selectedPatientPanelData.selectedVisitId, { [field]: trimmed }, true);
+  }, [selectedPatientPanelData, trackedUpdateVisitWithBedSync]);
+
+  const commitExtraCaution = useCallback((value: string) => {
+    if (!selectedPatientPanelData?.key) return;
+    const trimmed = value.trim();
+    setPatientExtraCautions((prev) => {
+      const next = { ...prev };
+      if (trimmed) next[selectedPatientPanelData.key] = trimmed;
+      else delete next[selectedPatientPanelData.key];
+      return next;
+    });
+  }, [selectedPatientPanelData, setPatientExtraCautions]);
 
 
   const activeBedIdsInLog = useMemo(() => {
@@ -1318,28 +1351,61 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           </p>
         </div>
 
-        {selectedSideNote && (
-          <div className="pointer-events-none absolute right-3 top-[58px] z-30 hidden xl:block">
-            <div className="pointer-events-auto w-[300px] h-[600px] overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-white/96 dark:bg-slate-900/96 shadow-2xl backdrop-blur">
+        <div className="pointer-events-none absolute right-3 top-[58px] z-30 hidden xl:block">
+          <div className="pointer-events-auto w-[300px] h-[600px] overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-white/96 dark:bg-slate-900/96 shadow-2xl backdrop-blur">
+            {selectedPatientPanelData ? (
+              <>
               <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-700 px-4 py-3">
                 <div className="min-w-0">
                   <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
                     비고
                   </div>
                   <div className="truncate text-sm font-black text-slate-800 dark:text-slate-100">
-                    {(selectedVisitForSideNote?.patient_name || '').trim()} · {(selectedVisitForSideNote?.chart_number || '').trim()}
+                    {selectedPatientPanelData.patientName} · {selectedPatientPanelData.chartNumber}
                   </div>
                 </div>
                 <div className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.45)]" />
               </div>
-              <div className="h-[calc(100%-61px)] overflow-y-auto px-4 py-4">
-                <div className="rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 px-4 py-3 text-[13px] leading-6 font-bold text-slate-700 dark:text-slate-200 whitespace-pre-wrap break-words">
-                  {selectedSideNote}
+              <div className="h-[calc(100%-61px)] overflow-y-auto px-4 py-4 space-y-3">
+                <div className="space-y-1.5">
+                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">특이사항</div>
+                  <textarea
+                    value={sidePanelSpecialNote}
+                    onChange={(e) => setSidePanelSpecialNote(e.target.value)}
+                    onBlur={(e) => { void commitSidePanelField('special_note', e.target.value); }}
+                    className="h-[140px] w-full resize-none rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2 text-[13px] leading-6 font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
+                    placeholder="특이사항 입력"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">메모</div>
+                  <textarea
+                    value={sidePanelMemo}
+                    onChange={(e) => setSidePanelMemo(e.target.value)}
+                    onBlur={(e) => { void commitSidePanelField('memo', e.target.value); }}
+                    className="h-[140px] w-full resize-none rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2 text-[13px] leading-6 font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
+                    placeholder="메모 입력"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">기타 주의사항</div>
+                  <textarea
+                    value={sidePanelExtraCaution}
+                    onChange={(e) => setSidePanelExtraCaution(e.target.value)}
+                    onBlur={(e) => commitExtraCaution(e.target.value)}
+                    className="h-[140px] w-full resize-none rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2 text-[13px] leading-6 font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
+                    placeholder="기타 주의사항 입력"
+                  />
                 </div>
               </div>
-            </div>
+              </>
+            ) : (
+              <div className="flex h-full items-center justify-center px-6 text-center text-[13px] font-bold text-slate-400 dark:text-slate-500">
+                이름 또는 차트번호 셀을 선택하면 해당 인물의 비고가 표시됩니다.
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       <PatientLogPrintView 
