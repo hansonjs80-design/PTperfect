@@ -1491,8 +1491,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         </div>
 
         <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
-          <div className="flex min-h-0 h-full min-w-max">
-            <div className="min-w-0 flex-1 flex flex-col">
+          <div className="min-h-0 h-full min-w-max">
+            <div className="min-w-0 h-full flex flex-col">
               <PatientLogTable 
                 visits={displayVisits}
                 beds={beds}
@@ -1531,98 +1531,6 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                 </p>
               </div>
             </div>
-
-          <div className="flex w-[360px] shrink-0 border-l border-slate-200/80 dark:border-slate-700 bg-white/96 dark:bg-slate-900/96">
-            <div className="w-full h-[600px] overflow-hidden">
-            {selectedPatientPanelData ? (
-              <>
-              <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-700 px-4 py-3">
-                <div className="min-w-0">
-                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
-                    비고
-                  </div>
-                  <div className="truncate text-sm font-black text-slate-800 dark:text-slate-100">
-                    {selectedPatientPanelData.patientName} · {selectedPatientPanelData.chartNumber}
-                  </div>
-                </div>
-                <div className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.45)]" />
-              </div>
-              <div className="h-[calc(100%-61px)] overflow-y-auto px-4 py-4 space-y-3">
-                <div className="space-y-1.5">
-                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">주의사항</div>
-                  <textarea
-                    value={sidePanelExtraCaution}
-                    onChange={(e) => setSidePanelExtraCaution(e.target.value)}
-                    onBlur={(e) => commitExtraCaution(e.target.value)}
-                    className="h-[140px] w-full resize-none rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2 text-[13px] leading-6 font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
-                    placeholder="주의사항 입력"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">특이사항</div>
-                  <textarea
-                    value={sidePanelSpecialNote}
-                    onChange={(e) => setSidePanelSpecialNote(e.target.value)}
-                    onBlur={(e) => { void commitSidePanelField('special_note', e.target.value); }}
-                    className="h-[140px] w-full resize-none rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2 text-[13px] leading-6 font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
-                    placeholder="특이사항 입력"
-                  />
-                  {selectedPatientPanelData.specialNoteItems.length > 0 && (
-                    <div className="max-h-[110px] overflow-y-auto rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 p-2 space-y-1.5">
-                      {selectedPatientPanelData.specialNoteItems.map((line) => {
-                        const checked = selectedPatientPanelData.selectedSpecialNoteLines.includes(line);
-                        return (
-                          <label key={`special-${line}`} className="flex items-start gap-2 rounded-lg px-2 py-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/70">
-                            <input
-                              type="checkbox"
-                              className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                              checked={checked}
-                              onChange={(e) => toggleSideNoteLine('specialNote', line, e.target.checked)}
-                            />
-                            <span className="whitespace-pre-wrap break-words">{line}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">메모</div>
-                  <textarea
-                    value={sidePanelMemo}
-                    onChange={(e) => setSidePanelMemo(e.target.value)}
-                    onBlur={(e) => { void commitSidePanelField('memo', e.target.value); }}
-                    className="h-[140px] w-full resize-none rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2 text-[13px] leading-6 font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
-                    placeholder="메모 입력"
-                  />
-                  {selectedPatientPanelData.memoItems.length > 0 && (
-                    <div className="max-h-[110px] overflow-y-auto rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 p-2 space-y-1.5">
-                      {selectedPatientPanelData.memoItems.map((line) => {
-                        const checked = selectedPatientPanelData.selectedMemoLines.includes(line);
-                        return (
-                          <label key={`memo-${line}`} className="flex items-start gap-2 rounded-lg px-2 py-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/70">
-                            <input
-                              type="checkbox"
-                              className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                              checked={checked}
-                              onChange={(e) => toggleSideNoteLine('memo', line, e.target.checked)}
-                            />
-                            <span className="whitespace-pre-wrap break-words">{line}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-              </>
-            ) : (
-              <div className="flex h-full items-center justify-center px-6 text-center text-[13px] font-bold text-slate-400 dark:text-slate-500">
-                이름 또는 차트번호 셀을 선택하면 해당 인물의 비고가 표시됩니다.
-              </div>
-            )}
-          </div>
-        </div>
         </div>
         </div>
       </div>
