@@ -13,6 +13,7 @@ import { useHistory } from '../hooks/useHistory';
 import { useBedPatientFields } from '../hooks/useBedPatientFields';
 import { useActiveBedStability } from '../hooks/useActiveBedStability';
 import { supabase, isOnlineMode } from '../lib/supabase';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 interface MovingPatientState {
   bedId: number;
@@ -97,6 +98,7 @@ interface TreatmentContextType {
 const TreatmentContext = createContext<TreatmentContextType | undefined>(undefined);
 
 export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [isBedActivationDisabled] = useLocalStorage<boolean>('patient-log-bed-activation-disabled', true);
   const { presets, updatePresets } = usePresetManager();
   const { quickTreatments, updateQuickTreatments } = useQuickTreatmentManager();
   const settings = useTreatmentSettings();
@@ -197,6 +199,15 @@ export const TreatmentProvider: React.FC<{ children: ReactNode }> = ({ children 
     clearBed: _clearBed,
     updateBedMemoFromLog,
   });
+
+  useEffect(() => {
+    if (!isBedActivationDisabled) return;
+    beds.forEach((bed) => {
+      if (bed.status !== BedStatus.IDLE) {
+        _clearBed(bed.id);
+      }
+    });
+  }, [_clearBed, beds, isBedActivationDisabled]);
 
 
   // --- Snapshot Wrappers for Actions ---
