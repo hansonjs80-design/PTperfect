@@ -281,7 +281,6 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isMemoHistoryModalOpen, setIsMemoHistoryModalOpen] = useState(false);
   const [pendingSearchInput, setPendingSearchInput] = useState<{col: number, text: string} | null>(null);
-  const [draftRowKey, setDraftRowKey] = useState(0);
   const [searchName, setSearchName] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<PatientVisit[]>([]);
@@ -828,7 +827,6 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     setDraftImport(null);
     setImportFieldSelection(defaultImportFieldSelection);
     setPendingSearchInput(null);
-    setDraftRowKey(prev => prev + 1);
     setModalEdits({});
     const emptySearchTargetContext = { row: null, col: null, visitId: null };
     setSearchTargetContext(emptySearchTargetContext);

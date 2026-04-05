@@ -170,7 +170,6 @@ interface PatientLogTableProps {
   isBedActivationDisabled?: boolean;
   onSelectionAnchorChange?: (rowIndex: number | null, colIndex: number | null) => void;
   cancelAutoFocusRef?: React.MutableRefObject<(() => void) | null>;
-  draftRowKey?: number;
   patientNameSuggestions?: string[];
   patientNameAutofillMap?: Record<string, { chart_number?: string; gender?: string }>;
   memoSuggestions?: string[];
@@ -198,7 +197,6 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   isBedActivationDisabled = false,
   onSelectionAnchorChange,
   cancelAutoFocusRef,
-  draftRowKey = 0,
   patientNameSuggestions = [],
   patientNameAutofillMap = {},
   memoSuggestions = [],
@@ -1122,6 +1120,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     };
   }, [focusHostWithoutResettingSelection, onSelectionAnchorChange, visits]);
 
+  const renderedRowCount = Math.max(totalRows, visits.length);
+
   return (
     <div
       className="flex-1 overflow-y-auto overflow-x-auto log-scrollbar bg-slate-50/60 dark:bg-slate-900"
@@ -1257,7 +1257,31 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
           showTimerColumn={showTimerColumn}
         />
         <tbody>
-          {visits.map((visit, index) => {
+          {Array.from({ length: renderedRowCount }).map((_, index) => {
+            const visit = visits[index];
+            if (!visit) {
+              return (
+                <PatientLogRow
+                  key={`row-${index}`}
+                  rowIndex={index}
+                  isRowSelected={!!selection && Math.min(selection.start.row, selection.end.row) <= index && index <= Math.max(selection.start.row, selection.end.row)}
+                  isDraft={true}
+                  onUpdate={onUpdate}
+                  onCreate={handleDraftCreate}
+                  onSelectLog={(id) => onSelectLog(id, null)}
+                  activeBedIds={activeBedIds}
+                  isBedActivationDisabled={isBedActivationDisabled}
+                  showTimerColumn={showTimerColumn}
+                  statusOptions={normalizedStatusOptions}
+                  patientNameSuggestions={patientNameSuggestions}
+                  patientNameAutofillMap={patientNameAutofillMap}
+                  memoSuggestions={memoSuggestions}
+                  specialNoteSuggestions={specialNoteSuggestions}
+                  onChartAutofillSuppressionChange={onChartAutofillSuppressionChange}
+                />
+              );
+            }
+
             const rowStatus = isBedActivationDisabled ? 'none' : getRowStatus(visit.id, visit.bed_id);
             const bed = !isBedActivationDisabled && visit.bed_id ? beds.find(b => b.id === visit.bed_id) : undefined;
 
@@ -1287,7 +1311,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
             return (
               <PatientLogRow
-                key={visit.id}
+                key={`row-${index}`}
                 rowIndex={index}
                 isRowSelected={!!selection && Math.min(selection.start.row, selection.end.row) <= index && index <= Math.max(selection.start.row, selection.end.row)}
                 visit={visit}
@@ -1324,27 +1348,6 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
               />
             );
           })}
-
-          {Array.from({ length: Math.max(0, totalRows - visits.length) }).map((_, index) => (
-            <PatientLogRow
-              key={`draft-${visits.length + index}-${draftRowKey}`}
-              rowIndex={visits.length + index}
-              isRowSelected={!!selection && Math.min(selection.start.row, selection.end.row) <= (visits.length + index) && (visits.length + index) <= Math.max(selection.start.row, selection.end.row)}
-              isDraft={true}
-              onUpdate={onUpdate}
-              onCreate={handleDraftCreate}
-              onSelectLog={(id) => onSelectLog(id, null)}
-              activeBedIds={activeBedIds}
-              isBedActivationDisabled={isBedActivationDisabled}
-              showTimerColumn={showTimerColumn}
-              statusOptions={normalizedStatusOptions}
-              patientNameSuggestions={patientNameSuggestions}
-              patientNameAutofillMap={patientNameAutofillMap}
-              memoSuggestions={memoSuggestions}
-              specialNoteSuggestions={specialNoteSuggestions}
-              onChartAutofillSuppressionChange={onChartAutofillSuppressionChange}
-            />
-          ))}
 
           {/* +10행 추가 버튼 */}
           <tr>
