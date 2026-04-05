@@ -4,9 +4,38 @@ import { useLocalStorage } from './useLocalStorage';
 import { supabase, isOnlineMode } from '../lib/supabase';
 import { DEFAULT_PRESETS } from '../constants';
 
+const PRESET_DEFAULTS_STORAGE_KEY = 'physio-presets-default-v1';
+
+const readPresetDefaults = (): Preset[] => {
+  if (typeof window === 'undefined') return DEFAULT_PRESETS;
+  try {
+    const raw = window.localStorage.getItem(PRESET_DEFAULTS_STORAGE_KEY);
+    if (!raw || raw === 'undefined' || raw === 'null' || raw.trim() === '') {
+      return DEFAULT_PRESETS;
+    }
+    return JSON.parse(raw) as Preset[];
+  } catch {
+    return DEFAULT_PRESETS;
+  }
+};
+
+const writePresetDefaults = (presets: Preset[]) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(PRESET_DEFAULTS_STORAGE_KEY, JSON.stringify(presets));
+  } catch (error) {
+    console.warn('Failed to persist preset defaults:', error);
+  }
+};
+
 export const usePresetManager = () => {
   // Local storage is the source of truth for immediate UI and offline capability
-  const [presets, setLocalPresets] = useLocalStorage<Preset[]>('physio-presets-v1', DEFAULT_PRESETS);
+  const [presets, setLocalPresets] = useLocalStorage<Preset[]>('physio-presets-v1', readPresetDefaults());
+
+  useEffect(() => {
+    if (!Array.isArray(presets)) return;
+    writePresetDefaults(presets);
+  }, [presets]);
 
   // Sync from DB on mount and subscribe to changes
   useEffect(() => {
@@ -70,6 +99,7 @@ export const usePresetManager = () => {
   const updatePresets = useCallback(async (newPresets: Preset[]) => {
     // 1. Optimistic Update (Immediate UI response)
     setLocalPresets(newPresets);
+    writePresetDefaults(newPresets);
 
     // 2. DB Sync
     // Local capture not needed here strictly if we check supabase directly in condition,

@@ -4,9 +4,38 @@ import { useLocalStorage } from './useLocalStorage';
 import { supabase, isOnlineMode } from '../lib/supabase';
 import { STANDARD_TREATMENTS } from '../constants';
 
+const QUICK_TREATMENT_DEFAULTS_STORAGE_KEY = 'physio-quick-treatments-default-v1';
+
+const readQuickTreatmentDefaults = (): QuickTreatment[] => {
+  if (typeof window === 'undefined') return STANDARD_TREATMENTS;
+  try {
+    const raw = window.localStorage.getItem(QUICK_TREATMENT_DEFAULTS_STORAGE_KEY);
+    if (!raw || raw === 'undefined' || raw === 'null' || raw.trim() === '') {
+      return STANDARD_TREATMENTS;
+    }
+    return JSON.parse(raw) as QuickTreatment[];
+  } catch {
+    return STANDARD_TREATMENTS;
+  }
+};
+
+const writeQuickTreatmentDefaults = (items: QuickTreatment[]) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(QUICK_TREATMENT_DEFAULTS_STORAGE_KEY, JSON.stringify(items));
+  } catch (error) {
+    console.warn('Failed to persist quick treatment defaults:', error);
+  }
+};
+
 export const useQuickTreatmentManager = () => {
   // Local storage is the source of truth for immediate UI and offline capability
-  const [quickTreatments, setLocalQuickTreatments] = useLocalStorage<QuickTreatment[]>('physio-quick-treatments-v1', STANDARD_TREATMENTS);
+  const [quickTreatments, setLocalQuickTreatments] = useLocalStorage<QuickTreatment[]>('physio-quick-treatments-v1', readQuickTreatmentDefaults());
+
+  useEffect(() => {
+    if (!Array.isArray(quickTreatments)) return;
+    writeQuickTreatmentDefaults(quickTreatments);
+  }, [quickTreatments]);
 
   // Sync from DB on mount and subscribe to changes
   useEffect(() => {
@@ -53,6 +82,7 @@ export const useQuickTreatmentManager = () => {
   const updateQuickTreatments = useCallback(async (newItems: QuickTreatment[]) => {
     // 1. Optimistic Update
     setLocalQuickTreatments(newItems);
+    writeQuickTreatmentDefaults(newItems);
 
     // 2. DB Sync
     const client = supabase;
