@@ -401,10 +401,10 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (isDraft && onCreate) {
-      await onCreate({ treatment_name: committedTreatment, ...statusUpdates }, 5);
+      const createdId = await onCreate({ treatment_name: committedTreatment, ...statusUpdates }, 5);
       requestAnimationFrame(() => {
-        window.dispatchEvent(new CustomEvent('patient-log-force-selection', {
-          detail: { row: rowIndex, col: 5 }
+        window.dispatchEvent(new CustomEvent('patient-log-force-selection-by-visit', {
+          detail: { visitId: createdId, col: 5 }
         }));
       });
       return;

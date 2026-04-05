@@ -1095,6 +1095,29 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     };
   }, [onSelectionAnchorChange]);
 
+  useEffect(() => {
+    const handleForceSelectionByVisit = (event: Event) => {
+      const customEvent = event as CustomEvent<{ visitId?: string; col?: number }>;
+      const visitId = customEvent.detail?.visitId;
+      const col = customEvent.detail?.col;
+      if (!visitId || typeof col !== 'number') return;
+
+      const row = visits.findIndex((visit) => visit.id === visitId);
+      if (row < 0) return;
+
+      setSelection({ start: { row, col }, end: { row, col } });
+      onSelectionAnchorChange?.(row, col);
+      requestAnimationFrame(() => {
+        focusHostWithoutResettingSelection({ row, col });
+      });
+    };
+
+    window.addEventListener('patient-log-force-selection-by-visit', handleForceSelectionByVisit as EventListener);
+    return () => {
+      window.removeEventListener('patient-log-force-selection-by-visit', handleForceSelectionByVisit as EventListener);
+    };
+  }, [focusHostWithoutResettingSelection, onSelectionAnchorChange, visits]);
+
   return (
     <div
       className="flex-1 overflow-y-auto overflow-x-auto log-scrollbar bg-slate-50/60 dark:bg-slate-900"
