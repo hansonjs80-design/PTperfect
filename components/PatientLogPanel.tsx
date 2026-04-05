@@ -433,6 +433,44 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     ])
   ), [dbPatientDirectory, visits]);
 
+  const selectedVisitForSideNote = useMemo(() => {
+    if (selectionAnchor.row === null) return null;
+    return visits[selectionAnchor.row] || null;
+  }, [selectionAnchor.row, visits]);
+
+  const selectedSideNote = useMemo(() => {
+    if (selectionAnchor.col !== 2) return null;
+    const selectedVisit = selectedVisitForSideNote;
+    if (!selectedVisit) return null;
+
+    const patientName = (selectedVisit.patient_name || '').trim();
+    const chartNumber = (selectedVisit.chart_number || '').trim();
+    if (!patientName || !chartNumber) return null;
+
+    const normalizedName = patientName.toLocaleLowerCase();
+    const normalizedChart = chartNumber.toLocaleLowerCase();
+
+    const matchedVisitNote = [...visits]
+      .reverse()
+      .find((visit) =>
+        (visit.patient_name || '').trim().toLocaleLowerCase() === normalizedName &&
+        (visit.chart_number || '').trim().toLocaleLowerCase() === normalizedChart &&
+        (visit.special_note || '').trim()
+      );
+
+    if (matchedVisitNote?.special_note?.trim()) {
+      return matchedVisitNote.special_note.trim();
+    }
+
+    const matchedDbNote = dbPatientDirectory.find((row) =>
+      row.patient_name.trim().toLocaleLowerCase() === normalizedName &&
+      (row.chart_number || '').trim().toLocaleLowerCase() === normalizedChart &&
+      (row.special_note || '').trim()
+    );
+
+    return matchedDbNote?.special_note?.trim() || null;
+  }, [dbPatientDirectory, selectionAnchor.col, selectedVisitForSideNote, visits]);
+
 
   const activeBedIdsInLog = useMemo(() => {
     const ids = new Set<number>();
@@ -1221,7 +1259,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           color: #ffffff;
         }
       `}</style>
-      <div ref={panelRootRef} data-patient-log-root="true" className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-xl print:hidden">
+      <div ref={panelRootRef} data-patient-log-root="true" className="relative flex flex-col h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-xl print:hidden">
         
         {/* Header: Visible on all layouts so desktop also shows total/date controls */}
         <div className="shrink-0">
@@ -1279,6 +1317,29 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
             * 빈 행에 내용을 입력하면 자동으로 추가됩니다.
           </p>
         </div>
+
+        {selectedSideNote && (
+          <div className="pointer-events-none absolute right-3 top-[58px] z-30 hidden xl:block">
+            <div className="pointer-events-auto w-[300px] h-[600px] overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-white/96 dark:bg-slate-900/96 shadow-2xl backdrop-blur">
+              <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-700 px-4 py-3">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
+                    비고
+                  </div>
+                  <div className="truncate text-sm font-black text-slate-800 dark:text-slate-100">
+                    {(selectedVisitForSideNote?.patient_name || '').trim()} · {(selectedVisitForSideNote?.chart_number || '').trim()}
+                  </div>
+                </div>
+                <div className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.45)]" />
+              </div>
+              <div className="h-[calc(100%-61px)] overflow-y-auto px-4 py-4">
+                <div className="rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 px-4 py-3 text-[13px] leading-6 font-bold text-slate-700 dark:text-slate-200 whitespace-pre-wrap break-words">
+                  {selectedSideNote}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <PatientLogPrintView 
