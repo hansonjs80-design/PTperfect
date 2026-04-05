@@ -443,8 +443,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       }
       e.preventDefault();
       e.stopPropagation();
-      const matchedPreset = commitEmptyInputValue();
+      const commitValue = emptyInputRef.current?.value ?? emptyInputLiveValueRef.current ?? emptyInputValue;
+      const matchedPreset = commitEmptyInputValue(commitValue);
       pinCurrentSelection();
+      window.setTimeout(() => {
+        pinCurrentSelection();
+      }, 0);
       if (matchedPreset) {
         window.setTimeout(() => {
           cellRef.current?.focus();
@@ -467,10 +471,13 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     handleGridKeyDown(e, rowIndex, colIndex, true, emptyInputRef.current);
   };
 
-  const finalizeEmptyEnterCommit = () => {
+  const finalizeEmptyEnterCommit = (valueOverride?: string) => {
     pendingEmptyEnterCommitRef.current = false;
-    const matchedPreset = commitEmptyInputValue();
+    const matchedPreset = commitEmptyInputValue(valueOverride);
     pinCurrentSelection();
+    window.setTimeout(() => {
+      pinCurrentSelection();
+    }, 0);
     if (matchedPreset) {
       window.setTimeout(() => {
         cellRef.current?.focus();
@@ -480,8 +487,8 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }
   };
 
-  const commitEmptyInputValue = () => {
-    const rawValue = emptyInputRef.current?.value ?? emptyInputLiveValueRef.current ?? emptyInputValue;
+  const commitEmptyInputValue = (valueOverride?: string) => {
+    const rawValue = valueOverride ?? emptyInputRef.current?.value ?? emptyInputLiveValueRef.current ?? emptyInputValue;
     const normalized = rawValue.trim();
     if (!normalized) {
       setEmptyInputValue('');
@@ -995,8 +1002,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                   onKeyDown={handleEmptyInputKeyDown}
                   onCompositionEnd={() => {
                     if (!pendingEmptyEnterCommitRef.current) return;
+                    const commitValue = emptyInputRef.current?.value ?? emptyInputLiveValueRef.current ?? emptyInputValue;
                     window.setTimeout(() => {
-                      finalizeEmptyEnterCommit();
+                      finalizeEmptyEnterCommit(commitValue);
                     }, 0);
                   }}
                   onBlur={() => {
