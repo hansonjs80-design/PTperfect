@@ -475,18 +475,25 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     const normalizedName = patientName.toLocaleLowerCase();
     const normalizedChart = chartNumber.toLocaleLowerCase();
     const useChartMatch = Boolean(chartNumber);
+    const matchesSideNotePatient = (nameValue?: string | null, chartValue?: string | null) => {
+      const normalizedRowName = (nameValue || '').trim().toLocaleLowerCase();
+      if (normalizedRowName !== normalizedName) return false;
+
+      if (!useChartMatch) return true;
+
+      const normalizedRowChart = (chartValue || '').trim().toLocaleLowerCase();
+      return normalizedRowChart === normalizedChart || normalizedRowChart === '';
+    };
 
     const matchingVisits = [...visits].filter((visit) =>
-      (visit.patient_name || '').trim().toLocaleLowerCase() === normalizedName &&
-      (!useChartMatch || (visit.chart_number || '').trim().toLocaleLowerCase() === normalizedChart)
+      matchesSideNotePatient(visit.patient_name, visit.chart_number)
     );
 
     const sortedMatchingVisits = [...matchingVisits]
       .sort((a, b) => (b.updated_at || b.visit_date || '').localeCompare(a.updated_at || a.visit_date || ''));
 
     const matchedDbRows = dbPatientDirectory.filter((row) =>
-      row.patient_name.trim().toLocaleLowerCase() === normalizedName &&
-      (!useChartMatch || (row.chart_number || '').trim().toLocaleLowerCase() === normalizedChart)
+      matchesSideNotePatient(row.patient_name, row.chart_number)
     );
     const sortedMatchedDbRows = [...matchedDbRows]
       .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
