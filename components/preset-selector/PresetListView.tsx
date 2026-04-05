@@ -18,6 +18,8 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
+  const isTouchLikeDevice = () => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse), (max-width: 1024px)').matches;
+
   const processedPresets = useMemo(() => {
     let result = [...presets];
     if (filterStep !== 'all') {
@@ -179,7 +181,12 @@ export const PresetListView: React.FC<PresetListViewProps> = ({ presets, onSelec
                 }`}
                 onClick={() => {
                   setHighlightedIndex(currentIndex);
-                  if (compactMode) return;
+                  if (compactMode) {
+                    if (isTouchLikeDevice()) {
+                      onSelect(preset);
+                    }
+                    return;
+                  }
                   handleToggleExpand(preset.id);
                 }}
                 onDoubleClick={() => {
