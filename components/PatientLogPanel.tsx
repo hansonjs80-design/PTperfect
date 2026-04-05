@@ -15,6 +15,26 @@ import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, S
 const VISIT_CACHE_PREFIX = 'physio-visits-v2-';
 const PATIENT_EXTRA_CAUTION_STORAGE_KEY = 'patient-log-extra-cautions-v1';
 
+const mergeUniqueTextValues = (values: Array<string | null | undefined>) => {
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+
+  values.forEach((value) => {
+    const normalized = (value || '')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    normalized.forEach((line) => {
+      if (seen.has(line)) return;
+      seen.add(line);
+      ordered.push(line);
+    });
+  });
+
+  return ordered.join('\n');
+};
+
 const PrintPreviewModal = React.lazy(() => import('./modals/PrintPreviewModal').then(module => ({ default: module.PrintPreviewModal })));
 
 interface PatientLogPanelProps {
@@ -457,10 +477,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       (visit.chart_number || '').trim().toLocaleLowerCase() === normalizedChart
     );
 
-    const latestMatchingVisit = [...matchingVisits]
-      .sort((a, b) => (b.updated_at || b.visit_date || '').localeCompare(a.updated_at || a.visit_date || ''))[0];
+    const sortedMatchingVisits = [...matchingVisits]
+      .sort((a, b) => (b.updated_at || b.visit_date || '').localeCompare(a.updated_at || a.visit_date || ''));
 
-    const matchedDbRow = dbPatientDirectory.find((row) =>
+    const matchedDbRows = dbPatientDirectory.filter((row) =>
       row.patient_name.trim().toLocaleLowerCase() === normalizedName &&
       (row.chart_number || '').trim().toLocaleLowerCase() === normalizedChart
     );
@@ -470,8 +490,14 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       key: patientKey,
       patientName,
       chartNumber,
-      memo: (latestMatchingVisit?.memo || matchedDbRow?.memo || '').trim(),
-      specialNote: (latestMatchingVisit?.special_note || matchedDbRow?.special_note || '').trim(),
+      memo: mergeUniqueTextValues([
+        ...sortedMatchingVisits.map((visit) => visit.memo),
+        ...matchedDbRows.map((row) => row.memo),
+      ]),
+      specialNote: mergeUniqueTextValues([
+        ...sortedMatchingVisits.map((visit) => visit.special_note),
+        ...matchedDbRows.map((row) => row.special_note),
+      ]),
       extraCaution: (patientExtraCautions[patientKey] || '').trim(),
       selectedVisitId: selectedVisit.id,
     };
