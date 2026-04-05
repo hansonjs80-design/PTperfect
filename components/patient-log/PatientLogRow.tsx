@@ -401,7 +401,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     }
 
     if (isDraft && onCreate) {
-      await onCreate({ treatment_name: committedTreatment, ...statusUpdates }, 3);
+      await onCreate({ treatment_name: committedTreatment, ...statusUpdates }, 5);
       requestAnimationFrame(() => {
         window.dispatchEvent(new CustomEvent('patient-log-force-selection', {
           detail: { row: rowIndex, col: 5 }
@@ -434,7 +434,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     const hasTreatment = hasMeaningfulTreatmentName(visit?.treatment_name);
 
     if (isDraft && onCreate) {
-      const newId = await onCreate({}, 3);
+      const newId = await onCreate({}, 5);
       if (onSelectLog) onSelectLog(newId);
       return;
     }
