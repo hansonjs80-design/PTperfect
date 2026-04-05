@@ -1314,45 +1314,48 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           />
         </div>
 
-        <PatientLogTable 
-          visits={visits}
-          beds={beds}
-          presets={presets}
-          patientNameSuggestions={patientNameSuggestions}
-          patientNameAutofillMap={patientNameAutofillMap}
-          memoSuggestions={memoSuggestions}
-          specialNoteSuggestions={specialNoteSuggestions}
-          getRowStatus={getRowStatus}
-          onUpdate={trackedUpdateVisitWithBedSync}
-          onDelete={handleDeleteVisit}
-          onCreate={handleCreateWithBedSync}
-          onSelectLog={handleSelectLog}
-          onMovePatient={handleMovePatient}
-          onEditActive={setEditingBedId}
-          onNextStep={nextStep}
-          onPrevStep={prevStep}
-          onClearBed={clearBed}
-          isBedActivationDisabled={isBedActivationDisabled}
-          onSelectionAnchorChange={(row, col) => {
-            if (isSearchModalOpen || isMemoHistoryModalOpen) return;
-            setSelectionAnchor({ row, col });
-            if (row !== null && visits[row]) {
-              setSelectedVisitIdForImport(visits[row].id);
-            }
-          }}
-          onMoveRowsToBottomLocal={moveRowsToBottomLocal}
-          onBulkUpdate={trackedBulkUpdateVisitWithBedSync}
-          cancelAutoFocusRef={cancelAutoFocusRef}
-        />
+        <div className="flex min-h-0 flex-1">
+          <div className="min-w-0 flex-1 flex flex-col">
+            <PatientLogTable 
+              visits={visits}
+              beds={beds}
+              presets={presets}
+              patientNameSuggestions={patientNameSuggestions}
+              patientNameAutofillMap={patientNameAutofillMap}
+              memoSuggestions={memoSuggestions}
+              specialNoteSuggestions={specialNoteSuggestions}
+              getRowStatus={getRowStatus}
+              onUpdate={trackedUpdateVisitWithBedSync}
+              onDelete={handleDeleteVisit}
+              onCreate={handleCreateWithBedSync}
+              onSelectLog={handleSelectLog}
+              onMovePatient={handleMovePatient}
+              onEditActive={setEditingBedId}
+              onNextStep={nextStep}
+              onPrevStep={prevStep}
+              onClearBed={clearBed}
+              isBedActivationDisabled={isBedActivationDisabled}
+              onSelectionAnchorChange={(row, col) => {
+                if (isSearchModalOpen || isMemoHistoryModalOpen) return;
+                setSelectionAnchor({ row, col });
+                if (row !== null && visits[row]) {
+                  setSelectedVisitIdForImport(visits[row].id);
+                }
+              }}
+              onMoveRowsToBottomLocal={moveRowsToBottomLocal}
+              onBulkUpdate={trackedBulkUpdateVisitWithBedSync}
+              cancelAutoFocusRef={cancelAutoFocusRef}
+            />
 
-        <div className="p-2 border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 shrink-0 text-center">
-          <p className="text-[10px] text-gray-400">
-            * 빈 행에 내용을 입력하면 자동으로 추가됩니다.
-          </p>
-        </div>
+            <div className="p-2 border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 shrink-0 text-center">
+              <p className="text-[10px] text-gray-400">
+                * 빈 행에 내용을 입력하면 자동으로 추가됩니다.
+              </p>
+            </div>
+          </div>
 
-        <div className="pointer-events-none absolute right-3 top-[58px] z-30 hidden xl:block">
-          <div className="pointer-events-auto w-[300px] h-[600px] overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-white/96 dark:bg-slate-900/96 shadow-2xl backdrop-blur">
+          <div className="hidden xl:flex w-[300px] shrink-0 border-l border-slate-200/80 dark:border-slate-700 bg-white/96 dark:bg-slate-900/96">
+            <div className="w-full h-[600px] overflow-hidden">
             {selectedPatientPanelData ? (
               <>
               <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-700 px-4 py-3">
@@ -1367,6 +1370,16 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                 <div className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.45)]" />
               </div>
               <div className="h-[calc(100%-61px)] overflow-y-auto px-4 py-4 space-y-3">
+                <div className="space-y-1.5">
+                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">주의사항</div>
+                  <textarea
+                    value={sidePanelExtraCaution}
+                    onChange={(e) => setSidePanelExtraCaution(e.target.value)}
+                    onBlur={(e) => commitExtraCaution(e.target.value)}
+                    className="h-[140px] w-full resize-none rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2 text-[13px] leading-6 font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
+                    placeholder="주의사항 입력"
+                  />
+                </div>
                 <div className="space-y-1.5">
                   <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">특이사항</div>
                   <textarea
@@ -1387,16 +1400,6 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                     placeholder="메모 입력"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">기타 주의사항</div>
-                  <textarea
-                    value={sidePanelExtraCaution}
-                    onChange={(e) => setSidePanelExtraCaution(e.target.value)}
-                    onBlur={(e) => commitExtraCaution(e.target.value)}
-                    className="h-[140px] w-full resize-none rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2 text-[13px] leading-6 font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
-                    placeholder="기타 주의사항 입력"
-                  />
-                </div>
               </div>
               </>
             ) : (
@@ -1405,6 +1408,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
 
