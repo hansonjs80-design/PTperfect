@@ -736,12 +736,16 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   }, [selection, visits, buildVisitCellPatch, buildDraftUpdatesForPasteRow, onCreate, onBulkUpdate, onUpdate, onClearBed]);
 
 
-  const isActiveInputEditing = (input: HTMLInputElement | null) => {
-    if (!input || input.tagName !== 'INPUT') return false;
+  const isActiveInputEditing = (el: HTMLElement | null) => {
+    if (!el) return false;
+    if (el.tagName === 'TEXTAREA') return true;
+    if (el.getAttribute('contenteditable') === 'true') return true;
+    if (el.tagName !== 'INPUT') return false;
+    const input = el as HTMLInputElement;
     return input.dataset.directEditing === 'true';
   };
 
-  const isInlineTreatmentSelectionInput = (input: HTMLInputElement | null) => {
+  const isInlineTreatmentSelectionInput = (input: HTMLElement | null) => {
     if (!input || input.tagName !== 'INPUT') return false;
     return input.dataset.inlineTreatmentEditing === 'true' && input.dataset.directEditing !== 'true';
   };
@@ -784,7 +788,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     return true;
   }, [selection, visits, buildVisitCellPatch, onBulkUpdate, setVisitCellText]);
   const handleCopy = useCallback(async (e: React.ClipboardEvent<HTMLDivElement>) => {
-    const active = document.activeElement as HTMLInputElement | null;
+    const active = document.activeElement as HTMLElement | null;
     if (isActiveInputEditing(active)) return;
 
     const text = handleGridClipboardCopy(false);
@@ -799,7 +803,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   }, [handleGridClipboardCopy, selection]);
 
   const handleCut = useCallback(async (e: React.ClipboardEvent<HTMLDivElement>) => {
-    const active = document.activeElement as HTMLInputElement | null;
+    const active = document.activeElement as HTMLElement | null;
     if (isActiveInputEditing(active)) return;
 
     const text = handleGridClipboardCopy(true);
@@ -814,7 +818,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   }, [handleGridClipboardCopy, selection]);
 
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
-    const active = document.activeElement as HTMLInputElement | null;
+    const active = document.activeElement as HTMLElement | null;
     if (isActiveInputEditing(active)) return;
 
     const text = e.clipboardData.getData('text/plain');
@@ -825,7 +829,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   }, [handleGridPaste]);
 
   const handleInlineSelectionKeyDownCapture = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    const active = document.activeElement as HTMLInputElement | null;
+    const active = document.activeElement as HTMLElement | null;
     if (!active || active.tagName !== 'INPUT') return;
     if (active.dataset.inlineTreatmentEditing !== 'true' || active.dataset.directEditing === 'true') return;
     if (!e.shiftKey) return;
@@ -981,7 +985,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     const handleWindowDelete = (event: KeyboardEvent) => {
       if (event.key !== 'Backspace' && event.key !== 'Delete') return;
 
-      const active = document.activeElement as HTMLInputElement | null;
+      const active = document.activeElement as HTMLElement | null;
       if (isActiveInputEditing(active)) return;
       if (document.body.dataset.statusPillSelected === 'true') return;
       if ((active as HTMLElement | null)?.dataset.statusPillSelected === 'true') return;
