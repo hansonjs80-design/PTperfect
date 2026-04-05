@@ -110,6 +110,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
   const inlineEnterStageRef = useRef(false);
   const suppressNextInlineSelectionFocusRef = useRef(false);
   const autoPresetAppliedAtRef = useRef(0);
+  const pendingEmptyEnterCommitRef = useRef(false);
   const { handleGridKeyDown } = useGridNavigation(11);
   const isInlineEditingTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && !!target.closest('[data-inline-treatment-editing="true"]');
@@ -433,6 +434,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
 
     if (e.key === 'Enter') {
       if (e.nativeEvent.isComposing) {
+        pendingEmptyEnterCommitRef.current = true;
+        e.preventDefault();
+        e.stopPropagation();
         return;
       }
       e.preventDefault();
@@ -459,6 +463,19 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }
 
     handleGridKeyDown(e, rowIndex, colIndex, true, emptyInputRef.current);
+  };
+
+  const finalizeEmptyEnterCommit = () => {
+    pendingEmptyEnterCommitRef.current = false;
+    const matchedPreset = commitEmptyInputValue();
+    pinCurrentSelection();
+    if (matchedPreset) {
+      window.setTimeout(() => {
+        cellRef.current?.focus();
+      }, 0);
+    } else {
+      requestAnimationFrame(() => cellRef.current?.focus());
+    }
   };
 
   const commitEmptyInputValue = () => {
@@ -970,6 +987,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     }
                   }}
                   onKeyDown={handleEmptyInputKeyDown}
+                  onCompositionEnd={() => {
+                    if (!pendingEmptyEnterCommitRef.current) return;
+                    window.setTimeout(() => {
+                      finalizeEmptyEnterCommit();
+                    }, 0);
+                  }}
                   onBlur={() => {
                     if (skipNextEmptyBlurCommitRef.current) {
                       skipNextEmptyBlurCommitRef.current = false;

@@ -503,9 +503,11 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     const memoItems = memo.split('\n').map((line) => line.trim()).filter(Boolean);
     const specialNoteItems = specialNote.split('\n').map((line) => line.trim()).filter(Boolean);
     const selection = patientSideNoteSelections[patientKey] || {};
-    const selectedMemoLines = (selection.memo && selection.memo.length > 0 ? selection.memo : memoItems)
+    const hasMemoSelection = Object.prototype.hasOwnProperty.call(selection, 'memo');
+    const hasSpecialNoteSelection = Object.prototype.hasOwnProperty.call(selection, 'specialNote');
+    const selectedMemoLines = ((hasMemoSelection ? (selection.memo || []) : memoItems))
       .filter((line, idx, arr) => memoItems.includes(line) && arr.indexOf(line) === idx);
-    const selectedSpecialNoteLines = (selection.specialNote && selection.specialNote.length > 0 ? selection.specialNote : specialNoteItems)
+    const selectedSpecialNoteLines = ((hasSpecialNoteSelection ? (selection.specialNote || []) : specialNoteItems))
       .filter((line, idx, arr) => specialNoteItems.includes(line) && arr.indexOf(line) === idx);
 
     return {
