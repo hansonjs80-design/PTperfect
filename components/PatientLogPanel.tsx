@@ -14,6 +14,7 @@ import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, S
 
 const VISIT_CACHE_PREFIX = 'physio-visits-v2-';
 const PATIENT_EXTRA_CAUTION_STORAGE_KEY = 'patient-log-extra-cautions-v1';
+const PATIENT_SIDE_NOTE_VISIBILITY_STORAGE_KEY = 'patient-log-side-note-visibility-v1';
 
 const mergeUniqueTextValues = (values: Array<string | null | undefined>) => {
   const seen = new Set<string>();
@@ -69,6 +70,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [isBedActivationDisabled, setIsBedActivationDisabled] = useLocalStorage<boolean>('patient-log-bed-activation-disabled', true);
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const [patientExtraCautions, setPatientExtraCautions] = useLocalStorage<Record<string, string>>(PATIENT_EXTRA_CAUTION_STORAGE_KEY, {});
+  const [patientSideNoteVisibility, setPatientSideNoteVisibility] = useLocalStorage<Record<string, { memo?: boolean; specialNote?: boolean }>>(PATIENT_SIDE_NOTE_VISIBILITY_STORAGE_KEY, {});
   const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
   const [dbPatientDirectory, setDbPatientDirectory] = useState<Array<{ id?: string; patient_name: string; chart_number?: string | null; gender?: string | null; body_part?: string | null; memo?: string | null; special_note?: string | null; updated_at?: string | null }>>([]);
 
@@ -502,9 +504,27 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         ...sortedMatchedDbRows.map((row) => row.special_note),
       ]),
       extraCaution: (patientExtraCautions[patientKey] || '').trim(),
+      memoVisible: patientSideNoteVisibility[patientKey]?.memo ?? true,
+      specialNoteVisible: patientSideNoteVisibility[patientKey]?.specialNote ?? true,
       selectedVisitId: selectedVisit.id,
     };
-  }, [dbPatientDirectory, patientExtraCautions, selectedVisitForSideNote, visits]);
+  }, [dbPatientDirectory, patientExtraCautions, patientSideNoteVisibility, selectedVisitForSideNote, visits]);
+
+  const displayVisits = useMemo(() => visits.map((visit) => {
+    const patientName = (visit.patient_name || '').trim();
+    const chartNumber = (visit.chart_number || '').trim();
+    if (!patientName || !chartNumber) return visit;
+
+    const key = `${patientName.toLocaleLowerCase()}::${chartNumber.toLocaleLowerCase()}`;
+    const visibility = patientSideNoteVisibility[key];
+    if (!visibility) return visit;
+
+    return {
+      ...visit,
+      memo: visibility.memo === false ? '' : visit.memo,
+      special_note: visibility.specialNote === false ? '' : visit.special_note,
+    };
+  }), [patientSideNoteVisibility, visits]);
 
   const [sidePanelMemo, setSidePanelMemo] = useState('');
   const [sidePanelSpecialNote, setSidePanelSpecialNote] = useState('');
@@ -1354,7 +1374,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           <div className="flex min-h-0 h-full min-w-max">
             <div className="min-w-0 flex-1 flex flex-col">
               <PatientLogTable 
-                visits={visits}
+                visits={displayVisits}
                 beds={beds}
                 presets={presets}
                 patientNameSuggestions={patientNameSuggestions}
@@ -1375,8 +1395,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                 onSelectionAnchorChange={(row, col) => {
                   if (isSearchModalOpen || isMemoHistoryModalOpen) return;
                   setSelectionAnchor({ row, col });
-                  if (row !== null && visits[row]) {
-                    setSelectedVisitIdForImport(visits[row].id);
+                  if (row !== null && displayVisits[row]) {
+                    setSelectedVisitIdForImport(displayVisits[row].id);
                   }
                 }}
                 onMoveRowsToBottomLocal={moveRowsToBottomLocal}
@@ -1418,7 +1438,27 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">특이사항</div>
+                  <label className="flex items-center justify-between gap-3">
+                    <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">특이사항</div>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                      <input
+                        type="checkbox"
+                        className="h-3.5 w-3.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                        checked={selectedPatientPanelData.specialNoteVisible}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setPatientSideNoteVisibility((prev) => ({
+                            ...prev,
+                            [selectedPatientPanelData.key]: {
+                              ...(prev[selectedPatientPanelData.key] || {}),
+                              specialNote: checked,
+                            },
+                          }));
+                        }}
+                      />
+                      표시
+                    </span>
+                  </label>
                   <textarea
                     value={sidePanelSpecialNote}
                     onChange={(e) => setSidePanelSpecialNote(e.target.value)}
@@ -1428,7 +1468,27 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">메모</div>
+                  <label className="flex items-center justify-between gap-3">
+                    <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">메모</div>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                      <input
+                        type="checkbox"
+                        className="h-3.5 w-3.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                        checked={selectedPatientPanelData.memoVisible}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setPatientSideNoteVisibility((prev) => ({
+                            ...prev,
+                            [selectedPatientPanelData.key]: {
+                              ...(prev[selectedPatientPanelData.key] || {}),
+                              memo: checked,
+                            },
+                          }));
+                        }}
+                      />
+                      표시
+                    </span>
+                  </label>
                   <textarea
                     value={sidePanelMemo}
                     onChange={(e) => setSidePanelMemo(e.target.value)}
