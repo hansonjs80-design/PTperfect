@@ -463,7 +463,6 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   }, [selectionAnchor.row, visits]);
 
   const selectedPatientPanelData = useMemo(() => {
-    if (selectionAnchor.col !== 1 && selectionAnchor.col !== 2) return null;
     const selectedVisit = selectedVisitForSideNote;
     if (!selectedVisit) return null;
 
@@ -505,7 +504,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       extraCaution: (patientExtraCautions[patientKey] || '').trim(),
       selectedVisitId: selectedVisit.id,
     };
-  }, [dbPatientDirectory, patientExtraCautions, selectedVisitForSideNote, selectionAnchor.col, visits]);
+  }, [dbPatientDirectory, patientExtraCautions, selectedVisitForSideNote, visits]);
 
   const [sidePanelMemo, setSidePanelMemo] = useState('');
   const [sidePanelSpecialNote, setSidePanelSpecialNote] = useState('');
