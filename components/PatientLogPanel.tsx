@@ -471,14 +471,15 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
     const patientName = (selectedVisit.patient_name || '').trim();
     const chartNumber = (selectedVisit.chart_number || '').trim();
-    if (!patientName || !chartNumber) return null;
+    if (!patientName) return null;
 
     const normalizedName = patientName.toLocaleLowerCase();
     const normalizedChart = chartNumber.toLocaleLowerCase();
+    const useChartMatch = Boolean(chartNumber);
 
     const matchingVisits = [...visits].filter((visit) =>
       (visit.patient_name || '').trim().toLocaleLowerCase() === normalizedName &&
-      (visit.chart_number || '').trim().toLocaleLowerCase() === normalizedChart
+      (!useChartMatch || (visit.chart_number || '').trim().toLocaleLowerCase() === normalizedChart)
     );
 
     const sortedMatchingVisits = [...matchingVisits]
@@ -486,12 +487,12 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
     const matchedDbRows = dbPatientDirectory.filter((row) =>
       row.patient_name.trim().toLocaleLowerCase() === normalizedName &&
-      (row.chart_number || '').trim().toLocaleLowerCase() === normalizedChart
+      (!useChartMatch || (row.chart_number || '').trim().toLocaleLowerCase() === normalizedChart)
     );
     const sortedMatchedDbRows = [...matchedDbRows]
       .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
 
-    const patientKey = `${normalizedName}::${normalizedChart}`;
+    const patientKey = useChartMatch ? `${normalizedName}::${normalizedChart}` : `${normalizedName}::__name_only__`;
     const memo = mergeUniqueTextValues([
       ...sortedMatchingVisits.map((visit) => visit.memo),
       ...sortedMatchedDbRows.map((row) => row.memo),
@@ -514,6 +515,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       key: patientKey,
       patientName,
       chartNumber,
+      useChartMatch,
       memo,
       specialNote,
       memoItems,
@@ -568,7 +570,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     const normalizedChart = selectedPatientPanelData.chartNumber.trim().toLocaleLowerCase();
     const localMatchingVisits = visits.filter((visit) =>
       (visit.patient_name || '').trim().toLocaleLowerCase() === normalizedName &&
-      (visit.chart_number || '').trim().toLocaleLowerCase() === normalizedChart &&
+      (!selectedPatientPanelData.useChartMatch || (visit.chart_number || '').trim().toLocaleLowerCase() === normalizedChart) &&
       (visit.visit_date || '') >= currentDate
     );
 
@@ -586,19 +588,24 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
     setDbPatientDirectory((prev) => prev.map((row) => (
       row.patient_name.trim().toLocaleLowerCase() === normalizedName &&
-      (row.chart_number || '').trim().toLocaleLowerCase() === normalizedChart &&
+      (!selectedPatientPanelData.useChartMatch || (row.chart_number || '').trim().toLocaleLowerCase() === normalizedChart) &&
       (row.visit_date || '') >= currentDate
         ? { ...row, [field]: deduped }
         : row
     )));
 
     if (isOnlineMode() && supabase) {
-      const { error } = await supabase
+      let query = supabase
         .from('patient_visits')
         .update({ [field]: deduped })
         .eq('patient_name', selectedPatientPanelData.patientName.trim())
-        .eq('chart_number', selectedPatientPanelData.chartNumber.trim())
         .gte('visit_date', currentDate);
+
+      if (selectedPatientPanelData.useChartMatch) {
+        query = query.eq('chart_number', selectedPatientPanelData.chartNumber.trim());
+      }
+
+      const { error } = await query;
       if (error) {
         console.error(`Failed to sync ${field} for current and future visits:`, error);
       }
