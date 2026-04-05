@@ -537,12 +537,27 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [sidePanelMemo, setSidePanelMemo] = useState('');
   const [sidePanelSpecialNote, setSidePanelSpecialNote] = useState('');
   const [sidePanelExtraCaution, setSidePanelExtraCaution] = useState('');
+  const sidePanelMemoRef = useRef('');
+  const sidePanelSpecialNoteRef = useRef('');
+  const sidePanelExtraCautionRef = useRef('');
 
   useEffect(() => {
     setSidePanelMemo(selectedPatientPanelData?.memo || '');
     setSidePanelSpecialNote(selectedPatientPanelData?.specialNote || '');
     setSidePanelExtraCaution(selectedPatientPanelData?.extraCaution || '');
   }, [selectedPatientPanelData]);
+
+  useEffect(() => {
+    sidePanelMemoRef.current = sidePanelMemo;
+  }, [sidePanelMemo]);
+
+  useEffect(() => {
+    sidePanelSpecialNoteRef.current = sidePanelSpecialNote;
+  }, [sidePanelSpecialNote]);
+
+  useEffect(() => {
+    sidePanelExtraCautionRef.current = sidePanelExtraCaution;
+  }, [sidePanelExtraCaution]);
 
   const commitSidePanelField = useCallback(async (field: 'memo' | 'special_note', value: string) => {
     if (!selectedPatientPanelData?.selectedVisitId) return;
@@ -633,6 +648,24 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       };
     });
   }, [selectedPatientPanelData, setPatientSideNoteSelections]);
+
+  const commitPendingSidePanelEdits = useCallback(() => {
+    if (!selectedPatientPanelData) return;
+
+    const nextExtraCaution = sidePanelExtraCautionRef.current;
+    const nextSpecialNote = sidePanelSpecialNoteRef.current;
+    const nextMemo = sidePanelMemoRef.current;
+
+    if (nextExtraCaution !== (selectedPatientPanelData.extraCaution || '')) {
+      commitExtraCaution(nextExtraCaution);
+    }
+    if (nextSpecialNote !== (selectedPatientPanelData.specialNote || '')) {
+      void commitSidePanelField('special_note', nextSpecialNote);
+    }
+    if (nextMemo !== (selectedPatientPanelData.memo || '')) {
+      void commitSidePanelField('memo', nextMemo);
+    }
+  }, [commitExtraCaution, commitSidePanelField, selectedPatientPanelData]);
 
 
   const activeBedIdsInLog = useMemo(() => {
@@ -1468,6 +1501,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                 isBedActivationDisabled={isBedActivationDisabled}
                 onSelectionAnchorChange={(row, col) => {
                   if (isSearchModalOpen || isMemoHistoryModalOpen) return;
+                  commitPendingSidePanelEdits();
                   setSelectionAnchor({ row, col });
                   if (row !== null && displayVisits[row]) {
                     setSelectedVisitIdForImport(displayVisits[row].id);
@@ -1485,7 +1519,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
               </div>
             </div>
 
-          <div className="flex w-[300px] shrink-0 border-l border-slate-200/80 dark:border-slate-700 bg-white/96 dark:bg-slate-900/96">
+          <div className="flex w-[360px] shrink-0 border-l border-slate-200/80 dark:border-slate-700 bg-white/96 dark:bg-slate-900/96">
             <div className="w-full h-[600px] overflow-hidden">
             {selectedPatientPanelData ? (
               <>
