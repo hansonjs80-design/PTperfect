@@ -13,7 +13,7 @@ interface TreatmentSelectorCellProps {
   value: string;
   placeholder?: string;
   rowStatus?: 'active' | 'completed' | 'none';
-  onCommitText: (val: string) => void;
+  onCommitText: (val: string) => void | Promise<void>;
   onOpenSelector: () => void;
   directSelector?: boolean;
   activeStepColor?: string;
@@ -445,18 +445,20 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
       e.preventDefault();
       e.stopPropagation();
       const commitValue = emptyInputRef.current?.value ?? emptyInputLiveValueRef.current ?? emptyInputValue;
-      const matchedPreset = commitEmptyInputValue(commitValue);
-      pinCurrentSelection();
-      window.setTimeout(() => {
+      void (async () => {
+        const matchedPreset = await commitEmptyInputValue(commitValue);
         pinCurrentSelection();
-      }, 0);
-      if (matchedPreset) {
         window.setTimeout(() => {
-          cellRef.current?.focus();
+          pinCurrentSelection();
         }, 0);
-      } else {
-        requestAnimationFrame(() => cellRef.current?.focus());
-      }
+        if (matchedPreset) {
+          window.setTimeout(() => {
+            cellRef.current?.focus();
+          }, 0);
+        } else {
+          requestAnimationFrame(() => cellRef.current?.focus());
+        }
+      })();
       return;
     }
 
@@ -472,9 +474,9 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     handleGridKeyDown(e, rowIndex, colIndex, true, emptyInputRef.current);
   };
 
-  const finalizeEmptyEnterCommit = (valueOverride?: string) => {
+  const finalizeEmptyEnterCommit = async (valueOverride?: string) => {
     pendingEmptyEnterCommitRef.current = false;
-    const matchedPreset = commitEmptyInputValue(valueOverride);
+    const matchedPreset = await commitEmptyInputValue(valueOverride);
     pinCurrentSelection();
     window.setTimeout(() => {
       pinCurrentSelection();
@@ -488,7 +490,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     }
   };
 
-  const commitEmptyInputValue = (valueOverride?: string) => {
+  const commitEmptyInputValue = async (valueOverride?: string) => {
     const rawValue = valueOverride ?? emptyInputRef.current?.value ?? emptyInputLiveValueRef.current ?? emptyInputValue;
     const normalized = rawValue.trim();
     if (!normalized) {
@@ -511,7 +513,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     setEmptyInputValue('');
     emptyInputLiveValueRef.current = '';
     setIsEmptyEditing(false);
-    onCommitText(nextValue);
+    await Promise.resolve(onCommitText(nextValue));
     if (matchedPreset) {
       window.setTimeout(() => {
         suppressNextSelectorOpenRef.current = false;
@@ -551,11 +553,13 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     setEmptyInputValue('');
     emptyInputLiveValueRef.current = '';
     setIsEmptyEditing(false);
-    onCommitText(nextValue);
-    pinCurrentSelection();
-    requestAnimationFrame(() => {
-      cellRef.current?.focus();
-    });
+    void (async () => {
+      await Promise.resolve(onCommitText(nextValue));
+      pinCurrentSelection();
+      requestAnimationFrame(() => {
+        cellRef.current?.focus();
+      });
+    })();
   }, [emptyInputValue, isEmptyEditing]);
 
   useEffect(() => {
@@ -1011,7 +1015,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     if (!pendingEmptyEnterCommitRef.current) return;
                     const commitValue = emptyInputRef.current?.value ?? emptyInputLiveValueRef.current ?? emptyInputValue;
                     window.setTimeout(() => {
-                      finalizeEmptyEnterCommit(commitValue);
+                      void finalizeEmptyEnterCommit(commitValue);
                     }, 0);
                   }}
                   onBlur={() => {
@@ -1030,7 +1034,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                       emptyInputLiveValueRef.current = '';
                       return;
                     }
-                    commitEmptyInputValue();
+                    void commitEmptyInputValue();
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => e.stopPropagation()}
