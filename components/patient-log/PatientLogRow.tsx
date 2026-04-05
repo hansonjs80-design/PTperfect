@@ -210,11 +210,34 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       setRenamedBadgeOverride(null);
     };
 
+    const handleTreatmentSelected = (event: Event) => {
+      const customEvent = event as CustomEvent<{ visitId?: string; treatmentName?: string; preset?: Preset }>;
+      if (customEvent.detail?.visitId !== visit.id) return;
+
+      const nextTreatmentName = (customEvent.detail?.treatmentName || '').trim();
+      if (nextTreatmentName) {
+        setOptimisticTreatmentName(nextTreatmentName);
+        setStickyTreatmentName(nextTreatmentName);
+      }
+
+      if (customEvent.detail?.preset) {
+        const nextPreset = customEvent.detail.preset;
+        stickyPresetBadgeRef.current = nextPreset;
+        latestDisplayedPresetBadgeRef.current = nextPreset;
+        persistedPresetBadgeByVisitId.set(visit.id, nextPreset);
+        syncPersistedPresetBadges();
+        setDetachedBadgeValue(null);
+        setRenamedBadgeOverride(null);
+      }
+    };
+
     window.addEventListener('patient-log-clear-treatment-display', handleClearTreatmentDisplay as EventListener);
     window.addEventListener('patient-log-preset-badge-selected', handlePresetBadgeSelected as EventListener);
+    window.addEventListener('patient-log-treatment-selected', handleTreatmentSelected as EventListener);
     return () => {
       window.removeEventListener('patient-log-clear-treatment-display', handleClearTreatmentDisplay as EventListener);
       window.removeEventListener('patient-log-preset-badge-selected', handlePresetBadgeSelected as EventListener);
+      window.removeEventListener('patient-log-treatment-selected', handleTreatmentSelected as EventListener);
     };
   }, [visit]);
 

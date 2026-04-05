@@ -74,11 +74,15 @@ export const useModalActions = (
     if (selectingLogId) {
       const preset = presets.find(p => p.id === presetId);
       if (preset) {
+        const treatmentName = generateTreatmentString(preset.steps);
         window.dispatchEvent(new CustomEvent('patient-log-preset-badge-selected', {
           detail: { visitId: selectingLogId, preset }
         }));
+        window.dispatchEvent(new CustomEvent('patient-log-treatment-selected', {
+          detail: { visitId: selectingLogId, treatmentName, preset }
+        }));
         const updates = withRuntimeBedId({
-            treatment_name: generateTreatmentString(preset.steps),
+            treatment_name: treatmentName,
             ...mapOptionsToFlags(options)
         });
         // If selectingBedId is present, we are assigning to a bed -> skipBedSync = false
@@ -94,6 +98,7 @@ export const useModalActions = (
 
   const handleCustomStart = useCallback((bedId: number, name: string, steps: TreatmentStep[], options: any) => {
     if (selectingLogId) {
+       const treatmentName = generateTreatmentString(steps);
        window.dispatchEvent(new CustomEvent('patient-log-preset-badge-selected', {
          detail: {
            visitId: selectingLogId,
@@ -104,8 +109,19 @@ export const useModalActions = (
            }
          }
        }));
+       window.dispatchEvent(new CustomEvent('patient-log-treatment-selected', {
+         detail: {
+           visitId: selectingLogId,
+           treatmentName,
+           preset: {
+             id: `custom-${selectingLogId}`,
+             name,
+             steps,
+           }
+         }
+       }));
        const updates = withRuntimeBedId({
-         treatment_name: generateTreatmentString(steps),
+         treatment_name: treatmentName,
          ...mapOptionsToFlags(options)
        });
        updateVisitWithBedSync(selectingLogId, updates, !selectingBedId);
