@@ -3,6 +3,7 @@ import React from 'react';
 import { ChevronUp, ChevronDown, Check, X, Trash2, Edit3 } from 'lucide-react';
 import { Preset } from '../../types';
 import { getStepLabel } from '../../utils/bedUtils';
+import { mapBgToTextClass } from '../../utils/styleUtils';
 
 interface PresetListItemProps {
   preset: Preset;
@@ -34,11 +35,26 @@ export const PresetListItem: React.FC<PresetListItemProps> = ({
     return Math.floor(totalSeconds / 60);
   };
 
-  const presetBadgeStyle = {
-    backgroundColor: preset.color || '#4f46e5',
-    color: preset.textColor || '#ffffff',
-    borderColor: preset.textColor ? `${preset.textColor}33` : 'rgba(15, 23, 42, 0.08)',
-  };
+  const presetBgValue = preset.color?.trim();
+  const presetTextValue = preset.textColor?.trim();
+
+  const isHexColor = (value?: string) => !!value && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value.trim());
+  const isTailwindBgClass = (value?: string) => !!value && value.trim().startsWith('bg-');
+  const isTailwindTextClass = (value?: string) => !!value && value.trim().startsWith('text-');
+
+  const presetBadgeStyle = isHexColor(presetBgValue) ? {
+    backgroundColor: presetBgValue,
+    color: isHexColor(presetTextValue) ? presetTextValue : undefined,
+    borderColor: isHexColor(presetTextValue) ? `${presetTextValue}33` : 'rgba(15, 23, 42, 0.08)',
+  } : undefined;
+
+  const presetBadgeClass = [
+    'inline-flex max-w-full items-center rounded-md border px-2.5 py-1 text-sm sm:text-base font-black shadow-sm truncate',
+    isTailwindBgClass(presetBgValue) ? presetBgValue : '',
+    isTailwindTextClass(presetTextValue)
+      ? presetTextValue
+      : (presetBgValue && isTailwindBgClass(presetBgValue) ? mapBgToTextClass(presetBgValue) : 'text-white'),
+  ].filter(Boolean).join(' ');
 
   return (
     <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 hover:border-brand-300 dark:hover:border-slate-500 transition-all group animate-in slide-in-from-bottom-1">
@@ -76,7 +92,7 @@ export const PresetListItem: React.FC<PresetListItemProps> = ({
             {/* Row 1 (Mobile): Name & Metadata - Justified between */}
             <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0 w-full sm:w-auto">
                 <span
-                  className="inline-flex max-w-full items-center rounded-md border px-2.5 py-1 text-sm sm:text-base font-black shadow-sm truncate"
+                  className={presetBadgeClass}
                   style={presetBadgeStyle}
                   title={`${preset.name} 세트 버튼 미리보기`}
                 >
