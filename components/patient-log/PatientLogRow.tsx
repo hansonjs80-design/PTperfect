@@ -413,6 +413,16 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
     if (isDraft && onCreate) {
       const createdId = await onCreate({ treatment_name: committedTreatment, ...statusUpdates }, 5);
+      if (committedTreatment) {
+        const appliedPreset = matchedPreset || stickyPresetBadgeRef.current || latestDisplayedPresetBadgeRef.current || null;
+        window.dispatchEvent(new CustomEvent('patient-log-treatment-selected', {
+          detail: {
+            visitId: createdId,
+            treatmentName: committedTreatment,
+            preset: appliedPreset || undefined,
+          },
+        }));
+      }
       requestAnimationFrame(() => {
         window.dispatchEvent(new CustomEvent('patient-log-force-selection-by-visit', {
           detail: { visitId: createdId, col: 5 }
