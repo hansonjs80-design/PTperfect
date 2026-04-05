@@ -70,7 +70,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const [patientExtraCautions, setPatientExtraCautions] = useLocalStorage<Record<string, string>>(PATIENT_EXTRA_CAUTION_STORAGE_KEY, {});
   const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
-  const [dbPatientDirectory, setDbPatientDirectory] = useState<Array<{ patient_name: string; chart_number?: string | null; gender?: string | null; body_part?: string | null; memo?: string | null; special_note?: string | null }>>([]);
+  const [dbPatientDirectory, setDbPatientDirectory] = useState<Array<{ id?: string; patient_name: string; chart_number?: string | null; gender?: string | null; body_part?: string | null; memo?: string | null; special_note?: string | null }>>([]);
 
   const hasMeaningfulVisitContent = useCallback((visit: PatientVisit | undefined) => {
     if (!visit) return false;
@@ -364,7 +364,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
       const { data, error } = await supabase
         .from('patient_visits')
-        .select('patient_name, chart_number, gender, body_part, memo, special_note, updated_at')
+        .select('id, patient_name, chart_number, gender, body_part, memo, special_note, updated_at')
         .not('patient_name', 'is', null)
         .order('updated_at', { ascending: false })
         .limit(1000);
@@ -374,6 +374,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       setDbPatientDirectory(
         data
           .map((row) => ({
+            id: row.id,
             patient_name: (row.patient_name || '').trim(),
             chart_number: (row.chart_number || '').trim(),
             gender: ((row.gender || '').trim().toUpperCase() || undefined),
@@ -515,13 +516,50 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
   const commitSidePanelField = useCallback(async (field: 'memo' | 'special_note', value: string) => {
     if (!selectedPatientPanelData?.selectedVisitId) return;
-    const trimmed = value.trim();
-    await trackedUpdateVisitWithBedSync(selectedPatientPanelData.selectedVisitId, { [field]: trimmed }, true);
-  }, [selectedPatientPanelData, trackedUpdateVisitWithBedSync]);
+
+    const patientName = selectedPatientPanelData.patientName.trim();
+    const chartNumber = selectedPatientPanelData.chartNumber.trim();
+    const deduped = mergeUniqueTextValues([value]);
+
+    const localMatchingVisits = visits.filter((visit) =>
+      (visit.patient_name || '').trim().toLocaleLowerCase() === patientName.toLocaleLowerCase() &&
+      (visit.chart_number || '').trim().toLocaleLowerCase() === chartNumber.toLocaleLowerCase()
+    );
+
+    if (localMatchingVisits.length > 0) {
+      trackedBulkUpdateVisitWithBedSync(
+        localMatchingVisits.map((visit) => ({
+          id: visit.id,
+          updates: { [field]: deduped },
+          skipBedSync: true,
+        }))
+      );
+    } else {
+      await trackedUpdateVisitWithBedSync(selectedPatientPanelData.selectedVisitId, { [field]: deduped }, true);
+    }
+
+    setDbPatientDirectory((prev) => prev.map((row) => (
+      row.patient_name.trim().toLocaleLowerCase() === patientName.toLocaleLowerCase() &&
+      (row.chart_number || '').trim().toLocaleLowerCase() === chartNumber.toLocaleLowerCase()
+        ? { ...row, [field]: deduped }
+        : row
+    )));
+
+    if (isOnlineMode() && supabase) {
+      const { error } = await supabase
+        .from('patient_visits')
+        .update({ [field]: deduped })
+        .eq('patient_name', patientName)
+        .eq('chart_number', chartNumber);
+      if (error) {
+        console.error(`Failed to sync ${field} across patient history:`, error);
+      }
+    }
+  }, [selectedPatientPanelData, visits, trackedBulkUpdateVisitWithBedSync, trackedUpdateVisitWithBedSync]);
 
   const commitExtraCaution = useCallback((value: string) => {
     if (!selectedPatientPanelData?.key) return;
-    const trimmed = value.trim();
+    const trimmed = mergeUniqueTextValues([value]);
     setPatientExtraCautions((prev) => {
       const next = { ...prev };
       if (trimmed) next[selectedPatientPanelData.key] = trimmed;
