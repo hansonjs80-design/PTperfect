@@ -368,8 +368,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         .from('patient_visits')
         .select('id, patient_name, chart_number, gender, body_part, memo, special_note, updated_at, visit_date')
         .not('patient_name', 'is', null)
-        .order('updated_at', { ascending: false })
-        .limit(1000);
+        .order('updated_at', { ascending: false });
 
       if (cancelled || error || !data) return;
 
