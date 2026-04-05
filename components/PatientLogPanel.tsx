@@ -702,6 +702,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     return Array.from(ids);
   }, [visits, getRowStatus]);
 
+  const meaningfulVisitCount = useMemo(() => {
+    return visits.filter((visit) => hasMeaningfulVisitContent(visit)).length;
+  }, [hasMeaningfulVisitContent, visits]);
+
   const handleClearAllActiveBeds = useCallback(() => {
     if (activeBedIdsInLog.length === 0) return;
 
@@ -1484,7 +1488,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         {/* Header: Visible on all layouts so desktop also shows total/date controls */}
         <div className="shrink-0">
           <PatientLogHeader 
-            totalCount={visits.length}
+            totalCount={meaningfulVisitCount}
             currentDate={currentDate}
             onDateChange={changeDate}
             onDateSelect={setCurrentDate}
