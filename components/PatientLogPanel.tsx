@@ -14,7 +14,7 @@ import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, S
 
 const VISIT_CACHE_PREFIX = 'physio-visits-v2-';
 const PATIENT_EXTRA_CAUTION_STORAGE_KEY = 'patient-log-extra-cautions-v1';
-const PATIENT_SIDE_NOTE_VISIBILITY_STORAGE_KEY = 'patient-log-side-note-visibility-v1';
+const PATIENT_SIDE_NOTE_SELECTION_STORAGE_KEY = 'patient-log-side-note-selection-v1';
 
 const mergeUniqueTextValues = (values: Array<string | null | undefined>) => {
   const seen = new Set<string>();
@@ -70,7 +70,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [isBedActivationDisabled, setIsBedActivationDisabled] = useLocalStorage<boolean>('patient-log-bed-activation-disabled', true);
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const [patientExtraCautions, setPatientExtraCautions] = useLocalStorage<Record<string, string>>(PATIENT_EXTRA_CAUTION_STORAGE_KEY, {});
-  const [patientSideNoteVisibility, setPatientSideNoteVisibility] = useLocalStorage<Record<string, { memo?: boolean; specialNote?: boolean }>>(PATIENT_SIDE_NOTE_VISIBILITY_STORAGE_KEY, {});
+  const [patientSideNoteSelections, setPatientSideNoteSelections] = useLocalStorage<Record<string, { memo?: string[]; specialNote?: string[] }>>(PATIENT_SIDE_NOTE_SELECTION_STORAGE_KEY, {});
   const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
   const [dbPatientDirectory, setDbPatientDirectory] = useState<Array<{ id?: string; patient_name: string; chart_number?: string | null; gender?: string | null; body_part?: string | null; memo?: string | null; special_note?: string | null; updated_at?: string | null }>>([]);
 
@@ -491,40 +491,45 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
 
     const patientKey = `${normalizedName}::${normalizedChart}`;
+    const memo = mergeUniqueTextValues([
+      ...sortedMatchingVisits.map((visit) => visit.memo),
+      ...sortedMatchedDbRows.map((row) => row.memo),
+    ]);
+    const specialNote = mergeUniqueTextValues([
+      ...sortedMatchingVisits.map((visit) => visit.special_note),
+      ...sortedMatchedDbRows.map((row) => row.special_note),
+    ]);
+    const memoItems = memo.split('\n').map((line) => line.trim()).filter(Boolean);
+    const specialNoteItems = specialNote.split('\n').map((line) => line.trim()).filter(Boolean);
+    const selection = patientSideNoteSelections[patientKey] || {};
+    const selectedMemoLines = (selection.memo && selection.memo.length > 0 ? selection.memo : memoItems)
+      .filter((line, idx, arr) => memoItems.includes(line) && arr.indexOf(line) === idx);
+    const selectedSpecialNoteLines = (selection.specialNote && selection.specialNote.length > 0 ? selection.specialNote : specialNoteItems)
+      .filter((line, idx, arr) => specialNoteItems.includes(line) && arr.indexOf(line) === idx);
+
     return {
       key: patientKey,
       patientName,
       chartNumber,
-      memo: mergeUniqueTextValues([
-        ...sortedMatchingVisits.map((visit) => visit.memo),
-        ...sortedMatchedDbRows.map((row) => row.memo),
-      ]),
-      specialNote: mergeUniqueTextValues([
-        ...sortedMatchingVisits.map((visit) => visit.special_note),
-        ...sortedMatchedDbRows.map((row) => row.special_note),
-      ]),
+      memo,
+      specialNote,
+      memoItems,
+      specialNoteItems,
+      selectedMemoLines,
+      selectedSpecialNoteLines,
       extraCaution: (patientExtraCautions[patientKey] || '').trim(),
-      memoVisible: patientSideNoteVisibility[patientKey]?.memo ?? true,
-      specialNoteVisible: patientSideNoteVisibility[patientKey]?.specialNote ?? true,
       selectedVisitId: selectedVisit.id,
     };
-  }, [dbPatientDirectory, patientExtraCautions, patientSideNoteVisibility, selectedVisitForSideNote, visits]);
+  }, [dbPatientDirectory, patientExtraCautions, patientSideNoteSelections, selectedVisitForSideNote, visits]);
 
   const displayVisits = useMemo(() => visits.map((visit) => {
-    const patientName = (visit.patient_name || '').trim();
-    const chartNumber = (visit.chart_number || '').trim();
-    if (!patientName || !chartNumber) return visit;
-
-    const key = `${patientName.toLocaleLowerCase()}::${chartNumber.toLocaleLowerCase()}`;
-    const visibility = patientSideNoteVisibility[key];
-    if (!visibility) return visit;
-
+    if (!selectedPatientPanelData || visit.id !== selectedPatientPanelData.selectedVisitId) return visit;
     return {
       ...visit,
-      memo: visibility.memo === false ? '' : visit.memo,
-      special_note: visibility.specialNote === false ? '' : visit.special_note,
+      memo: selectedPatientPanelData.selectedMemoLines.join('\n'),
+      special_note: selectedPatientPanelData.selectedSpecialNoteLines.join('\n'),
     };
-  }), [patientSideNoteVisibility, visits]);
+  }), [selectedPatientPanelData, visits]);
 
   const [sidePanelMemo, setSidePanelMemo] = useState('');
   const [sidePanelSpecialNote, setSidePanelSpecialNote] = useState('');
@@ -540,6 +545,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     if (!selectedPatientPanelData?.selectedVisitId) return;
 
     const deduped = mergeUniqueTextValues([value]);
+    const nextLines = deduped.split('\n').map((line) => line.trim()).filter(Boolean);
     await trackedUpdateVisitWithBedSync(selectedPatientPanelData.selectedVisitId, { [field]: deduped }, true);
 
     setDbPatientDirectory((prev) => prev.map((row) => (
@@ -547,7 +553,19 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         ? { ...row, [field]: deduped }
         : row
     )));
-  }, [selectedPatientPanelData, trackedUpdateVisitWithBedSync]);
+    setPatientSideNoteSelections((prev) => {
+      const existing = prev[selectedPatientPanelData.key] || {};
+      const selected = field === 'memo' ? (existing.memo || nextLines) : (existing.specialNote || nextLines);
+      const filtered = selected.filter((line, idx, arr) => nextLines.includes(line) && arr.indexOf(line) === idx);
+      return {
+        ...prev,
+        [selectedPatientPanelData.key]: {
+          ...existing,
+          ...(field === 'memo' ? { memo: filtered } : { specialNote: filtered }),
+        },
+      };
+    });
+  }, [selectedPatientPanelData, setPatientSideNoteSelections, trackedUpdateVisitWithBedSync]);
 
   const commitExtraCaution = useCallback((value: string) => {
     if (!selectedPatientPanelData?.key) return;
@@ -559,6 +577,26 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       return next;
     });
   }, [selectedPatientPanelData, setPatientExtraCautions]);
+
+  const toggleSideNoteLine = useCallback((field: 'memo' | 'specialNote', line: string, checked: boolean) => {
+    if (!selectedPatientPanelData?.key) return;
+    setPatientSideNoteSelections((prev) => {
+      const existing = prev[selectedPatientPanelData.key] || {};
+      const currentLines = field === 'memo'
+        ? (existing.memo && existing.memo.length > 0 ? existing.memo : selectedPatientPanelData.memoItems)
+        : (existing.specialNote && existing.specialNote.length > 0 ? existing.specialNote : selectedPatientPanelData.specialNoteItems);
+      const nextLines = checked
+        ? Array.from(new Set([...currentLines, line]))
+        : currentLines.filter((item) => item !== line);
+      return {
+        ...prev,
+        [selectedPatientPanelData.key]: {
+          ...existing,
+          ...(field === 'memo' ? { memo: nextLines } : { specialNote: nextLines }),
+        },
+      };
+    });
+  }, [selectedPatientPanelData, setPatientSideNoteSelections]);
 
 
   const activeBedIdsInLog = useMemo(() => {
@@ -1438,27 +1476,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="flex items-center justify-between gap-3">
-                    <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">특이사항</div>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                      <input
-                        type="checkbox"
-                        className="h-3.5 w-3.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                        checked={selectedPatientPanelData.specialNoteVisible}
-                        onChange={(e) => {
-                          const checked = e.target.checked;
-                          setPatientSideNoteVisibility((prev) => ({
-                            ...prev,
-                            [selectedPatientPanelData.key]: {
-                              ...(prev[selectedPatientPanelData.key] || {}),
-                              specialNote: checked,
-                            },
-                          }));
-                        }}
-                      />
-                      표시
-                    </span>
-                  </label>
+                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">특이사항</div>
                   <textarea
                     value={sidePanelSpecialNote}
                     onChange={(e) => setSidePanelSpecialNote(e.target.value)}
@@ -1466,29 +1484,27 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                     className="h-[140px] w-full resize-none rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2 text-[13px] leading-6 font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
                     placeholder="특이사항 입력"
                   />
+                  {selectedPatientPanelData.specialNoteItems.length > 0 && (
+                    <div className="max-h-[110px] overflow-y-auto rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 p-2 space-y-1.5">
+                      {selectedPatientPanelData.specialNoteItems.map((line) => {
+                        const checked = selectedPatientPanelData.selectedSpecialNoteLines.includes(line);
+                        return (
+                          <label key={`special-${line}`} className="flex items-start gap-2 rounded-lg px-2 py-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/70">
+                            <input
+                              type="checkbox"
+                              className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                              checked={checked}
+                              onChange={(e) => toggleSideNoteLine('specialNote', line, e.target.checked)}
+                            />
+                            <span className="whitespace-pre-wrap break-words">{line}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="flex items-center justify-between gap-3">
-                    <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">메모</div>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                      <input
-                        type="checkbox"
-                        className="h-3.5 w-3.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                        checked={selectedPatientPanelData.memoVisible}
-                        onChange={(e) => {
-                          const checked = e.target.checked;
-                          setPatientSideNoteVisibility((prev) => ({
-                            ...prev,
-                            [selectedPatientPanelData.key]: {
-                              ...(prev[selectedPatientPanelData.key] || {}),
-                              memo: checked,
-                            },
-                          }));
-                        }}
-                      />
-                      표시
-                    </span>
-                  </label>
+                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">메모</div>
                   <textarea
                     value={sidePanelMemo}
                     onChange={(e) => setSidePanelMemo(e.target.value)}
@@ -1496,6 +1512,24 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                     className="h-[140px] w-full resize-none rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2 text-[13px] leading-6 font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-sky-400"
                     placeholder="메모 입력"
                   />
+                  {selectedPatientPanelData.memoItems.length > 0 && (
+                    <div className="max-h-[110px] overflow-y-auto rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 p-2 space-y-1.5">
+                      {selectedPatientPanelData.memoItems.map((line) => {
+                        const checked = selectedPatientPanelData.selectedMemoLines.includes(line);
+                        return (
+                          <label key={`memo-${line}`} className="flex items-start gap-2 rounded-lg px-2 py-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/70">
+                            <input
+                              type="checkbox"
+                              className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                              checked={checked}
+                              onChange={(e) => toggleSideNoteLine('memo', line, e.target.checked)}
+                            />
+                            <span className="whitespace-pre-wrap break-words">{line}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
               </>
