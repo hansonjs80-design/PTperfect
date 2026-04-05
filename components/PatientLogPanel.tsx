@@ -1378,47 +1378,48 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           />
         </div>
 
-        <div className="flex min-h-0 flex-1">
-          <div className="min-w-0 flex-1 flex flex-col">
-            <PatientLogTable 
-              visits={visits}
-              beds={beds}
-              presets={presets}
-              patientNameSuggestions={patientNameSuggestions}
-              patientNameAutofillMap={patientNameAutofillMap}
-              memoSuggestions={memoSuggestions}
-              specialNoteSuggestions={specialNoteSuggestions}
-              getRowStatus={getRowStatus}
-              onUpdate={trackedUpdateVisitWithBedSync}
-              onDelete={handleDeleteVisit}
-              onCreate={handleCreateWithBedSync}
-              onSelectLog={handleSelectLog}
-              onMovePatient={handleMovePatient}
-              onEditActive={setEditingBedId}
-              onNextStep={nextStep}
-              onPrevStep={prevStep}
-              onClearBed={clearBed}
-              isBedActivationDisabled={isBedActivationDisabled}
-              onSelectionAnchorChange={(row, col) => {
-                if (isSearchModalOpen || isMemoHistoryModalOpen) return;
-                setSelectionAnchor({ row, col });
-                if (row !== null && visits[row]) {
-                  setSelectedVisitIdForImport(visits[row].id);
-                }
-              }}
-              onMoveRowsToBottomLocal={moveRowsToBottomLocal}
-              onBulkUpdate={trackedBulkUpdateVisitWithBedSync}
-              cancelAutoFocusRef={cancelAutoFocusRef}
-            />
+        <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex min-h-0 h-full min-w-max">
+            <div className="min-w-0 flex-1 flex flex-col">
+              <PatientLogTable 
+                visits={visits}
+                beds={beds}
+                presets={presets}
+                patientNameSuggestions={patientNameSuggestions}
+                patientNameAutofillMap={patientNameAutofillMap}
+                memoSuggestions={memoSuggestions}
+                specialNoteSuggestions={specialNoteSuggestions}
+                getRowStatus={getRowStatus}
+                onUpdate={trackedUpdateVisitWithBedSync}
+                onDelete={handleDeleteVisit}
+                onCreate={handleCreateWithBedSync}
+                onSelectLog={handleSelectLog}
+                onMovePatient={handleMovePatient}
+                onEditActive={setEditingBedId}
+                onNextStep={nextStep}
+                onPrevStep={prevStep}
+                onClearBed={clearBed}
+                isBedActivationDisabled={isBedActivationDisabled}
+                onSelectionAnchorChange={(row, col) => {
+                  if (isSearchModalOpen || isMemoHistoryModalOpen) return;
+                  setSelectionAnchor({ row, col });
+                  if (row !== null && visits[row]) {
+                    setSelectedVisitIdForImport(visits[row].id);
+                  }
+                }}
+                onMoveRowsToBottomLocal={moveRowsToBottomLocal}
+                onBulkUpdate={trackedBulkUpdateVisitWithBedSync}
+                cancelAutoFocusRef={cancelAutoFocusRef}
+              />
 
-            <div className="p-2 border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 shrink-0 text-center">
-              <p className="text-[10px] text-gray-400">
-                * 빈 행에 내용을 입력하면 자동으로 추가됩니다.
-              </p>
+              <div className="p-2 border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 shrink-0 text-center">
+                <p className="text-[10px] text-gray-400">
+                  * 빈 행에 내용을 입력하면 자동으로 추가됩니다.
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="hidden xl:flex w-[300px] shrink-0 border-l border-slate-200/80 dark:border-slate-700 bg-white/96 dark:bg-slate-900/96">
+          <div className="flex w-[300px] shrink-0 border-l border-slate-200/80 dark:border-slate-700 bg-white/96 dark:bg-slate-900/96">
             <div className="w-full h-[600px] overflow-hidden">
             {selectedPatientPanelData ? (
               <>
@@ -1472,6 +1473,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
               </div>
             )}
           </div>
+        </div>
         </div>
         </div>
       </div>
