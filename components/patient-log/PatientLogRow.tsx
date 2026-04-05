@@ -80,6 +80,8 @@ interface PatientLogRowProps {
   patientNameAutofillMap?: Record<string, { chart_number?: string; gender?: string }>;
   memoSuggestions?: string[];
   specialNoteSuggestions?: string[];
+  isChartAutofillSuppressed?: boolean;
+  onChartAutofillSuppressionChange?: (visitId: string, suppressed: boolean) => void;
 }
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
@@ -115,6 +117,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   patientNameAutofillMap = {},
   memoSuggestions = [],
   specialNoteSuggestions = [],
+  isChartAutofillSuppressed = false,
+  onChartAutofillSuppressionChange,
 }) => {
   const { handleGridKeyDown } = useGridNavigation(11);
   const { activateVisitFromLog, togglePause, updateBedSteps, updateBedDuration, quickTreatments } = useTreatmentContext();
@@ -292,20 +296,27 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     const normalizedValue = value.trim();
     const patientNameKey = field === 'patient_name' ? normalizedValue.toLocaleLowerCase() : '';
     const matchedAutofill = field === 'patient_name' ? patientNameAutofillMap[patientNameKey] : undefined;
+    const allowChartAutofill = field === 'patient_name' ? !isChartAutofillSuppressed : true;
+    const nextChartNumber = field === 'patient_name' && allowChartAutofill ? matchedAutofill?.chart_number : undefined;
+    const nextGender = field === 'patient_name' ? matchedAutofill?.gender : undefined;
+
+    if (field === 'chart_number' && visit?.id && onChartAutofillSuppressionChange) {
+      onChartAutofillSuppressionChange(visit.id, normalizedValue === '');
+    }
 
     if (isDraft && onCreate) {
       await onCreate({
         [field]: value,
-        ...(field === 'patient_name' && matchedAutofill?.chart_number ? { chart_number: matchedAutofill.chart_number } : {}),
-        ...(field === 'patient_name' && matchedAutofill?.gender ? { gender: matchedAutofill.gender } : {}),
+        ...(field === 'patient_name' && nextChartNumber ? { chart_number: nextChartNumber } : {}),
+        ...(field === 'patient_name' && nextGender ? { gender: nextGender } : {}),
       }, colIndex, navDirection);
     } else if (!isDraft && visit && onUpdate) {
       // 배드번호/처방목록 외 환자로그 텍스트 셀은 항상 로그만 수정한다.
       // (활성 배드/타이머 상태에는 절대 영향 주지 않음)
       onUpdate(visit.id, {
         [field]: value,
-        ...(field === 'patient_name' && matchedAutofill?.chart_number ? { chart_number: matchedAutofill.chart_number } : {}),
-        ...(field === 'patient_name' && matchedAutofill?.gender ? { gender: matchedAutofill.gender } : {}),
+        ...(field === 'patient_name' && nextChartNumber ? { chart_number: nextChartNumber } : {}),
+        ...(field === 'patient_name' && nextGender ? { gender: nextGender } : {}),
       }, true);
     }
   };

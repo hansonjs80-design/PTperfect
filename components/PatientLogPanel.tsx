@@ -71,6 +71,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const [patientExtraCautions, setPatientExtraCautions] = useLocalStorage<Record<string, string>>(PATIENT_EXTRA_CAUTION_STORAGE_KEY, {});
   const [patientSideNoteSelections, setPatientSideNoteSelections] = useLocalStorage<Record<string, { memo?: string[]; specialNote?: string[] }>>(PATIENT_SIDE_NOTE_SELECTION_STORAGE_KEY, {});
+  const [suppressedChartAutofillVisitIds, setSuppressedChartAutofillVisitIds] = useState<string[]>([]);
   const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
   const [dbPatientDirectory, setDbPatientDirectory] = useState<Array<{ id?: string; patient_name: string; chart_number?: string | null; gender?: string | null; body_part?: string | null; memo?: string | null; special_note?: string | null; updated_at?: string | null; visit_date?: string | null }>>([]);
 
@@ -163,8 +164,18 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
   const trackedDeleteVisit = useCallback(async (visitId: string) => {
     pushUndoSnapshot();
+    setSuppressedChartAutofillVisitIds((prev) => prev.filter((id) => id !== visitId));
     await deleteVisit(visitId);
   }, [deleteVisit, pushUndoSnapshot]);
+
+  const handleChartAutofillSuppressionChange = useCallback((visitId: string, suppressed: boolean) => {
+    setSuppressedChartAutofillVisitIds((prev) => {
+      if (suppressed) {
+        return prev.includes(visitId) ? prev : [...prev, visitId];
+      }
+      return prev.filter((id) => id !== visitId);
+    });
+  }, []);
 
   const trackedBulkUpdateVisitWithBedSync = useCallback((patches: Array<{ id: string; updates: Partial<PatientVisit>; skipBedSync?: boolean; clearBedId?: number | null }>) => {
     if (patches.length === 0) return;
@@ -1501,6 +1512,8 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                 patientNameAutofillMap={patientNameAutofillMap}
                 memoSuggestions={memoSuggestions}
                 specialNoteSuggestions={specialNoteSuggestions}
+                suppressedChartAutofillVisitIds={suppressedChartAutofillVisitIds}
+                onChartAutofillSuppressionChange={handleChartAutofillSuppressionChange}
                 getRowStatus={getRowStatus}
                 onUpdate={trackedUpdateVisitWithBedSync}
                 onDelete={handleDeleteVisit}

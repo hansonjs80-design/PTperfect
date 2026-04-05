@@ -177,6 +177,8 @@ interface PatientLogTableProps {
   specialNoteSuggestions?: string[];
   onMoveRowsToBottomLocal?: (rows: number[]) => void;
   onBulkUpdate?: (patches: Array<{ id: string; updates: Partial<PatientVisit>; skipBedSync?: boolean; clearBedId?: number | null }>) => void;
+  suppressedChartAutofillVisitIds?: string[];
+  onChartAutofillSuppressionChange?: (visitId: string, suppressed: boolean) => void;
 }
 
 export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
@@ -202,7 +204,9 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   memoSuggestions = [],
   specialNoteSuggestions = [],
   onMoveRowsToBottomLocal,
-  onBulkUpdate
+  onBulkUpdate,
+  suppressedChartAutofillVisitIds = [],
+  onChartAutofillSuppressionChange,
 }) => {
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
@@ -1315,6 +1319,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
                 patientNameAutofillMap={patientNameAutofillMap}
                 memoSuggestions={memoSuggestions}
                 specialNoteSuggestions={specialNoteSuggestions}
+                isChartAutofillSuppressed={suppressedChartAutofillVisitIds.includes(visit.id)}
+                onChartAutofillSuppressionChange={onChartAutofillSuppressionChange}
               />
             );
           })}
@@ -1336,6 +1342,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
               patientNameAutofillMap={patientNameAutofillMap}
               memoSuggestions={memoSuggestions}
               specialNoteSuggestions={specialNoteSuggestions}
+              onChartAutofillSuppressionChange={onChartAutofillSuppressionChange}
             />
           ))}
 
