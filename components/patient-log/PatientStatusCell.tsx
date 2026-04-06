@@ -103,14 +103,12 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   };
 
   const focusTypedStatusInput = () => {
-    requestAnimationFrame(() => {
-      if (menuPos || selectedStatusKeyRef.current) return;
-      const input = typedQueryInputRef.current;
-      if (!input) return;
-      input.focus();
-      const end = input.value.length;
-      input.setSelectionRange(end, end);
-    });
+    if (menuPos || selectedStatusKeyRef.current) return;
+    const input = typedQueryInputRef.current;
+    if (!input) return;
+    input.focus();
+    const end = input.value.length;
+    input.setSelectionRange(end, end);
   };
 
   const beginTypedStatusEntry = (seed = '') => {
@@ -455,6 +453,9 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         setIsTypingQuery(!!e.currentTarget.value);
       }}
       onKeyDown={(e) => {
+        if (e.key === 'Backspace' || e.key === 'Delete') {
+          e.stopPropagation();
+        }
         if (e.key === 'Enter') {
           e.preventDefault();
           e.stopPropagation();

@@ -843,6 +843,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     if (el.tagName === 'INPUT') {
       const input = el as HTMLInputElement;
       if (input.dataset.searchModalInput === 'true') return true;
+      if (input.dataset.statusTypedInput === 'true') return true;
       return input.dataset.directEditing === 'true';
     }
     return false;
