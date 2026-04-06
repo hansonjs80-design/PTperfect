@@ -351,7 +351,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     <>
       <div
         ref={cellRef}
-        className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
+        className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-start cursor-pointer hover:bg-slate-200/55 dark:hover:bg-slate-700/70 transition-all duration-150 group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
         onMouseDown={(e) => {
           if (e.button !== 0) return;
           cellRef.current?.focus();
@@ -386,7 +386,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                     cellRef.current?.focus();
                     updateSelectedStatusKey(selectedStatusKeyRef.current === item.key ? null : item.key);
                   }}
-                  className={`px-1.5 py-0.5 rounded-md text-[13px] font-black ${item.bg} ${item.text} ${selectedStatusKey === item.key ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
+                  className={`px-1.5 py-0.5 rounded-md text-[13px] font-black transition-transform duration-150 group-hover:scale-[1.04] transform-gpu ${item.bg} ${item.text} ${selectedStatusKey === item.key ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
                 >
                   {item.label}
                 </span>

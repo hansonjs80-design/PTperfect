@@ -194,7 +194,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
     <>
       <div
         ref={cellRef}
-        className={`absolute inset-px px-1.5 flex items-center justify-center text-center cursor-pointer rounded-[1px] hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group outline-none focus:outline-none focus:z-10 focus:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] ${isDraft ? 'opacity-50 hover:opacity-100' : ''}`}
+        className={`absolute inset-px px-1.5 flex items-center justify-center text-center cursor-pointer rounded-[1px] hover:bg-slate-200/55 dark:hover:bg-slate-700/70 transition-all duration-150 group outline-none focus:outline-none focus:z-10 focus:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] ${isDraft ? 'opacity-50 hover:opacity-100' : ''}`}
         onMouseDown={(e) => {
           if (e.button !== 0) return;
           cellRef.current?.focus();
@@ -208,9 +208,9 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
         title="클릭하여 셀 선택, 영문 입력 가능 / 더블클릭·더블터치로 작성자 선택"
       >
         {value ? (
-          <span className="inline-flex w-full items-center justify-center text-center text-sm xl:text-base font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap">{value}</span>
+          <span className="inline-flex w-full items-center justify-center text-center text-sm xl:text-base font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap transition-transform duration-150 group-hover:scale-[1.05] transform-gpu">{value}</span>
         ) : (
-          <span className="inline-flex w-full items-center justify-center text-center text-gray-300 dark:text-gray-600 text-sm font-bold">-</span>
+          <span className="inline-flex w-full items-center justify-center text-center text-gray-300 dark:text-gray-600 text-sm font-bold transition-transform duration-150 group-hover:scale-[1.05] transform-gpu">-</span>
         )}
         {showFillHandle && (
           <button

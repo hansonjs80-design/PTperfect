@@ -571,13 +571,13 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
   if (rowStatus === 'active') {
     // Active Row: Blue tint -> Darker Blue on Hover
-    rowClasses += 'bg-sky-50/70 dark:bg-sky-900/10 hover:bg-sky-100/80 dark:hover:bg-sky-900/20';
+    rowClasses += 'bg-sky-50/70 dark:bg-sky-900/10 hover:bg-sky-200/75 dark:hover:bg-sky-900/28';
   } else if (rowStatus === 'completed') {
     // Completed Row: Gray tint -> Darker Gray on Hover
-    rowClasses += 'bg-slate-50/80 dark:bg-slate-800/55 opacity-85 hover:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-700/80';
+    rowClasses += 'bg-slate-50/80 dark:bg-slate-800/55 opacity-85 hover:opacity-100 hover:bg-slate-200/75 dark:hover:bg-slate-700/88';
   } else {
     // Default Row: White -> Distinct Gray on Hover
-    rowClasses += 'bg-white/95 dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70';
+    rowClasses += 'bg-white/95 dark:bg-slate-900 hover:bg-slate-200/55 dark:hover:bg-slate-800/82';
   }
 
   if (isDraft) {

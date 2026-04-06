@@ -416,11 +416,11 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
             onKeyDown={handleContainerKeyDown}
             tabIndex={0}
             data-grid-id={gridId}
-            className={`w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors group select-none outline-none focus:outline-none focus:z-10 focus:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] ${className}`}
+            className={`w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-center cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-700/72 transition-all duration-150 group select-none outline-none focus:outline-none focus:z-10 focus:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] ${className}`}
             title={getTitle()}
         >
             {(displayValueOverride || value) ? (
-                <span className={`text-lg sm:text-xl xl:text-base font-black group-hover:scale-110 transition-transform ${(displayValueOverride || value) === '11' || value === 11 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                <span className={`text-lg sm:text-xl xl:text-base font-black group-hover:scale-[1.12] transition-transform duration-150 transform-gpu ${(displayValueOverride || value) === '11' || value === 11 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>
                 {(displayValueOverride || value) === '11' || value === 11 ? 'T' : (displayValueOverride || value)}
                 </span>
             ) : (

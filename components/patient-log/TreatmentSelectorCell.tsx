@@ -962,7 +962,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] min-h-[28px] relative rounded-[1px] outline-none focus:outline-none focus-within:outline-none focus:z-10 focus-within:z-10 focus:bg-sky-500/5 focus-within:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] focus-within:shadow-[inset_0_0_0_2px_rgb(14_165_233)]"
       >
         <div
-          className={`flex items-center w-full h-full px-2 transition-colors relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30'} rounded-[1px]`}
+          className={`flex items-center w-full h-full px-2 transition-all duration-150 relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-200/55 dark:hover:bg-slate-700/55'} rounded-[1px]`}
           title={getTitle()}
         >
           <div className="flex-1 min-w-0 h-full flex items-center justify-start pl-2 pr-[4px] py-0 gap-1.5">
@@ -979,12 +979,12 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     setBadgeRenamePopup({ x: e.clientX, y: e.clientY });
                   }
                 }}
-                className={`shrink-0 px-2 py-0.5 rounded-md text-[14.3px] font-black ${presetColor} ${presetBadgeTextClass} border ${isBadgeSelected ? 'border-sky-500 outline outline-2 outline-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]' : 'border-black/10 dark:border-white/10'} cursor-pointer transition-all`}
+                className={`shrink-0 px-2 py-0.5 rounded-md text-[14.3px] font-black ${presetColor} ${presetBadgeTextClass} border ${isBadgeSelected ? 'border-sky-500 outline outline-2 outline-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]' : 'border-black/10 dark:border-white/10'} cursor-pointer transition-all duration-150 group-hover:scale-[1.03] transform-gpu`}
               >
                 {presetLabel}
               </span>
             )}
-            <div className={`text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[28px] ${(allowStepSelection || isEmptyTreatmentCell || preferInlineTextEditing) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+            <div className={`text-[16.5px] sm:text-[17.6px] xl:text-[16.5px] font-semibold text-left w-full leading-normal text-slate-900 dark:text-slate-100 flex items-center min-h-[28px] transition-transform duration-150 group-hover:scale-[1.02] transform-gpu ${(allowStepSelection || isEmptyTreatmentCell || preferInlineTextEditing) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
               {isEmptyTreatmentCell && !isReadOnly ? (
                 <input
                   key="empty-treatment-input"

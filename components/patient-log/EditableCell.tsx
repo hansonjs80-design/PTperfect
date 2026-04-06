@@ -476,7 +476,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
               ? 'bg-transparent text-center !text-gray-900 dark:!text-gray-100'
               : 'bg-transparent'}
             ${isDirectEditing && previewTail ? '!text-transparent caret-gray-900 dark:caret-gray-100 selection:bg-transparent selection:text-transparent' : ''}
-            ${(directEdit && mode !== 'edit') ? 'cursor-default select-none caret-transparent' : 'cursor-pointer'} hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-sm truncate
+            ${(directEdit && mode !== 'edit') ? 'cursor-default select-none caret-transparent' : 'cursor-pointer'} hover:bg-slate-200/55 dark:hover:bg-slate-700/70 transition-all duration-150 text-sm truncate group-hover:scale-[1.03] transform-gpu
             ${mode === 'edit'
               ? 'focus:outline-none focus:ring-0 focus:bg-transparent dark:focus:bg-transparent'
               : 'focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 focus:bg-transparent dark:focus:bg-transparent'}
