@@ -47,6 +47,75 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const isEditingTypedInputTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && !!target.closest('[data-status-typed-input="true"]');
   const isHangulLikeKey = (key: string) => /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(key);
+  const HANGUL_CHO = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+  const HANGUL_JUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
+  const HANGUL_JONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+  const COMPLEX_VOWEL_MAP: Record<string, string> = { 'ㅗㅏ': 'ㅘ', 'ㅗㅐ': 'ㅙ', 'ㅗㅣ': 'ㅚ', 'ㅜㅓ': 'ㅝ', 'ㅜㅔ': 'ㅞ', 'ㅜㅣ': 'ㅟ', 'ㅡㅣ': 'ㅢ' };
+  const COMPLEX_FINAL_MAP: Record<string, string> = { 'ㄱㅅ': 'ㄳ', 'ㄴㅈ': 'ㄵ', 'ㄴㅎ': 'ㄶ', 'ㄹㄱ': 'ㄺ', 'ㄹㅁ': 'ㄻ', 'ㄹㅂ': 'ㄼ', 'ㄹㅅ': 'ㄽ', 'ㄹㅌ': 'ㄾ', 'ㄹㅍ': 'ㄿ', 'ㄹㅎ': 'ㅀ', 'ㅂㅅ': 'ㅄ' };
+  const CHO_INDEX = new Map<string, number>(HANGUL_CHO.map((char, index) => [char, index]));
+  const JUNG_INDEX = new Map<string, number>(HANGUL_JUNG.map((char, index) => [char, index]));
+  const JONG_INDEX = new Map<string, number>(HANGUL_JONG.map((char, index) => [char, index]));
+
+  const composeStatusHangul = (value: string) => {
+    const chars = Array.from(value);
+    let result = '';
+
+    const readVowel = (start: number) => {
+      const first = chars[start];
+      const next = chars[start + 1];
+      if (first && next) {
+        const complex = COMPLEX_VOWEL_MAP[`${first}${next}`];
+        if (complex) return { vowel: complex, length: 2 };
+      }
+      return { vowel: first, length: 1 };
+    };
+
+    for (let i = 0; i < chars.length;) {
+      const current = chars[i];
+      const choIndex = CHO_INDEX.get(current);
+      const next = chars[i + 1];
+      const nextIsVowel = next ? JUNG_INDEX.has(next) || !!COMPLEX_VOWEL_MAP[`${next}${chars[i + 2] || ''}`] : false;
+
+      if (choIndex == null || !nextIsVowel) {
+        result += current;
+        i += 1;
+        continue;
+      }
+
+      const { vowel, length: vowelLength } = readVowel(i + 1);
+      const jungIndex = JUNG_INDEX.get(vowel);
+      if (jungIndex == null) {
+        result += current;
+        i += 1;
+        continue;
+      }
+
+      let consumed = 1 + vowelLength;
+      let jong = '';
+      const final1 = chars[i + consumed];
+      const final2 = chars[i + consumed + 1];
+      const final1IsConsonant = !!final1 && CHO_INDEX.has(final1);
+      const final2StartsVowel = !!final2 && (JUNG_INDEX.has(final2) || !!COMPLEX_VOWEL_MAP[`${final2}${chars[i + consumed + 2] || ''}`]);
+
+      if (final1IsConsonant && !final2StartsVowel) {
+        const complexFinal = final1 && final2 ? COMPLEX_FINAL_MAP[`${final1}${final2}`] : undefined;
+        const final3StartsVowel = !!chars[i + consumed + 2] && (JUNG_INDEX.has(chars[i + consumed + 2]) || !!COMPLEX_VOWEL_MAP[`${chars[i + consumed + 2]}${chars[i + consumed + 3] || ''}`]);
+        if (complexFinal && !final3StartsVowel) {
+          jong = complexFinal;
+          consumed += 2;
+        } else {
+          jong = final1 || '';
+          consumed += 1;
+        }
+      }
+
+      const jongIndex = JONG_INDEX.get(jong) ?? 0;
+      result += String.fromCharCode(0xac00 + choIndex * 588 + jungIndex * 28 + jongIndex);
+      i += consumed;
+    }
+
+    return result;
+  };
 
   const STATUS_KEYS: Array<keyof PatientVisit> = [
     'is_injection',
@@ -114,12 +183,12 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const beginTypedStatusEntry = (seed = '') => {
     updateSelectedStatusKey(null);
     setIsTypingQuery(true);
-    setTypedQuery(seed);
+    setTypedQuery(composeStatusHangul(seed));
     focusTypedStatusInput();
   };
 
   const applyTypedStatusQuery = async () => {
-    const query = (typedQueryInputRef.current?.value ?? typedQuery).trim();
+    const query = composeStatusHangul(typedQueryInputRef.current?.value ?? typedQuery).trim();
     if (!query) {
       setIsTypingQuery(false);
       setTypedQuery('');
@@ -494,7 +563,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       data-status-typed-input="true"
       value={typedQuery}
       onChange={(e) => {
-        setTypedQuery(e.target.value);
+        setTypedQuery(composeStatusHangul(e.target.value));
         if (!isTypingQuery && e.target.value) {
           setIsTypingQuery(true);
         }
@@ -505,8 +574,9 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       }}
       onCompositionEnd={(e) => {
         typedQueryCompositionRef.current = false;
-        setTypedQuery(e.currentTarget.value);
-        setIsTypingQuery(!!e.currentTarget.value);
+        const composedValue = composeStatusHangul(e.currentTarget.value);
+        setTypedQuery(composedValue);
+        setIsTypingQuery(!!composedValue);
       }}
       onKeyDown={(e) => {
         if (e.key === 'Backspace' || e.key === 'Delete') {
