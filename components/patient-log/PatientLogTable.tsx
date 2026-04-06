@@ -237,6 +237,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   // rowOffset = 1 (vertical: jump to new draft), rowOffset = 0 (horizontal: stay on created row)
   const focusTargetRef = useRef<{ rowOffset: number, colIndex: number } | null>(null);
   const absoluteFocusTargetRef = useRef<{ row: number, colIndex: number } | null>(null);
+  const pendingAutoFocusVisitsLengthRef = useRef<number | null>(null);
   const prevVisitsLengthRef = useRef(visits.length);
   const pendingAutoFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPointerDownAtRef = useRef(0);
@@ -401,6 +402,11 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   useEffect(() => {
     // If visits length increased, it means a row was added.
     if (visits.length > prevVisitsLengthRef.current && (focusTargetRef.current !== null || absoluteFocusTargetRef.current !== null)) {
+      if (pendingAutoFocusVisitsLengthRef.current !== null && visits.length < pendingAutoFocusVisitsLengthRef.current) {
+        prevVisitsLengthRef.current = visits.length;
+        return;
+      }
+
       const fallbackBaseRowIndex = prevVisitsLengthRef.current;
       const targetRowIndex = absoluteFocusTargetRef.current
         ? absoluteFocusTargetRef.current.row
@@ -419,6 +425,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         if (Date.now() - lastPointerDownAtRef.current < 250) {
           focusTargetRef.current = null;
           absoluteFocusTargetRef.current = null;
+          pendingAutoFocusVisitsLengthRef.current = null;
           return;
         }
 
@@ -426,6 +433,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         if (document.querySelector('[data-modal-overlay="true"]') || document.body.getAttribute('data-prevent-autofocus') === 'true') {
           focusTargetRef.current = null;
           absoluteFocusTargetRef.current = null;
+          pendingAutoFocusVisitsLengthRef.current = null;
           return;
         }
 
@@ -442,6 +450,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         }
         focusTargetRef.current = null;
         absoluteFocusTargetRef.current = null;
+        pendingAutoFocusVisitsLengthRef.current = null;
       }, 0);
     }
     prevVisitsLengthRef.current = visits.length;
@@ -497,6 +506,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     // 화면상 아래쪽 빈 슬롯에서 직접 입력한 경우에도,
     // 그 슬롯 자체가 실제 행이 되도록 중간 빈 행을 먼저 채운다.
     if (draftRowIndex > visits.length) {
+      pendingAutoFocusVisitsLengthRef.current = draftRowIndex + 1;
       const tailCreatedAt = visits.length > 0
         ? new Date(visits[visits.length - 1].created_at || 0).getTime()
         : Date.now();
@@ -515,6 +525,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       });
     }
 
+    pendingAutoFocusVisitsLengthRef.current = insertRowIndex + 1;
     return await onCreate({
       ...updates,
       ...(updates.created_at ? {} : { created_at: getInsertCreatedAt(insertRowIndex) }),
