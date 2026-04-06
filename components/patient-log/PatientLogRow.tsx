@@ -595,6 +595,9 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const currentPreset = bed?.customPreset || presets.find(p => p.id === bed?.currentPresetId);
   const currentStep = currentPreset?.steps[bed?.currentStepIndex || 0];
   const activeSteps = currentPreset?.steps || [];
+  const persistedPresetBadgeForVisit = visit?.id
+    ? resolvePresetAppearance(persistedPresetBadgeByVisitId.get(visit.id) || null)
+    : null;
   const canInteractActiveSteps = !isDraft && !isBedActivationDisabled && rowStatus === 'active' && !!bed && activeSteps.length > 0;
 
   const commitActiveSteps = (steps: TreatmentStep[], preferredIndex?: number) => {
@@ -712,6 +715,11 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     // 사용자가 우클릭으로 배지 이름을 명시적으로 변경한 경우 최우선 적용
     if (renamedBadgeOverride) {
       return { preset: resolvePresetAppearance(renamedBadgeOverride), source: 'renamed' as const };
+    }
+
+    // 날짜 전환 직후 첫 렌더에서도 저장된 배지를 가장 먼저 복원한다.
+    if (normalized && persistedPresetBadgeForVisit) {
+      return { preset: persistedPresetBadgeForVisit, source: 'persisted' as const };
     }
 
     // 처방 문자열이 같은 다른 세트가 있어도, 사용자가 마지막으로 선택한 세트 배지를 우선 유지한다.
