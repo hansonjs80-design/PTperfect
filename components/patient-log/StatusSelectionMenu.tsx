@@ -199,7 +199,9 @@ const customStatusFromOption = (option: StatusOptionConfig): PatientCustomStatus
 
 const CHOSEONG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 
-const normalizeStatusQuery = (value: string) => value.trim().normalize('NFC').toLowerCase();
+const stripStatusWhitespace = (value: string) => value.replace(/\s+/g, '');
+const normalizeStatusQuery = (value: string) => stripStatusWhitespace(value.trim().normalize('NFC').toLowerCase());
+const normalizeStatusCompatibility = (value: string) => stripStatusWhitespace(value.trim().normalize('NFKD').toLowerCase());
 
 const getInitialConsonants = (value: string) => {
   let result = '';
@@ -217,13 +219,18 @@ const getInitialConsonants = (value: string) => {
 
 export const findMatchingStatusOption = (options: StatusOptionConfig[], rawQuery: string) => {
   const query = normalizeStatusQuery(rawQuery);
-  if (!query) return null;
+  const compatibilityQuery = normalizeStatusCompatibility(rawQuery);
+  if (!query && !compatibilityQuery) return null;
   const initialQuery = getInitialConsonants(query);
 
   return options.find((option) => {
     const label = normalizeStatusQuery(option.label);
+    const compatibilityLabel = normalizeStatusCompatibility(option.label);
     const initials = getInitialConsonants(option.label);
-    return label.startsWith(query) || initials.startsWith(initialQuery);
+    return (
+      (!!query && (label.startsWith(query) || initials.startsWith(initialQuery))) ||
+      (!!compatibilityQuery && compatibilityLabel.startsWith(compatibilityQuery))
+    );
   }) || null;
 };
 
