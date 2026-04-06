@@ -487,6 +487,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         });
       }}
       className={className}
+      style={{ caretColor: isTypingQuery ? undefined : 'transparent' }}
     />
   );
 
@@ -498,9 +499,15 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         onMouseDown={(e) => {
           if (e.button !== 0) return;
           cellRef.current?.focus();
+          if (!menuPos && !selectedStatusKeyRef.current) {
+            focusTypedStatusInput();
+          }
         }}
         onClick={() => {
           cellRef.current?.focus();
+          if (!menuPos && !selectedStatusKeyRef.current) {
+            focusTypedStatusInput();
+          }
         }}
         onBlur={(e) => {
           const nextFocus = e.relatedTarget as Node | null;
@@ -512,20 +519,6 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         onTouchEnd={handleTouchEnd}
         onKeyDownCapture={handleKeyDownCapture}
         onKeyDown={handleKeyDown}
-        onBeforeInputCapture={(e) => {
-          if (menuPos || isEditingTypedInputTarget(e.target)) return;
-          const nativeEvent = e.nativeEvent as InputEvent;
-          const insertedText = nativeEvent.data ?? '';
-          if (!insertedText) return;
-          if (!nativeEvent.inputType?.startsWith('insert')) return;
-          e.preventDefault();
-          e.stopPropagation();
-          beginTypedStatusEntry(insertedText);
-        }}
-        onCompositionStartCapture={(e) => {
-          if (menuPos || isEditingTypedInputTarget(e.target)) return;
-          beginTypedStatusEntry('');
-        }}
         tabIndex={0}
         data-grid-id={gridId}
         data-status-pill-selected={selectedStatusKey ? 'true' : 'false'}
