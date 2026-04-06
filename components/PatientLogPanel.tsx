@@ -1575,7 +1575,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           is_exercise: { label: '운동', color: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-300' },
         };
         const STATUS_KEYS = Object.keys(STATUS_LABELS) as Array<keyof typeof STATUS_LABELS>;
-        const rowGridClass = "grid grid-cols-[86px_72px_72px_58px_74px_minmax(156px,1fr)_112px_64px_116px_116px] min-w-[926px]";
+        const rowGridClass = "grid grid-cols-[86px_72px_72px_58px_89px_minmax(141px,1fr)_112px_64px_116px_116px] min-w-[926px]";
 
         return (
         <div data-modal-overlay="true" className="fixed inset-0 z-[120] bg-slate-950/40 backdrop-blur-[3px] flex items-center justify-center p-3" onClick={() => resetSearchModal()}>
