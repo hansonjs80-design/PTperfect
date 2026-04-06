@@ -1729,12 +1729,9 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
                             <input
                               className="w-full h-full min-h-[36px] px-1.5 text-[13.5px] font-mono font-bold text-center bg-transparent text-gray-700 dark:text-gray-300 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
-                              defaultValue={v.chart_number || ''}
+                              value={v.chart_number || ''}
                               placeholder="-"
-                              onBlur={e => {
-                                const val = e.target.value;
-                                if (val !== (v.chart_number || '')) handleModalLocalUpdate(v.id, { chart_number: val });
-                              }}
+                              onChange={e => handleModalLocalUpdate(v.id, { chart_number: e.target.value })}
                             />
                           </div>
                           
@@ -1742,12 +1739,9 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
                             <input
                               className="w-full h-full min-h-[36px] px-1.5 text-[12px] font-extrabold text-center bg-transparent text-gray-900 dark:text-gray-100 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
-                              defaultValue={v.patient_name || ''}
+                              value={v.patient_name || ''}
                               placeholder="-"
-                              onBlur={e => {
-                                const val = e.target.value;
-                                if (val !== (v.patient_name || '')) handleModalLocalUpdate(v.id, { patient_name: val });
-                              }}
+                              onChange={e => handleModalLocalUpdate(v.id, { patient_name: e.target.value })}
                             />
                           </div>
                           
@@ -1768,12 +1762,9 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
                             <input
                               className="w-full h-full min-h-[36px] px-1 text-[13px] font-semibold text-center bg-transparent text-amber-700 dark:text-amber-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
-                              defaultValue={v.body_part || ''}
+                              value={v.body_part || ''}
                               placeholder="-"
-                              onBlur={e => {
-                                const val = e.target.value;
-                                if (val !== (v.body_part || '')) handleModalLocalUpdate(v.id, { body_part: val });
-                              }}
+                              onChange={e => handleModalLocalUpdate(v.id, { body_part: e.target.value })}
                             />
                           </div>
 
