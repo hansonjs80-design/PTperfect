@@ -757,10 +757,14 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const isActiveInputEditing = (el: HTMLElement | null) => {
     if (!el) return false;
     if (el.tagName === 'TEXTAREA') return true;
+    if (el.tagName === 'SELECT') return true;
     if (el.getAttribute('contenteditable') === 'true') return true;
-    if (el.tagName !== 'INPUT') return false;
-    const input = el as HTMLInputElement;
-    return input.dataset.directEditing === 'true';
+    if (el.tagName === 'INPUT') {
+      const input = el as HTMLInputElement;
+      if (input.dataset.searchModalInput === 'true') return true;
+      return input.dataset.directEditing === 'true';
+    }
+    return false;
   };
 
   const isInlineTreatmentSelectionInput = (input: HTMLElement | null) => {

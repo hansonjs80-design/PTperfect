@@ -1750,6 +1750,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           {/* 차트번호 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
                             <input
+                              data-search-modal-input="true"
                               className="w-full h-full min-h-[36px] px-1.5 text-[13.5px] font-mono font-bold text-center bg-transparent text-gray-700 dark:text-gray-300 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
                               value={v.chart_number || ''}
                               placeholder="-"
@@ -1766,6 +1767,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           {/* 이름 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
                             <input
+                              data-search-modal-input="true"
                               className="w-full h-full min-h-[36px] px-1.5 text-[12px] font-extrabold text-center bg-transparent text-gray-900 dark:text-gray-100 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
                               value={v.patient_name || ''}
                               placeholder="-"
@@ -1782,6 +1784,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           {/* 성별 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0 flex items-center justify-center" onClick={e => e.stopPropagation()}>
                             <select
+                              data-search-modal-input="true"
                               className="w-full h-full min-h-[36px] text-[13px] font-bold text-center bg-transparent outline-none cursor-pointer focus:ring-1 focus:ring-inset focus:ring-brand-400"
                               value={(v.gender || '').toUpperCase()}
                               onChange={e => {
@@ -1798,6 +1801,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           {/* 부위 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
                             <input
+                              data-search-modal-input="true"
                               className="w-full h-full min-h-[36px] px-1 text-[13px] font-semibold text-center bg-transparent text-amber-700 dark:text-amber-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
                               value={v.body_part || ''}
                               placeholder="-"
@@ -1838,6 +1842,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           {/* 담당 (Author select linked to saved options) */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0 flex items-center justify-center" onClick={e => e.stopPropagation()}>
                             <select
+                              data-search-modal-input="true"
                               className="w-full h-full min-h-[36px] text-[13px] font-bold text-center bg-transparent outline-none cursor-pointer focus:ring-1 focus:ring-inset focus:ring-brand-400 text-gray-700 dark:text-gray-300"
                               value={v.author || ''}
                               onChange={e => {
@@ -1855,6 +1860,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           {/* 메모 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
                             <input
+                              data-search-modal-input="true"
                               className="w-full h-full min-h-[36px] px-1.5 text-[13px] font-medium bg-transparent text-gray-600 dark:text-gray-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
                               value={v.memo || ''}
                               placeholder="-"
@@ -1871,6 +1877,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           {/* 특이사항 */}
                           <div className="p-0" onClick={e => e.stopPropagation()}>
                             <input
+                              data-search-modal-input="true"
                               className="w-full h-full min-h-[36px] px-1.5 text-[13px] font-medium bg-transparent text-orange-600 dark:text-orange-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
                               value={v.special_note || ''}
                               placeholder="-"
