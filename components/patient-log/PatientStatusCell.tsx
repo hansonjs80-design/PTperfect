@@ -142,6 +142,48 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     requestAnimationFrame(() => cellRef.current?.focus());
   };
 
+  const clearAllStatuses = async () => {
+    const targetVisitId = targetVisitIdRef.current;
+    const baseSnapshot = pendingSnapshotRef.current || visit || {};
+    const hasAnyStatus = STATUS_KEYS.some((statusKey) => !!baseSnapshot[statusKey]) || !!baseSnapshot.custom_statuses?.length;
+
+    setIsTypingQuery(false);
+    setTypedQuery('');
+    updateSelectedStatusKey(null);
+
+    if (!hasAnyStatus) {
+      cellRef.current?.focus();
+      return;
+    }
+
+    const snapshotUpdates = Object.fromEntries(
+      STATUS_KEYS.map((statusKey) => [statusKey, false])
+    ) as Partial<PatientVisit> & { custom_statuses?: PatientCustomStatus[] };
+    snapshotUpdates.custom_statuses = [];
+
+    const clearedSnapshot = {
+      ...baseSnapshot,
+      ...snapshotUpdates,
+    } as Partial<PatientVisit>;
+
+    pendingSnapshotRef.current = clearedSnapshot;
+    setMenuVisitSnapshot(clearedSnapshot);
+
+    const skipSync = disableBedSync || rowStatus !== 'active';
+
+    if (targetVisitId) {
+      onUpdate(targetVisitId, snapshotUpdates, skipSync);
+      requestAnimationFrame(() => cellRef.current?.focus());
+      return;
+    }
+
+    if (visit) {
+      onUpdate(visit.id, snapshotUpdates, skipSync);
+    }
+
+    requestAnimationFrame(() => cellRef.current?.focus());
+  };
+
   const handleTouchEnd = (e: React.TouchEvent) => {
     cellRef.current?.focus();
 
@@ -243,6 +285,13 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       return;
     }
 
+    if (!menuPos && !selectedStatusKey && !typedQuery.trim() && (e.key === 'Backspace' || e.key === 'Delete')) {
+      e.preventDefault();
+      e.stopPropagation();
+      void clearAllStatuses();
+      return;
+    }
+
     handleGridKeyDown(e, rowIndex, colIndex);
   };
 
@@ -261,6 +310,13 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       e.stopPropagation();
       void deleteStatusByKey(selectedStatusKeyRef.current || selectedStatusKey);
       updateSelectedStatusKey(null);
+      return;
+    }
+
+    if (!menuPos && !selectedStatusKey && !typedQuery.trim() && (e.key === 'Backspace' || e.key === 'Delete')) {
+      e.preventDefault();
+      e.stopPropagation();
+      void clearAllStatuses();
     }
   };
 
@@ -454,6 +510,12 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       }}
       onKeyDown={(e) => {
         if (e.key === 'Backspace' || e.key === 'Delete') {
+          if (!typedQuery.trim()) {
+            e.preventDefault();
+            e.stopPropagation();
+            void clearAllStatuses();
+            return;
+          }
           e.stopPropagation();
         }
         if (e.key === 'Enter') {
