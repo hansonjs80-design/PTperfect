@@ -44,6 +44,9 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const [typedQuery, setTypedQuery] = useState('');
   const { handleGridKeyDown } = useGridNavigation(11);
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
+  const isEditingTypedInputTarget = (target: EventTarget | null) =>
+    target instanceof HTMLElement && !!target.closest('[data-status-typed-input="true"]');
+  const isHangulLikeKey = (key: string) => /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(key);
 
   const STATUS_KEYS: Array<keyof PatientVisit> = [
     'is_injection',
@@ -98,6 +101,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   };
 
   const beginTypedStatusEntry = (seed = '') => {
+    updateSelectedStatusKey(null);
     setTypedQuery(seed);
     requestAnimationFrame(() => {
       const input = typedQueryInputRef.current;
@@ -190,14 +194,15 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (isEditingTypedInputTarget(e.target)) return;
+
     const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
-    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey;
+    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey && !isHangulLikeKey(e.key);
 
-    if (!menuPos && (isIMEKey || isPlainTypingKey)) {
+    if (!menuPos && (isIMEKey || isPlainTypingKey || isHangulLikeKey(e.key))) {
       e.preventDefault();
       e.stopPropagation();
-      updateSelectedStatusKey(null);
       beginTypedStatusEntry(isPlainTypingKey ? e.key : '');
       return;
     }
@@ -433,67 +438,6 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         data-status-pill-selected={selectedStatusKey ? 'true' : 'false'}
         title={getTitle()}
       >
-        <input
-          ref={typedQueryInputRef}
-          value={typedQuery}
-          onChange={(e) => setTypedQuery(e.target.value)}
-          onCompositionStart={() => {
-            typedQueryCompositionRef.current = true;
-          }}
-          onCompositionEnd={(e) => {
-            typedQueryCompositionRef.current = false;
-            setTypedQuery(e.currentTarget.value);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              if (typedQueryCompositionRef.current) {
-                e.preventDefault();
-                return;
-              }
-              e.preventDefault();
-              e.stopPropagation();
-              void applyTypedStatusQuery();
-              return;
-            }
-
-            if (e.key === 'Escape') {
-              e.preventDefault();
-              e.stopPropagation();
-              setTypedQuery('');
-              requestAnimationFrame(() => cellRef.current?.focus());
-              return;
-            }
-
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-              e.preventDefault();
-              e.stopPropagation();
-              setTypedQuery('');
-              requestAnimationFrame(() => {
-                cellRef.current?.focus();
-                const keyboardEvent = new KeyboardEvent('keydown', {
-                  key: e.key,
-                  bubbles: true,
-                  shiftKey: e.shiftKey,
-                  ctrlKey: e.ctrlKey,
-                  metaKey: e.metaKey,
-                  altKey: e.altKey,
-                });
-                cellRef.current?.dispatchEvent(keyboardEvent);
-              });
-            }
-          }}
-          onBlur={() => {
-            if (!typedQuery) return;
-            requestAnimationFrame(() => {
-              const active = document.activeElement as HTMLElement | null;
-              if (active && cellRef.current?.contains(active)) return;
-              setTypedQuery('');
-            });
-          }}
-          className="absolute pointer-events-none opacity-0 w-px h-px"
-          tabIndex={-1}
-          aria-hidden="true"
-        />
         {hasActiveStatus ? (
           <div className="w-full min-h-0 px-1.5 py-0 flex items-center justify-start">
             <div className="flex flex-wrap items-center justify-start gap-1 max-w-full">
@@ -515,18 +459,94 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                 </span>
               ))}
               {typedQuery && (
-                <span className="px-1 py-0.5 text-[13px] font-black text-slate-500 dark:text-slate-300">
-                  {typedQuery}
-                </span>
+                <input
+                  ref={typedQueryInputRef}
+                  data-status-typed-input="true"
+                  value={typedQuery}
+                  onChange={(e) => setTypedQuery(e.target.value)}
+                  onCompositionStart={() => {
+                    typedQueryCompositionRef.current = true;
+                  }}
+                  onCompositionEnd={(e) => {
+                    typedQueryCompositionRef.current = false;
+                    setTypedQuery(e.currentTarget.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (typedQueryCompositionRef.current) {
+                        e.preventDefault();
+                        return;
+                      }
+                      e.preventDefault();
+                      e.stopPropagation();
+                      void applyTypedStatusQuery();
+                      return;
+                    }
+
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setTypedQuery('');
+                      requestAnimationFrame(() => cellRef.current?.focus());
+                      return;
+                    }
+                  }}
+                  onBlur={() => {
+                    requestAnimationFrame(() => {
+                      const active = document.activeElement as HTMLElement | null;
+                      if (active && cellRef.current?.contains(active)) return;
+                      setTypedQuery('');
+                    });
+                  }}
+                  className="min-w-[1.75ch] max-w-[84px] bg-transparent outline-none border-none text-[13px] font-black text-slate-600 dark:text-slate-200 px-1 py-0.5"
+                />
               )}
             </div>
           </div>
         ) : (
           typedQuery ? (
             <div className="w-full px-1.5 py-0 flex items-center justify-start">
-              <span className="px-1 py-0.5 text-[13px] font-black text-slate-500 dark:text-slate-300">
-                {typedQuery}
-              </span>
+              <input
+                ref={typedQueryInputRef}
+                data-status-typed-input="true"
+                value={typedQuery}
+                onChange={(e) => setTypedQuery(e.target.value)}
+                onCompositionStart={() => {
+                  typedQueryCompositionRef.current = true;
+                }}
+                onCompositionEnd={(e) => {
+                  typedQueryCompositionRef.current = false;
+                  setTypedQuery(e.currentTarget.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (typedQueryCompositionRef.current) {
+                      e.preventDefault();
+                      return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void applyTypedStatusQuery();
+                    return;
+                  }
+
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setTypedQuery('');
+                    requestAnimationFrame(() => cellRef.current?.focus());
+                    return;
+                  }
+                }}
+                onBlur={() => {
+                  requestAnimationFrame(() => {
+                    const active = document.activeElement as HTMLElement | null;
+                    if (active && cellRef.current?.contains(active)) return;
+                    setTypedQuery('');
+                  });
+                }}
+                className="w-full bg-transparent outline-none border-none text-[13px] font-black text-slate-600 dark:text-slate-200 px-1 py-0.5"
+              />
             </div>
           ) : (
             <div className="opacity-0 group-hover:opacity-50 transition-opacity">
