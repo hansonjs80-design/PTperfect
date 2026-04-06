@@ -176,6 +176,14 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   }, [visit?.id]);
 
   useEffect(() => {
+    if (!isTypingQuery || menuPos) return;
+    const frame = requestAnimationFrame(() => {
+      focusTypedStatusInput();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isTypingQuery, menuPos]);
+
+  useEffect(() => {
     pendingSnapshotRef.current = menuVisitSnapshot;
   }, [menuVisitSnapshot]);
 
@@ -226,7 +234,9 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     updateSelectedStatusKey(null);
     setIsTypingQuery(true);
     setTypedQuery(seed);
-    focusTypedStatusInput();
+    requestAnimationFrame(() => {
+      focusTypedStatusInput();
+    });
   };
 
   const applyTypedStatusQuery = async () => {
