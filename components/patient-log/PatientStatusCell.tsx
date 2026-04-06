@@ -85,6 +85,8 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const executeInteraction = (e: React.MouseEvent | React.KeyboardEvent | React.TouchEvent, isKeyboard: boolean = false) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsTypingQuery(false);
+    setTypedQuery('');
     targetVisitIdRef.current = visit?.id ?? null;
     setMenuVisitSnapshot(visit ? { ...visit } : {});
 
@@ -203,10 +205,10 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
     const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey && !isHangulLikeKey(e.key);
 
-    if (!menuPos && isPlainTypingKey) {
-      e.preventDefault();
+    if (!menuPos && (isPlainTypingKey || isIMEKey || isHangulLikeKey(e.key))) {
+      if (isPlainTypingKey) e.preventDefault();
       e.stopPropagation();
-      beginTypedStatusEntry(e.key);
+      beginTypedStatusEntry(isPlainTypingKey ? e.key : '');
       return;
     }
 
@@ -456,6 +458,10 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
           e.preventDefault();
           e.stopPropagation();
           beginTypedStatusEntry(insertedText);
+        }}
+        onCompositionStartCapture={(e) => {
+          if (menuPos || isEditingTypedInputTarget(e.target)) return;
+          beginTypedStatusEntry('');
         }}
         tabIndex={0}
         data-grid-id={gridId}
