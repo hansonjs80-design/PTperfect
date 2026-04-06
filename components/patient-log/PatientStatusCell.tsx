@@ -102,17 +102,22 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     }
   };
 
-  const beginTypedStatusEntry = (seed = '') => {
-    updateSelectedStatusKey(null);
-    setIsTypingQuery(true);
-    setTypedQuery(seed);
+  const focusTypedStatusInput = () => {
     requestAnimationFrame(() => {
+      if (menuPos || selectedStatusKeyRef.current) return;
       const input = typedQueryInputRef.current;
       if (!input) return;
       input.focus();
       const end = input.value.length;
       input.setSelectionRange(end, end);
     });
+  };
+
+  const beginTypedStatusEntry = (seed = '') => {
+    updateSelectedStatusKey(null);
+    setIsTypingQuery(true);
+    setTypedQuery(seed);
+    focusTypedStatusInput();
   };
 
   const applyTypedStatusQuery = async () => {
@@ -429,6 +434,62 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     return `더블클릭 또는 Enter로 추가 사항 변경 (${disableBedSync || rowStatus !== 'active' ? '로그만 수정' : '배드 연동'})`;
   };
 
+  const renderTypedStatusInput = (className: string) => (
+    <input
+      ref={typedQueryInputRef}
+      data-status-typed-input="true"
+      value={typedQuery}
+      onChange={(e) => {
+        setTypedQuery(e.target.value);
+        if (!isTypingQuery && e.target.value) {
+          setIsTypingQuery(true);
+        }
+      }}
+      onCompositionStart={() => {
+        typedQueryCompositionRef.current = true;
+        setIsTypingQuery(true);
+      }}
+      onCompositionEnd={(e) => {
+        typedQueryCompositionRef.current = false;
+        setTypedQuery(e.currentTarget.value);
+        setIsTypingQuery(!!e.currentTarget.value);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!typedQuery.trim()) {
+            executeInteraction(e, true);
+            return;
+          }
+          if (typedQueryCompositionRef.current) {
+            return;
+          }
+          void applyTypedStatusQuery();
+          return;
+        }
+
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsTypingQuery(false);
+          setTypedQuery('');
+          requestAnimationFrame(() => cellRef.current?.focus());
+          return;
+        }
+      }}
+      onBlur={() => {
+        requestAnimationFrame(() => {
+          const active = document.activeElement as HTMLElement | null;
+          if (active && cellRef.current?.contains(active)) return;
+          setIsTypingQuery(false);
+          setTypedQuery('');
+        });
+      }}
+      className={className}
+    />
+  );
+
   return (
     <>
       <div
@@ -437,8 +498,12 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         onMouseDown={(e) => {
           if (e.button !== 0) return;
           cellRef.current?.focus();
+          focusTypedStatusInput();
         }}
-        onClick={() => cellRef.current?.focus()}
+        onClick={() => {
+          cellRef.current?.focus();
+          focusTypedStatusInput();
+        }}
         onBlur={(e) => {
           const nextFocus = e.relatedTarget as Node | null;
           if (nextFocus && cellRef.current?.contains(nextFocus)) return;
@@ -491,103 +556,22 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                   {item.label}
                 </span>
               ))}
-              {isTypingQuery && (
-                <input
-                  ref={typedQueryInputRef}
-                  data-status-typed-input="true"
-                  value={typedQuery}
-                  onChange={(e) => setTypedQuery(e.target.value)}
-                  onCompositionStart={() => {
-                    typedQueryCompositionRef.current = true;
-                  }}
-                  onCompositionEnd={(e) => {
-                    typedQueryCompositionRef.current = false;
-                    setTypedQuery(e.currentTarget.value);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      if (typedQueryCompositionRef.current) {
-                        e.preventDefault();
-                        return;
-                      }
-                      e.preventDefault();
-                      e.stopPropagation();
-                      void applyTypedStatusQuery();
-                      return;
-                    }
-
-                    if (e.key === 'Escape') {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setIsTypingQuery(false);
-                      setTypedQuery('');
-                      requestAnimationFrame(() => cellRef.current?.focus());
-                      return;
-                    }
-                  }}
-                  onBlur={() => {
-                    requestAnimationFrame(() => {
-                      const active = document.activeElement as HTMLElement | null;
-                      if (active && cellRef.current?.contains(active)) return;
-                      setIsTypingQuery(false);
-                      setTypedQuery('');
-                    });
-                  }}
-                  className="min-w-[1.75ch] max-w-[84px] bg-transparent outline-none border-none text-[13px] font-black text-slate-600 dark:text-slate-200 px-1 py-0.5"
-                />
+              {renderTypedStatusInput(
+                isTypingQuery
+                  ? 'min-w-[1.75ch] max-w-[84px] bg-transparent outline-none border-none text-[13px] font-black text-slate-600 dark:text-slate-200 px-1 py-0.5'
+                  : 'absolute pointer-events-none opacity-0 w-px h-px'
               )}
             </div>
           </div>
         ) : (
-          isTypingQuery ? (
-            <div className="w-full px-1.5 py-0 flex items-center justify-start">
-              <input
-                ref={typedQueryInputRef}
-                data-status-typed-input="true"
-                value={typedQuery}
-                onChange={(e) => setTypedQuery(e.target.value)}
-                onCompositionStart={() => {
-                  typedQueryCompositionRef.current = true;
-                }}
-                onCompositionEnd={(e) => {
-                  typedQueryCompositionRef.current = false;
-                  setTypedQuery(e.currentTarget.value);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    if (typedQueryCompositionRef.current) {
-                      e.preventDefault();
-                      return;
-                    }
-                    e.preventDefault();
-                    e.stopPropagation();
-                    void applyTypedStatusQuery();
-                    return;
-                  }
-
-                  if (e.key === 'Escape') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setIsTypingQuery(false);
-                    setTypedQuery('');
-                    requestAnimationFrame(() => cellRef.current?.focus());
-                    return;
-                  }
-                }}
-                onBlur={() => {
-                  requestAnimationFrame(() => {
-                    const active = document.activeElement as HTMLElement | null;
-                    if (active && cellRef.current?.contains(active)) return;
-                    setIsTypingQuery(false);
-                    setTypedQuery('');
-                  });
-                }}
-                className="w-full bg-transparent outline-none border-none text-[13px] font-black text-slate-600 dark:text-slate-200 px-1 py-0.5"
-              />
-            </div>
-          ) : (
-            <div className="w-full h-full" />
-          )
+          <div className="w-full px-1.5 py-0 flex items-center justify-start">
+            {renderTypedStatusInput(
+              isTypingQuery
+                ? 'w-full bg-transparent outline-none border-none text-[13px] font-black text-slate-600 dark:text-slate-200 px-1 py-0.5'
+                : 'absolute pointer-events-none opacity-0 w-px h-px'
+            )}
+            {!isTypingQuery && <div className="w-full h-full" />}
+          </div>
         )}
       </div>
 
