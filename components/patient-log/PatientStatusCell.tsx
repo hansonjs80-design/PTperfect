@@ -362,11 +362,12 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
     const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey && !isHangulLikeKey(e.key);
+    const typedSeed = isPlainTypingKey ? e.key : (isHangulLikeKey(e.key) && e.key.length === 1 ? e.key : '');
 
     if (!menuPos && (isPlainTypingKey || isIMEKey || isHangulLikeKey(e.key))) {
-      if (isPlainTypingKey) e.preventDefault();
+      if (isPlainTypingKey || typedSeed) e.preventDefault();
       e.stopPropagation();
-      beginTypedStatusEntry(isPlainTypingKey ? e.key : '');
+      beginTypedStatusEntry(typedSeed);
       return;
     }
 
@@ -691,6 +692,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
           if (e.button !== 0) return;
           cellRef.current?.focus();
           if (e.shiftKey) return;
+          updateSelectedStatusKey(null);
           if (!menuPos && !selectedStatusKeyRef.current) {
             focusTypedStatusInput();
           }
@@ -698,6 +700,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         onClick={(e) => {
           cellRef.current?.focus();
           if (e.shiftKey) return;
+          updateSelectedStatusKey(null);
           if (!menuPos && !selectedStatusKeyRef.current) {
             focusTypedStatusInput();
           }
