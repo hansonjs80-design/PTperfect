@@ -35,6 +35,8 @@ const loadPersistedPresetBadges = () => {
   }
 };
 
+const normalizeKoreanNameInput = (value: string) => value.replace(/[^\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3\s]/g, '');
+
 const syncPersistedPresetBadges = () => {
   if (typeof window === 'undefined') return;
   try {
@@ -318,7 +320,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   };
 
   const handleChange = async (field: keyof PatientVisit, value: string, _skipSync: boolean, colIndex: number, navDirection?: 'down' | 'right' | 'left' | 'up') => {
-    const normalizedValue = value.trim();
+    const sanitizedValue = field === 'patient_name' ? normalizeKoreanNameInput(value) : value;
+    const normalizedValue = sanitizedValue.trim();
     const patientNameKey = field === 'patient_name' ? normalizedValue.toLocaleLowerCase() : '';
     const matchedAutofill = field === 'patient_name' ? patientNameAutofillMap[patientNameKey] : undefined;
     const allowChartAutofill = field === 'patient_name' ? !isChartAutofillSuppressed : true;
@@ -331,7 +334,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
     if (isDraft && onCreate) {
       await onCreate({
-        [field]: value,
+        [field]: sanitizedValue,
         ...(field === 'patient_name' && nextChartNumber ? { chart_number: nextChartNumber } : {}),
         ...(field === 'patient_name' && nextGender ? { gender: nextGender } : {}),
       }, colIndex, navDirection);
@@ -339,7 +342,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       // 배드번호/처방목록 외 환자로그 텍스트 셀은 항상 로그만 수정한다.
       // (활성 배드/타이머 상태에는 절대 영향 주지 않음)
       onUpdate(visit.id, {
-        [field]: value,
+        [field]: sanitizedValue,
         ...(field === 'patient_name' && nextChartNumber ? { chart_number: nextChartNumber } : {}),
         ...(field === 'patient_name' && nextGender ? { gender: nextGender } : {}),
       }, true);
@@ -845,6 +848,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           syncOnDirectEdit={false}
           suppressEnterNav={isDraft}
           suggestionOptions={patientNameSuggestions}
+          koreanOnly
         />
       </td>
 

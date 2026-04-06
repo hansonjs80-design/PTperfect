@@ -19,6 +19,7 @@ interface EditableCellProps {
   colIndex: number;
   suppressEnterNav?: boolean;
   suggestionOptions?: string[];
+  koreanOnly?: boolean;
 }
 
 export const EditableCell: React.FC<EditableCellProps> = memo(({
@@ -35,7 +36,8 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   rowIndex,
   colIndex,
   suppressEnterNav = false,
-  suggestionOptions = []
+  suggestionOptions = [],
+  koreanOnly = false
 }) => {
   const [mode, setMode] = useState<'view' | 'menu' | 'edit'>('view');
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
@@ -60,6 +62,12 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
       if (!cellElement) return;
       cellElement.focus();
     });
+  };
+
+  const sanitizeInputValue = (raw: string) => {
+    const upperCased = forceUpperCase ? raw.toUpperCase() : raw;
+    if (!koreanOnly) return upperCased;
+    return upperCased.replace(/[^\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3\s]/g, '');
   };
 
   const normalizeSuggestion = (text: string) => text.trim().normalize('NFD').toLocaleLowerCase();
@@ -146,7 +154,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const nextValue = forceUpperCase ? e.target.value.toUpperCase() : e.target.value;
+    const nextValue = sanitizeInputValue(e.target.value);
     setLocalValue(nextValue);
   };
 
@@ -163,7 +171,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
 
   const handleCompositionEnd = (e: React.CompositionEvent<HTMLInputElement>) => {
     isComposingRef.current = false;
-    const nextValue = forceUpperCase ? e.currentTarget.value.toUpperCase() : e.currentTarget.value;
+    const nextValue = sanitizeInputValue(e.currentTarget.value);
     setLocalValue(nextValue);
   };
 
@@ -252,7 +260,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     if (pastedRaw === '') return;
 
     e.preventDefault();
-    const pasted = forceUpperCase ? pastedRaw.toUpperCase() : pastedRaw;
+    const pasted = sanitizeInputValue(pastedRaw);
 
     const baseValue = localValue;
     const start = input.selectionStart ?? baseValue.length;
@@ -271,7 +279,12 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
       const isPrintableKey = e.key.length === 1 || isIMEKey;
 
       if (isPrintableKey) {
-        const nextValue = isIMEKey ? '' : (forceUpperCase ? e.key.toUpperCase() : e.key);
+        const nextValue = isIMEKey ? '' : sanitizeInputValue(e.key);
+        if (!isIMEKey && nextValue.length === 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
         if (!isIMEKey) {
           e.preventDefault();
           e.stopPropagation();
