@@ -1579,19 +1579,27 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           is_exercise: { label: '운동', color: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-300' },
         };
         const STATUS_KEYS = Object.keys(STATUS_LABELS) as Array<keyof typeof STATUS_LABELS>;
-        const rowGridClass = "grid grid-cols-[72px_72px_70px_62px_50px_minmax(160px,1fr)_120px_60px_110px_110px] min-w-[880px]";
+        const rowGridClass = "grid grid-cols-[68px_72px_72px_58px_56px_minmax(180px,1fr)_112px_64px_116px_116px] min-w-[914px]";
 
         return (
-        <div data-modal-overlay="true" className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-3" onClick={() => resetSearchModal()}>
-          <div className="w-full max-w-6xl bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-2xl max-h-[95vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div data-modal-overlay="true" className="fixed inset-0 z-[120] bg-slate-950/40 backdrop-blur-[3px] flex items-center justify-center p-3" onClick={() => resetSearchModal()}>
+          <div className="w-full max-w-[1120px] bg-white dark:bg-slate-900 rounded-[20px] border border-slate-200 dark:border-slate-700 shadow-[0_24px_80px_rgba(15,23,42,0.22)] max-h-[94vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-slate-700 shrink-0">
-              <h3 className="text-sm font-black text-gray-800 dark:text-gray-100 flex items-center gap-2"><Search className="w-4 h-4 text-brand-500" /> 환자 검색 (표 뷰)</h3>
-              <button onClick={() => resetSearchModal()} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"><X className="w-4 h-4" /></button>
+            <div className="flex items-center justify-between px-5 py-3 bg-slate-50/95 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-300">
+                  <Search className="w-4 h-4" />
+                </span>
+                <div>
+                  <h3 className="text-[15px] font-black tracking-[-0.02em] text-slate-800 dark:text-slate-100">환자 검색</h3>
+                  <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">선택한 행으로 필요한 항목만 가져옵니다.</p>
+                </div>
+              </div>
+              <button onClick={() => resetSearchModal()} className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-slate-500 dark:text-slate-300"><X className="w-4 h-4" /></button>
             </div>
 
             {/* Search bar */}
-            <div className="px-4 pt-3 pb-3 shrink-0 border-b border-gray-100 dark:border-slate-800">
+            <div className="px-5 pt-3 pb-3 shrink-0 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
               <div className="flex gap-2 max-w-2xl">
                 <input
                   autoFocus
@@ -1600,61 +1608,61 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                   onChange={(e) => setSearchName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSearchByName(); }}
                   placeholder="이름 또는 차트번호 입력..."
-                  className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-brand-400 focus:border-brand-400"
+                  className="flex-1 h-10 px-3.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-[13px] font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-400/60 focus:border-brand-400"
                 />
-                <button onClick={() => { void handleSearchByName(); }} className="px-5 py-2 rounded-lg bg-gray-800 dark:bg-gray-700 hover:bg-black dark:hover:bg-gray-600 text-white text-sm font-bold flex items-center gap-1.5 transition-colors shadow-sm">
+                <button onClick={() => { void handleSearchByName(); }} className="h-10 px-4 rounded-xl bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-[13px] font-bold flex items-center gap-1.5 transition-colors shadow-sm">
                   검색
                 </button>
               </div>
               {selectedKeywordForSearch && (
-                <p className="text-[11px] text-brand-600 dark:text-brand-400 mt-1.5 font-bold ml-1">선택 행 기준 검색: {selectedKeywordForSearch}</p>
+                <p className="text-[11px] text-brand-600 dark:text-brand-400 mt-2 font-semibold ml-1">선택 행 기준 검색: {selectedKeywordForSearch}</p>
               )}
             </div>
 
 
             {/* Results list (Table View) with Header Checkboxes */}
-            <div className="flex-1 overflow-x-auto overflow-y-auto px-4 py-3 min-h-[250px] bg-slate-50 dark:bg-slate-900/50">
-              {isSearching && <p className="text-xs text-gray-400 py-8 text-center animate-pulse">데이터를 찾고 있습니다...</p>}
-              {!isSearching && mappedResults.length === 0 && <p className="text-xs text-gray-400 py-8 text-center">검색 결과가 없습니다.</p>}
+            <div className="flex-1 overflow-x-auto overflow-y-auto px-5 py-4 min-h-[250px] bg-slate-50/80 dark:bg-slate-950/40">
+              {isSearching && <p className="text-[12px] text-slate-400 py-10 text-center animate-pulse">데이터를 찾고 있습니다...</p>}
+              {!isSearching && mappedResults.length === 0 && <p className="text-[12px] text-slate-400 py-10 text-center">검색 결과가 없습니다.</p>}
 
               {!isSearching && mappedResults.length > 0 && (
-                <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
+                <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-white dark:bg-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
                   {/* Table Header with Checkboxes */}
-                  <div className={`${rowGridClass} bg-gray-100 dark:bg-slate-700/50 border-b-2 border-gray-300 dark:border-slate-600 text-[10px] font-bold text-gray-600 dark:text-gray-300 select-none`}>
-                    <div className="px-2 py-2 text-center border-r border-gray-200 dark:border-slate-700">날짜</div>
-                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                  <div className={`${rowGridClass} bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-300 select-none`}>
+                    <div className="px-2 py-2.5 text-center border-r border-slate-200 dark:border-slate-700">날짜</div>
+                    <div className="px-1.5 py-2 flex items-center justify-center gap-1.5 border-r border-slate-200 dark:border-slate-700">
                       <input type="checkbox" checked={importFieldSelection.chart_number} onChange={e => setImportFieldSelection(p => ({...p, chart_number: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                       <span>차트 번호</span>
                     </div>
-                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                    <div className="px-1.5 py-2 flex items-center justify-center gap-1.5 border-r border-slate-200 dark:border-slate-700">
                       <input type="checkbox" checked={importFieldSelection.patient_name} onChange={e => setImportFieldSelection(p => ({...p, patient_name: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                       <span>이름</span>
                     </div>
-                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                    <div className="px-1.5 py-2 flex items-center justify-center gap-1.5 border-r border-slate-200 dark:border-slate-700">
                       <input type="checkbox" checked={importFieldSelection.gender} onChange={e => setImportFieldSelection(p => ({...p, gender: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                       <span>성별</span>
                     </div>
-                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                    <div className="px-1.5 py-2 flex items-center justify-center gap-1.5 border-r border-slate-200 dark:border-slate-700">
                       <input type="checkbox" checked={importFieldSelection.body_part} onChange={e => setImportFieldSelection(p => ({...p, body_part: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                       <span>부위</span>
                     </div>
-                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                    <div className="px-1.5 py-2 flex items-center justify-center gap-1.5 border-r border-slate-200 dark:border-slate-700">
                       <input type="checkbox" checked={importFieldSelection.treatment_name} onChange={e => setImportFieldSelection(p => ({...p, treatment_name: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                       <span>처방목록</span>
                     </div>
-                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700" title="주사, 수액, 견인, 체외충격, 도수, 이온, 운동치료">
+                    <div className="px-1.5 py-2 flex items-center justify-center gap-1.5 border-r border-slate-200 dark:border-slate-700" title="주사, 수액, 견인, 체외충격, 도수, 이온, 운동치료">
                       <input type="checkbox" checked={importFieldSelection.additional_options} onChange={e => setImportFieldSelection(p => ({...p, additional_options: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                       <span>추가사항</span>
                     </div>
-                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                    <div className="px-1.5 py-2 flex items-center justify-center gap-1.5 border-r border-slate-200 dark:border-slate-700">
                       <input type="checkbox" checked={importFieldSelection.author} onChange={e => setImportFieldSelection(p => ({...p, author: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                       <span>담당</span>
                     </div>
-                    <div className="px-1 py-1.5 flex items-center justify-center gap-1 border-r border-gray-200 dark:border-slate-700">
+                    <div className="px-1.5 py-2 flex items-center justify-center gap-1.5 border-r border-slate-200 dark:border-slate-700">
                       <input type="checkbox" checked={importFieldSelection.memo} onChange={e => setImportFieldSelection(p => ({...p, memo: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                       <span>메모</span>
                     </div>
-                    <div className="px-1 py-1.5 flex items-center justify-center gap-1">
+                    <div className="px-1.5 py-2 flex items-center justify-center gap-1.5">
                       <input type="checkbox" checked={importFieldSelection.special_note} onChange={e => setImportFieldSelection(p => ({...p, special_note: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                       <span>특이</span>
                     </div>
@@ -1714,10 +1722,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                             selectResult(v);
                             void handleImportToToday(v);
                           }}
-                          className={`${rowGridClass} border-b border-gray-100 dark:border-slate-700/50 last:border-0 cursor-pointer transition-colors hover:bg-brand-50/50 dark:hover:bg-brand-900/10 ${isSelected ? 'bg-brand-50 dark:bg-brand-900/40 ring-2 ring-inset ring-brand-500 dark:ring-brand-400 shadow-[inset_0_0_0_2px_rgba(59,130,246,0.9)]' : ''}`}
+                          className={`${rowGridClass} border-b border-slate-100 dark:border-slate-700/50 last:border-0 cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/80 ${isSelected ? 'bg-brand-50/70 dark:bg-brand-900/25 ring-2 ring-inset ring-brand-500/90 dark:ring-brand-400 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.55)]' : ''}`}
                         >
                           {/* 날짜 (Read Only) */}
-                          <div className="px-2 py-2 flex items-center justify-center text-[11px] font-medium text-gray-500 dark:text-gray-400 border-r border-gray-100 dark:border-slate-700/50">
+                          <div className="px-2 py-2.5 flex items-center justify-center text-[11px] font-medium text-slate-500 dark:text-slate-400 border-r border-slate-100 dark:border-slate-700/50">
                             {v.visit_date.slice(2)}
                           </div>
                           
@@ -1840,7 +1848,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
             {/* Memo / Special Note History (Compact) */}
             {(memoHistory.length > 0 || specialNoteHistory.length > 0) && (
-              <div className="px-4 py-3 border-t border-gray-200 dark:border-slate-700 shrink-0 bg-white dark:bg-slate-900">
+              <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 shrink-0 bg-white dark:bg-slate-900">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {memoHistory.length > 0 && (
                     <div>
@@ -1883,16 +1891,16 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
             )}
 
             {/* Modal Footer */}
-             <div className="px-5 py-4 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80 flex justify-between items-center rounded-b-2xl shrink-0 mt-auto">
-               <div className="text-[12px] text-gray-500 dark:text-gray-400">
+             <div className="px-5 py-3.5 border-t border-slate-200 dark:border-slate-700 bg-slate-50/95 dark:bg-slate-800/90 flex justify-between items-center rounded-b-[20px] shrink-0 mt-auto">
+               <div className="text-[12px] text-slate-500 dark:text-slate-400">
                   {selectedResult ? (
                     <>선택된 항목: <span className="font-bold text-brand-700 dark:text-brand-400">{(selectedResult.patient_name || '이름 없음')} ({selectedResult.visit_date.slice(5)})</span></>
-                  ) : <span className="italic flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span>가져올 항목을 목록에서 선택해주세요.</span>}
+                  ) : <span className="italic flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span>가져올 항목을 선택해주세요.</span>}
                </div>
-               <div className="flex items-center gap-2.5">
-                 <button onClick={() => resetSearchModal()} className="px-4 py-2 text-sm font-bold text-gray-600 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg transition-colors shadow-sm">취소</button>
-                 <button onClick={(e) => { e.stopPropagation(); void handleImportToToday(); }} disabled={!selectedResult} className={`px-6 py-2 text-sm font-black rounded-lg shadow-md transition-all ${selectedResult ? 'bg-brand-600 hover:bg-brand-700 hover:shadow-lg text-white' : 'bg-gray-200 dark:bg-slate-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'}`}>
-                   ✓ 선택 항목 적용
+               <div className="flex items-center gap-2">
+                 <button onClick={() => resetSearchModal()} className="h-10 px-4 text-[13px] font-bold text-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl transition-colors shadow-sm">취소</button>
+                 <button onClick={(e) => { e.stopPropagation(); void handleImportToToday(); }} disabled={!selectedResult} className={`h-10 px-5 text-[13px] font-black rounded-xl shadow-sm transition-all ${selectedResult ? 'bg-brand-600 hover:bg-brand-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'}`}>
+                   적용
                  </button>
                </div>
              </div>
