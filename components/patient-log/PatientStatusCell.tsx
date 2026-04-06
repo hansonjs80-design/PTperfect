@@ -40,6 +40,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const createPromiseRef = useRef<Promise<string> | null>(null);
   const typedQueryInputRef = useRef<HTMLInputElement>(null);
   const typedQueryCompositionRef = useRef(false);
+  const pendingTypedQueryApplyRef = useRef(false);
   const [typedQuery, setTypedQuery] = useState('');
   const [isTypingQuery, setIsTypingQuery] = useState(false);
   const { handleGridKeyDown } = useGridNavigation(11);
@@ -231,6 +232,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const applyTypedStatusQuery = async () => {
     const query = composeStatusHangul(typedQueryInputRef.current?.value ?? typedQuery).trim();
     if (!query) {
+      pendingTypedQueryApplyRef.current = false;
       setIsTypingQuery(false);
       setTypedQuery('');
       cellRef.current?.focus();
@@ -249,6 +251,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
     setIsTypingQuery(false);
     setTypedQuery('');
+    pendingTypedQueryApplyRef.current = false;
     requestAnimationFrame(() => cellRef.current?.focus());
   };
 
@@ -612,6 +615,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       }}
       onCompositionStart={(e) => {
         typedQueryCompositionRef.current = true;
+        pendingTypedQueryApplyRef.current = false;
         setTypedQuery(e.currentTarget.value);
         setIsTypingQuery(true);
       }}
@@ -621,6 +625,11 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         setTypedQuery(composedValue);
         e.currentTarget.value = composedValue;
         setIsTypingQuery(!!composedValue);
+        if (pendingTypedQueryApplyRef.current) {
+          requestAnimationFrame(() => {
+            void applyTypedStatusQuery();
+          });
+        }
       }}
       onKeyDown={(e) => {
         const currentValue = (typedQueryInputRef.current?.value ?? typedQuery).trim();
@@ -641,6 +650,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
             return;
           }
           if (typedQueryCompositionRef.current) {
+            pendingTypedQueryApplyRef.current = true;
             return;
           }
           void applyTypedStatusQuery();
