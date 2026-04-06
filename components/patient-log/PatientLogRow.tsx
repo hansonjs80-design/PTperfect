@@ -129,6 +129,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const [renamedBadgeOverride, setRenamedBadgeOverride] = useState<Preset | null>(null);
   const stickyPresetBadgeRef = useRef<Preset | null>(null);
   const latestDisplayedPresetBadgeRef = useRef<Preset | null>(null);
+  const previousVisitIdRef = useRef<string | null>(visit?.id || null);
 
   const resolvePresetAppearance = (preset: Preset | null | undefined): Preset | null => {
     if (!preset) return null;
@@ -149,6 +150,30 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
       textColor: matchedCurrentPreset.textColor || preset.textColor,
     };
   };
+
+  useEffect(() => {
+    const nextVisitId = visit?.id || null;
+    const previousVisitId = previousVisitIdRef.current;
+    if (previousVisitId === nextVisitId) return;
+
+    previousVisitIdRef.current = nextVisitId;
+    setOptimisticTreatmentName(null);
+    setDetachedBadgeValue(null);
+    setRenamedBadgeOverride(null);
+
+    if (!visit) {
+      setStickyTreatmentName('');
+      stickyPresetBadgeRef.current = null;
+      latestDisplayedPresetBadgeRef.current = null;
+      return;
+    }
+
+    setStickyTreatmentName((visit.treatment_name || '').trim());
+    const persistedBadge = persistedPresetBadgeByVisitId.get(visit.id);
+    const resolvedPersistedBadge = persistedBadge ? resolvePresetAppearance(persistedBadge) : null;
+    stickyPresetBadgeRef.current = resolvedPersistedBadge;
+    latestDisplayedPresetBadgeRef.current = resolvedPersistedBadge;
+  }, [visit, resolvePresetAppearance]);
 
   useEffect(() => {
     if (!visit?.id) return;
