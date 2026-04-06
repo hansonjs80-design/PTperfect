@@ -961,7 +961,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.memo || ''}
           placeholder=""
           menuTitle="메모 수정 (로그만 변경)"
-          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.3px] xl:text-[13px]"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[12.5px] xl:text-[14.3px]"
           onCommit={(val, skipSync, navDir) => handleChange('memo', val || '', skipSync, 7, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
@@ -978,7 +978,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
           value={visit?.special_note || ''}
           placeholder=""
           menuTitle="특이사항 수정 (로그만 변경)"
-          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[11.2px] sm:text-[12.5px]"
+          className="text-slate-700 dark:text-slate-300 font-bold bg-transparent justify-center text-center text-[12.3px] sm:text-[13.8px]"
           onCommit={(val, skipSync, navDir) => handleChange('special_note', val || '', skipSync, 8, navDir)}
           directEdit={true}
           syncOnDirectEdit={false}
