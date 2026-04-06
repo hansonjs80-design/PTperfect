@@ -1508,6 +1508,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
             <div className="min-w-0 h-full flex flex-col">
               <PatientLogTable 
                 visits={displayVisits}
+                currentDate={currentDate}
                 beds={beds}
                 presets={presets}
                 patientNameSuggestions={patientNameSuggestions}

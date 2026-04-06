@@ -155,6 +155,7 @@ const hasMeaningfulVisitContent = (visit: PatientVisit | undefined) => {
 
 interface PatientLogTableProps {
   visits: PatientVisit[];
+  currentDate: string;
   beds: BedState[];
   presets: Preset[];
   getRowStatus: (visitId: string, bedId: number | null) => 'active' | 'completed' | 'none';
@@ -182,6 +183,7 @@ interface PatientLogTableProps {
 
 export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   visits,
+  currentDate,
   beds,
   presets,
   getRowStatus,
@@ -206,6 +208,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   suppressedChartAutofillVisitIds = [],
   onChartAutofillSuppressionChange,
 }) => {
+  const getLocalISODate = () => {
+    const now = new Date();
+    const offsetMs = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offsetMs).toISOString().split('T')[0];
+  };
+  const isTodayView = currentDate === getLocalISODate();
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
   const [totalRows, setTotalRows] = useState(120);
@@ -1282,8 +1290,9 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
               );
             }
 
-            const rowStatus = isBedActivationDisabled ? 'none' : getRowStatus(visit.id, visit.bed_id);
-            const bed = !isBedActivationDisabled && visit.bed_id ? beds.find(b => b.id === visit.bed_id) : undefined;
+            const canUseBedRuntime = !isBedActivationDisabled && isTodayView;
+            const rowStatus = canUseBedRuntime ? getRowStatus(visit.id, visit.bed_id) : 'none';
+            const bed = canUseBedRuntime && visit.bed_id ? beds.find(b => b.id === visit.bed_id) : undefined;
 
             const {
               activeStepColorClass,
