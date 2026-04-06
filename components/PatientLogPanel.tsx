@@ -1861,7 +1861,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
                             <input
                               data-search-modal-input="true"
-                              className="w-full h-full min-h-[36px] px-1.5 text-[13px] font-medium bg-transparent text-gray-600 dark:text-gray-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
+                              className="w-full h-full min-h-[36px] px-1.5 text-[13px] font-medium text-center bg-transparent text-gray-600 dark:text-gray-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
                               value={v.memo || ''}
                               placeholder="-"
                               onChange={e => handleModalLocalUpdate(v.id, { memo: e.target.value })}
