@@ -478,7 +478,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const handleDraftCreate = async (draftRowIndex: number, updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left' | 'up') => {
     const insertRowIndex = Math.min(draftRowIndex, visits.length);
     if (colIndex !== undefined) {
-      const targetBaseRow = insertRowIndex;
+      const targetBaseRow = draftRowIndex;
       if (navDirection === 'left') {
         absoluteFocusTargetRef.current = { row: targetBaseRow, colIndex: colIndex - 1 };
       } else if (navDirection === 'right') {
@@ -493,6 +493,28 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         absoluteFocusTargetRef.current = { row: targetBaseRow, colIndex };
       }
     }
+
+    // 화면상 아래쪽 빈 슬롯에서 직접 입력한 경우에도,
+    // 그 슬롯 자체가 실제 행이 되도록 중간 빈 행을 먼저 채운다.
+    if (draftRowIndex > visits.length) {
+      const tailCreatedAt = visits.length > 0
+        ? new Date(visits[visits.length - 1].created_at || 0).getTime()
+        : Date.now();
+
+      for (let fillerOffset = 0; fillerOffset < draftRowIndex - visits.length; fillerOffset += 1) {
+        await onCreate({
+          created_at: new Date(tailCreatedAt + (fillerOffset + 1) * 1000).toISOString(),
+        });
+      }
+
+      return await onCreate({
+        ...updates,
+        ...(updates.created_at ? {} : {
+          created_at: new Date(tailCreatedAt + (draftRowIndex - visits.length + 1) * 1000).toISOString(),
+        }),
+      });
+    }
+
     return await onCreate({
       ...updates,
       ...(updates.created_at ? {} : { created_at: getInsertCreatedAt(insertRowIndex) }),
