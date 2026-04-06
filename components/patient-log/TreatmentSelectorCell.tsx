@@ -118,6 +118,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     target instanceof HTMLElement && !!target.closest('[data-inline-treatment-editing="true"]');
   const isEditingInputTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && !!target.closest('input[data-inline-treatment-editing="true"]');
+  const isHangulLikeKey = (key: string) => /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(key);
 
   const normalizePresetMatchText = (text: string) => text.trim().normalize('NFC').toLowerCase();
   const normalizePresetMatchTextDecomposed = (text: string) => text.trim().normalize('NFD').toLowerCase();
@@ -269,7 +270,19 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (isEmptyTreatmentCell && !isReadOnly) {
       const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
       const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
+      const isHangulKey = isHangulLikeKey(e.key);
       const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey;
+
+      if (isIMEKey || isHangulKey) {
+        e.stopPropagation();
+        flushSync(() => {
+          setIsEmptyEditing(true);
+        });
+        requestAnimationFrame(() => {
+          emptyInputRef.current?.focus();
+        });
+        return;
+      }
 
       if (isPlainTypingKey) {
         const nextValue = e.key;
@@ -398,6 +411,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
     if (!isEmptyEditing) {
       const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
       const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
+      const isHangulKey = isHangulLikeKey(e.key);
       const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey;
 
       if (e.key === 'Enter') {
@@ -419,11 +433,10 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         return;
       }
 
-      if (isIMEKey) {
+      if (isIMEKey || isHangulKey) {
         e.stopPropagation();
         flushSync(() => {
           setIsEmptyEditing(true);
-          setEmptyInputValue('');
         });
         requestAnimationFrame(() => {
           emptyInputRef.current?.focus();
