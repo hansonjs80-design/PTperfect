@@ -992,7 +992,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
                     setBadgeRenamePopup({ x: e.clientX, y: e.clientY });
                   }
                 }}
-                className={`shrink-0 px-1.5 py-[0.05rem] rounded-[0.4rem] text-[14.3px] font-black ${presetColor} ${presetBadgeTextClass} border ${isBadgeSelected ? 'border-sky-500 outline outline-2 outline-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]' : 'border-black/10 dark:border-white/10'} cursor-pointer transition-all duration-150 group-hover:scale-[1.03] transform-gpu`}
+                className={`shrink-0 px-1.5 py-[0.02rem] rounded-[0.4rem] text-[14.3px] font-black ${presetColor} ${presetBadgeTextClass} border ${isBadgeSelected ? 'border-sky-500 outline outline-2 outline-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]' : 'border-black/10 dark:border-white/10'} cursor-pointer transition-all duration-150 group-hover:scale-[1.03] transform-gpu`}
               >
                 {presetLabel}
               </span>
