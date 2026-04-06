@@ -9,7 +9,7 @@ const MIN_COL_WIDTH_BY_INDEX: Record<number, number> = {
 };
 const MAX_COL_WIDTH_BY_INDEX: Record<number, number> = {};
 export const FLEX_COL_INDEX = -1; // 강제 채움 비활성화: 컬럼 리사이즈는 실제 너비를 유지
-const STORAGE_KEY = 'physio-column-widths-v11';
+const STORAGE_KEY = 'physio-column-widths-v12';
 
 const getMinWidthByIndex = (index: number) => {
   if (index === 7 && typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
@@ -34,7 +34,7 @@ const STATUS_DEFAULT_WIDTH_FACTOR = 1.5;
 const SPECIAL_NOTE_COL_INDEX = 8;
 const SPECIAL_NOTE_DEFAULT_WIDTH = 150;
 const AUTHOR_COL_INDEX = 10;
-const AUTHOR_DESKTOP_DEFAULT_WIDTH = 90; // Default width reduced by ~30% from 128
+const AUTHOR_DESKTOP_DEFAULT_WIDTH = 72;
 
 const arraysEqual = (a: number[], b: number[]) => (
   a.length === b.length && a.every((value, index) => value === b[index])
