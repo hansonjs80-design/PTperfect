@@ -1786,7 +1786,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                                   color: matchedPreset.textColor || '#3730a3',
                                   border: `1px solid ${matchedPreset.textColor ? `${matchedPreset.textColor}40` : '#c7d2fe'}`,
                                 }}
-                              >{matchedPreset.name} 세트</span>
+                              >{matchedPreset.name}</span>
                             )}
                             {treatmentParts.map((part, idx) => (
                               <span key={idx} className="text-[12px] font-semibold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 border border-indigo-100 dark:border-indigo-800/40 rounded whitespace-nowrap">{part}</span>
