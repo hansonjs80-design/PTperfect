@@ -604,24 +604,28 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       data-status-typed-input="true"
       value={typedQuery}
       onChange={(e) => {
-        setTypedQuery(composeStatusHangul(e.target.value));
+        const nextValue = e.target.value;
+        setTypedQuery(typedQueryCompositionRef.current ? nextValue : composeStatusHangul(nextValue));
         if (!isTypingQuery && e.target.value) {
           setIsTypingQuery(true);
         }
       }}
-      onCompositionStart={() => {
+      onCompositionStart={(e) => {
         typedQueryCompositionRef.current = true;
+        setTypedQuery(e.currentTarget.value);
         setIsTypingQuery(true);
       }}
       onCompositionEnd={(e) => {
         typedQueryCompositionRef.current = false;
         const composedValue = composeStatusHangul(e.currentTarget.value);
         setTypedQuery(composedValue);
+        e.currentTarget.value = composedValue;
         setIsTypingQuery(!!composedValue);
       }}
       onKeyDown={(e) => {
+        const currentValue = (typedQueryInputRef.current?.value ?? typedQuery).trim();
         if (e.key === 'Backspace' || e.key === 'Delete') {
-          if (!typedQuery.trim()) {
+          if (!currentValue) {
             e.preventDefault();
             e.stopPropagation();
             void clearAllStatuses();
@@ -632,7 +636,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         if (e.key === 'Enter') {
           e.preventDefault();
           e.stopPropagation();
-          if (!typedQuery.trim()) {
+          if (!currentValue) {
             executeInteraction(e, true);
             return;
           }
