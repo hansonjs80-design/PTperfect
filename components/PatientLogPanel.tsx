@@ -543,14 +543,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     };
   }, [dbPatientDirectory, patientExtraCautions, patientSideNoteSelections, selectedVisitForSideNote, visits]);
 
-  const displayVisits = useMemo(() => visits.map((visit) => {
-    if (!selectedPatientPanelData || visit.id !== selectedPatientPanelData.selectedVisitId) return visit;
-    return {
-      ...visit,
-      memo: selectedPatientPanelData.selectedMemoLines.join('\n'),
-      special_note: selectedPatientPanelData.selectedSpecialNoteLines.join('\n'),
-    };
-  }), [selectedPatientPanelData, visits]);
+  const displayVisits = visits;
 
   const [sidePanelMemo, setSidePanelMemo] = useState('');
   const [sidePanelSpecialNote, setSidePanelSpecialNote] = useState('');
@@ -1530,7 +1523,6 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                 isBedActivationDisabled={isBedActivationDisabled}
                 onSelectionAnchorChange={(row, col) => {
                   if (isSearchModalOpen || isMemoHistoryModalOpen) return;
-                  commitPendingSidePanelEdits();
                   setSelectionAnchor({ row, col });
                   if (row !== null && displayVisits[row]) {
                     setSelectedVisitIdForImport(displayVisits[row].id);
