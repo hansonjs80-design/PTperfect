@@ -176,6 +176,17 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   }, [visit?.id]);
 
   useEffect(() => {
+    if (menuPos) return;
+    targetVisitIdRef.current = visit?.id ?? null;
+    pendingSnapshotRef.current = null;
+    createPromiseRef.current = null;
+    setMenuVisitSnapshot(visit ? { ...visit } : null);
+    setIsTypingQuery(false);
+    setTypedQuery('');
+    updateSelectedStatusKey(null);
+  }, [visit?.id, gridId, isDraft, menuPos]);
+
+  useEffect(() => {
     if (!isTypingQuery || menuPos) return;
     const frame = requestAnimationFrame(() => {
       focusTypedStatusInput();
