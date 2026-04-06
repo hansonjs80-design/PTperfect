@@ -34,7 +34,7 @@ const STATUS_DEFAULT_WIDTH_FACTOR = 1.5;
 const SPECIAL_NOTE_COL_INDEX = 8;
 const SPECIAL_NOTE_DEFAULT_WIDTH = 150;
 const AUTHOR_COL_INDEX = 10;
-const AUTHOR_DESKTOP_DEFAULT_WIDTH = 72;
+const AUTHOR_DESKTOP_DEFAULT_WIDTH = 61;
 
 const arraysEqual = (a: number[], b: number[]) => (
   a.length === b.length && a.every((value, index) => value === b[index])

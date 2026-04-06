@@ -93,7 +93,7 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
           타이머
           {handle(9)}
         </th>
-        <th className={`${thBase} w-[45px] min-w-[45px] max-w-[45px] xl:w-[54px] xl:min-w-[54px] xl:max-w-[54px] relative`}>
+        <th className={`${thBase} w-[38px] min-w-[38px] max-w-[38px] xl:w-[46px] xl:min-w-[46px] xl:max-w-[46px] relative`}>
           작성
         </th>
       </tr>
