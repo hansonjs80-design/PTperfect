@@ -655,8 +655,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   const visitTreatmentValue = rawVisitTreatmentValue.trim() !== '' ? rawVisitTreatmentValue : '';
   const shouldUseStickyForNonActiveRow = rowStatus !== 'active';
   const nonActiveDisplayValue = shouldUseStickyForNonActiveRow
-    ? (visitTreatmentValue || stickyTreatmentName || activeBedTreatmentValue)
-    : (visitTreatmentValue || activeBedTreatmentValue);
+    ? (visitTreatmentValue || stickyTreatmentName)
+    : visitTreatmentValue;
   const treatmentDisplayValue = rowStatus === 'active'
     ? (visitTreatmentValue || activeBedTreatmentValue)
     : nonActiveDisplayValue;

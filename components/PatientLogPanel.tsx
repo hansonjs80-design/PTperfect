@@ -1332,7 +1332,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
     // Merge originalResult with any local edits made in the modal
     const localOverride = modalEdits[baseSource.id] || {};
-    const source = { ...baseSource, ...localOverride };
+    const source = { ...baseSource, ...localOverride, ...(draftImport || {}) };
     const sanitized = sanitizeImportedVisit(source);
 
     const payload: Partial<PatientVisit> = {};
