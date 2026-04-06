@@ -20,6 +20,13 @@ const getLocalDateString = () => {
   return new Date(now.getTime() - offset).toISOString().split('T')[0];
 };
 
+const sortVisitsByCreatedAt = (rows: PatientVisit[]) =>
+  [...rows].sort((a, b) => {
+    const aTime = new Date(a.created_at || 0).getTime();
+    const bTime = new Date(b.created_at || 0).getTime();
+    return aTime - bTime;
+  });
+
 export const usePatientLog = () => {
   // 1. Current Date State (Persisted)
   const [currentDate, setCurrentDate] = useLocalStorage<string>('physio-log-date', getLocalDateString());
@@ -109,7 +116,7 @@ export const usePatientLog = () => {
             if (eventType === 'INSERT' && newRow) {
               setVisits(prev => {
                 if (prev.some(v => v.id === newRow.id)) return prev;
-                const updated = [...prev, newRow as PatientVisit];
+                const updated = sortVisitsByCreatedAt([...prev, newRow as PatientVisit]);
                 saveToLocalCache(currentDate, updated);
                 return updated;
               });
@@ -206,7 +213,7 @@ export const usePatientLog = () => {
 
     // Optimistic Update
     setVisits(prev => {
-      const updated = [...prev, newVisit];
+      const updated = sortVisitsByCreatedAt([...prev, newVisit]);
       saveToLocalCache(currentDate, updated);
       return updated;
     });
@@ -247,7 +254,7 @@ export const usePatientLog = () => {
           const retryData = await retryInsertWithoutOptionalFields(newVisit);
           if (retryData) {
             setVisits(prev => {
-              const updated = prev.map(v => v.id === tempId ? retryData : v);
+              const updated = sortVisitsByCreatedAt(prev.map(v => v.id === tempId ? retryData : v));
               saveToLocalCache(currentDate, updated);
               return updated;
             });
@@ -259,7 +266,7 @@ export const usePatientLog = () => {
         }
       } else if (data) {
         setVisits(prev => {
-          const updated = prev.map(v => v.id === tempId ? data : v);
+          const updated = sortVisitsByCreatedAt(prev.map(v => v.id === tempId ? data : v));
           saveToLocalCache(currentDate, updated);
           return updated;
         });
@@ -273,7 +280,7 @@ export const usePatientLog = () => {
   const updateVisit = useCallback(async (id: string, updates: Partial<PatientVisit>) => {
     // Optimistic Update (즉시 UI 반영)
     setVisits(prev => {
-      const updated = prev.map(v => v.id === id ? { ...v, ...updates } : v);
+      const updated = sortVisitsByCreatedAt(prev.map(v => v.id === id ? { ...v, ...updates } : v));
       saveToLocalCache(currentDate, updated);
       return updated;
     });
