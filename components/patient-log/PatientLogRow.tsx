@@ -705,16 +705,18 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     return !!targetNorm && targetNorm !== baseNorm;
   })();
 
-  const matchedPresetForDisplay = (() => {
+  const matchedPresetDisplayState = (() => {
     const normalized = treatmentDisplayValue.trim();
-    if (detachedBadgeValue === normalized) return null;
+    if (detachedBadgeValue === normalized) return { preset: null, source: 'detached' as const };
 
     // 사용자가 우클릭으로 배지 이름을 명시적으로 변경한 경우 최우선 적용
-    if (renamedBadgeOverride) return resolvePresetAppearance(renamedBadgeOverride);
+    if (renamedBadgeOverride) {
+      return { preset: resolvePresetAppearance(renamedBadgeOverride), source: 'renamed' as const };
+    }
 
     // 처방 문자열이 같은 다른 세트가 있어도, 사용자가 마지막으로 선택한 세트 배지를 우선 유지한다.
     if (normalized && stickyPresetBadgeRef.current) {
-      return resolvePresetAppearance(stickyPresetBadgeRef.current);
+      return { preset: resolvePresetAppearance(stickyPresetBadgeRef.current), source: 'sticky' as const };
     }
 
     const presetMatchedFromDisplay = normalized
@@ -723,23 +725,29 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
     if (rowStatus === 'active') {
       // 세트 처방이 변경되면(특히 플레이 직후 동기화 지연 구간) 문자열 기준 세트명을 우선 반영한다.
-      if (presetMatchedFromDisplay) return resolvePresetAppearance(presetMatchedFromDisplay);
+      if (presetMatchedFromDisplay) {
+        return { preset: resolvePresetAppearance(presetMatchedFromDisplay), source: 'string-match' as const };
+      }
 
       if (currentPreset) {
         if (isActivePresetModified && activeBasePreset) {
           return {
-            ...currentPreset,
-            name: activeBasePreset.name,
-            color: activeBasePreset.color || currentPreset.color,
-            textColor: activeBasePreset.textColor || currentPreset.textColor,
+            preset: {
+              ...currentPreset,
+              name: activeBasePreset.name,
+              color: activeBasePreset.color || currentPreset.color,
+              textColor: activeBasePreset.textColor || currentPreset.textColor,
+            },
+            source: 'current-preset' as const,
           };
         }
-        return resolvePresetAppearance(currentPreset);
+        return { preset: resolvePresetAppearance(currentPreset), source: 'current-preset' as const };
       }
     }
 
-    return resolvePresetAppearance(presetMatchedFromDisplay);
+    return { preset: resolvePresetAppearance(presetMatchedFromDisplay), source: 'string-match' as const };
   })();
+  const matchedPresetForDisplay = matchedPresetDisplayState.preset;
 
   useEffect(() => {
     if (!treatmentDisplayValue.trim()) {
@@ -753,11 +761,11 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
     if (!matchedPresetForDisplay) return;
     latestDisplayedPresetBadgeRef.current = matchedPresetForDisplay;
     stickyPresetBadgeRef.current = matchedPresetForDisplay;
-    if (visit?.id) {
+    if (visit?.id && matchedPresetDisplayState.source !== 'string-match') {
       persistedPresetBadgeByVisitId.set(visit.id, matchedPresetForDisplay);
       syncPersistedPresetBadges();
     }
-  }, [matchedPresetForDisplay, treatmentDisplayValue, visit?.id]);
+  }, [matchedPresetForDisplay, matchedPresetDisplayState.source, treatmentDisplayValue, visit?.id]);
 
   const handleOpenTimerEdit = (position: { x: number; y: number }) => {
     if (!bed) return;
