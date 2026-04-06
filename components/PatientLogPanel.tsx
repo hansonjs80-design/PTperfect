@@ -72,6 +72,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const [patientExtraCautions, setPatientExtraCautions] = useLocalStorage<Record<string, string>>(PATIENT_EXTRA_CAUTION_STORAGE_KEY, {});
   const [patientSideNoteSelections, setPatientSideNoteSelections] = useLocalStorage<Record<string, { memo?: string[]; specialNote?: string[] }>>(PATIENT_SIDE_NOTE_SELECTION_STORAGE_KEY, {});
   const [suppressedChartAutofillVisitIds, setSuppressedChartAutofillVisitIds] = useState<string[]>([]);
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const normalizedStatusOptions = useMemo(() => normalizeStatusOptions(statusOptions), [statusOptions]);
   const [dbPatientDirectory, setDbPatientDirectory] = useState<Array<{ id?: string; patient_name: string; chart_number?: string | null; gender?: string | null; body_part?: string | null; memo?: string | null; special_note?: string | null; updated_at?: string | null; visit_date?: string | null }>>([]);
 
@@ -723,6 +724,56 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
   const meaningfulVisitCount = useMemo(() => {
     return visits.filter((visit) => hasMeaningfulVisitContent(visit)).length;
   }, [hasMeaningfulVisitContent, visits]);
+
+  const statusSummary = useMemo(() => {
+    const buildRows = (predicate: (visit: PatientVisit) => boolean) => visits
+      .filter(predicate)
+      .map((visit) => ({
+        id: visit.id,
+        chartNumber: visit.chart_number?.trim() || '-',
+        name: visit.patient_name?.trim() || '이름 없음',
+        bodyPart: visit.body_part?.trim() || '-',
+        treatment: visit.treatment_name?.trim() || '-',
+      }));
+
+    return {
+      injection: buildRows((visit) => !!visit.is_injection),
+      ion: buildRows((visit) => !!visit.is_ion),
+      manual: buildRows((visit) => !!visit.is_manual),
+      eswt: buildRows((visit) => !!visit.is_eswt),
+    };
+  }, [visits]);
+
+  const summarySections = useMemo(() => ([
+    {
+      key: 'injection',
+      label: '주사',
+      count: statusSummary.injection.length,
+      rows: statusSummary.injection,
+      badgeClass: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800/40',
+    },
+    {
+      key: 'ion',
+      label: '이온',
+      count: statusSummary.ion.length,
+      rows: statusSummary.ion,
+      badgeClass: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/20 dark:text-cyan-300 dark:border-cyan-800/40',
+    },
+    {
+      key: 'manual',
+      label: '도수',
+      count: statusSummary.manual.length,
+      rows: statusSummary.manual,
+      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800/40',
+    },
+    {
+      key: 'eswt',
+      label: '충격파',
+      count: statusSummary.eswt.length,
+      rows: statusSummary.eswt,
+      badgeClass: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800/40',
+    },
+  ]), [statusSummary]);
 
   const handleClearAllActiveBeds = useCallback(() => {
     if (activeBedIdsInLog.length === 0) return;
@@ -1502,9 +1553,14 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         <div className="shrink-0">
           <PatientLogHeader 
             totalCount={meaningfulVisitCount}
+            injectionCount={statusSummary.injection.length}
+            ionCount={statusSummary.ion.length}
+            manualCount={statusSummary.manual.length}
+            eswtCount={statusSummary.eswt.length}
             currentDate={currentDate}
             onDateChange={changeDate}
             onDateSelect={setCurrentDate}
+            onOpenSummary={() => setIsSummaryModalOpen(true)}
             onPrint={handlePrintClick}
             onClose={onClose}
             onUndo={() => { void undoLogOnly(); }}
@@ -1584,6 +1640,86 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
             currentDate={currentDate} 
           />
         </Suspense>
+      )}
+
+      {isSummaryModalOpen && (
+        <div
+          data-modal-overlay="true"
+          className="fixed inset-0 z-[118] bg-slate-950/35 backdrop-blur-[2px] flex items-start justify-center p-4 sm:p-6"
+          onClick={() => setIsSummaryModalOpen(false)}
+        >
+          <div
+            className="mt-10 w-full max-w-[920px] rounded-[22px] border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 shadow-[0_26px_80px_rgba(15,23,42,0.26)] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5 py-3">
+              <div>
+                <h3 className="text-[15px] font-black tracking-[-0.02em] text-slate-800 dark:text-slate-100">현황 집계</h3>
+                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">오늘 날짜 기준 상태별 세부 목록</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSummaryModalOpen(false)}
+                className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="border-b border-slate-100 dark:border-slate-800 px-5 py-4">
+              <div className="grid gap-2 sm:grid-cols-[minmax(120px,1fr)_repeat(4,minmax(0,1fr))]">
+                <div className="rounded-2xl border border-brand-200 bg-brand-50/80 px-4 py-3 dark:border-brand-800/40 dark:bg-brand-900/20">
+                  <div className="text-[11px] font-black uppercase tracking-[0.08em] text-brand-500 dark:text-brand-300">Total</div>
+                  <div className="mt-1 text-[24px] font-black leading-none text-brand-700 dark:text-brand-200">{meaningfulVisitCount}</div>
+                </div>
+                {summarySections.map((section) => (
+                  <div key={section.key} className={`rounded-2xl border px-4 py-3 ${section.badgeClass}`}>
+                    <div className="text-[11px] font-black tracking-[-0.01em]">{section.label}</div>
+                    <div className="mt-1 text-[24px] font-black leading-none">{section.count}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid max-h-[62vh] gap-3 overflow-y-auto px-5 py-4 sm:grid-cols-2">
+              {summarySections.map((section) => (
+                <section key={section.key} className="rounded-2xl border border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-950/40">
+                  <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-2.5 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center rounded-lg border px-2 py-1 text-[11px] font-black ${section.badgeClass}`}>
+                        {section.label}
+                      </span>
+                    </div>
+                    <span className="text-[12px] font-black tabular-nums text-slate-500 dark:text-slate-300">{section.count}</span>
+                  </div>
+                  <div className="max-h-[250px] overflow-y-auto px-3 py-3">
+                    {section.rows.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-[12px] font-medium text-slate-400 dark:border-slate-800 dark:text-slate-500">
+                        해당 항목 없음
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {section.rows.map((row) => (
+                          <div key={`${section.key}-${row.id}`} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="truncate text-[13px] font-black text-slate-800 dark:text-slate-100">{row.name}</span>
+                              <span className="shrink-0 text-[11px] font-semibold tabular-nums text-slate-500 dark:text-slate-400">{row.chartNumber}</span>
+                            </div>
+                            <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                              <span className="truncate">{row.bodyPart}</span>
+                              <span className="text-slate-300 dark:text-slate-600">/</span>
+                              <span className="truncate">{row.treatment}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {isSearchModalOpen && (() => {

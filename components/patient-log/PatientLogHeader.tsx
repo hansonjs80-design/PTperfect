@@ -4,9 +4,14 @@ import { ChevronLeft, ChevronRight, CalendarCheck, Printer, X, Undo2, Redo2, Tra
 
 interface PatientLogHeaderProps {
   totalCount: number;
+  injectionCount?: number;
+  ionCount?: number;
+  manualCount?: number;
+  eswtCount?: number;
   currentDate: string;
   onDateChange: (offset: number) => void;
   onDateSelect: (date: string) => void;
+  onOpenSummary?: () => void;
   onPrint: () => void;
   onClose?: () => void;
   onUndo?: () => void;
@@ -21,9 +26,14 @@ interface PatientLogHeaderProps {
 
 export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
   totalCount,
+  injectionCount = 0,
+  ionCount = 0,
+  manualCount = 0,
+  eswtCount = 0,
   currentDate,
   onDateChange,
   onDateSelect,
+  onOpenSummary,
   onPrint,
   onClose,
   onUndo,
@@ -66,15 +76,36 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
 
   // 공통 버튼 스타일 정의
   const iconBtnClass = "flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all shadow-sm hover:shadow active:scale-95 shrink-0 disabled:opacity-30 disabled:cursor-not-allowed";
+  const summaryPills = [
+    { label: '주사', count: injectionCount, className: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800/40' },
+    { label: '이온', count: ionCount, className: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/20 dark:text-cyan-300 dark:border-cyan-800/40' },
+    { label: '도수', count: manualCount, className: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800/40' },
+    { label: '충격파', count: eswtCount, className: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800/40' },
+  ];
 
   return (
     <div className="shrink-0 z-20 flex flex-row items-center justify-between px-2 sm:px-3 py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800 transition-colors">
       
       {/* Left: Count Badge Only (Removed Title & Icon) */}
-      <div className="flex items-center shrink-0">
-         <div className="flex flex-col items-center justify-center px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 min-w-[42px] shadow-sm">
+      <div className="flex items-center gap-2 shrink-0">
+         <button
+           type="button"
+           onClick={onOpenSummary}
+           className="flex flex-col items-center justify-center px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 min-w-[42px] shadow-sm transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
+         >
            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase leading-none mb-0.5">Total</span>
            <span className="text-sm sm:text-base font-black text-brand-600 dark:text-brand-400 leading-none">{totalCount}</span>
+         </button>
+         <div className="hidden md:flex items-center gap-1.5">
+           {summaryPills.map((item) => (
+             <div
+               key={item.label}
+               className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 shadow-sm ${item.className}`}
+             >
+               <span className="text-[10px] font-black tracking-[-0.01em]">{item.label}</span>
+               <span className="text-[11px] font-black tabular-nums">{item.count}</span>
+             </div>
+           ))}
          </div>
       </div>
       
