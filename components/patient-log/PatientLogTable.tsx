@@ -14,6 +14,7 @@ import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_OPTIONS_STORAGE_
 type GridCellPos = { row: number; col: number };
 type GridSelection = { start: GridCellPos; end: GridCellPos } | null;
 type RowHeaderPos = { row: number };
+type FillHandleDrag = { anchorRow: number; targetRow: number; col: number } | null;
 
 const SELECTABLE_COLS = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 10]);
 
@@ -220,6 +221,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const [selection, setSelection] = useState<GridSelection>(null);
   const [clipboardSelection, setClipboardSelection] = useState<{ selection: GridSelection; mode: 'copy' | 'cut' } | null>(null);
   const [rowHeaderMenu, setRowHeaderMenu] = useState<{ row: number; rows: number[]; x: number; y: number } | null>(null);
+  const [fillHandleDrag, setFillHandleDrag] = useState<FillHandleDrag>(null);
   const showTimerColumn = false;
   const activeBedIds = beds.filter(b => b.status !== 'IDLE').map(b => b.id);
   const isDraggingRef = useRef(false);
@@ -227,6 +229,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const skipPointerSelectionCommitRef = useRef(false);
   const skipFocusSelectionCommitRef = useRef(false);
   const focusSkipResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fillHandleMouseDownRef = useRef(false);
 
   // Column resize (desktop & tablet portrait)
   const tableRef = useRef<HTMLTableElement>(null);
@@ -259,6 +262,51 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     if (bounds.colMin !== 0 || bounds.colMax !== 10) return [] as number[];
     return Array.from({ length: bounds.rowMax - bounds.rowMin + 1 }, (_, idx) => bounds.rowMin + idx);
   }, [selection]);
+
+  const handleAuthorFillDown = useCallback(async (anchorRow: number, targetRow: number) => {
+    if (targetRow <= anchorRow) {
+      setSelection({ start: { row: anchorRow, col: 10 }, end: { row: anchorRow, col: 10 } });
+      onSelectionAnchorChange?.(anchorRow, 10);
+      return;
+    }
+
+    const sourceVisit = visits[anchorRow];
+    const sourceAuthor = normalizeUpperEnglishKeyInput(sourceVisit?.author || '').slice(0, 4);
+
+    const patches: Array<{ id: string; updates: Partial<PatientVisit>; skipBedSync?: boolean; clearBedId?: number | null }> = [];
+    for (let row = anchorRow + 1; row <= Math.min(targetRow, visits.length - 1); row += 1) {
+      const visit = visits[row];
+      if (!visit) continue;
+      patches.push({ id: visit.id, updates: { author: sourceAuthor }, skipBedSync: true, clearBedId: null });
+    }
+
+    if (patches.length > 0) {
+      if (onBulkUpdate) {
+        onBulkUpdate(patches);
+      } else {
+        patches.forEach((patch) => {
+          onUpdate(patch.id, patch.updates, patch.skipBedSync);
+        });
+      }
+    }
+
+    if (targetRow >= visits.length) {
+      for (let row = visits.length; row <= targetRow; row += 1) {
+        await onCreate({ author: sourceAuthor });
+      }
+    }
+
+    const nextSelection = {
+      start: { row: anchorRow, col: 10 },
+      end: { row: targetRow, col: 10 },
+    };
+    setSelection(nextSelection);
+    onSelectionAnchorChange?.(targetRow, 10);
+    requestAnimationFrame(() => {
+      const host = document.querySelector(`[data-grid-id="${targetRow}-10"]`) as HTMLElement | null;
+      host?.focus();
+    });
+  }, [onBulkUpdate, onCreate, onSelectionAnchorChange, onUpdate, visits]);
 
   const getInsertCreatedAt = useCallback((insertIndex: number) => {
     const prevVisit = visits[insertIndex - 1];
@@ -1174,6 +1222,11 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   }, [focusHostWithoutResettingSelection, onSelectionAnchorChange, visits]);
 
   const renderedRowCount = Math.max(totalRows, visits.length);
+  const selectionBounds = normalizeSelectionBounds(selection);
+  const showAuthorFillHandle = !!selectionBounds
+    && selectionBounds.rowMin === selectionBounds.rowMax
+    && selectionBounds.colMin === 10
+    && selectionBounds.colMax === 10;
 
   return (
     <div
@@ -1185,6 +1238,10 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       onPaste={handlePaste}
       onKeyDown={handleSelectionKeyDown}
       onMouseDownCapture={(e) => {
+        if (fillHandleMouseDownRef.current) {
+          fillHandleMouseDownRef.current = false;
+          return;
+        }
         lastPointerDownAtRef.current = Date.now();
         const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
         if (rowHeaderPos) {
@@ -1277,6 +1334,18 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         setRowHeaderMenu({ row: rowHeaderPos.row, rows: menuRows, x: e.clientX, y: e.clientY });
       }}
       onMouseMoveCapture={(e) => {
+        if (fillHandleDrag) {
+          const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
+          const pos = parseGridCellId(e.target as HTMLElement);
+          const nextRow = rowHeaderPos?.row ?? pos?.row;
+          if (typeof nextRow !== 'number') return;
+          setFillHandleDrag((prev) => prev ? { ...prev, targetRow: nextRow } : prev);
+          setSelection({
+            start: { row: fillHandleDrag.anchorRow, col: 10 },
+            end: { row: nextRow, col: 10 },
+          });
+          return;
+        }
         if (!isDraggingRef.current) return;
         const rowHeaderPos = parseRowHeaderId(e.target as HTMLElement);
         if (rowHeaderPos) {
@@ -1288,6 +1357,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         setSelection((prev) => prev ? { ...prev, end: pos } : prev);
       }}
       onMouseUpCapture={() => {
+        if (fillHandleDrag) {
+          const next = fillHandleDrag;
+          setFillHandleDrag(null);
+          void handleAuthorFillDown(next.anchorRow, next.targetRow);
+          return;
+        }
         isDraggingRef.current = false;
       }}
     >
@@ -1331,6 +1406,17 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
                   memoSuggestions={memoSuggestions}
                   specialNoteSuggestions={specialNoteSuggestions}
                   onChartAutofillSuppressionChange={onChartAutofillSuppressionChange}
+                  showAuthorFillHandle={showAuthorFillHandle && selectionBounds?.rowMin === index}
+                  onAuthorFillHandleMouseDown={(e) => {
+                    fillHandleMouseDownRef.current = true;
+                    setFillHandleDrag({ anchorRow: index, targetRow: index, col: 10 });
+                    setSelection({
+                      start: { row: index, col: 10 },
+                      end: { row: index, col: 10 },
+                    });
+                    onSelectionAnchorChange?.(index, 10);
+                    e.currentTarget.blur();
+                  }}
                 />
               );
             }
@@ -1399,6 +1485,17 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
                 specialNoteSuggestions={specialNoteSuggestions}
                 isChartAutofillSuppressed={suppressedChartAutofillVisitIds.includes(visit.id)}
                 onChartAutofillSuppressionChange={onChartAutofillSuppressionChange}
+                showAuthorFillHandle={showAuthorFillHandle && selectionBounds?.rowMin === index}
+                onAuthorFillHandleMouseDown={(e) => {
+                  fillHandleMouseDownRef.current = true;
+                  setFillHandleDrag({ anchorRow: index, targetRow: index, col: 10 });
+                  setSelection({
+                    start: { row: index, col: 10 },
+                    end: { row: index, col: 10 },
+                  });
+                  onSelectionAnchorChange?.(index, 10);
+                  e.currentTarget.blur();
+                }}
               />
             );
           })}

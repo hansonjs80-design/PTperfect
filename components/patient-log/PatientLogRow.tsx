@@ -84,6 +84,8 @@ interface PatientLogRowProps {
   specialNoteSuggestions?: string[];
   isChartAutofillSuppressed?: boolean;
   onChartAutofillSuppressionChange?: (visitId: string, suppressed: boolean) => void;
+  showAuthorFillHandle?: boolean;
+  onAuthorFillHandleMouseDown?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
@@ -121,6 +123,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
   specialNoteSuggestions = [],
   isChartAutofillSuppressed = false,
   onChartAutofillSuppressionChange,
+  showAuthorFillHandle = false,
+  onAuthorFillHandleMouseDown,
 }) => {
   const { handleGridKeyDown } = useGridNavigation(11);
   const { activateVisitFromLog, togglePause, updateBedSteps, updateBedDuration, quickTreatments } = useTreatmentContext();
@@ -1073,6 +1077,8 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
               }
             }}
             isDraft={isDraft}
+            showFillHandle={showAuthorFillHandle}
+            onFillHandleMouseDown={onAuthorFillHandleMouseDown}
           />
         </div>
       </td>

@@ -17,6 +17,8 @@ interface AuthorSelectorCellProps {
   value: string;
   onSelect: (val: string) => void;
   isDraft?: boolean;
+  showFillHandle?: boolean;
+  onFillHandleMouseDown?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
@@ -25,7 +27,9 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
   colIndex,
   value,
   onSelect,
-  isDraft = false
+  isDraft = false,
+  showFillHandle = false,
+  onFillHandleMouseDown,
 }) => {
   const [authorOptions, setAuthorOptions] = useLocalStorage<string[]>('physio-author-options', DEFAULT_AUTHORS);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -207,6 +211,19 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
           <span className="inline-flex w-full items-center justify-center text-center text-sm xl:text-base font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap">{value}</span>
         ) : (
           <span className="inline-flex w-full items-center justify-center text-center text-gray-300 dark:text-gray-600 text-sm font-bold">-</span>
+        )}
+        {showFillHandle && (
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onFillHandleMouseDown?.(e);
+            }}
+            className="absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-[1px] translate-y-[1px] rounded-sm border border-white bg-sky-500 shadow-sm dark:border-slate-900"
+            title="아래로 채우기"
+            tabIndex={-1}
+          />
         )}
       </div>
 
