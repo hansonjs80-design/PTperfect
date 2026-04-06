@@ -236,6 +236,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   // Stores { rowOffset, colIndex }
   // rowOffset = 1 (vertical: jump to new draft), rowOffset = 0 (horizontal: stay on created row)
   const focusTargetRef = useRef<{ rowOffset: number, colIndex: number } | null>(null);
+  const absoluteFocusTargetRef = useRef<{ row: number, colIndex: number } | null>(null);
   const prevVisitsLengthRef = useRef(visits.length);
   const pendingAutoFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPointerDownAtRef = useRef(0);
@@ -388,6 +389,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     if (cancelAutoFocusRef) {
       cancelAutoFocusRef.current = () => {
         focusTargetRef.current = null;
+        absoluteFocusTargetRef.current = null;
         if (pendingAutoFocusTimerRef.current) {
           clearTimeout(pendingAutoFocusTimerRef.current);
           pendingAutoFocusTimerRef.current = null;
@@ -398,10 +400,14 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
   useEffect(() => {
     // If visits length increased, it means a row was added.
-    if (visits.length > prevVisitsLengthRef.current && focusTargetRef.current !== null) {
-      const baseRowIndex = prevVisitsLengthRef.current; // Index of the row just created (which was previously the draft row)
-      const targetRowIndex = baseRowIndex + focusTargetRef.current.rowOffset;
-      const targetColIndex = focusTargetRef.current.colIndex;
+    if (visits.length > prevVisitsLengthRef.current && (focusTargetRef.current !== null || absoluteFocusTargetRef.current !== null)) {
+      const fallbackBaseRowIndex = prevVisitsLengthRef.current;
+      const targetRowIndex = absoluteFocusTargetRef.current
+        ? absoluteFocusTargetRef.current.row
+        : fallbackBaseRowIndex + (focusTargetRef.current?.rowOffset || 0);
+      const targetColIndex = absoluteFocusTargetRef.current
+        ? absoluteFocusTargetRef.current.colIndex
+        : (focusTargetRef.current?.colIndex ?? 0);
 
       // Small delay to allow DOM to update
       if (pendingAutoFocusTimerRef.current) {
@@ -412,12 +418,14 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
         // If the user manually clicked very recently, never steal focus to another cell.
         if (Date.now() - lastPointerDownAtRef.current < 250) {
           focusTargetRef.current = null;
+          absoluteFocusTargetRef.current = null;
           return;
         }
 
         // If a modal overlay is open (search / memo history) or a modal transition is in progress, never steal focus.
         if (document.querySelector('[data-modal-overlay="true"]') || document.body.getAttribute('data-prevent-autofocus') === 'true') {
           focusTargetRef.current = null;
+          absoluteFocusTargetRef.current = null;
           return;
         }
 
@@ -432,7 +440,8 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
             targetEl.focus();
           }
         }
-        focusTargetRef.current = null; // Reset
+        focusTargetRef.current = null;
+        absoluteFocusTargetRef.current = null;
       }, 0);
     }
     prevVisitsLengthRef.current = visits.length;
@@ -466,29 +475,28 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     }, 0);
   }, []);
 
-  const handleDraftCreate = async (updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left' | 'up') => {
+  const handleDraftCreate = async (draftRowIndex: number, updates: Partial<PatientVisit>, colIndex?: number, navDirection?: 'down' | 'right' | 'left' | 'up') => {
+    const insertRowIndex = Math.min(draftRowIndex, visits.length);
     if (colIndex !== undefined) {
+      const targetBaseRow = insertRowIndex;
       if (navDirection === 'left') {
-        // Horizontal Left: Stay on the same row (newly created), go to previous column
-        focusTargetRef.current = { rowOffset: 0, colIndex: colIndex - 1 };
+        absoluteFocusTargetRef.current = { row: targetBaseRow, colIndex: colIndex - 1 };
       } else if (navDirection === 'right') {
-        // Horizontal Right: Stay on the same row (newly created), go to next column
-        focusTargetRef.current = { rowOffset: 0, colIndex: colIndex + 1 };
+        absoluteFocusTargetRef.current = { row: targetBaseRow, colIndex: colIndex + 1 };
       } else if (navDirection === 'up') {
-        // Explicit upward navigation should land on the previous existing row.
-        focusTargetRef.current = { rowOffset: -1, colIndex };
+        absoluteFocusTargetRef.current = { row: Math.max(0, targetBaseRow - 1), colIndex };
       } else if (navDirection === 'down') {
-        // Explicit vertical navigation only when the editor asked for it.
-        focusTargetRef.current = { rowOffset: 1, colIndex };
+        absoluteFocusTargetRef.current = { row: targetBaseRow + 1, colIndex };
       } else if (colIndex === 5 && typeof updates.treatment_name === 'string' && updates.treatment_name.trim() !== '') {
-        // 처방목록 셀에서 엔터로 세트 자동적용 시에는 현재 생성된 행에 선택을 유지한다.
-        focusTargetRef.current = { rowOffset: 0, colIndex };
+        absoluteFocusTargetRef.current = { row: targetBaseRow, colIndex };
       } else {
-        // Direct typing/blur commit should keep selection on the created row and same column.
-        focusTargetRef.current = { rowOffset: 0, colIndex };
+        absoluteFocusTargetRef.current = { row: targetBaseRow, colIndex };
       }
     }
-    return await onCreate(updates);
+    return await onCreate({
+      ...updates,
+      ...(updates.created_at ? {} : { created_at: getInsertCreatedAt(insertRowIndex) }),
+    });
   };
 
   const handleBulkAuthorUpdate = useCallback((val: string) => {
@@ -1270,12 +1278,12 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
             if (!visit) {
               return (
                 <PatientLogRow
-                  key={`row-${index}`}
+                  key={`draft-row-${index}-${visits.length}`}
                   rowIndex={index}
                   isRowSelected={!!selection && Math.min(selection.start.row, selection.end.row) <= index && index <= Math.max(selection.start.row, selection.end.row)}
                   isDraft={true}
                   onUpdate={onUpdate}
-                  onCreate={handleDraftCreate}
+                  onCreate={(updates, colIndex, navDirection) => handleDraftCreate(index, updates, colIndex, navDirection)}
                   onSelectLog={(id) => onSelectLog(id, null)}
                   activeBedIds={activeBedIds}
                   isBedActivationDisabled={isBedActivationDisabled}
@@ -1320,7 +1328,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
             return (
               <PatientLogRow
-                key={`row-${index}`}
+                key={`visit-row-${visit.id}`}
                 rowIndex={index}
                 isRowSelected={!!selection && Math.min(selection.start.row, selection.end.row) <= index && index <= Math.max(selection.start.row, selection.end.row)}
                 visit={visit}
