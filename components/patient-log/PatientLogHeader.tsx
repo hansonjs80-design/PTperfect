@@ -47,6 +47,17 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
 }) => {
   const dateInputRef = useRef<HTMLInputElement>(null);
 
+  const formatHeaderDate = (value: string) => {
+    const [year, month, day] = value.split('-');
+    if (!year || !month || !day) return value;
+
+    const parsed = new Date(`${value}T00:00:00`);
+    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+    const weekday = Number.isNaN(parsed.getTime()) ? '' : ` (${weekdays[parsed.getDay()]})`;
+
+    return `${year}년 ${month}월 ${day}일${weekday}`;
+  };
+
   const handleTodayClick = () => {
     const now = new Date();
     const offset = now.getTimezoneOffset() * 60000;
@@ -174,7 +185,7 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
             onClick={openDatePicker}
           >
             <span className="text-xs sm:text-base font-black text-slate-800 dark:text-slate-100 tabular-nums tracking-tight whitespace-nowrap">
-              {currentDate}
+              {formatHeaderDate(currentDate)}
             </span>
             <input 
               ref={dateInputRef}
