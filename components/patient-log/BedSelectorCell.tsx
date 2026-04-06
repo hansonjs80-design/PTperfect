@@ -420,7 +420,7 @@ export const BedSelectorCell: React.FC<BedSelectorCellProps> = ({
             title={getTitle()}
         >
             {(displayValueOverride || value) ? (
-                <span className={`text-lg sm:text-xl xl:text-base font-black group-hover:scale-[1.12] transition-transform duration-150 transform-gpu ${(displayValueOverride || value) === '11' || value === 11 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                <span className={`text-[16px] sm:text-[18px] xl:text-[14px] font-black group-hover:scale-[1.12] transition-transform duration-150 transform-gpu ${(displayValueOverride || value) === '11' || value === 11 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>
                 {(displayValueOverride || value) === '11' || value === 11 ? 'T' : (displayValueOverride || value)}
                 </span>
             ) : (
