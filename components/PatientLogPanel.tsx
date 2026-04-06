@@ -305,6 +305,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
       const existing = prev[id] || {};
       return { ...prev, [id]: { ...existing, ...updates } };
     });
+    setDraftImport((prev) => {
+      if (!prev || selectedResult?.id !== id) return prev;
+      return { ...prev, ...updates };
+    });
   }, []);
 
   const replaceStepAt = (steps: TreatmentStep[], idx: number, qt: QuickTreatment): TreatmentStep[] => {
@@ -1325,7 +1329,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
     // Merge originalResult with any local edits made in the modal
     const localOverride = modalEdits[baseSource.id] || {};
-    const source = { ...baseSource, ...localOverride, ...(draftImport || {}) };
+    const source = { ...baseSource, ...(draftImport || {}), ...localOverride };
     const sanitized = sanitizeImportedVisit(source);
 
     const payload: Partial<PatientVisit> = {};
@@ -1811,12 +1815,9 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
                             <input
                               className="w-full h-full min-h-[36px] px-1.5 text-[10px] font-medium bg-transparent text-gray-600 dark:text-gray-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
-                              defaultValue={v.memo || ''}
+                              value={v.memo || ''}
                               placeholder="-"
-                              onBlur={e => {
-                                const val = e.target.value;
-                                if (val !== (v.memo || '')) handleModalLocalUpdate(v.id, { memo: val });
-                              }}
+                              onChange={e => handleModalLocalUpdate(v.id, { memo: e.target.value })}
                             />
                           </div>
 
@@ -1824,12 +1825,9 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           <div className="p-0" onClick={e => e.stopPropagation()}>
                             <input
                               className="w-full h-full min-h-[36px] px-1.5 text-[10px] font-medium bg-transparent text-orange-600 dark:text-orange-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
-                              defaultValue={v.special_note || ''}
+                              value={v.special_note || ''}
                               placeholder="-"
-                              onBlur={e => {
-                                const val = e.target.value;
-                                if (val !== (v.special_note || '')) handleModalLocalUpdate(v.id, { special_note: val });
-                              }}
+                              onChange={e => handleModalLocalUpdate(v.id, { special_note: e.target.value })}
                             />
                           </div>
                         </div>
