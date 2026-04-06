@@ -311,6 +311,28 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
     });
   }, [selectedResult]);
 
+  const persistSearchResultUpdate = useCallback(async (id: string, updates: Partial<PatientVisit>) => {
+    const sanitizedEntries = Object.entries(updates).filter(([, value]) => value !== undefined);
+    if (sanitizedEntries.length === 0) return;
+    const normalizedUpdates = Object.fromEntries(sanitizedEntries) as Partial<PatientVisit>;
+
+    setSearchResults((prev) => prev.map((visit) => (
+      visit.id === id ? { ...visit, ...normalizedUpdates } : visit
+    )));
+    setVisits((prev) => prev.map((visit) => (
+      visit.id === id ? { ...visit, ...normalizedUpdates } : visit
+    )));
+    setSelectedResult((prev) => (
+      prev?.id === id ? { ...prev, ...normalizedUpdates } : prev
+    ));
+    setDraftImport((prev) => {
+      if (!prev || selectedResult?.id !== id) return prev;
+      return { ...prev, ...normalizedUpdates };
+    });
+
+    await updateVisit(id, normalizedUpdates);
+  }, [selectedResult?.id, setVisits, updateVisit]);
+
   const replaceStepAt = (steps: TreatmentStep[], idx: number, qt: QuickTreatment): TreatmentStep[] => {
     const next = [...steps];
     next[idx] = {
@@ -1732,6 +1754,12 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                               value={v.chart_number || ''}
                               placeholder="-"
                               onChange={e => handleModalLocalUpdate(v.id, { chart_number: e.target.value })}
+                              onBlur={e => {
+                                const val = e.target.value;
+                                if (val !== (searchResults.find((row) => row.id === v.id)?.chart_number || '')) {
+                                  void persistSearchResultUpdate(v.id, { chart_number: val });
+                                }
+                              }}
                             />
                           </div>
                           
@@ -1742,6 +1770,12 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                               value={v.patient_name || ''}
                               placeholder="-"
                               onChange={e => handleModalLocalUpdate(v.id, { patient_name: e.target.value })}
+                              onBlur={e => {
+                                const val = e.target.value;
+                                if (val !== (searchResults.find((row) => row.id === v.id)?.patient_name || '')) {
+                                  void persistSearchResultUpdate(v.id, { patient_name: val });
+                                }
+                              }}
                             />
                           </div>
                           
@@ -1750,7 +1784,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                             <select
                               className="w-full h-full min-h-[36px] text-[13px] font-bold text-center bg-transparent outline-none cursor-pointer focus:ring-1 focus:ring-inset focus:ring-brand-400"
                               value={(v.gender || '').toUpperCase()}
-                              onChange={e => handleModalLocalUpdate(v.id, { gender: e.target.value })}
+                              onChange={e => {
+                                handleModalLocalUpdate(v.id, { gender: e.target.value });
+                                void persistSearchResultUpdate(v.id, { gender: e.target.value });
+                              }}
                             >
                               <option value="">-</option>
                               <option value="M">M</option>
@@ -1765,6 +1802,12 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                               value={v.body_part || ''}
                               placeholder="-"
                               onChange={e => handleModalLocalUpdate(v.id, { body_part: e.target.value })}
+                              onBlur={e => {
+                                const val = e.target.value;
+                                if (val !== (searchResults.find((row) => row.id === v.id)?.body_part || '')) {
+                                  void persistSearchResultUpdate(v.id, { body_part: val });
+                                }
+                              }}
                             />
                           </div>
 
@@ -1797,7 +1840,10 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                             <select
                               className="w-full h-full min-h-[36px] text-[13px] font-bold text-center bg-transparent outline-none cursor-pointer focus:ring-1 focus:ring-inset focus:ring-brand-400 text-gray-700 dark:text-gray-300"
                               value={v.author || ''}
-                              onChange={e => handleModalLocalUpdate(v.id, { author: e.target.value })}
+                              onChange={e => {
+                                handleModalLocalUpdate(v.id, { author: e.target.value });
+                                void persistSearchResultUpdate(v.id, { author: e.target.value });
+                              }}
                             >
                               <option value="">-</option>
                               {authorOptions.map(opt => (
@@ -1813,6 +1859,12 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                               value={v.memo || ''}
                               placeholder="-"
                               onChange={e => handleModalLocalUpdate(v.id, { memo: e.target.value })}
+                              onBlur={e => {
+                                const val = e.target.value;
+                                if (val !== (searchResults.find((row) => row.id === v.id)?.memo || '')) {
+                                  void persistSearchResultUpdate(v.id, { memo: val });
+                                }
+                              }}
                             />
                           </div>
 
@@ -1823,6 +1875,12 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                               value={v.special_note || ''}
                               placeholder="-"
                               onChange={e => handleModalLocalUpdate(v.id, { special_note: e.target.value })}
+                              onBlur={e => {
+                                const val = e.target.value;
+                                if (val !== (searchResults.find((row) => row.id === v.id)?.special_note || '')) {
+                                  void persistSearchResultUpdate(v.id, { special_note: val });
+                                }
+                              }}
                             />
                           </div>
                         </div>
