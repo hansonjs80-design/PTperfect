@@ -718,41 +718,36 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         title={getTitle()}
       >
         {hasActiveStatus ? (
-          isTypingQuery ? (
-            <div className="w-full px-1.5 py-0 flex items-center justify-start">
-              {renderTypedStatusInput(
-                'w-full bg-transparent outline-none border-none text-[13px] font-black text-slate-600 dark:text-slate-200 px-1 py-0.5'
+          <div className={`w-full min-h-0 px-1.5 ${isTypingQuery ? 'py-0.5 flex flex-col items-start justify-center gap-1' : 'py-0 flex items-center justify-start'}`}>
+            <div className="flex flex-wrap items-center justify-start gap-1 max-w-full">
+              {activeStatusPills.map((item) => (
+                <span
+                  key={item.key}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    cellRef.current?.focus();
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    cellRef.current?.focus();
+                    updateSelectedStatusKey(selectedStatusKeyRef.current === item.key ? null : item.key);
+                  }}
+                  onDoubleClick={(e) => {
+                    executeInteraction(e);
+                  }}
+                  className={`px-1.5 py-0.5 rounded-md text-[13px] font-black transition-transform duration-150 group-hover:scale-[1.04] transform-gpu ${item.bg} ${item.text} ${selectedStatusKey === item.key ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
+                >
+                  {item.label}
+                </span>
+              ))}
+              {!isTypingQuery && renderTypedStatusInput(
+                'w-[1px] min-w-[1px] bg-transparent outline-none border-none text-transparent px-0 py-0'
               )}
             </div>
-          ) : (
-            <div className="w-full min-h-0 px-1.5 py-0 flex items-center justify-start">
-              <div className="flex flex-wrap items-center justify-start gap-1 max-w-full">
-                {activeStatusPills.map((item) => (
-                  <span
-                    key={item.key}
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      cellRef.current?.focus();
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      cellRef.current?.focus();
-                      updateSelectedStatusKey(selectedStatusKeyRef.current === item.key ? null : item.key);
-                    }}
-                    onDoubleClick={(e) => {
-                      executeInteraction(e);
-                    }}
-                    className={`px-1.5 py-0.5 rounded-md text-[13px] font-black transition-transform duration-150 group-hover:scale-[1.04] transform-gpu ${item.bg} ${item.text} ${selectedStatusKey === item.key ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
-                  >
-                    {item.label}
-                  </span>
-                ))}
-                {renderTypedStatusInput(
-                  'w-[1px] min-w-[1px] bg-transparent outline-none border-none text-transparent px-0 py-0'
-                )}
-              </div>
-            </div>
-          )
+            {isTypingQuery && renderTypedStatusInput(
+              'w-full bg-transparent outline-none border-none text-[13px] font-black text-slate-600 dark:text-slate-200 px-1 py-0.5'
+            )}
+          </div>
         ) : (
           <div className="w-full px-1.5 py-0 flex items-center justify-start">
             {renderTypedStatusInput(
