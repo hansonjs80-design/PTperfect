@@ -242,6 +242,15 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   };
 
   const handleKeyDownCapture = (e: React.KeyboardEvent) => {
+    if (isEditingTypedInputTarget(e.target)) return;
+
+    if (e.key === 'Enter' && !menuPos && !typedQuery.trim()) {
+      e.preventDefault();
+      e.stopPropagation();
+      executeInteraction(e, true);
+      return;
+    }
+
     if ((e.key === 'Backspace' || e.key === 'Delete') && selectedStatusKey) {
       e.preventDefault();
       e.stopPropagation();
@@ -433,6 +442,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
           if (nextFocus && cellRef.current?.contains(nextFocus)) return;
           updateSelectedStatusKey(null);
         }}
+        onDoubleClickCapture={executeInteraction}
         onDoubleClick={executeInteraction}
         onTouchEnd={handleTouchEnd}
         onKeyDownCapture={handleKeyDownCapture}
@@ -466,6 +476,9 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                     e.stopPropagation();
                     cellRef.current?.focus();
                     updateSelectedStatusKey(selectedStatusKeyRef.current === item.key ? null : item.key);
+                  }}
+                  onDoubleClick={(e) => {
+                    executeInteraction(e);
                   }}
                   className={`px-1.5 py-0.5 rounded-md text-[13px] font-black transition-transform duration-150 group-hover:scale-[1.04] transform-gpu ${item.bg} ${item.text} ${selectedStatusKey === item.key ? 'ring-2 ring-sky-400 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
                 >
