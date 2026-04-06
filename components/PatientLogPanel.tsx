@@ -1721,14 +1721,14 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           className={`${rowGridClass} border-b border-slate-100 dark:border-slate-700/50 last:border-0 cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/80 ${isSelected ? 'bg-brand-50/70 dark:bg-brand-900/25 ring-2 ring-inset ring-brand-500/90 dark:ring-brand-400 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.55)]' : ''}`}
                         >
                           {/* 날짜 (Read Only) */}
-                          <div className="px-2 py-2.5 flex items-center justify-center text-[11px] font-medium text-slate-500 dark:text-slate-400 border-r border-slate-100 dark:border-slate-700/50">
+                          <div className="px-2 py-2.5 flex items-center justify-center text-[13px] font-semibold text-slate-500 dark:text-slate-400 border-r border-slate-100 dark:border-slate-700/50">
                             {v.visit_date.slice(2)}
                           </div>
                           
                           {/* 차트번호 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
                             <input
-                              className="w-full h-full min-h-[36px] px-1.5 text-[11px] font-mono font-bold text-center bg-transparent text-gray-700 dark:text-gray-300 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
+                              className="w-full h-full min-h-[36px] px-1.5 text-[13.5px] font-mono font-bold text-center bg-transparent text-gray-700 dark:text-gray-300 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
                               defaultValue={v.chart_number || ''}
                               placeholder="-"
                               onBlur={e => {
@@ -1754,7 +1754,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           {/* 성별 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0 flex items-center justify-center" onClick={e => e.stopPropagation()}>
                             <select
-                              className="w-full h-full min-h-[36px] text-[10px] font-bold text-center bg-transparent outline-none cursor-pointer focus:ring-1 focus:ring-inset focus:ring-brand-400"
+                              className="w-full h-full min-h-[36px] text-[13px] font-bold text-center bg-transparent outline-none cursor-pointer focus:ring-1 focus:ring-inset focus:ring-brand-400"
                               value={(v.gender || '').toUpperCase()}
                               onChange={e => handleModalLocalUpdate(v.id, { gender: e.target.value })}
                             >
@@ -1767,7 +1767,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           {/* 부위 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
                             <input
-                              className="w-full h-full min-h-[36px] px-1 text-[11px] font-medium text-center bg-transparent text-amber-700 dark:text-amber-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
+                              className="w-full h-full min-h-[36px] px-1 text-[13px] font-semibold text-center bg-transparent text-amber-700 dark:text-amber-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
                               defaultValue={v.body_part || ''}
                               placeholder="-"
                               onBlur={e => {
@@ -1780,7 +1780,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           {/* 처방목록 */}
                           <div className="px-2 py-1.5 flex flex-wrap items-center content-center gap-1 border-r border-gray-100 dark:border-slate-700/50 overflow-hidden" onClick={e => e.stopPropagation()}>
                             {matchedPreset && (
-                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap"
+                              <span className="text-[12px] font-black px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap"
                                 style={{
                                   backgroundColor: matchedPreset.color || '#e0e7ff',
                                   color: matchedPreset.textColor || '#3730a3',
@@ -1789,22 +1789,22 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                               >{matchedPreset.name} 세트</span>
                             )}
                             {treatmentParts.map((part, idx) => (
-                              <span key={idx} className="text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-1 border border-indigo-100 dark:border-indigo-800/40 rounded whitespace-nowrap">{part}</span>
+                              <span key={idx} className="text-[12px] font-semibold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 border border-indigo-100 dark:border-indigo-800/40 rounded whitespace-nowrap">{part}</span>
                             ))}
-                            {treatmentParts.length === 0 && !matchedPreset && <span className="text-[10px] text-gray-400">-</span>}
+                            {treatmentParts.length === 0 && !matchedPreset && <span className="text-[13px] text-gray-400">-</span>}
                           </div>
 
                           {/* 추가사항 */}
                           <div className="px-1.5 py-1 flex flex-wrap items-center content-center gap-1 border-r border-gray-100 dark:border-slate-700/50">
                             {activeStatuses.length > 0 ? activeStatuses.map((status) => (
-                              <span key={status.id} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${status.bg} ${status.text}`}>{status.label}</span>
-                            )) : <span className="text-[10px] text-gray-400">-</span>}
+                              <span key={status.id} className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md ${status.bg} ${status.text}`}>{status.label}</span>
+                            )) : <span className="text-[13px] text-gray-400">-</span>}
                           </div>
 
                           {/* 담당 (Author select linked to saved options) */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0 flex items-center justify-center" onClick={e => e.stopPropagation()}>
                             <select
-                              className="w-full h-full min-h-[36px] text-[11px] font-bold text-center bg-transparent outline-none cursor-pointer focus:ring-1 focus:ring-inset focus:ring-brand-400 text-gray-700 dark:text-gray-300"
+                              className="w-full h-full min-h-[36px] text-[13px] font-bold text-center bg-transparent outline-none cursor-pointer focus:ring-1 focus:ring-inset focus:ring-brand-400 text-gray-700 dark:text-gray-300"
                               value={v.author || ''}
                               onChange={e => handleModalLocalUpdate(v.id, { author: e.target.value })}
                             >
@@ -1818,7 +1818,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           {/* 메모 */}
                           <div className="border-r border-gray-100 dark:border-slate-700/50 p-0" onClick={e => e.stopPropagation()}>
                             <input
-                              className="w-full h-full min-h-[36px] px-1.5 text-[10px] font-medium bg-transparent text-gray-600 dark:text-gray-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
+                              className="w-full h-full min-h-[36px] px-1.5 text-[13px] font-medium bg-transparent text-gray-600 dark:text-gray-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
                               value={v.memo || ''}
                               placeholder="-"
                               onChange={e => handleModalLocalUpdate(v.id, { memo: e.target.value })}
@@ -1828,7 +1828,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           {/* 특이사항 */}
                           <div className="p-0" onClick={e => e.stopPropagation()}>
                             <input
-                              className="w-full h-full min-h-[36px] px-1.5 text-[10px] font-medium bg-transparent text-orange-600 dark:text-orange-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
+                              className="w-full h-full min-h-[36px] px-1.5 text-[13px] font-medium bg-transparent text-orange-600 dark:text-orange-400 outline-none focus:bg-brand-50 dark:focus:bg-brand-900/30 focus:ring-1 focus:ring-inset focus:ring-brand-400 transition-colors"
                               value={v.special_note || ''}
                               placeholder="-"
                               onChange={e => handleModalLocalUpdate(v.id, { special_note: e.target.value })}
