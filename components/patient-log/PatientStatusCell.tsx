@@ -201,15 +201,12 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
     const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
-    const isHangulKey = isHangulLikeKey(e.key);
-    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey && !isHangulKey;
+    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey && !isHangulLikeKey(e.key);
 
-    if (!menuPos && (isIMEKey || isPlainTypingKey || isHangulKey)) {
-      if (isPlainTypingKey) {
-        e.preventDefault();
-      }
+    if (!menuPos && isPlainTypingKey) {
+      e.preventDefault();
       e.stopPropagation();
-      beginTypedStatusEntry(isPlainTypingKey ? e.key : '');
+      beginTypedStatusEntry(e.key);
       return;
     }
 
@@ -440,9 +437,15 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         onTouchEnd={handleTouchEnd}
         onKeyDownCapture={handleKeyDownCapture}
         onKeyDown={handleKeyDown}
-        onCompositionStartCapture={(e) => {
+        onBeforeInputCapture={(e) => {
           if (menuPos || isEditingTypedInputTarget(e.target)) return;
-          beginTypedStatusEntry('');
+          const nativeEvent = e.nativeEvent as InputEvent;
+          const insertedText = nativeEvent.data ?? '';
+          if (!insertedText) return;
+          if (!nativeEvent.inputType?.startsWith('insert')) return;
+          e.preventDefault();
+          e.stopPropagation();
+          beginTypedStatusEntry(insertedText);
         }}
         tabIndex={0}
         data-grid-id={gridId}
