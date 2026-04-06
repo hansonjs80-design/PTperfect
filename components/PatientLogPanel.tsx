@@ -1575,7 +1575,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
           is_exercise: { label: '운동', color: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-300' },
         };
         const STATUS_KEYS = Object.keys(STATUS_LABELS) as Array<keyof typeof STATUS_LABELS>;
-        const rowGridClass = "grid grid-cols-[68px_72px_72px_58px_56px_minmax(180px,1fr)_112px_64px_116px_116px] min-w-[914px]";
+        const rowGridClass = "grid grid-cols-[86px_72px_72px_58px_56px_minmax(180px,1fr)_112px_64px_116px_116px] min-w-[932px]";
 
         return (
         <div data-modal-overlay="true" className="fixed inset-0 z-[120] bg-slate-950/40 backdrop-blur-[3px] flex items-center justify-center p-3" onClick={() => resetSearchModal()}>
@@ -1625,7 +1625,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                 <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-white dark:bg-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
                   {/* Table Header with Checkboxes */}
                   <div className={`${rowGridClass} bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-300 select-none`}>
-                    <div className="px-2 py-2.5 text-center border-r border-slate-200 dark:border-slate-700">날짜</div>
+                    <div className="px-2 py-2.5 text-center whitespace-nowrap border-r border-slate-200 dark:border-slate-700">날짜</div>
                     <div className="px-1.5 py-2 flex items-center justify-center gap-1.5 border-r border-slate-200 dark:border-slate-700">
                       <input type="checkbox" checked={importFieldSelection.chart_number} onChange={e => setImportFieldSelection(p => ({...p, chart_number: e.target.checked}))} className="rounded border-gray-400 w-3 h-3 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                       <span>차트 번호</span>
@@ -1721,7 +1721,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
                           className={`${rowGridClass} border-b border-slate-100 dark:border-slate-700/50 last:border-0 cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/80 ${isSelected ? 'bg-brand-50/70 dark:bg-brand-900/25 ring-2 ring-inset ring-brand-500/90 dark:ring-brand-400 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.55)]' : ''}`}
                         >
                           {/* 날짜 (Read Only) */}
-                          <div className="px-2 py-2.5 flex items-center justify-center text-[13px] font-semibold text-slate-500 dark:text-slate-400 border-r border-slate-100 dark:border-slate-700/50">
+                          <div className="px-2 py-2.5 flex items-center justify-center whitespace-nowrap text-[13px] font-semibold text-slate-500 dark:text-slate-400 border-r border-slate-100 dark:border-slate-700/50">
                             {v.visit_date.slice(2)}
                           </div>
                           
