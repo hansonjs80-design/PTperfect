@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef, memo } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { PatientCustomStatus, PatientVisit } from '../../types';
-import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, STATUS_OPTIONS_STORAGE_KEY, StatusOptionConfig, StatusSelectionMenu } from './StatusSelectionMenu';
+import { DEFAULT_STATUS_OPTIONS, findMatchingStatusOption, normalizeStatusOptions, STATUS_COLOR_OPTIONS, STATUS_OPTIONS_STORAGE_KEY, StatusOptionConfig, StatusSelectionMenu } from './StatusSelectionMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 
@@ -39,6 +39,9 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const targetVisitIdRef = useRef<string | null>(visit?.id ?? null);
   const pendingSnapshotRef = useRef<Partial<PatientVisit> | null>(null);
   const createPromiseRef = useRef<Promise<string> | null>(null);
+  const typedQueryInputRef = useRef<HTMLInputElement>(null);
+  const typedQueryCompositionRef = useRef(false);
+  const [typedQuery, setTypedQuery] = useState('');
   const { handleGridKeyDown } = useGridNavigation(11);
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
 
@@ -92,6 +95,39 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       const mouseEvent = e as React.MouseEvent;
       setMenuPos({ x: mouseEvent.clientX, y: mouseEvent.clientY });
     }
+  };
+
+  const beginTypedStatusEntry = (seed = '') => {
+    setTypedQuery(seed);
+    requestAnimationFrame(() => {
+      const input = typedQueryInputRef.current;
+      if (!input) return;
+      input.focus();
+      const end = input.value.length;
+      input.setSelectionRange(end, end);
+    });
+  };
+
+  const applyTypedStatusQuery = async () => {
+    const query = (typedQueryInputRef.current?.value ?? typedQuery).trim();
+    if (!query) {
+      setTypedQuery('');
+      cellRef.current?.focus();
+      return;
+    }
+
+    const matched = findMatchingStatusOption(normalizedStatusOptions.filter((option) => option.visible), query);
+    if (matched) {
+      const isAlreadyActive = matched.kind === 'predefined'
+        ? !!menuDisplayVisit?.[matched.key as keyof PatientVisit]
+        : !!menuDisplayVisit?.custom_statuses?.some((status) => status.id === matched.id);
+      if (!isAlreadyActive) {
+        await toggleStatus(matched);
+      }
+    }
+
+    setTypedQuery('');
+    requestAnimationFrame(() => cellRef.current?.focus());
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -154,8 +190,34 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
+    const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
+    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey;
+
+    if (!menuPos && (isIMEKey || isPlainTypingKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+      updateSelectedStatusKey(null);
+      beginTypedStatusEntry(isPlainTypingKey ? e.key : '');
+      return;
+    }
+
     if (e.key === 'Enter') {
+      if (!menuPos && typedQuery.trim()) {
+        e.preventDefault();
+        e.stopPropagation();
+        void applyTypedStatusQuery();
+        return;
+      }
       executeInteraction(e, true);
+      return;
+    }
+
+    if (!menuPos && e.key === 'Escape' && typedQuery) {
+      e.preventDefault();
+      e.stopPropagation();
+      setTypedQuery('');
+      cellRef.current?.focus();
       return;
     }
 
@@ -371,6 +433,67 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         data-status-pill-selected={selectedStatusKey ? 'true' : 'false'}
         title={getTitle()}
       >
+        <input
+          ref={typedQueryInputRef}
+          value={typedQuery}
+          onChange={(e) => setTypedQuery(e.target.value)}
+          onCompositionStart={() => {
+            typedQueryCompositionRef.current = true;
+          }}
+          onCompositionEnd={(e) => {
+            typedQueryCompositionRef.current = false;
+            setTypedQuery(e.currentTarget.value);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              if (typedQueryCompositionRef.current) {
+                e.preventDefault();
+                return;
+              }
+              e.preventDefault();
+              e.stopPropagation();
+              void applyTypedStatusQuery();
+              return;
+            }
+
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              e.stopPropagation();
+              setTypedQuery('');
+              requestAnimationFrame(() => cellRef.current?.focus());
+              return;
+            }
+
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+              e.preventDefault();
+              e.stopPropagation();
+              setTypedQuery('');
+              requestAnimationFrame(() => {
+                cellRef.current?.focus();
+                const keyboardEvent = new KeyboardEvent('keydown', {
+                  key: e.key,
+                  bubbles: true,
+                  shiftKey: e.shiftKey,
+                  ctrlKey: e.ctrlKey,
+                  metaKey: e.metaKey,
+                  altKey: e.altKey,
+                });
+                cellRef.current?.dispatchEvent(keyboardEvent);
+              });
+            }
+          }}
+          onBlur={() => {
+            if (!typedQuery) return;
+            requestAnimationFrame(() => {
+              const active = document.activeElement as HTMLElement | null;
+              if (active && cellRef.current?.contains(active)) return;
+              setTypedQuery('');
+            });
+          }}
+          className="absolute pointer-events-none opacity-0 w-px h-px"
+          tabIndex={-1}
+          aria-hidden="true"
+        />
         {hasActiveStatus ? (
           <div className="w-full min-h-0 px-1.5 py-0 flex items-center justify-start">
             <div className="flex flex-wrap items-center justify-start gap-1 max-w-full">
@@ -391,12 +514,25 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                   {item.label}
                 </span>
               ))}
+              {typedQuery && (
+                <span className="px-1 py-0.5 text-[13px] font-black text-slate-500 dark:text-slate-300">
+                  {typedQuery}
+                </span>
+              )}
             </div>
           </div>
         ) : (
-          <div className="opacity-0 group-hover:opacity-50 transition-opacity">
-            <MoreHorizontal className="w-4 h-4 text-gray-400" />
-          </div>
+          typedQuery ? (
+            <div className="w-full px-1.5 py-0 flex items-center justify-start">
+              <span className="px-1 py-0.5 text-[13px] font-black text-slate-500 dark:text-slate-300">
+                {typedQuery}
+              </span>
+            </div>
+          ) : (
+            <div className="opacity-0 group-hover:opacity-50 transition-opacity">
+              <MoreHorizontal className="w-4 h-4 text-gray-400" />
+            </div>
+          )
         )}
       </div>
 

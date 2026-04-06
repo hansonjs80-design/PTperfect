@@ -197,6 +197,36 @@ const customStatusFromOption = (option: StatusOptionConfig): PatientCustomStatus
   order: option.order,
 });
 
+const CHOSEONG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+
+const normalizeStatusQuery = (value: string) => value.trim().normalize('NFC').toLowerCase();
+
+const getInitialConsonants = (value: string) => {
+  let result = '';
+  for (const char of value.normalize('NFC')) {
+    const code = char.charCodeAt(0);
+    if (code >= 0xac00 && code <= 0xd7a3) {
+      const choseongIndex = Math.floor((code - 0xac00) / 588);
+      result += CHOSEONG[choseongIndex] || char;
+    } else {
+      result += char;
+    }
+  }
+  return result.toLowerCase();
+};
+
+export const findMatchingStatusOption = (options: StatusOptionConfig[], rawQuery: string) => {
+  const query = normalizeStatusQuery(rawQuery);
+  if (!query) return null;
+  const initialQuery = getInitialConsonants(query);
+
+  return options.find((option) => {
+    const label = normalizeStatusQuery(option.label);
+    const initials = getInitialConsonants(option.label);
+    return label.startsWith(query) || initials.startsWith(initialQuery);
+  }) || null;
+};
+
 export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   visit,
   position,
@@ -221,8 +251,11 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   }, [visibleStatusOptions, visit]);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
+  const [typeaheadQuery, setTypeaheadQuery] = useState('');
   const pendingEnterIndexRef = useRef<number | null>(null);
   const didInitActiveIndexRef = useRef(false);
+  const typeaheadInputRef = useRef<HTMLInputElement>(null);
+  const isTypingCompositionRef = useRef(false);
 
   useEffect(() => {
     if (areStatusOptionsEqual(statusOptions, normalizedStatusOptions)) return;
@@ -260,9 +293,23 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
 
   useEffect(() => {
     if (isSettingsOpen) return;
-    buttonRefs.current[activeIndex]?.focus();
     pendingEnterIndexRef.current = activeIndex;
   }, [activeIndex, isSettingsOpen]);
+
+  useEffect(() => {
+    if (isSettingsOpen) return;
+    typeaheadInputRef.current?.focus();
+  }, [isSettingsOpen, position.x, position.y]);
+
+  useEffect(() => {
+    if (!typeaheadQuery) return;
+    const matched = findMatchingStatusOption(visibleStatusOptions, typeaheadQuery);
+    if (!matched) return;
+    const nextIndex = visibleStatusOptions.findIndex((option) => option.id === matched.id);
+    if (nextIndex < 0) return;
+    setActiveIndex(nextIndex);
+    pendingEnterIndexRef.current = nextIndex;
+  }, [typeaheadQuery, visibleStatusOptions]);
 
   const toggleSelection = useCallback((index: number) => {
     const option = visibleStatusOptions[index];
@@ -358,6 +405,11 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
       }
 
       if (e.key === 'Enter') {
+        if (isTypingCompositionRef.current) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
         const pendingIndex = pendingEnterIndexRef.current;
@@ -416,6 +468,26 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
         </>
       )}
     >
+      {!isSettingsOpen && (
+        <input
+          ref={typeaheadInputRef}
+          value={typeaheadQuery}
+          onChange={(e) => setTypeaheadQuery(e.target.value)}
+          onCompositionStart={() => {
+            isTypingCompositionRef.current = true;
+          }}
+          onCompositionEnd={(e) => {
+            isTypingCompositionRef.current = false;
+            setTypeaheadQuery(e.currentTarget.value);
+          }}
+          onBlur={() => {
+            requestAnimationFrame(() => typeaheadInputRef.current?.focus());
+          }}
+          className="absolute pointer-events-none opacity-0 w-px h-px"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+      )}
       {isSettingsOpen ? (
         <div className="flex flex-col gap-4 min-h-0">
           <div className="flex flex-col gap-2">
