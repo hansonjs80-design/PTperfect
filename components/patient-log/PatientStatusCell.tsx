@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState, useRef, memo } from 'react';
-import { MoreHorizontal } from 'lucide-react';
 import { PatientCustomStatus, PatientVisit } from '../../types';
 import { DEFAULT_STATUS_OPTIONS, findMatchingStatusOption, normalizeStatusOptions, STATUS_COLOR_OPTIONS, STATUS_OPTIONS_STORAGE_KEY, StatusOptionConfig, StatusSelectionMenu } from './StatusSelectionMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
@@ -549,9 +548,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
               />
             </div>
           ) : (
-            <div className="opacity-0 group-hover:opacity-50 transition-opacity">
-              <MoreHorizontal className="w-4 h-4 text-gray-400" />
-            </div>
+            <div className="w-full h-full" />
           )
         )}
       </div>
