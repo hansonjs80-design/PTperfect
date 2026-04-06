@@ -383,10 +383,10 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
     const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey && !isHangulLikeKey(e.key);
-    const typedSeed = isPlainTypingKey ? e.key : (isHangulLikeKey(e.key) && e.key.length === 1 ? e.key : '');
+    const typedSeed = isPlainTypingKey ? e.key : '';
 
     if (!menuPos && (isPlainTypingKey || isIMEKey || isHangulLikeKey(e.key))) {
-      if (isPlainTypingKey || typedSeed) e.preventDefault();
+      if (isPlainTypingKey) e.preventDefault();
       e.stopPropagation();
       beginTypedStatusEntry(typedSeed);
       return;
