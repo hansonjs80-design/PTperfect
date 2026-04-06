@@ -486,6 +486,9 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
           setTypedQuery('');
         });
       }}
+      onDoubleClick={(e) => {
+        executeInteraction(e);
+      }}
       className={className}
       style={{ caretColor: isTypingQuery ? undefined : 'transparent' }}
     />
@@ -550,7 +553,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
               {renderTypedStatusInput(
                 isTypingQuery
                   ? 'min-w-[1.75ch] max-w-[84px] bg-transparent outline-none border-none text-[13px] font-black text-slate-600 dark:text-slate-200 px-1 py-0.5'
-                  : 'absolute pointer-events-none opacity-0 w-px h-px'
+                  : 'w-[1px] min-w-[1px] bg-transparent outline-none border-none text-transparent px-0 py-0'
               )}
             </div>
           </div>
@@ -559,7 +562,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
             {renderTypedStatusInput(
               isTypingQuery
                 ? 'w-full bg-transparent outline-none border-none text-[13px] font-black text-slate-600 dark:text-slate-200 px-1 py-0.5'
-                : 'absolute pointer-events-none opacity-0 w-px h-px'
+                : 'w-full bg-transparent outline-none border-none text-transparent px-1 py-0.5'
             )}
             {!isTypingQuery && <div className="w-full h-full" />}
           </div>
