@@ -690,12 +690,14 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         onMouseDown={(e) => {
           if (e.button !== 0) return;
           cellRef.current?.focus();
+          if (e.shiftKey) return;
           if (!menuPos && !selectedStatusKeyRef.current) {
             focusTypedStatusInput();
           }
         }}
-        onClick={() => {
+        onClick={(e) => {
           cellRef.current?.focus();
+          if (e.shiftKey) return;
           if (!menuPos && !selectedStatusKeyRef.current) {
             focusTypedStatusInput();
           }
