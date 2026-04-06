@@ -41,6 +41,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const typedQueryInputRef = useRef<HTMLInputElement>(null);
   const typedQueryCompositionRef = useRef(false);
   const [typedQuery, setTypedQuery] = useState('');
+  const [isTypingQuery, setIsTypingQuery] = useState(false);
   const { handleGridKeyDown } = useGridNavigation(11);
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
   const isEditingTypedInputTarget = (target: EventTarget | null) =>
@@ -101,6 +102,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
   const beginTypedStatusEntry = (seed = '') => {
     updateSelectedStatusKey(null);
+    setIsTypingQuery(true);
     setTypedQuery(seed);
     requestAnimationFrame(() => {
       const input = typedQueryInputRef.current;
@@ -114,6 +116,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
   const applyTypedStatusQuery = async () => {
     const query = (typedQueryInputRef.current?.value ?? typedQuery).trim();
     if (!query) {
+      setIsTypingQuery(false);
       setTypedQuery('');
       cellRef.current?.focus();
       return;
@@ -129,6 +132,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       }
     }
 
+    setIsTypingQuery(false);
     setTypedQuery('');
     requestAnimationFrame(() => cellRef.current?.focus());
   };
@@ -197,10 +201,13 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
     const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
-    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey && !isHangulLikeKey(e.key);
+    const isHangulKey = isHangulLikeKey(e.key);
+    const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey && !isHangulKey;
 
-    if (!menuPos && (isIMEKey || isPlainTypingKey || isHangulLikeKey(e.key))) {
-      e.preventDefault();
+    if (!menuPos && (isIMEKey || isPlainTypingKey || isHangulKey)) {
+      if (isPlainTypingKey) {
+        e.preventDefault();
+      }
       e.stopPropagation();
       beginTypedStatusEntry(isPlainTypingKey ? e.key : '');
       return;
@@ -220,6 +227,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     if (!menuPos && e.key === 'Escape' && typedQuery) {
       e.preventDefault();
       e.stopPropagation();
+      setIsTypingQuery(false);
       setTypedQuery('');
       cellRef.current?.focus();
       return;
@@ -432,6 +440,10 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         onTouchEnd={handleTouchEnd}
         onKeyDownCapture={handleKeyDownCapture}
         onKeyDown={handleKeyDown}
+        onCompositionStartCapture={(e) => {
+          if (menuPos || isEditingTypedInputTarget(e.target)) return;
+          beginTypedStatusEntry('');
+        }}
         tabIndex={0}
         data-grid-id={gridId}
         data-status-pill-selected={selectedStatusKey ? 'true' : 'false'}
@@ -457,7 +469,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                   {item.label}
                 </span>
               ))}
-              {typedQuery && (
+              {isTypingQuery && (
                 <input
                   ref={typedQueryInputRef}
                   data-status-typed-input="true"
@@ -485,6 +497,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                     if (e.key === 'Escape') {
                       e.preventDefault();
                       e.stopPropagation();
+                      setIsTypingQuery(false);
                       setTypedQuery('');
                       requestAnimationFrame(() => cellRef.current?.focus());
                       return;
@@ -494,6 +507,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                     requestAnimationFrame(() => {
                       const active = document.activeElement as HTMLElement | null;
                       if (active && cellRef.current?.contains(active)) return;
+                      setIsTypingQuery(false);
                       setTypedQuery('');
                     });
                   }}
@@ -503,7 +517,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
             </div>
           </div>
         ) : (
-          typedQuery ? (
+          isTypingQuery ? (
             <div className="w-full px-1.5 py-0 flex items-center justify-start">
               <input
                 ref={typedQueryInputRef}
@@ -532,6 +546,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                   if (e.key === 'Escape') {
                     e.preventDefault();
                     e.stopPropagation();
+                    setIsTypingQuery(false);
                     setTypedQuery('');
                     requestAnimationFrame(() => cellRef.current?.focus());
                     return;
@@ -541,6 +556,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                   requestAnimationFrame(() => {
                     const active = document.activeElement as HTMLElement | null;
                     if (active && cellRef.current?.contains(active)) return;
+                    setIsTypingQuery(false);
                     setTypedQuery('');
                   });
                 }}
