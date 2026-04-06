@@ -1579,7 +1579,7 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
 
         return (
         <div data-modal-overlay="true" className="fixed inset-0 z-[120] bg-slate-950/40 backdrop-blur-[3px] flex items-center justify-center p-3" onClick={() => resetSearchModal()}>
-          <div className="w-full max-w-[1120px] bg-white dark:bg-slate-900 rounded-[20px] border border-slate-200 dark:border-slate-700 shadow-[0_24px_80px_rgba(15,23,42,0.22)] max-h-[94vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-[1230px] bg-white dark:bg-slate-900 rounded-[20px] border border-slate-200 dark:border-slate-700 shadow-[0_24px_80px_rgba(15,23,42,0.22)] max-h-[94vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-3 bg-slate-50/95 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700 shrink-0">
               <div className="flex items-center gap-2.5">
