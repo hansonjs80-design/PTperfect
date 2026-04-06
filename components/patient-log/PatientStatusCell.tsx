@@ -60,6 +60,41 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     const chars = Array.from(value);
     let result = '';
 
+    const mergeTrailingFinalIntoPrevious = (currentIndex: number) => {
+      const current = chars[currentIndex];
+      if (!CHO_INDEX.has(current) || !result) return null;
+
+      const lastChar = result[result.length - 1];
+      const lastCode = lastChar.charCodeAt(0);
+      if (lastCode < 0xac00 || lastCode > 0xd7a3) return null;
+
+      const syllableIndex = lastCode - 0xac00;
+      const cho = Math.floor(syllableIndex / 588);
+      const jung = Math.floor((syllableIndex % 588) / 28);
+      const jong = syllableIndex % 28;
+      if (jong !== 0) return null;
+
+      const next = chars[currentIndex + 1];
+      const nextStartsVowel = !!next && (JUNG_INDEX.has(next) || !!COMPLEX_VOWEL_MAP[`${next}${chars[currentIndex + 2] || ''}`]);
+      if (nextStartsVowel) return null;
+
+      let mergedFinal = current;
+      let consumed = 1;
+      const after = chars[currentIndex + 1];
+      const complexFinal = current && after ? COMPLEX_FINAL_MAP[`${current}${after}`] : undefined;
+      const afterStartsVowel = !!chars[currentIndex + 2] && (JUNG_INDEX.has(chars[currentIndex + 2]) || !!COMPLEX_VOWEL_MAP[`${chars[currentIndex + 2]}${chars[currentIndex + 3] || ''}`]);
+      if (complexFinal && !afterStartsVowel) {
+        mergedFinal = complexFinal;
+        consumed = 2;
+      }
+
+      const jongIndex = JONG_INDEX.get(mergedFinal);
+      if (jongIndex == null) return null;
+
+      result = result.slice(0, -1) + String.fromCharCode(0xac00 + cho * 588 + jung * 28 + jongIndex);
+      return consumed;
+    };
+
     const readVowel = (start: number) => {
       const first = chars[start];
       const next = chars[start + 1];
@@ -72,6 +107,12 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
 
     for (let i = 0; i < chars.length;) {
       const current = chars[i];
+      const mergedTrailingFinalLength = mergeTrailingFinalIntoPrevious(i);
+      if (mergedTrailingFinalLength) {
+        i += mergedTrailingFinalLength;
+        continue;
+      }
+
       const choIndex = CHO_INDEX.get(current);
       const next = chars[i + 1];
       const nextIsVowel = next ? JUNG_INDEX.has(next) || !!COMPLEX_VOWEL_MAP[`${next}${chars[i + 2] || ''}`] : false;
