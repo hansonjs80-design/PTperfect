@@ -64,6 +64,13 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     });
   };
 
+  const focusInputAt = (start: number, end: number = start) => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.focus();
+    input.setSelectionRange(start, end);
+  };
+
   const sanitizeInputValue = (raw: string) => {
     const upperCased = forceUpperCase ? raw.toUpperCase() : raw;
     if (!koreanOnly) return upperCased;
@@ -151,6 +158,10 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const handleOptionClick = (shouldSkipSync: boolean) => {
     skipSyncRef.current = shouldSkipSync;
     setMode('edit');
+    queueMicrotask(() => {
+      const end = inputRef.current?.value.length ?? 0;
+      focusInputAt(end, end);
+    });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,8 +298,8 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
           setMode('edit');
         });
 
+        focusInputAt(0, inputRef.current?.value.length ?? String(value ?? '').length);
         requestAnimationFrame(() => {
-          inputRef.current?.focus();
           inputRef.current?.select();
         });
         return;
@@ -313,10 +324,10 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
           setLocalValue(nextValue);
         });
 
+        const end = nextValue.length;
+        focusInputAt(end, end);
         requestAnimationFrame(() => {
-          inputRef.current?.focus();
-          const end = nextValue.length;
-          inputRef.current?.setSelectionRange(end, end);
+          focusInputAt(end, end);
         });
         return;
       }
@@ -329,9 +340,9 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
           setMode('edit');
           setLocalValue('');
         });
+        focusInputAt(0, 0);
         requestAnimationFrame(() => {
-          inputRef.current?.focus();
-          inputRef.current?.setSelectionRange(0, 0);
+          focusInputAt(0, 0);
         });
         return;
       }

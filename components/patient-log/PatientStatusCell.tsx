@@ -245,6 +245,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     updateSelectedStatusKey(null);
     setIsTypingQuery(true);
     setTypedQuery(seed);
+    focusTypedStatusInput();
     requestAnimationFrame(() => {
       focusTypedStatusInput();
     });
