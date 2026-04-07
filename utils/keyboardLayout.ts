@@ -30,7 +30,16 @@ export const normalizeUpperEnglishKeyInput = (raw: string): string => {
 export const normalizeKoreanKeyInput = (raw: string): string => {
   if (!raw) return '';
   return Array.from(raw)
-    .map((char) => ENGLISH_TO_KOREAN_KEY_MAP[char] ?? char)
+    .map((char) => {
+      const mapped = ENGLISH_TO_KOREAN_KEY_MAP[char];
+      if (mapped) return mapped;
+
+      if (/[A-Z]/.test(char)) {
+        return ENGLISH_TO_KOREAN_KEY_MAP[char.toLowerCase()] ?? char;
+      }
+
+      return char;
+    })
     .join('');
 };
 
