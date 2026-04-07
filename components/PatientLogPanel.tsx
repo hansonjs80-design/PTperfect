@@ -10,6 +10,7 @@ import { BedStatus, PatientCustomStatus, PatientVisit, TreatmentStep, QuickTreat
 import { isOnlineMode, supabase } from '../lib/supabase';
 import { findExactPresetByTreatmentString, generateTreatmentString, parseTreatmentString } from '../utils/bedUtils';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { safeGetItem, safeKeys } from '../utils/safeStorage';
 import { DEFAULT_STATUS_OPTIONS, normalizeStatusOptions, STATUS_COLOR_OPTIONS, STATUS_OPTIONS_STORAGE_KEY, type StatusOptionConfig } from './patient-log/StatusSelectionMenu';
 
 const VISIT_CACHE_PREFIX = 'physio-visits-v2-';
@@ -991,11 +992,11 @@ export const PatientLogPanel: React.FC<PatientLogPanelProps> = ({ onClose }) => 
         return;
       }
 
-      const keys = Object.keys(window.localStorage).filter((k) => k.startsWith(VISIT_CACHE_PREFIX) && k !== `${VISIT_CACHE_PREFIX}${currentDate}`);
+      const keys = safeKeys().filter((k) => k.startsWith(VISIT_CACHE_PREFIX) && k !== `${VISIT_CACHE_PREFIX}${currentDate}`);
       const merged: PatientVisit[] = [];
       keys.forEach((k) => {
         try {
-          const raw = window.localStorage.getItem(k);
+          const raw = safeGetItem(k);
           if (!raw) return;
           const parsed = JSON.parse(raw);
           if (!Array.isArray(parsed)) return;

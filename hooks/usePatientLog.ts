@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, isOnlineMode } from '../lib/supabase';
 import { PatientVisit } from '../types';
 import { useLocalStorage } from './useLocalStorage';
+import { safeGetItem, safeKeys, safeRemoveItem, safeSetItem } from '../utils/safeStorage';
 
 /** 폴링 간격 (ms) */
 const POLL_INTERVAL = 5000;
@@ -44,9 +45,9 @@ export const usePatientLog = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      Object.keys(window.localStorage).forEach((key) => {
+      safeKeys().forEach((key) => {
         if (key.startsWith('physio-visits-') && !key.startsWith(VISIT_CACHE_PREFIX)) {
-          window.localStorage.removeItem(key);
+          safeRemoveItem(key);
         }
       });
     } catch (error) {
@@ -56,7 +57,7 @@ export const usePatientLog = () => {
 
   const saveToLocalCache = (date: string, data: PatientVisit[]) => {
     try {
-      window.localStorage.setItem(getStorageKey(date), JSON.stringify(data));
+      safeSetItem(getStorageKey(date), JSON.stringify(data));
     } catch (e) {
       console.warn('LocalStorage save failed', e);
     }
@@ -68,7 +69,7 @@ export const usePatientLog = () => {
     setIsLoading(true);
 
     // A. Load from Local Cache first
-    const cached = window.localStorage.getItem(dateKey);
+    const cached = safeGetItem(dateKey);
     if (cached && cached !== "undefined" && cached !== "null" && cached.trim() !== "") {
       try {
         const parsed = JSON.parse(cached);

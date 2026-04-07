@@ -1,4 +1,5 @@
 import { queueGuideSpeech } from './alarmSpeech';
+import { safeGetItem, safeSetItem } from './safeStorage';
 
 const GUIDE_SPEECH_REPEAT_KEY = 'guide_speech_repeat_count';
 const DEFAULT_GUIDE_SPEECH_REPEAT = 2;
@@ -6,7 +7,7 @@ const DEFAULT_GUIDE_SPEECH_REPEAT = 2;
 export const getGuideSpeechRepeatCount = (): number => {
   if (typeof window === 'undefined') return DEFAULT_GUIDE_SPEECH_REPEAT;
 
-  const raw = window.localStorage.getItem(GUIDE_SPEECH_REPEAT_KEY);
+  const raw = safeGetItem(GUIDE_SPEECH_REPEAT_KEY);
   const parsed = Number(raw);
   if (!Number.isFinite(parsed)) return DEFAULT_GUIDE_SPEECH_REPEAT;
 
@@ -16,7 +17,7 @@ export const getGuideSpeechRepeatCount = (): number => {
 export const setGuideSpeechRepeatCount = (count: number) => {
   if (typeof window === 'undefined') return;
   const normalized = Math.min(5, Math.max(1, Math.floor(count)));
-  window.localStorage.setItem(GUIDE_SPEECH_REPEAT_KEY, String(normalized));
+  safeSetItem(GUIDE_SPEECH_REPEAT_KEY, String(normalized));
 };
 
 

@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { Wifi, RefreshCw, Link, ShieldCheck } from 'lucide-react';
 import { isOnlineMode, testSupabaseConnection, saveSupabaseConfig, clearSupabaseConfig } from '../../lib/supabase';
+import { safeGetItem } from '../../utils/safeStorage';
 
 const DEFAULT_SB_URL = 'https://qqbjtuwwzwtkjgblwyso.supabase.co';
 const DEFAULT_SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxYmp0dXd3end0a2pnYmx3eXNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NzE4ODAsImV4cCI6MjA4NjE0Nzg4MH0.qtQ2dxmEHi0eYyVsmxgB2mlo_W039cNmaMa1pDq_zAY';
 
 export const ConnectionConfig: React.FC = () => {
-  const [sbUrl, setSbUrl] = useState(window.localStorage.getItem('sb_url') || DEFAULT_SB_URL);
-  const [sbKey, setSbKey] = useState(window.localStorage.getItem('sb_key') || DEFAULT_SB_KEY);
+  const [sbUrl, setSbUrl] = useState(() => safeGetItem('sb_url') || DEFAULT_SB_URL);
+  const [sbKey, setSbKey] = useState(() => safeGetItem('sb_key') || DEFAULT_SB_KEY);
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);

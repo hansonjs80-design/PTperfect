@@ -1,5 +1,6 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { safeGetItem, safeSetItem } from '../utils/safeStorage';
 
 const MIN_COL_WIDTH = 24;
 const MIN_COL_WIDTH_BY_INDEX: Record<number, number> = {
@@ -129,10 +130,10 @@ const applyDefaultWidthProfile = (widths: number[]) => {
 export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | null>) {
   const [columnWidths, setColumnWidths] = useState<number[] | null>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = safeGetItem(STORAGE_KEY);
       if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed.map((w, i) => clampWidthByIndex(Number(w) || 0, i));
         }
       }
@@ -252,7 +253,7 @@ export function useColumnResize(tableRef: React.RefObject<HTMLTableElement | nul
       // Persist column widths to localStorage
       const current = widthsRef.current;
       if (current) {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(current)); } catch { /* ignore */ }
+        safeSetItem(STORAGE_KEY, JSON.stringify(current));
       }
     };
 

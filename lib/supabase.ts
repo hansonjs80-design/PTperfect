@@ -1,5 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
+import { safeGetItem, safeRemoveItem, safeSetItem } from '../utils/safeStorage';
 
 // Prioritize Environment Variables for Production (Vercel)
 // Use optional chaining for import.meta.env to prevent crashes in non-Vite envs if ever needed
@@ -12,16 +13,10 @@ const DEFAULT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 // Check Local Storage first, then Env Vars, then Hardcoded defaults
 const getStoredConfig = () => {
-  if (typeof window !== 'undefined') {
-    try {
-      const storedUrl = window.localStorage.getItem('sb_url');
-      const storedKey = window.localStorage.getItem('sb_key');
-      if (storedUrl && storedKey) {
-        return { url: storedUrl, key: storedKey };
-      }
-    } catch (e) {
-      console.warn('LocalStorage access failed', e);
-    }
+  const storedUrl = safeGetItem('sb_url');
+  const storedKey = safeGetItem('sb_key');
+  if (storedUrl && storedKey) {
+    return { url: storedUrl, key: storedKey };
   }
   
   // Use Env vars if available, otherwise default
@@ -44,16 +39,16 @@ export const isOnlineMode = () => !!supabase;
 // Helper to save config (triggers reload)
 export const saveSupabaseConfig = (url: string, key: string) => {
   if (typeof window !== 'undefined') {
-    window.localStorage.setItem('sb_url', url);
-    window.localStorage.setItem('sb_key', key);
+    safeSetItem('sb_url', url);
+    safeSetItem('sb_key', key);
     window.location.reload(); // Reload to re-initialize client
   }
 };
 
 export const clearSupabaseConfig = () => {
   if (typeof window !== 'undefined') {
-    window.localStorage.removeItem('sb_url');
-    window.localStorage.removeItem('sb_key');
+    safeRemoveItem('sb_url');
+    safeRemoveItem('sb_key');
     window.location.reload();
   }
 };
