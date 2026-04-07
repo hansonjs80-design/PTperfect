@@ -661,11 +661,13 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         const currentValue = (typedQueryInputRef.current?.value ?? typedQuery).trim();
         if (
           !typedQueryCompositionRef.current &&
-          !currentValue &&
           ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)
         ) {
           e.preventDefault();
           e.stopPropagation();
+          setIsTypingQuery(false);
+          setTypedQuery('');
+          typedQueryInputRef.current?.blur();
           requestAnimationFrame(() => cellRef.current?.focus());
           handleGridKeyDown(e, rowIndex, colIndex);
           return;
