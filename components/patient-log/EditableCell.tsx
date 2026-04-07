@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import { Edit3, RefreshCw } from 'lucide-react';
 import { ContextMenu } from '../common/ContextMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
+import { normalizeKoreanKeyInput } from '../../utils/keyboardLayout';
 
 interface EditableCellProps {
   value: string | number | null;
@@ -74,7 +75,8 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const sanitizeInputValue = (raw: string) => {
     const upperCased = forceUpperCase ? raw.toUpperCase() : raw;
     if (!koreanOnly) return upperCased;
-    return upperCased.replace(/[^\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3\s]/g, '');
+    const normalizedKorean = normalizeKoreanKeyInput(upperCased);
+    return normalizedKorean.replace(/[^\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3\s]/g, '');
   };
 
   const normalizeSuggestion = (text: string) => text.trim().normalize('NFD').toLocaleLowerCase();
