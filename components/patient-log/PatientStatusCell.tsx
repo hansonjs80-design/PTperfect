@@ -731,11 +731,6 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         onFocus={(e) => {
           if (e.target !== e.currentTarget) return;
           if (e.relatedTarget && cellRef.current?.contains(e.relatedTarget as Node)) return;
-          if (menuPos || selectedStatusKeyRef.current) return;
-
-          requestAnimationFrame(() => {
-            focusTypedStatusInput();
-          });
         }}
         onMouseDown={(e) => {
           if (e.button !== 0) return;
@@ -743,12 +738,8 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
             cellRef.current?.focus();
             return;
           }
+          e.preventDefault();
           updateSelectedStatusKey(null);
-          if (!menuPos && !selectedStatusKeyRef.current) {
-            e.preventDefault();
-            focusTypedStatusInput();
-            return;
-          }
           cellRef.current?.focus();
         }}
         onClick={(e) => {
@@ -757,10 +748,6 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
             return;
           }
           updateSelectedStatusKey(null);
-          if (!menuPos && !selectedStatusKeyRef.current) {
-            focusTypedStatusInput();
-            return;
-          }
           cellRef.current?.focus();
         }}
         onBlur={(e) => {
