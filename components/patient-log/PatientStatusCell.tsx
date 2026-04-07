@@ -251,6 +251,12 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     });
   };
 
+  const syncTypedQueryValue = (rawValue: string, composing = false) => {
+    const nextValue = composing ? rawValue : composeStatusHangul(rawValue);
+    setTypedQuery(nextValue);
+    setIsTypingQuery(!!nextValue);
+  };
+
   const applyTypedStatusQuery = async () => {
     const query = composeStatusHangul(typedQueryInputRef.current?.value ?? typedQuery).trim();
     if (!query) {
@@ -636,10 +642,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       data-status-typed-input="true"
       value={typedQuery}
       onChange={(e) => {
-        setTypedQuery(e.target.value);
-        if (!isTypingQuery && e.target.value) {
-          setIsTypingQuery(true);
-        }
+        syncTypedQueryValue(e.target.value, typedQueryCompositionRef.current);
       }}
       onCompositionStart={(e) => {
         typedQueryCompositionRef.current = true;
@@ -650,8 +653,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       onCompositionEnd={(e) => {
         typedQueryCompositionRef.current = false;
         const nextValue = e.currentTarget.value;
-        setTypedQuery(nextValue);
-        setIsTypingQuery(!!nextValue);
+        syncTypedQueryValue(nextValue);
         if (pendingTypedQueryApplyRef.current) {
           requestAnimationFrame(() => {
             void applyTypedStatusQuery();
