@@ -659,6 +659,18 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       }}
       onKeyDown={(e) => {
         const currentValue = (typedQueryInputRef.current?.value ?? typedQuery).trim();
+        if (
+          !typedQueryCompositionRef.current &&
+          !currentValue &&
+          ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          requestAnimationFrame(() => cellRef.current?.focus());
+          handleGridKeyDown(e, rowIndex, colIndex);
+          return;
+        }
+
         if (e.key === 'Backspace' || e.key === 'Delete') {
           if (!currentValue) {
             e.preventDefault();
