@@ -61,7 +61,7 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
           차트 번호
           {handle(1)}
         </th>
-        <th className={`${thBase} w-[44px] md:w-[76px] xl:w-[60px] relative`}>
+        <th className={`${thBase} w-[31px] md:w-[53px] xl:w-[42px] relative`}>
           이름
           {handle(2)}
         </th>
