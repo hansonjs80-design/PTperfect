@@ -274,24 +274,40 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
+    const isHangulLikeKey = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key);
 
     if (directEdit && !isDirectEditing && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      const isPrintableKey = e.key.length === 1 || isIMEKey;
+      if (isIMEKey || isHangulLikeKey) {
+        e.stopPropagation();
+        skipSyncRef.current = !syncOnDirectEdit;
+        navIntentRef.current = null;
+        shouldReplaceOnCompositionRef.current = false;
+        flushSync(() => {
+          setMode('edit');
+        });
+
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+          const end = inputRef.current?.value.length ?? String(value ?? '').length;
+          inputRef.current?.setSelectionRange(end, end);
+        });
+        return;
+      }
+
+      const isPrintableKey = e.key.length === 1;
 
       if (isPrintableKey) {
-        const nextValue = isIMEKey ? '' : sanitizeInputValue(e.key);
-        if (!isIMEKey && nextValue.length === 0) {
+        const nextValue = sanitizeInputValue(e.key);
+        if (nextValue.length === 0) {
           e.preventDefault();
           e.stopPropagation();
           return;
         }
-        if (!isIMEKey) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
+        e.preventDefault();
+        e.stopPropagation();
         skipSyncRef.current = !syncOnDirectEdit;
         navIntentRef.current = null;
-        shouldReplaceOnCompositionRef.current = isIMEKey;
+        shouldReplaceOnCompositionRef.current = false;
         flushSync(() => {
           setMode('edit');
           setLocalValue(nextValue);
