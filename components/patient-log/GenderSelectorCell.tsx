@@ -134,7 +134,7 @@ export const GenderSelectorCell: React.FC<GenderSelectorCellProps> = ({
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         onKeyDown={handleKeyDown}
-        className="w-full h-full min-h-[32px] flex items-center justify-center cursor-default outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 hover:bg-slate-200/55 dark:hover:bg-slate-700/70 transition-all duration-150"
+        className="w-full h-full min-h-[32px] flex items-center justify-center cursor-default outline-none focus:outline-none focus:ring-0 focus:z-10 hover:bg-slate-200/55 dark:hover:bg-slate-700/70 transition-all duration-150"
         title="더블클릭하여 성별 선택"
       >
         <span className={`text-[12px] sm:text-[13px] font-black transition-transform duration-150 group-hover:scale-[1.05] transform-gpu ${value ? 'text-slate-700 dark:text-slate-200' : 'text-gray-300 dark:text-gray-600'}`}>

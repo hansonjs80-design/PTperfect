@@ -1009,7 +1009,7 @@ export const PatientLogRow: React.FC<PatientLogRowProps> = memo(({
 
       <td data-grid-cell-id={`${rowIndex}-9`} className={`${cellBorderClass} p-0 ${showTimerColumn ? "" : "hidden"}`}>
         <div
-          className="w-full h-full min-h-[32px] flex items-center justify-center px-1 text-[11px] sm:text-[12px] font-black tracking-tight"
+          className="w-full h-full min-h-[32px] flex items-center justify-center px-1 text-[11px] sm:text-[12px] font-black tracking-tight outline-none focus:outline-none focus:ring-0"
           data-grid-id={`${rowIndex}-9`}
           tabIndex={0}
           onKeyDown={(e) => {

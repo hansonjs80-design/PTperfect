@@ -972,7 +972,7 @@ export const TreatmentSelectorCell: React.FC<TreatmentSelectorCellProps> = ({
         onCompositionEndCapture={handleCompositionEndCapture}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] min-h-[28px] relative rounded-[1px] outline-none focus:outline-none focus-within:outline-none focus:z-10 focus-within:z-10 focus:bg-sky-500/5 focus-within:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] focus-within:shadow-[inset_0_0_0_2px_rgb(14_165_233)]"
+        className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] min-h-[28px] relative rounded-[1px] outline-none focus:outline-none focus-within:outline-none focus:ring-0 focus-within:ring-0 focus:z-10 focus-within:z-10"
       >
         <div
           className={`flex items-center w-full h-full px-2 transition-all duration-150 relative ${isReadOnly ? 'cursor-not-allowed bg-gray-50/80 dark:bg-slate-800/40' : 'cursor-pointer hover:bg-slate-200/55 dark:hover:bg-slate-700/55'} rounded-[1px]`}

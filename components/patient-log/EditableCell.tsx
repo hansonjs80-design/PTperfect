@@ -495,7 +495,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
             ${(directEdit && mode !== 'edit') ? 'cursor-default select-none caret-transparent' : 'cursor-pointer'} hover:bg-slate-200/55 dark:hover:bg-slate-700/70 transition-all duration-150 text-sm truncate group-hover:scale-[1.03] transform-gpu
             ${mode === 'edit'
               ? 'focus:outline-none focus:ring-0 focus:bg-transparent dark:focus:bg-transparent'
-              : 'focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10 focus:bg-transparent dark:focus:bg-transparent'}
+              : 'focus:outline-none focus:ring-0 focus:z-10 focus:bg-transparent dark:focus:bg-transparent'}
             ${!localValue ? 'placeholder-gray-300 italic' : ''} ${className}
           `}
           title={directEdit ? '클릭: 셀 선택 / 더블클릭: 수정' : '클릭하여 옵션 열기'}

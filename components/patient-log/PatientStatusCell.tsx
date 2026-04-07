@@ -724,7 +724,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     <>
       <div
         ref={cellRef}
-        className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-start cursor-pointer hover:bg-slate-200/55 dark:hover:bg-slate-700/70 transition-all duration-150 group outline-none focus:outline focus:outline-2 focus:outline-sky-400 focus:outline-offset-[-1px] focus:z-10"
+        className="w-[calc(100%-4px)] h-[calc(100%-4px)] m-[2px] rounded-[1px] flex items-center justify-start cursor-pointer hover:bg-slate-200/55 dark:hover:bg-slate-700/70 transition-all duration-150 group outline-none focus:outline-none focus:ring-0 focus:z-10"
         onFocus={(e) => {
           if (e.target !== e.currentTarget) return;
           if (e.relatedTarget && cellRef.current?.contains(e.relatedTarget as Node)) return;

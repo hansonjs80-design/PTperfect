@@ -194,7 +194,7 @@ export const AuthorSelectorCell: React.FC<AuthorSelectorCellProps> = ({
     <>
       <div
         ref={cellRef}
-        className={`absolute inset-px px-1.5 flex items-center justify-center text-center cursor-pointer rounded-[1px] hover:bg-slate-200/55 dark:hover:bg-slate-700/70 transition-all duration-150 group outline-none focus:outline-none focus:z-10 focus:bg-sky-500/5 focus:shadow-[inset_0_0_0_2px_rgb(14_165_233)] ${isDraft ? 'opacity-50 hover:opacity-100' : ''}`}
+        className={`absolute inset-px px-1.5 flex items-center justify-center text-center cursor-pointer rounded-[1px] hover:bg-slate-200/55 dark:hover:bg-slate-700/70 transition-all duration-150 group outline-none focus:outline-none focus:ring-0 focus:z-10 ${isDraft ? 'opacity-50 hover:opacity-100' : ''}`}
         onMouseDown={(e) => {
           if (e.button !== 0) return;
           cellRef.current?.focus();
