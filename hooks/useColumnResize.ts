@@ -9,7 +9,7 @@ const MIN_COL_WIDTH_BY_INDEX: Record<number, number> = {
 };
 const MAX_COL_WIDTH_BY_INDEX: Record<number, number> = {};
 export const FLEX_COL_INDEX = -1; // 강제 채움 비활성화: 컬럼 리사이즈는 실제 너비를 유지
-const STORAGE_KEY = 'physio-column-widths-v18';
+const STORAGE_KEY = 'physio-column-widths-v19';
 
 const getMinWidthByIndex = (index: number) => {
   if (index === 7 && typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
@@ -29,6 +29,8 @@ const CHART_NUMBER_COL_INDEX = 1;
 const CHART_NUMBER_DEFAULT_WIDTH_FACTOR = 0.392;
 const PATIENT_NAME_COL_INDEX = 2;
 const PATIENT_NAME_DEFAULT_WIDTH_FACTOR = 0.56;
+const GENDER_COL_INDEX = 3;
+const GENDER_DEFAULT_WIDTH_FACTOR = 0.8;
 const BODY_PART_COL_INDEX = 4;
 const BODY_PART_DEFAULT_WIDTH_FACTOR = 0.8;
 const TREATMENT_COL_INDEX = 5;
@@ -85,6 +87,12 @@ const applyDefaultWidthProfile = (widths: number[]) => {
     next[PATIENT_NAME_COL_INDEX] = clampWidthByIndex(
       next[PATIENT_NAME_COL_INDEX] * PATIENT_NAME_DEFAULT_WIDTH_FACTOR,
       PATIENT_NAME_COL_INDEX
+    );
+  }
+  if (next[GENDER_COL_INDEX] > 0) {
+    next[GENDER_COL_INDEX] = clampWidthByIndex(
+      next[GENDER_COL_INDEX] * GENDER_DEFAULT_WIDTH_FACTOR,
+      GENDER_COL_INDEX
     );
   }
   if (next[BODY_PART_COL_INDEX] > 0) {
