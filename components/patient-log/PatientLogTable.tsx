@@ -218,6 +218,28 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
   const [statusOptions] = useLocalStorage<StatusOptionConfig[]>(STATUS_OPTIONS_STORAGE_KEY, DEFAULT_STATUS_OPTIONS);
   const normalizedStatusOptions = normalizeStatusOptions(statusOptions);
   const [totalRows, setTotalRows] = useState(120);
+
+  useEffect(() => {
+    const styleId = 'patient-log-grid-focus-reset';
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      [data-grid-id]:focus,
+      [data-grid-id]:focus-visible,
+      [data-grid-id] *:focus,
+      [data-grid-id] *:focus-visible {
+        outline: none !important;
+        box-shadow: none !important;
+      }
+    `;
+
+    document.head.appendChild(style);
+    return () => {
+      style.remove();
+    };
+  }, []);
   const [selection, setSelection] = useState<GridSelection>(null);
   const [clipboardSelection, setClipboardSelection] = useState<{ selection: GridSelection; mode: 'copy' | 'cut' } | null>(null);
   const [rowHeaderMenu, setRowHeaderMenu] = useState<{ row: number; rows: number[]; x: number; y: number } | null>(null);
