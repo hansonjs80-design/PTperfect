@@ -491,6 +491,11 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     'data-grid-id': gridId,
     placeholder: placeholder,
     'data-direct-editing': isDirectEditing ? 'true' : 'false',
+    lang: koreanOnly ? 'ko' : undefined,
+    inputMode: 'text' as const,
+    autoCapitalize: 'off' as const,
+    autoCorrect: 'off' as const,
+    spellCheck: false,
   };
 
   return (
