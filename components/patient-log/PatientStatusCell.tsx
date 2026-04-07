@@ -384,12 +384,17 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
     const isHangulTypingKey = !e.ctrlKey && !e.metaKey && !e.altKey && isHangulLikeKey(e.key);
     const isPlainTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && !isIMEKey && !isHangulTypingKey;
-    const typedSeed = isPlainTypingKey || isHangulTypingKey ? e.key : '';
 
-    if (!menuPos && (isPlainTypingKey || isHangulTypingKey || isIMEKey)) {
-      if (isPlainTypingKey || isHangulTypingKey) e.preventDefault();
+    if (!menuPos && (isHangulTypingKey || isIMEKey)) {
       e.stopPropagation();
-      beginTypedStatusEntry(typedSeed);
+      focusTypedStatusInput();
+      return;
+    }
+
+    if (!menuPos && isPlainTypingKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      beginTypedStatusEntry(e.key);
       return;
     }
 
@@ -719,20 +724,29 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
         }}
         onMouseDown={(e) => {
           if (e.button !== 0) return;
-          cellRef.current?.focus();
-          if (e.shiftKey) return;
+          if (e.shiftKey) {
+            cellRef.current?.focus();
+            return;
+          }
           updateSelectedStatusKey(null);
           if (!menuPos && !selectedStatusKeyRef.current) {
+            e.preventDefault();
             focusTypedStatusInput();
+            return;
           }
+          cellRef.current?.focus();
         }}
         onClick={(e) => {
-          cellRef.current?.focus();
-          if (e.shiftKey) return;
+          if (e.shiftKey) {
+            cellRef.current?.focus();
+            return;
+          }
           updateSelectedStatusKey(null);
           if (!menuPos && !selectedStatusKeyRef.current) {
             focusTypedStatusInput();
+            return;
           }
+          cellRef.current?.focus();
         }}
         onBlur={(e) => {
           const nextFocus = e.relatedTarget as Node | null;
