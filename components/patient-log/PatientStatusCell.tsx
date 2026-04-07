@@ -251,14 +251,20 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     });
   };
 
+  const normalizeTypedStatusValue = (rawValue: string) => {
+    if (!rawValue) return '';
+    const nfcComposed = rawValue.normalize('NFC');
+    return composeStatusHangul(nfcComposed).normalize('NFC');
+  };
+
   const syncTypedQueryValue = (rawValue: string, composing = false) => {
-    const nextValue = composing ? rawValue : composeStatusHangul(rawValue);
+    const nextValue = composing ? rawValue : normalizeTypedStatusValue(rawValue);
     setTypedQuery(nextValue);
     setIsTypingQuery(!!nextValue);
   };
 
   const applyTypedStatusQuery = async () => {
-    const query = composeStatusHangul(typedQueryInputRef.current?.value ?? typedQuery).trim();
+    const query = normalizeTypedStatusValue(typedQueryInputRef.current?.value ?? typedQuery).trim();
     if (!query) {
       pendingTypedQueryApplyRef.current = false;
       setIsTypingQuery(false);
