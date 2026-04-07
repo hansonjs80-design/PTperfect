@@ -1018,13 +1018,6 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       return;
     }
 
-    const selectedWholeRows = getSelectedWholeRows();
-    if (isShortcut && e.key === 'ArrowDown' && selectedWholeRows.length > 0) {
-      e.preventDefault();
-      void handleMoveRowsToBottom(selectedWholeRows);
-      return;
-    }
-
     const bounds = normalizeSelectionBounds(selection);
     const anchor = bounds ? { row: bounds.rowMin, col: bounds.colMin } : null;
     const isStatusMenuOpen = document.body.dataset.patientStatusMenuOpen === 'true';
