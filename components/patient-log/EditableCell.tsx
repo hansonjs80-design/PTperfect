@@ -288,7 +288,27 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     const isHangulLikeKey = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key);
 
     if (directEdit && !isDirectEditing && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      if (isIMEKey || isHangulLikeKey) {
+      if (isHangulLikeKey) {
+        const nextValue = sanitizeInputValue(e.key);
+        e.preventDefault();
+        e.stopPropagation();
+        skipSyncRef.current = !syncOnDirectEdit;
+        navIntentRef.current = null;
+        shouldReplaceOnCompositionRef.current = false;
+        flushSync(() => {
+          setMode('edit');
+          setLocalValue(nextValue);
+        });
+
+        const end = nextValue.length;
+        focusInputAt(end, end);
+        requestAnimationFrame(() => {
+          focusInputAt(end, end);
+        });
+        return;
+      }
+
+      if (isIMEKey) {
         e.stopPropagation();
         skipSyncRef.current = !syncOnDirectEdit;
         navIntentRef.current = null;
