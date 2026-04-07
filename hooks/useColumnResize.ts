@@ -9,7 +9,7 @@ const MIN_COL_WIDTH_BY_INDEX: Record<number, number> = {
 };
 const MAX_COL_WIDTH_BY_INDEX: Record<number, number> = {};
 export const FLEX_COL_INDEX = -1; // 강제 채움 비활성화: 컬럼 리사이즈는 실제 너비를 유지
-const STORAGE_KEY = 'physio-column-widths-v13';
+const STORAGE_KEY = 'physio-column-widths-v14';
 
 const getMinWidthByIndex = (index: number) => {
   if (index === 7 && typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
@@ -27,7 +27,7 @@ const clampWidthByIndex = (width: number, index: number) => {
 
 
 const TREATMENT_COL_INDEX = 5;
-const TREATMENT_DEFAULT_WIDTH_FACTOR = 1.136;
+const TREATMENT_DEFAULT_WIDTH_FACTOR = 0.9088;
 const MOBILE_TREATMENT_WIDTH_FACTOR = TREATMENT_DEFAULT_WIDTH_FACTOR * 1.2;
 const STATUS_COL_INDEX = 6;
 const STATUS_DEFAULT_WIDTH_FACTOR = 1.2;
