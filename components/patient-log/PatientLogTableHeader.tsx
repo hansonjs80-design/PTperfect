@@ -61,7 +61,7 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
           차트 번호
           {handle(1)}
         </th>
-        <th className={`${thBase} w-[55px] md:w-[95px] xl:w-[75px] relative`}>
+        <th className={`${thBase} w-[44px] md:w-[76px] xl:w-[60px] relative`}>
           이름
           {handle(2)}
         </th>
@@ -69,15 +69,15 @@ export const PatientLogTableHeader: React.FC<PatientLogTableHeaderProps> = ({
           성별
           {handle(3)}
         </th>
-        <th className={`${thBase} w-[55px] md:w-[120px] xl:w-[105px] relative`}>
+        <th className={`${thBase} w-[44px] md:w-[96px] xl:w-[84px] relative`}>
           부위
           {handle(4)}
         </th>
-        <th className={`${thBase} w-[255px] md:w-[213px] xl:w-[213px] relative`}>
+        <th className={`${thBase} w-[204px] md:w-[170px] xl:w-[170px] relative`}>
           처방 목록
           {handle(5)}
         </th>
-        <th className={`${thBase} w-[96px] md:w-[132px] xl:w-[117px] relative`}>
+        <th className={`${thBase} w-[77px] md:w-[106px] xl:w-[94px] relative`}>
           추가 사항
           {handle(6)}
         </th>
