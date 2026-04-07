@@ -278,18 +278,18 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
 
     if (directEdit && !isDirectEditing && !e.ctrlKey && !e.metaKey && !e.altKey) {
       if (isIMEKey || isHangulLikeKey) {
+        e.preventDefault();
         e.stopPropagation();
         skipSyncRef.current = !syncOnDirectEdit;
         navIntentRef.current = null;
-        shouldReplaceOnCompositionRef.current = false;
+        shouldReplaceOnCompositionRef.current = true;
         flushSync(() => {
           setMode('edit');
         });
 
         requestAnimationFrame(() => {
           inputRef.current?.focus();
-          const end = inputRef.current?.value.length ?? String(value ?? '').length;
-          inputRef.current?.setSelectionRange(end, end);
+          inputRef.current?.select();
         });
         return;
       }
