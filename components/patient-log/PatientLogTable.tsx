@@ -226,12 +226,21 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
+      [data-patient-log-grid="true"]:focus,
+      [data-patient-log-grid="true"]:focus-visible,
+      [data-patient-log-grid="true"] :focus,
+      [data-patient-log-grid="true"] :focus-visible,
+      [data-grid-cell-id]:focus,
+      [data-grid-cell-id]:focus-visible,
+      [data-row-header-id]:focus,
+      [data-row-header-id]:focus-visible,
       [data-grid-id]:focus,
       [data-grid-id]:focus-visible,
       [data-grid-id] *:focus,
       [data-grid-id] *:focus-visible {
         outline: none !important;
         box-shadow: none !important;
+        border-color: inherit !important;
       }
     `;
 
