@@ -775,7 +775,7 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
       >
         {hasActiveStatus ? (
           <div className={`w-full min-h-0 px-1.5 ${isTypingQuery ? 'py-0.5 flex flex-col items-start justify-center gap-1' : 'py-0 flex items-center justify-start'}`}>
-            <div className="flex flex-wrap items-center justify-start gap-1 max-w-full">
+            <div className="flex flex-wrap items-center justify-start gap-1 max-w-full w-full">
               {activeStatusPills.map((item) => (
                 <span
                   key={item.key}
@@ -796,13 +796,12 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
                   {item.label}
                 </span>
               ))}
-              {!isTypingQuery && renderTypedStatusInput(
-                'w-[1px] min-w-[1px] bg-transparent outline-none border-none text-transparent px-0 py-0'
+              {renderTypedStatusInput(
+                isTypingQuery
+                  ? 'min-w-[96px] flex-1 bg-transparent outline-none border-none text-[13px] font-black text-slate-600 dark:text-slate-200 px-1 py-0.5'
+                  : 'w-[1px] min-w-[1px] bg-transparent outline-none border-none text-transparent px-0 py-0'
               )}
             </div>
-            {isTypingQuery && renderTypedStatusInput(
-              'w-full bg-transparent outline-none border-none text-[13px] font-black text-slate-600 dark:text-slate-200 px-1 py-0.5'
-            )}
           </div>
         ) : (
           <div className="w-full px-1.5 py-0 flex items-center justify-start">

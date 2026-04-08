@@ -260,6 +260,7 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
   const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
   const [typeaheadQuery, setTypeaheadQuery] = useState('');
   const pendingEnterIndexRef = useRef<number | null>(null);
+  const didExplicitToggleRef = useRef(false);
   const didInitActiveIndexRef = useRef(false);
   const typeaheadInputRef = useRef<HTMLInputElement>(null);
   const isTypingCompositionRef = useRef(false);
@@ -281,6 +282,10 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
     });
     setActiveKeys(next);
   }, [orderedStatusOptions, visit]);
+
+  useEffect(() => {
+    didExplicitToggleRef.current = false;
+  }, [position.x, position.y]);
 
   useEffect(() => {
     setActiveIndex((prev) => {
@@ -318,9 +323,12 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
     pendingEnterIndexRef.current = nextIndex;
   }, [typeaheadQuery, visibleStatusOptions]);
 
-  const toggleSelection = useCallback((index: number) => {
+  const toggleSelection = useCallback((index: number, markAsExplicit: boolean = true) => {
     const option = visibleStatusOptions[index];
     if (!option) return;
+    if (markAsExplicit) {
+      didExplicitToggleRef.current = true;
+    }
     pendingEnterIndexRef.current = null;
     setActiveKeys((prev) => {
       const next = new Set(prev);
@@ -420,10 +428,10 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
         e.preventDefault();
         e.stopPropagation();
         const pendingIndex = pendingEnterIndexRef.current;
-        if (pendingIndex !== null) {
+        if (!didExplicitToggleRef.current && pendingIndex !== null) {
           const option = visibleStatusOptions[pendingIndex];
           if (option && !activeKeys.has(option.id)) {
-            toggleSelection(pendingIndex);
+            toggleSelection(pendingIndex, false);
           }
         }
         onClose();
@@ -641,10 +649,16 @@ export const StatusSelectionMenu: React.FC<StatusSelectionMenuProps> = ({
               ref={(el) => {
                 buttonRefs.current[idx] = el;
               }}
+              onMouseDown={(e) => {
+                // Keep focus on the hidden typeahead input so Enter confirms current state
+                // instead of re-triggering the button's native keyboard activation.
+                e.preventDefault();
+              }}
               onClick={() => {
                 setActiveIndex(idx);
                 pendingEnterIndexRef.current = idx;
                 toggleSelection(idx);
+                requestAnimationFrame(() => typeaheadInputRef.current?.focus());
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
