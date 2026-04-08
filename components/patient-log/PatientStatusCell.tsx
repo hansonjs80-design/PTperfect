@@ -646,7 +646,13 @@ export const PatientStatusCell: React.FC<PatientStatusCellProps> = memo(({
     <input
       ref={typedQueryInputRef}
       data-status-typed-input="true"
+      data-status-typed-input-active={isTypingQuery ? 'true' : 'false'}
+      tabIndex={isTypingQuery ? 0 : -1}
       value={typedQuery}
+      onFocus={() => {
+        if (isTypingQuery) return;
+        requestAnimationFrame(() => cellRef.current?.focus());
+      }}
       onChange={(e) => {
         syncTypedQueryValue(e.target.value, typedQueryCompositionRef.current);
       }}

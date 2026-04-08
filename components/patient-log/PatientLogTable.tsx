@@ -554,8 +554,15 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       clearTimeout(focusSkipResetTimerRef.current);
     }
 
+    const active = document.activeElement as HTMLElement | null;
     const host = document.querySelector(`[data-grid-id="${pos.row}-${pos.col}"]`) as HTMLElement | null;
-    host?.focus();
+    if (!host) return;
+
+    if (active && active !== host && active.closest('[data-patient-log-grid="true"]')) {
+      active.blur();
+    }
+
+    host.focus();
 
     focusSkipResetTimerRef.current = setTimeout(() => {
       skipFocusSelectionCommitRef.current = false;
@@ -874,7 +881,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     if (el.tagName === 'INPUT') {
       const input = el as HTMLInputElement;
       if (input.dataset.searchModalInput === 'true') return true;
-      if (input.dataset.statusTypedInput === 'true') return true;
+      if (input.dataset.statusTypedInput === 'true') return input.dataset.statusTypedInputActive === 'true';
       return input.dataset.directEditing === 'true';
     }
     return false;
