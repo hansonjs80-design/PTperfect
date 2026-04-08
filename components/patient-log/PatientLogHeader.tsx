@@ -142,11 +142,10 @@ export const PatientLogHeader: React.FC<PatientLogHeaderProps> = ({
          <button
            onClick={() => onClearAllBeds?.()}
            disabled={!canClearAllBeds}
-           className="flex items-center gap-1 px-2.5 h-8 sm:h-9 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/35 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+           className="flex items-center justify-center w-8 sm:w-9 h-8 sm:h-9 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/35 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
            title="활성 침상 일괄 비우기"
          >
            <Trash2 className="w-3.5 h-3.5" />
-           <span className="hidden sm:inline text-[11px] font-black">일괄 비우기</span>
          </button>
 
          {/* Undo/Redo Group */}
