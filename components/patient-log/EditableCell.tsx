@@ -285,6 +285,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
     const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
     const isHangulLikeKey = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key);
+    const isAsciiAlphabetKey = /^[a-z]$/i.test(e.key);
 
     if (directEdit && !isDirectEditing && !e.ctrlKey && !e.metaKey && !e.altKey) {
       if (isHangulLikeKey) {
@@ -303,6 +304,25 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
         focusInputAt(end, end);
         requestAnimationFrame(() => {
           focusInputAt(end, end);
+        });
+        return;
+      }
+
+      if (koreanOnly && isAsciiAlphabetKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        skipSyncRef.current = !syncOnDirectEdit;
+        navIntentRef.current = null;
+        shouldReplaceOnCompositionRef.current = true;
+        flushSync(() => {
+          setMode('edit');
+        });
+
+        inputRef.current?.focus();
+        inputRef.current?.select();
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+          inputRef.current?.select();
         });
         return;
       }
