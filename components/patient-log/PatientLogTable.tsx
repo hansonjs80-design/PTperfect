@@ -1106,6 +1106,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
       const active = document.activeElement as HTMLElement | null;
       if (isActiveInputEditing(active)) return;
+      if (active?.closest('[data-patient-log-grid="true"]')) return;
       if (document.body.dataset.statusPillSelected === 'true') return;
       if ((active as HTMLElement | null)?.dataset.statusPillSelected === 'true') return;
 
@@ -1246,6 +1247,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
 
   return (
     <div
+      data-patient-log-grid="true"
       className="flex-1 overflow-y-auto overflow-x-auto log-scrollbar bg-slate-50/60 dark:bg-slate-900"
       tabIndex={0}
       onKeyDownCapture={handleInlineSelectionKeyDownCapture}
