@@ -542,7 +542,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
             `}
           >
             <span
-              className={`absolute left-2 top-1/2 -translate-y-1/2 whitespace-pre text-slate-400 dark:text-slate-500 ${className || ''}`}
+              className={`absolute left-2 top-1/2 -translate-y-1/2 whitespace-pre ${className || ''} !text-slate-400 dark:!text-slate-500`}
               style={{ marginLeft: previewOffset }}
             >
               {previewTail}
