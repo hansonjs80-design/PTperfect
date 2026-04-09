@@ -61,9 +61,6 @@ export const useGridNavigation = (totalCols: number) => {
     if (e.key === 'Tab') {
       e.preventDefault();
       e.stopPropagation();
-      if (isInput && inputElement) {
-        inputElement.blur();
-      }
       lastGlobalNavTime = now;
       moveFocus(row, col, e.shiftKey ? 'left' : 'right');
       return;
@@ -80,9 +77,6 @@ export const useGridNavigation = (totalCols: number) => {
 
       e.preventDefault();
       e.stopPropagation();
-      if (inputElement) {
-        inputElement.blur();
-      }
       lastGlobalNavTime = now;
       moveFocus(row, col, 'down');
       return;
@@ -122,9 +116,6 @@ export const useGridNavigation = (totalCols: number) => {
       // Strict Event Stopping
       e.preventDefault();
       e.stopPropagation();
-      if (isInput && inputElement) {
-        inputElement.blur();
-      }
       
       lastGlobalNavTime = now;
       
