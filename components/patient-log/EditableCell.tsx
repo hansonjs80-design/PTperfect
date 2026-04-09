@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, memo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, memo } from 'react';
 import { flushSync } from 'react-dom';
 import { Edit3, RefreshCw } from 'lucide-react';
 import { ContextMenu } from '../common/ContextMenu';
@@ -42,10 +42,12 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [localValue, setLocalValue] = useState(value === null ? '' : String(value));
   const inputRef = useRef<HTMLInputElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
   const isComposingRef = useRef(false);
   const skipNextBlurCommitRef = useRef(false);
   const restoreSelectionAfterBlurRef = useRef(false);
   const shouldReplaceOnCompositionRef = useRef(false);
+  const [previewOffset, setPreviewOffset] = useState(0);
 
   const skipSyncRef = useRef(false);
   const navIntentRef = useRef<'down' | 'right' | 'left' | 'up' | null>(null);
@@ -100,6 +102,16 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   useEffect(() => {
     setLocalValue(value === null ? '' : String(value));
   }, [value, rowIndex]);
+
+  useLayoutEffect(() => {
+    if (!isDirectEditing || !previewTail) {
+      setPreviewOffset(0);
+      return;
+    }
+
+    const measuredWidth = measureRef.current?.getBoundingClientRect().width ?? 0;
+    setPreviewOffset(measuredWidth);
+  }, [className, isDirectEditing, localValue, previewTail]);
 
   const commitValue = (nextValue: string, navDirection?: 'down' | 'right' | 'left' | 'up') => {
     if (nextValue !== String(value || '') || navDirection) {
@@ -526,18 +538,24 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
           <div
             aria-hidden="true"
             className={`
-              pointer-events-none absolute inset-[1px] px-2 py-0.5 rounded-[1px]
-              flex items-center overflow-hidden text-sm
-              ${shouldLeftAlignAutocomplete ? 'justify-start' : 'justify-center'}
+              pointer-events-none absolute inset-[1px] overflow-hidden rounded-[1px] text-sm
             `}
-            style={{ textAlign: shouldLeftAlignAutocomplete ? 'left' : undefined }}
           >
-            <div className={`max-w-full truncate whitespace-pre ${shouldLeftAlignAutocomplete ? 'w-full text-left' : 'text-center'} ${className || ''}`}>
-              <span className="text-gray-900 dark:text-gray-100">{localValue}</span>
-              <span className="text-slate-400 dark:text-slate-500">{previewTail}</span>
-            </div>
+            <span
+              className={`absolute left-2 top-1/2 -translate-y-1/2 whitespace-pre text-slate-400 dark:text-slate-500 ${className || ''}`}
+              style={{ marginLeft: previewOffset }}
+            >
+              {previewTail}
+            </span>
           </div>
         )}
+        <span
+          ref={measureRef}
+          aria-hidden="true"
+          className={`pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 invisible whitespace-pre text-sm ${className || ''}`}
+        >
+          {localValue}
+        </span>
         <input
           {...commonInputProps}
           autoFocus={mode === 'edit'}
@@ -549,7 +567,6 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
             ${mode === 'edit'
               ? `bg-transparent !text-gray-900 dark:!text-gray-100 ${shouldLeftAlignAutocomplete ? 'text-left' : 'text-center'}`
               : 'bg-transparent'}
-            ${isDirectEditing && previewTail ? '!text-transparent caret-gray-900 dark:caret-gray-100 selection:bg-transparent selection:text-transparent' : ''}
             ${(directEdit && mode !== 'edit') ? 'cursor-default select-none caret-transparent' : 'cursor-pointer'} hover:bg-slate-200/55 dark:hover:bg-slate-700/70 transition-all duration-150 text-sm truncate group-hover:scale-[1.03] transform-gpu
             ${mode === 'edit'
               ? 'focus:outline-none focus:ring-0 focus:bg-transparent dark:focus:bg-transparent'
