@@ -1000,6 +1000,31 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
     focusHostWithoutResettingSelection(nextPos);
   }, [selection, totalRows, onSelectionAnchorChange, focusHostWithoutResettingSelection]);
 
+  const handleMultiSelectionDeleteCapture = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Backspace' && e.key !== 'Delete') return;
+
+    const active = document.activeElement as HTMLElement | null;
+    if (isActiveInputEditing(active)) return;
+    if (document.body.dataset.statusPillSelected === 'true') return;
+    if ((active as HTMLElement | null)?.dataset.statusPillSelected === 'true') return;
+
+    const bounds = normalizeSelectionBounds(selection);
+    if (!bounds) return;
+
+    const isMultiSelection = bounds.rowMin !== bounds.rowMax || bounds.colMin !== bounds.colMax;
+    if (!isMultiSelection) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    clearSelectionContents();
+  }, [selection, clearSelectionContents]);
+
+  const handleGridKeyDownCapture = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    handleMultiSelectionDeleteCapture(e);
+    if (e.defaultPrevented) return;
+    handleInlineSelectionKeyDownCapture(e);
+  }, [handleInlineSelectionKeyDownCapture, handleMultiSelectionDeleteCapture]);
+
 
 
   const handleSelectionKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -1266,7 +1291,7 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       data-patient-log-grid="true"
       className="flex-1 overflow-y-auto overflow-x-auto log-scrollbar bg-slate-50/60 dark:bg-slate-900"
       tabIndex={0}
-      onKeyDownCapture={handleInlineSelectionKeyDownCapture}
+      onKeyDownCapture={handleGridKeyDownCapture}
       onCopy={handleCopy}
       onCut={handleCut}
       onPaste={handlePaste}
