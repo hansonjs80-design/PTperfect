@@ -554,15 +554,15 @@ export const PatientLogTable: React.FC<PatientLogTableProps> = memo(({
       clearTimeout(focusSkipResetTimerRef.current);
     }
 
-    const active = document.activeElement as HTMLElement | null;
     const host = document.querySelector(`[data-grid-id="${pos.row}-${pos.col}"]`) as HTMLElement | null;
     if (!host) return;
 
-    if (active && active !== host && active.closest('[data-patient-log-grid="true"]')) {
-      active.blur();
+    try {
+      host.focus({ preventScroll: true });
+    } catch {
+      host.focus();
     }
-
-    host.focus();
+    host.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 
     focusSkipResetTimerRef.current = setTimeout(() => {
       skipFocusSelectionCommitRef.current = false;
