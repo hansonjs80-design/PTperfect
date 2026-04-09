@@ -530,6 +530,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
               flex items-center overflow-hidden text-sm
               ${shouldLeftAlignAutocomplete ? 'justify-start' : 'justify-center'}
             `}
+            style={{ textAlign: shouldLeftAlignAutocomplete ? 'left' : undefined }}
           >
             <div className={`max-w-full truncate whitespace-pre ${shouldLeftAlignAutocomplete ? 'w-full text-left' : 'text-center'} ${className || ''}`}>
               <span className="text-gray-900 dark:text-gray-100">{localValue}</span>
@@ -555,6 +556,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
               : 'focus:outline-none focus:ring-0 focus:z-10 focus:bg-transparent dark:focus:bg-transparent'}
             ${!localValue ? 'placeholder-gray-300 italic' : ''} ${className}
           `}
+          style={{ textAlign: shouldLeftAlignAutocomplete ? 'left' : undefined }}
           title={directEdit ? '클릭: 셀 선택 / 더블클릭: 수정' : '클릭하여 옵션 열기'}
         />
       </div>
