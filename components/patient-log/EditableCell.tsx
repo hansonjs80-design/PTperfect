@@ -3,7 +3,6 @@ import { flushSync } from 'react-dom';
 import { Edit3, RefreshCw } from 'lucide-react';
 import { ContextMenu } from '../common/ContextMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
-import { composeHangulSyllables, normalizeKoreanKeyInput } from '../../utils/keyboardLayout';
 interface EditableCellProps {
   value: string | number | null;
   onCommit: (val: string, skipSync: boolean, navDirection?: 'down' | 'right' | 'left' | 'up') => void;
@@ -76,8 +75,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const sanitizeInputValue = (raw: string) => {
     const upperCased = forceUpperCase ? raw.toUpperCase() : raw;
     if (!koreanOnly) return upperCased;
-    const normalizedKorean = composeHangulSyllables(normalizeKoreanKeyInput(upperCased));
-    return normalizedKorean.replace(/[^\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3\s]/g, '');
+    return upperCased.replace(/[^\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3\s]/g, '');
   };
 
   const normalizeSuggestion = (text: string) => text.trim().normalize('NFD').toLocaleLowerCase();
@@ -299,10 +297,28 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const nativeEvt = e.nativeEvent as KeyboardEvent & { keyCode?: number; which?: number };
     const isIMEKey = nativeEvt.isComposing || e.key === 'Process' || nativeEvt.keyCode === 229 || nativeEvt.which === 229;
+    const isHangulToggleKey = e.key === 'HangulMode' || e.key === 'KanaMode' || nativeEvt.keyCode === 21 || nativeEvt.which === 21;
     const isHangulLikeKey = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key);
     const isAsciiAlphabetKey = /^[a-z]$/i.test(e.key);
 
     if (directEdit && !isDirectEditing && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (koreanOnly && isHangulToggleKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        skipSyncRef.current = !syncOnDirectEdit;
+        navIntentRef.current = null;
+        shouldReplaceOnCompositionRef.current = false;
+        flushSync(() => {
+          setMode('edit');
+        });
+
+        inputRef.current?.focus();
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+        });
+        return;
+      }
+
       if (isHangulLikeKey) {
         const nextValue = sanitizeInputValue(e.key);
         e.preventDefault();
@@ -328,17 +344,16 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
         e.stopPropagation();
         skipSyncRef.current = !syncOnDirectEdit;
         navIntentRef.current = null;
-        shouldReplaceOnCompositionRef.current = false;
-        const nextValue = sanitizeInputValue(e.key);
+        shouldReplaceOnCompositionRef.current = true;
         flushSync(() => {
           setMode('edit');
-          setLocalValue(nextValue);
         });
 
-        const end = nextValue.length;
-        focusInputAt(end, end);
+        inputRef.current?.focus();
+        inputRef.current?.select();
         requestAnimationFrame(() => {
-          focusInputAt(end, end);
+          inputRef.current?.focus();
+          inputRef.current?.select();
         });
         return;
       }
