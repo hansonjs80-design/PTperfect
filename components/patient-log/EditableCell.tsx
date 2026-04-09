@@ -95,6 +95,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const previewTail = previewSuggestion && previewSuggestion.length > localValue.length
     ? previewSuggestion.slice(localValue.length)
     : '';
+  const shouldLeftAlignAutocomplete = isDirectEditing && suggestionOptions.length > 0;
 
   useEffect(() => {
     setLocalValue(value === null ? '' : String(value));
@@ -526,10 +527,11 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
             aria-hidden="true"
             className={`
               pointer-events-none absolute inset-[1px] px-2 py-0.5 rounded-[1px]
-              flex items-center justify-center overflow-hidden text-sm
+              flex items-center overflow-hidden text-sm
+              ${shouldLeftAlignAutocomplete ? 'justify-start' : 'justify-center'}
             `}
           >
-            <div className={`max-w-full truncate whitespace-pre text-center ${className || ''}`}>
+            <div className={`max-w-full truncate whitespace-pre ${shouldLeftAlignAutocomplete ? 'w-full text-left' : 'text-center'} ${className || ''}`}>
               <span className="text-gray-900 dark:text-gray-100">{localValue}</span>
               <span className="text-slate-400 dark:text-slate-500">{previewTail}</span>
             </div>
@@ -544,7 +546,7 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
           className={`
             w-[calc(100%-2px)] h-[calc(100%-2px)] m-px px-2 py-0.5 flex items-center border-none outline-none rounded-[1px]
             ${mode === 'edit'
-              ? 'bg-transparent text-center !text-gray-900 dark:!text-gray-100'
+              ? `bg-transparent !text-gray-900 dark:!text-gray-100 ${shouldLeftAlignAutocomplete ? 'text-left' : 'text-center'}`
               : 'bg-transparent'}
             ${isDirectEditing && previewTail ? '!text-transparent caret-gray-900 dark:caret-gray-100 selection:bg-transparent selection:text-transparent' : ''}
             ${(directEdit && mode !== 'edit') ? 'cursor-default select-none caret-transparent' : 'cursor-pointer'} hover:bg-slate-200/55 dark:hover:bg-slate-700/70 transition-all duration-150 text-sm truncate group-hover:scale-[1.03] transform-gpu
