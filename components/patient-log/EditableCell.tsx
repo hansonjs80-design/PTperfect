@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import { Edit3, RefreshCw } from 'lucide-react';
 import { ContextMenu } from '../common/ContextMenu';
 import { useGridNavigation } from '../../hooks/useGridNavigation';
+import { composeHangulSyllables, normalizeKoreanKeyInput } from '../../utils/keyboardLayout';
 interface EditableCellProps {
   value: string | number | null;
   onCommit: (val: string, skipSync: boolean, navDirection?: 'down' | 'right' | 'left' | 'up') => void;
@@ -75,7 +76,8 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
   const sanitizeInputValue = (raw: string) => {
     const upperCased = forceUpperCase ? raw.toUpperCase() : raw;
     if (!koreanOnly) return upperCased;
-    return upperCased.replace(/[^\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3\s]/g, '');
+    const normalizedKorean = composeHangulSyllables(normalizeKoreanKeyInput(upperCased));
+    return normalizedKorean.replace(/[^\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3\s]/g, '');
   };
 
   const normalizeSuggestion = (text: string) => text.trim().normalize('NFD').toLocaleLowerCase();
@@ -326,16 +328,17 @@ export const EditableCell: React.FC<EditableCellProps> = memo(({
         e.stopPropagation();
         skipSyncRef.current = !syncOnDirectEdit;
         navIntentRef.current = null;
-        shouldReplaceOnCompositionRef.current = true;
+        shouldReplaceOnCompositionRef.current = false;
+        const nextValue = sanitizeInputValue(e.key);
         flushSync(() => {
           setMode('edit');
+          setLocalValue(nextValue);
         });
 
-        inputRef.current?.focus();
-        inputRef.current?.select();
+        const end = nextValue.length;
+        focusInputAt(end, end);
         requestAnimationFrame(() => {
-          inputRef.current?.focus();
-          inputRef.current?.select();
+          focusInputAt(end, end);
         });
         return;
       }
